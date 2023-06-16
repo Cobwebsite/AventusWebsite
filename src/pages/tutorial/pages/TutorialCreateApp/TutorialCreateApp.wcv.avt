@@ -1,0 +1,43 @@
+<h1>Create app</h1>
+<p>To simplify application management, for this example we will create a new <span class="cn">App</span> webcomponent that will be the application entry point. Over the folder <span class="cn">components</span> you can right click and select <span class="cn">Aventus : Create...</span>.</p>
+
+<av-img src="/img/tuto/app/create.png"></av-img>
+
+<p>Then you can select <span class="cn">Component</span></p>
+<av-img src="/img/tuto/app/component.png"></av-img>
+
+<p>Fill the component name with <span class="cn">App</span></p>
+<av-img src="/img/tuto/app/name.png"></av-img>
+
+<p>Select single file.</p>
+<av-img src="/img/tuto/app/single.png"></av-img>
+
+<p>A new file is created named <span class="cn">App.wc.avt</span>. This file will generate a webcomponent with the tag <span class="cn">&lt;td-app&gt;</span>. Inside this tag you can replace the content of the <span class="cn">&lt;slot&gt;&lt;/slot&gt;</span> with <span class="cn">&lt;h1&gt;Todo&lt;/h1&gt;</span></p>
+
+<av-img src="/img/tuto/app/view.png"></av-img>
+
+<p>Now we can replace <span class="cn">&lt;h1&gt;Todo&lt;/h1&gt;</span> inside the <span class="cn">index.html</span> by <span class="cn">&lt;td-app&gt;&lt;/td-app&gt;</span></p>
+
+
+<av-code language="html" filename="index.html">
+    &lt;!DOCTYPE html&gt;
+    &lt;html lang="en"&gt;
+    &nbsp;
+    \t&lt;head&gt;
+    \t\t&lt;meta charset="UTF-8"&gt;
+    \t\t&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    \t\t&lt;title&gt;Todo demo&lt;/title&gt;
+    \t\t&lt;script src="/todo.js"&gt;&lt;/script&gt;
+    \t&lt;/head&gt;
+    &nbsp;
+    \t&lt;body&gt;
+    \t\t&lt;td-app&gt;&lt;/td-app&gt;
+    \t&lt;/body&gt;
+    &nbsp;
+    &lt;/html&gt;
+</av-code>
+
+<p>You can reload the page in your browser and open the <span class="cn">dev tools</span>. The html should be like this.</p>
+<av-img src="/img/tuto/app/console.png"></av-img>
+
+<p>You can notice that the tag <span class="cn">td-app</span> contains a <span class="cn"><a href="https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot" target="_blank" >shadowroot</a></span> that contains a <span class="cn">&lt;h1&gt;</span></p>

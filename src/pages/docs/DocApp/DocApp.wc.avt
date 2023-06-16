@@ -1,0 +1,141 @@
+<script>
+import { DocFirstApp } from "../pages/install/DocFirstApp/DocFirstApp.wcl.avt";
+import { DocIntroduction } from "../pages/install/DocIntroduction/DocIntroduction.wcl.avt";
+import { DocExperience } from "../pages/install/DocExperience/DocExperience.wcl.avt";
+import { DocInstallation } from "../pages/install/DocInstallation/DocInstallation.wcl.avt";
+import { DocConfigBasic } from "../pages/config/DocConfigBasic/DocConfigBasic.wcl.avt";
+import { DocConfigBuild } from "../pages/config/DocConfigBuild/DocConfigBuild.wcl.avt";
+import { DocConfigStatic } from "../pages/config/DocConfigStatic/DocConfigStatic.wcl.avt";
+import { DocConfigLib } from "../pages/config/DocConfigLib/DocConfigLib.wcl.avt";
+import { DocDataCreate } from "../pages/data/DocDataCreate/DocDataCreate.wcl.avt";
+import { DocRamCreate } from "../pages/ram/DocRamCreate/DocRamCreate.wcl.avt";
+import { DocRamCrud } from "../pages/ram/DocRamCrud/DocRamCrud.wcl.avt";
+import { DocRamListenChanges } from "../pages/ram/DocRamListenChanges/DocRamListenChanges.wcl.avt";
+import { DocRamMixin } from "../pages/ram/DocRamMixin/DocRamMixin.wcl.avt";
+import { DocStateCreate } from "../pages/state/DocStateCreate/DocStateCreate.wcl.avt";
+import { DocStateChange } from "../pages/state/DocStateChange/DocStateChange.wcl.avt";
+import { DocStateListen } from "../pages/state/DocStateListen/DocStateListen.wcl.avt";
+import { DocSocketCreate } from "../pages/socket/DocSocketCreate/DocSocketCreate.wcl.avt";
+import { DocSocketSend } from "../pages/socket/DocSocketSend/DocSocketSend.wcl.avt";
+import { DocSocketReceive } from "../pages/socket/DocSocketReceive/DocSocketReceive.wcl.avt";
+import { DocWcCreate } from "../pages/webcomponent/DocWcCreate/DocWcCreate.wcl.avt";
+import { DocWcInheritance } from "../pages/webcomponent/DocWcInheritance/DocWcInheritance.wcl.avt";
+import { DocWcAttribute } from "../pages/webcomponent/DocWcAttribute/DocWcAttribute.wcl.avt";
+import { DocWcProperty } from "../pages/webcomponent/DocWcProperty/DocWcProperty.wcl.avt";
+import { DocWcWatch } from "../pages/webcomponent/DocWcWatch/DocWcWatch.wcl.avt";
+import { DocWcStyle } from "../pages/webcomponent/DocWcStyle/DocWcStyle.wcl.avt";
+import { DocWcElement } from "../pages/webcomponent/DocWcElement/DocWcElement.wcl.avt";
+import { DocWcBinding } from "../pages/webcomponent/DocWcBinding/DocWcBinding.wcl.avt";
+import { DocWcInjection } from "../pages/webcomponent/DocWcInjection/DocWcInjection.wcl.avt";
+import { DocWcLoop } from "../pages/webcomponent/DocWcLoop/DocWcLoop.wcl.avt";
+import { DocWcEvent } from "../pages/webcomponent/DocWcEvent/DocWcEvent.wcl.avt";
+import { DocWcState } from "../pages/webcomponent/DocWcState/DocWcState.wcl.avt";
+import { DocLibCreate } from "../pages/lib/DocLibCreate/DocLibCreate.wcl.avt";
+import { DocPage } from "../DocPage/DocPage.wcl.avt";
+import { DocAdvancedTemplate } from "../pages/advanced/DocAdvancedTemplate/DocAdvancedTemplate.wcl.avt";
+import { DocWcInterpolation } from "../pages/webcomponent/DocWcInterpolation/DocWcInterpolation.wcl.avt";
+import { DocLibAnimation } from "../pages/lib/DocLibAnimation/DocLibAnimation.wcl.avt";
+import { DocLibCallback } from "../pages/lib/DocLibCallback/DocLibCallback.wcl.avt";
+import { DocLibDragAndDrop } from "../pages/lib/DocLibDragAndDrop/DocLibDragAndDrop.wcl.avt";
+import { DocLibInstance } from "../pages/lib/DocLibInstance/DocLibInstance.wcl.avt";
+import { DocLibPressManager } from "../pages/lib/DocLibPressManager/DocLibPressManager.wcl.avt";
+import { DocLibResizeObserver } from "../pages/lib/DocLibResizeObserver/DocLibResizeObserver.wcl.avt";
+import { DocLibResourceLoader } from "../pages/lib/DocLibResourceLoader/DocLibResourceLoader.wcl.avt";
+import { DocLibWatcher } from "../pages/lib/DocLibWatcher/DocLibWatcher.wcl.avt";
+import { DocLibTools } from "../pages/lib/DocLibTools/DocLibTools.wcl.avt";
+
+
+	export class DocApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
+	    private docPage: DocPage;
+	    protected defineRoutes(): void {
+	        //#region doc install
+	        this.addRoute("/docs/introduction", DocIntroduction);
+	        this.addRoute("/docs/installation", DocInstallation);
+	        this.addRoute("/docs/experience", DocExperience);
+	        this.addRoute("/docs/first_app", DocFirstApp);
+	        //#endregion
+
+	        //#region doc config
+	        this.addRoute("/docs/config/basic_prop", DocConfigBasic);
+	        this.addRoute("/docs/config/build", DocConfigBuild);
+	        this.addRoute("/docs/config/static", DocConfigStatic);
+	        this.addRoute("/docs/config/lib", DocConfigLib);
+	        //#endregion
+
+	        //#region doc data
+	        this.addRoute("/docs/data/create", DocDataCreate);
+	        //#endregion
+
+	        //#region doc ram
+	        this.addRoute("/docs/ram/create", DocRamCreate);
+	        this.addRoute("/docs/ram/CRUD", DocRamCrud);
+	        this.addRoute("/docs/ram/listen_changes", DocRamListenChanges);
+	        this.addRoute("/docs/ram/mixin", DocRamMixin);
+	        //#endregion
+
+	        //#region doc state
+	        this.addRoute("/docs/state/create", DocStateCreate);
+	        this.addRoute("/docs/state/change", DocStateChange);
+	        this.addRoute("/docs/state/listen_changes", DocStateListen);
+	        //#endregion
+
+	        //#region doc socket
+	        this.addRoute("/docs/socket/create", DocSocketCreate);
+	        this.addRoute("/docs/socket/send", DocSocketSend);
+	        this.addRoute("/docs/socket/receive", DocSocketReceive);
+	        //#endregion
+
+	        //#region doc webcomponent
+	        this.addRoute("/docs/wc/create", DocWcCreate);
+	        this.addRoute("/docs/wc/inheritance", DocWcInheritance);
+	        this.addRoute("/docs/wc/attribute", DocWcAttribute);
+	        this.addRoute("/docs/wc/property", DocWcProperty);
+	        this.addRoute("/docs/wc/watch", DocWcWatch);
+	        this.addRoute("/docs/wc/style", DocWcStyle);
+	        this.addRoute("/docs/wc/interpolation", DocWcInterpolation);
+	        this.addRoute("/docs/wc/element", DocWcElement);
+	        this.addRoute("/docs/wc/binding", DocWcBinding);
+	        this.addRoute("/docs/wc/injection", DocWcInjection);
+	        this.addRoute("/docs/wc/loop", DocWcLoop);
+	        this.addRoute("/docs/wc/event", DocWcEvent);
+	        this.addRoute("/docs/wc/state", DocWcState);
+	        //#endregion
+
+	        //#region doc lib
+	        this.addRoute("/docs/lib/create", DocLibCreate);
+	        this.addRoute("/docs/lib/animation", DocLibAnimation);
+	        this.addRoute("/docs/lib/callback", DocLibCallback);
+	        this.addRoute("/docs/lib/drag_and_drop", DocLibDragAndDrop);
+	        this.addRoute("/docs/lib/instance", DocLibInstance);
+	        this.addRoute("/docs/lib/press_manager", DocLibPressManager);
+	        this.addRoute("/docs/lib/resize_observer", DocLibResizeObserver);
+	        this.addRoute("/docs/lib/resource_loader", DocLibResourceLoader);
+	        this.addRoute("/docs/lib/watcher", DocLibWatcher);
+	        this.addRoute("/docs/lib/tools", DocLibTools);
+	        //#endregion
+
+	        //#region doc advanced
+	        this.addRoute("/docs/advanced/template", DocAdvancedTemplate);
+	        //#endregion
+	    }
+	}
+	
+	
+	
+</script>
+
+<template>	
+	
+</template>
+
+<style>	
+		:host {
+			height: 100%;
+	
+	
+			.content {
+				height: 100%;
+			}
+		}
+	
+</style>

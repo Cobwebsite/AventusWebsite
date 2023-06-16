@@ -1,0 +1,14 @@
+{
+    "name": "New Doc Page",
+    "description": "Create a new Doc Page",
+    "version": "1.0.0",
+    "variables": {
+        "PageName": {
+            "question": "Choose a name for your page",
+            "type": "input"
+        }
+    },
+    "filesToOpen": [
+        "/${{PageName}}.wcl.avt$/"
+    ]
+}

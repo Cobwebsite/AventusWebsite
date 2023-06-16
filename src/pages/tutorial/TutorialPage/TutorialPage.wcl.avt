@@ -1,0 +1,57 @@
+import { TutorialSidenav } from "../TutorialSidenav/TutorialSidenav.wcl.avt";
+import { Page } from "../../../core/components/Page/Page.wcl.avt";
+
+export class TutorialPage extends Page implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+    @Attribute()
+    public open: boolean;
+    //#endregion
+
+
+    //#region variables
+    @ViewElement()
+    protected sidenavEl: TutorialSidenav;
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    public getNextAndPrevious(state: string) {
+        return this.sidenavEl.getNextAndPrevious(state);
+    }
+    public pageTitle(): string {
+        return "Aventus - Tutorial";
+    }
+
+    /**
+     * 
+     */
+    public openMenu() {
+        this.open = true;
+    }
+
+    /**
+     * 
+     */
+    public closeMenu() {
+        this.open = false;
+    }
+
+    //#endregion
+
+}

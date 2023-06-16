@@ -1,0 +1,19 @@
+:host {
+	.table {
+        av-dynamic-row:not(.header) {
+
+			av-dynamic-col:nth-child(2) {
+				text-align: justify;
+			}
+
+			av-router-link, b, i {
+				display: contents;
+			}
+		}
+		.constraint {
+			display: block;
+			font-size: 14px;
+			margin-top: 5px;
+		}
+    }
+}

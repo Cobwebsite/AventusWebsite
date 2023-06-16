@@ -1,0 +1,116 @@
+<h1>RAM - Extend data</h1>
+<p>As you can see inside the previous section, new functions are added on the items. You can your custom functions too
+    based on the <a href="https://www.patterns.dev/posts/mixin-pattern" target="_blank">mixin pattern</a>. This is
+    useful when you auto generated your data from your backend but you just want to add some functions. The best way
+    to learn this is with an example. We will add a function helloWorld on the Person item.</p>
+<av-code language="typescript" filename="Person.data.avt">
+    export class Person extends Aventus.Data implements Aventus.IData {
+    \tpublic id: number = 0;
+    \tpublic name: string = "";
+    }
+</av-code>
+<p>First of all, we must create an interface with the action needed.</p>
+<av-code language="typescript" filename="Person.ram.avt">
+    interface PersonAction {
+    \t// define your function here
+    \thelloWorld(): void;
+    }
+</av-code>
+<p>Then you can create a type that is the mix of the data and the extension.</p>
+<av-code language="typescript" filename="Person.ram.avt">
+    interface PersonAction {
+    \t// define your function here
+    \thelloWorld(): void;
+    }
+    &nbsp;
+    type PersonExtended = Person & PersonAction;
+</av-code>
+<p>Then you can add your RAM.</p>
+<av-code language="typescript" filename="Person.ram.avt">
+    interface PersonAction {
+    \t// define your function here
+    \thelloWorld(): void;
+    }
+    &nbsp;
+    type PersonExtended = Person & PersonAction;
+    &nbsp;
+    export class PersonRAM extends Aventus.Ram&lt;PersonExtended&gt; implements Aventus.IRam {
+
+    }
+</av-code>
+<p>Now you can use the action <span class="cn">Implement inherited abstract class</span>.</p>
+<av-code language="typescript" filename="Person.ram.avt">
+    interface PersonAction {
+    \t// define your function here
+    \thelloWorld(): void;
+    }
+    &nbsp;
+    type PersonExtended = Person & PersonAction;
+    &nbsp;
+    export class PersonRAM extends Aventus.Ram&lt;PersonExtended&gt; implements Aventus.IRam {
+    &nbsp;
+    \tpublic override defineIndexKey(): keyof Person | "helloWorld" {
+    \t\treturn 'id';
+    \t}
+    &nbsp;
+    \tprotected override getTypeForData(objJson: PersonExtended | Aventus.KeysObject&lt;PersonExtended&gt;): new ()&nbsp;=&gt; PersonExtended {
+    \t\tthrow new Error("Method not implemented.");
+    \t}
+    }
+</av-code>
+<p>Then you can add the the mixin pattern.</p>
+<av-code language="typescript" filename="Person.ram.avt">
+    interface PersonAction {
+    \t// define your function here
+    \thelloWorld(): void;
+    }
+    &nbsp;
+    type PersonExtended = Person & PersonAction;
+    &nbsp;
+    export class PersonRAM extends Aventus.Ram&lt;PersonExtended&gt; implements Aventus.IRam {
+    &nbsp;
+    \tpublic override defineIndexKey(): keyof Person | "helloWorld" {
+    \t\treturn 'id';
+    \t}
+    &nbsp;
+    \tprotected override getTypeForData(objJson: PersonExtended | Aventus.KeysObject&lt;PersonExtended&gt;): new ()&nbsp;=&gt PersonExtended {
+    \t\tthrow new Error("Method not implemented.");
+    \t}
+    &nbsp;
+    \tprivate addHelloWorldFunction&lt;B extends new (...args: any[]) =&gt; Person&gt;(Base: B) {
+    \t\treturn class Extension extends Base implements PersonAction {
+    \t\t\tpublic helloWorld(): void {
+    \t\t\t\tconsole.log("hello world");
+    \t\t\t};
+    \t\t};
+    \t}
+    }
+</av-code>
+<p>Now you can use the extension on the function <span class="cn">getTypeForData</span>.</p>
+<av-code language="typescript" filename="Person.ram.avt">
+    interface PersonAction {
+    \t// define your function here
+    \thelloWorld(): void;
+    }
+    &nbsp;
+    type PersonExtended = Person & PersonAction;
+    &nbsp;
+    export class PersonRAM extends Aventus.Ram&lt;PersonExtended&gt; implements Aventus.IRam {
+    &nbsp;
+    \tpublic override defineIndexKey(): keyof Person | "helloWorld" {
+    \t\treturn 'id';
+    \t}
+    &nbsp;
+    \tprotected override getTypeForData(objJson: PersonExtended | Aventus.KeysObject&lt;PersonExtended&gt;): new ()&nbsp;=&gt PersonExtended {
+    \t\treturn this.addHelloWorldFunction(Person);
+    \t}
+    &nbsp;
+    \tprivate addHelloWorldFunction&lt;B extends new (...args: any[]) =&gt; Person&gt;(Base: B) {
+    \t\treturn class Extension extends Base implements PersonAction {
+    \t\t\tpublic helloWorld(): void {
+    \t\t\t\tconsole.log("hello world");
+    \t\t\t};
+    \t\t};
+    \t}
+    }
+</av-code>

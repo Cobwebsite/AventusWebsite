@@ -1,0 +1,121 @@
+<h1>Webcomponent - Select element</h1>
+<p>In the section you are going to learn how to select a element from your shadowroot to use it inside your logical
+    part.</p>
+<h2>Normal case</h2>
+<p>Inside the <span class="cn">*.wcv.avt</span> file you can add an attribute <span class="cn">@element</span> to tag
+    your element.</p>
+<av-code language="html" filename="Img.wcv.avt">
+    &lt;div class="img-container" @element="container"&gt;
+    \t&lt;img @element="imgEl"/&gt;
+    &lt;/div&gt;
+</av-code>
+<p>When you save your file, the attribute <span class="cn">@element</span> will be underlined in red because you didn't
+    declare the variable
+    inside the <span class="cn">*.wcl.avt.</span> You can open this file and if you have sections, the variables section
+    will be underline. You
+    can alt+. and click on "Import missing view element". This will create the two variables with a <span
+        class="cn">protected</span>
+    modifier and a decorator <span class="cn">@ViewElement</span>. This decorator is set to have a quick vision on which
+    variables are
+    used inside your view.</p>
+<av-code language="typescript" filename="Img.wcl.avt">
+    export class Img extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \t//#region static
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region props
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region variables
+    \t@ViewElement()
+    \tprotected container: HTMLDivElement;
+    &nbsp;
+    \t@ViewElement()
+    \tprotected imgEl: HTMLImageElement;
+    \t//#endregion
+    &nbsp;
+    \t//#region constructor
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region methods
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    }
+</av-code>
+<h2>Multiple selection</h2>
+<p>In addition, you can use the same element name for different tags. It will select all the tags marked by the element
+    name.</p>
+<av-code language="html" filename="List.wcv.avt">
+    &lt;div class="list"&gt;
+    \t&lt;div class="item" @element="items"&gt;&lt;/div&gt;
+    \t&lt;div class="item" @element="items"&gt;&lt;/div&gt;
+    \t&lt;p class="item" @element="items"&gt;&lt;/p&gt;
+    &lt;/div&gt;
+</av-code>
+<av-code language="typescript" filename="List.wcl.avt">
+    export class List extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \t//#region static
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region props
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region variables
+    \t@ViewElement()
+    \tprotected items: (HTMLDivElement | HTMLParagraphElement)[];
+    \t//#endregion
+    &nbsp;
+    \t//#region constructor
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region methods
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    }
+</av-code>
+
+<h2>Expert use only</h2>
+<p>If you change your <span class="cn">shadowroot</span> by cloning node or something else, you can add a
+    useLive option inside the decorator <span class="cn">@ViewElement</span> to do a <span
+        class="cn">querySelector</span> instead of using saved values.</p>
+<av-code language="typescript" filename="Img.wcl.avt">
+    export class Img extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \t//#region static
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region props
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region variables
+    \t@ViewElement({
+    \t\tuseLive: true // this code ll do a this.shadowroot.querySelector.
+    \t})
+    \tprotected container: HTMLDivElement;
+    &nbsp;
+    \t@ViewElement()
+    \tprotected imgEl: HTMLImageElement;
+    \t//#endregion
+    &nbsp;
+    \t//#region constructor
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region methods
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    }
+</av-code>

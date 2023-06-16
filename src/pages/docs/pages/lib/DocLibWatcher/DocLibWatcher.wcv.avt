@@ -1,0 +1,33 @@
+<h1>Library - Watcher</h1>
+<p>A watcher is an object that will notify any changes it undergoes. This is based on the <span class="cn"><a
+            href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy"
+            target="_blank" rel="noopener noreferrer">Proxy</a></span> pattern.</p>
+
+<av-code language="typescript" filename="Example.lib.avt">
+    export function createWatcher() {
+    \tlet watchableObj = Aventus.Watcher.get({}, (action: WatchAction, path: string, element: any) =&gt; {
+    \t\tconsole.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);
+    \t});
+    \treturn watchableObj;
+    }
+</av-code>
+
+<p>The callback is fired when one of the following action occured : <span class="cn">CREATED</span>, <span class="cn">UPDATED</span>, <span class="cn">DELETED</span>.</p>
+
+
+<av-code language="typescript" filename="Example.lib.avt">
+    export function runWatcher() {
+    \tlet watchableObj = Aventus.Watcher.get({}, (action: WatchAction, path: string, element: any) =&gt; {
+    \t\tconsole.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);
+    \t});
+    &nbsp;
+    \twatchableObj.name = "John"; // Fire a CREATED
+    \t// the log : CREATED on name with value "John"
+    &nbsp;
+    \twatchableObj.name = "John Doe"; // Fire a UPDATED
+    \t// the log : UPDATED on name with value "John Doe"
+    &nbsp;
+    \tdelete watchableObj.name; // Fire a DELETED
+    \t// the log : DELETED on name with value "John Doe"
+    }
+</av-code>

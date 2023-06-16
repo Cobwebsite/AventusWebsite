@@ -1,0 +1,142 @@
+<h1>Socket - Send message</h1>
+<h2>Simple send</h2>
+<p>To send message from the client to the server you must call the function <span class="cn">sendMessage</span>.</p>
+<av-code language="typescript" filename="Test.lib.avt">
+    export function login(username: string, password: string) {
+    \tAventus.Instance.get(LoginSocket).sendMessage("/login", { username, password });
+    }
+</av-code>
+<p>This code will send a message to the unique route named <span class="cn">/login</span> and provide username and password as
+    <span class="cn">body</span>. The code below is the receiver written in C# to handle the message.
+</p>
+<av-code language="csharp">
+    public class Login : WebSocketReceiver&lt;Login, Login.Body&gt;
+    {
+    \tpublic override string defineTrigger()
+    \t{
+    \t\treturn "/login";
+    \t}
+    &nbsp;
+    \tpublic override void defineWebSockets()
+    \t{
+    \t\tsetWebSocket&lt;DefaultSocket&gt;();
+    \t}
+    &nbsp;
+    \tpublic override async Task onMessage(WebSocketData socketData, Body message)
+    \t{
+    \t\tConsole.WriteLine("Login for " + message.username + " with password " + message.password);
+    \t}
+    &nbsp;
+    \tpublic class Body
+    \t{
+    \t\tpublic string username { get; set; }
+    \t\tpublic string password { get; set; }
+    \t}
+    }
+</av-code>
+
+<h2>Send with responses</h2>
+<p>Because most of the time, the communication is used to send data and waiting a response, for example if you want to
+    create a new user, you want to know if the user is created or if an error occured. To send a message and wait
+    answer, you can use the method <span class="cn">sendMessageAndWait</span>. The behaviour of this method is similar to the sendMessage
+    but you must add potentials route result.</p>
+<av-code language="typescript" filename="Test.lib.avt">
+    export function login(username: string, password: string) {
+    \tAventus.Instance.get(LoginSocket).sendMessageAndWait("/login",
+    \t\t{
+    \t\t\tusername,
+    \t\t\tpassword
+    \t\t},
+    \t\t{
+    \t\t\t"/login/response": (data: { success: boolean; }) =&gt; {
+    \t\t\t\tconsole.log("login result "+ data.success);
+    \t\t\t},
+    \t\t\t"/login/error": (data: { errors: string[] }) =&gt; {
+    &nbsp;
+    \t\t\t}
+    \t\t}
+    \t);
+    }
+</av-code>
+<p>To match query and response, Aventus add an <span class="cn">uid</span> inside the message and if the message from the server contains
+    the
+    same uid as the query, it means that the message is the response for the query.</p>
+<av-code language="json">
+    {
+    \t"channel": "/login",
+    \t"data": {
+    \t\t"username":"root",
+    \t\t"password":"root"
+    \t},
+    \tuid: "_8f34mbk7g"
+    }
+</av-code>
+<p>The code below is an example of the login receiver written in C#</p>
+<av-code language="csharp">
+    public class Login : WebSocketReceiverAnswer&lt;Login, Login.Body&gt;
+    {
+    &nbsp;
+    \tpublic override string defineTrigger()
+    \t{
+    \t\treturn "/login";
+    \t}
+    &nbsp;
+    \tpublic override void defineWebSockets()
+    \t{
+    \t\tsetWebSocket&lt;DefaultSocket&gt;();
+    \t}
+    \tpublic override void defineAnswers()
+    \t{
+    \t\tsetAnswer&lt;LoginResponse&gt;();
+    \t}
+    &nbsp;
+    \tpublic override async Task&lt;IWebSocketSender&gt; onMessage(WebSocketData socketData, Body message,
+    WebSocketAnswerOptions options)
+    \t{
+    \t\tif (message.username == "root" && message.password == "root")
+    \t\t{
+    \t\t\treturn new LoginResponse(success: true);
+    \t\t}
+    \t\treturn new LoginResponse(success: false);
+    \t}
+    &nbsp;
+    \tpublic class Body
+    \t{
+    \t\tpublic string username { get; set; }
+    \t\tpublic string password { get; set; }
+    \t}
+    }
+</av-code>
+<h2>Good pratice</h2>
+<p>To avoid writting the communication function everywhere in your code, you should add function inside the socket class
+    with a specific return type.</p>
+<av-code language="typescript" filename="Login.socket.avt">
+    export class LoginSocket extends Aventus.Socket implements Aventus.ISocket {
+    &nbsp;
+    \t...
+    &nbsp;
+    \tpublic login(username:string, password:string): Promise&lt;boolean&gt; {
+    \t\treturn new Promise&lt;boolean&gt;(() =&gt; {
+    \t\t\tthis.sendMessageAndWait("/login",
+    \t\t\t\t{
+    \t\t\t\t\tusername,
+    \t\t\t\t\tpassword
+    \t\t\t\t},
+    \t\t\t\t{
+    \t\t\t\t\t"/login/response": (data: { success: boolean; }) =&gt; {
+    \t\t\t\t\t\tresolve(data.success);
+    \t\t\t\t\t},
+    \t\t\t\t\t"/login/error": (data: { errors: string[] }) =&gt; {
+    \t\t\t\t\t\tresolve(false);
+    \t\t\t\t\t}
+    \t\t\t\t}
+    \t\t\t);
+    \t\t})
+    \t}
+    }
+</av-code>
+<av-code language="typescript" filename="Test.lib.avt">
+    export async function test(){
+    \tconst success = await LoginSocket.getInstance().login("root", "root")
+    }
+</av-code>

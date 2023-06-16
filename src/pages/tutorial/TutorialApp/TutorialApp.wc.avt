@@ -1,0 +1,48 @@
+<script>
+import { TutorialData } from "../pages/TutorialData/TutorialData.wcl.avt";
+import { TutorialCreateApp } from "../pages/TutorialCreateApp/TutorialCreateApp.wcl.avt";
+import { TutorialInit } from "../pages/TutorialInit/TutorialInit.wcl.avt";
+import { TutorialIntroduction } from "../pages/TutorialIntroduction/TutorialIntroduction.wcl.avt";
+import { TutorialPage } from "../TutorialPage/TutorialPage.wcl.avt";
+import { TutorialRam } from "../pages/TutorialRam/TutorialRam.wcl.avt";
+import { TutorialForm } from "../pages/TutorialForm/TutorialForm.wcl.avt";
+import { TutorialList } from "../pages/TutorialList/TutorialList.wcl.avt";
+import { TutorialStyle } from "../pages/TutorialStyle/TutorialStyle.wcl.avt";
+
+	export class TutorialApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
+	    private tutorialPage: TutorialPage;
+	    protected defineRoutes(): void {
+
+	        this.addRoute("/tutorial/introduction", TutorialIntroduction);
+	        this.addRoute("/tutorial/init", TutorialInit);
+	        this.addRoute("/tutorial/app", TutorialCreateApp);
+	        this.addRoute("/tutorial/data", TutorialData);
+	        this.addRoute("/tutorial/ram", TutorialRam);
+	        this.addRoute("/tutorial/form", TutorialForm);
+	        this.addRoute("/tutorial/list", TutorialList);
+	        this.addRoute("/tutorial/style", TutorialStyle);
+	        
+	    }
+	}
+	
+	
+	
+	
+</script>
+	
+	<template>	
+	
+</template>
+	
+	<style>	
+		:host {
+			height: 100%;
+	
+	
+			.content {
+				height: 100%;
+			}
+		}
+	
+</style>
+	

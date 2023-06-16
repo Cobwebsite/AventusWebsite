@@ -1,0 +1,64 @@
+import { Page } from "../../core/components/Page/Page.wcl.avt";
+
+export class About extends Page implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+
+
+    /**
+     * 
+     */
+    protected changeTab(e: Event, instance: Aventus.PressManager) {
+		let element = instance.getElement();
+		if(element.classList.contains("active")){
+			return;
+		}
+
+		let tabHeaderActive = this.shadowRoot.querySelector(".tabs .header .tab.active");
+		if(tabHeaderActive) {
+			tabHeaderActive.classList.remove("active");
+		}
+		let tabActive = this.shadowRoot.querySelector(".tabs .body .tab.active");
+		if(tabActive) {
+			tabActive.classList.remove("active");
+		}
+
+		let tabName = element.getAttribute("tab-name");
+		element.classList.add("active");
+		let newTabActive = this.shadowRoot.querySelector('.tabs .body .tab[name="'+tabName+'"]');
+		if(newTabActive){
+			newTabActive.classList.add("active");
+		}
+
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public override pageTitle(): string {
+        return "Aventus";
+    }
+
+    //#endregion
+
+}

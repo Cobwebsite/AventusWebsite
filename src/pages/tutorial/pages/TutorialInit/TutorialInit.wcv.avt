@@ -1,0 +1,58 @@
+<h1>Init a project</h1>
+<p>First of all, you need to create your project and configure it. Below you can find the specs of this project :</p>
+<ul>
+    <li>Module name : TodoDemo</li>
+    <li>Component prefix : td</li>
+    <li>Output file : todo.js</li>
+</ul>
+
+
+<p>You can create folder where you want named <span class="cn">demo</span> and open it with VSCode. You can right click
+    on the Explorer section and select <span class="cn">Aventus : Create...</span>.</p>
+
+<av-img src="/img/tuto/init/create.png"></av-img>
+
+<p>Then select <span class="cn">Init</span>.</p>
+<av-img src="/img/tuto/init/init.png"></av-img>
+
+<p>Choose <span class="cn">Default</span></p>
+<av-img src="/img/tuto/init/default.png"></av-img>
+
+<p>Fill the name with <span class="cn">TodoDemo</span></p>
+<av-img src="/img/tuto/init/default.png"></av-img>
+
+<p>Fill the component prefix with <span class="cn">td</span></p>
+<av-img src="/img/tuto/init/prefix.png"></av-img>
+
+<p>The file <span class="cn">aventus.conf.avt</span> will open and the following structure is created</p>
+<av-img src="/img/tuto/init/basic_struct.png"></av-img>
+
+<p>Replace the <span class="cn">outputFile</span> with <span class="cn">./dist/todo.js</span> and save the file.</p>
+<av-img src="/img/tuto/init/output.png"></av-img>
+
+<p>Inside the folder static you can create a new file named <span class="cn">index.html</span> with the following
+    content</p>
+
+<av-code language="html" filename="index.html">
+    &lt;!DOCTYPE html&gt;
+    &lt;html lang="en"&gt;
+    &nbsp;
+    \t&lt;head&gt;
+    \t\t&lt;meta charset="UTF-8"&gt;
+    \t\t&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    \t\t&lt;title&gt;Todo demo&lt;/title&gt;
+    \t\t&lt;script src="/todo.js"&gt;&lt;/script&gt;
+    \t&lt;/head&gt;
+    &nbsp;
+    \t&lt;body&gt;
+    \t\t&lt;h1&gt;Todo&lt;/h1&gt;
+    \t&lt;/body&gt;
+    &nbsp;
+    &lt;/html&gt;
+</av-code>
+
+<p>Start the live server by clicking on the play button</p>
+<av-img src="/img/tuto/init/play.png"></av-img>
+
+<p>Your browser will open a new page : </p>
+<av-img src="/img/tuto/init/done.png"></av-img>

@@ -1,0 +1,10 @@
+:host {
+	display: flex;
+	justify-content: center;
+
+	.timeline {
+		background: var(--primary-color);
+		margin: 20px auto;
+		padding: 20px;
+	}
+}

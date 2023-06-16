@@ -1,0 +1,20 @@
+<h1>Installation</h1>
+<h2>Basic install</h2>
+<p>Aventus is actually only available as a vscode extension. You can download it directly inside the vscode extensions
+    tab by searching "Aventus" in the marketplace. Nothing else is required because everythink is wrapped inside the
+    extension.
+</p>
+
+<h2>Useful command inside vscode</h2>
+<p>Because Aventus is fully integrated inside vscode, you must know how to run some commands. By default the shortcut to
+    list all the commands is : <b>ctrl</b>+<b>shift</b>+<b>p</b>. This action open a dropdown with all commands available inside your vscode instance.</p>
+<ul class="list-commands">
+    <li><b>Developer: Reload Window</b> <av-icon icon="arrow-right"></av-icon> To reload the vscode instance</li>
+    <li><b>Aventus : Compile</b> <av-icon icon="arrow-right"></av-icon> To compile a build</li>
+    <li><b>Aventus : Copy static</b> <av-icon icon="arrow-right"></av-icon> To export a static a folder</li>
+    <li><b>Aventus : Import template</b> <av-icon icon="arrow-right"></av-icon> To import Aventus templates</li>
+    <li><b>Aventus : Open storage</b> <av-icon icon="arrow-right"></av-icon> To open the folder where Aventus store data</li>
+</ul>
+
+<h2>Source code</h2>
+<p>The Aventus source code can be downloaded on <a href="https://github.com/Cobwebsite/Aventus" target="_blank" rel="noopener noreferrer">github.</a></p>

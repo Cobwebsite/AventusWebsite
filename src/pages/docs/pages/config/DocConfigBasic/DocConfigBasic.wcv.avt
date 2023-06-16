@@ -1,0 +1,55 @@
+<h1>Configuration - Basic info</h1>
+<p>To create an application with Aventus, you need to define a file named <span class="cn">aventus.conf.avt</span>. This file will define
+    what Aventus must do with your code. The configuration is a json file with properties that are going to be explained
+    below.</p>
+
+
+<div class="table">
+    <av-dynamic-row class="header">
+        <av-dynamic-col size="4" center>Name</av-dynamic-col>
+        <av-dynamic-col size="8" center>Description</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>module</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is the name of the module you are building. All your code will be inside
+            the module to avoid global variables.
+            <span class="constraint">Must satisfy: <span class="cn">^[a-zA-Z0-9_]+$</span></span>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>version</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is the version of the module you are building. The first number is the
+            major version, the second is the minor version and the last is the patch version. By default the value is
+            1.0.0
+            <span class="constraint">Must satisfy: <span class="cn">^[0-9]+\\.[0-9]+\\.[0-9]+$</span></span>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>componentPrefix</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is the prefix that are going to be used by all your webcomponents inside the module. For example if my class is named "Test" and my prefix is "av", the final tag will be "av-test".
+            <span class="constraint">Must satisfy: <span class="cn">^[a-z]{2,}$</span></span>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>hideWarnings</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is a boolean to hide warnings inside Aventus. This is useful when you are developing an app but your aren't in production. If you set it to false, you need to document all your methods
+            <span class="constraint">Must satisfy: <span class="cn">true|false</span></span>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>avoidParsingInsideTags</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is an array of string that the HTML compiler must avoid parsing. For example on this website, the tag av-code isn't parsed by the compiler to avoid detecting some Aventus features inside the HTML code like @element.
+            <span class="constraint">Each string must satisfy: <span class="cn">^[a-z\-]+$</span></span>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>build</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is an array of <av-router-link state="/docs/config/build">build options</av-router-link>. Each build is defined by a list of input and will output a .js file and / or a package.avt file
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>static</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is an array of <av-router-link state="/docs/config/static">static options</av-router-link>.
+        </av-dynamic-col>
+    </av-dynamic-row>
+</div>

@@ -1,0 +1,51 @@
+import { IconLib, IconList } from "./IconLib.lib.avt";
+
+export class Icon extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+    //#region static
+    private static isFirstIcon: boolean = true;
+    //#endregion
+
+
+    //#region props
+	@Property((target: Icon) => {
+        if(target.icon) {
+            target.spanEl.style.setProperty("--icon-code", IconLib.getIcon(target.icon));
+        }
+    })
+    public icon: IconList;
+    //#endregion
+
+
+    //#region variables
+	@ViewElement()
+    protected spanEl: HTMLSpanElement;
+    //#endregion
+
+
+    //#region constructor
+	constructor() {
+        super();
+        if(Icon.isFirstIcon) {
+            Icon.isFirstIcon = false;
+            let tagEl = document.createElement("STYLE");
+            tagEl.innerHTML = `@font-face {
+	font-family: "Font Awesome 6 Free";
+	font-style: normal;
+	font-weight: 900;
+	font-display: block;
+	src: url(https://ka-f.fontawesome.com/releases/v6.2.1/webfonts/free-fa-solid-900.woff2) format("woff2"),
+		url(https://ka-f.fontawesome.com/releases/v6.2.1/webfonts/free-fa-solid-900.ttf) format("truetype");
+}`;
+            document.head.appendChild(tagEl);
+
+        }
+    }
+    //#endregion
+
+
+    //#region methods
+
+    //#endregion
+
+}

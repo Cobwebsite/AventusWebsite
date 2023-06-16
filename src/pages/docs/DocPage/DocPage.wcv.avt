@@ -1,0 +1,5 @@
+<block name="before-container">
+    <av-doc-sidenav @element="sidenavEl"></av-doc-sidenav>
+    <div class="hider" @press="closeMenu"></div>
+</block>
+<av-doc-app></av-doc-app>

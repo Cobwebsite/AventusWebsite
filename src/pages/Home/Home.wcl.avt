@@ -1,0 +1,37 @@
+import { Page } from "../../core/components/Page/Page.wcl.avt";
+
+export class Home extends Page implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region states
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+    public override pageTitle(): string {
+       return "Aventus";
+    }
+	
+	//#endregion
+	
+}

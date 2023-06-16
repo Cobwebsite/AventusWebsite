@@ -1,0 +1,158 @@
+<h1>Form</h1>
+<p>To insert data inside the RAM that we juste created, we need a graphic element. To achieve that you can right click
+    on the folder <span class="cn">components</span> and select <span class="cn">Aventus : Create...</span>.</p>
+<av-img src="/img/tuto/form/create.png"></av-img>
+
+<p>Then you can select <span class="cn">Component</span> in the options.</p>
+<av-img src="/img/tuto/form/component_options.png"></av-img>
+
+<p>You can fill the input with <span class="cn">CreateForm</span> that is the name of the new component.</p>
+<av-img src="/img/tuto/form/name.png"></av-img>
+
+
+<p>You can select <span class="cn">Multiple</span> in the options.</p>
+<av-img src="/img/tuto/form/multiple_options.png"></av-img>
+
+<p>Three new files are created : </p>
+<ul>
+    <li><span class="cn">CreateForm.wcl.avt</span> for the script / logic</li>
+    <li><span class="cn">CreateForm.wcs.avt</span> for the style</li>
+    <li><span class="cn">CreateForm.wcv.avt</span> for the structure</li>
+</ul>
+
+<p>Lets get started by the HTML. We need an input to enter the name. You can replace the <span
+        class="cn">CreateForm.wcv.avt</span> content by :</p>
+
+<av-code language="html" filename="CreateForm.wcv.avt">
+    &lt;h2&gt;Create a new Todo&lt;/h2&gt;
+    &lt;div class="input-container"&gt;
+    \t&lt;label for="todo-name"&gt;Name&lt;/label&gt;
+    \t&lt;input type="text" name="todo-name" @bind="todo_name"&gt;
+    &lt;/div&gt;
+    &lt;button @click="save"&gt;Save&lt;/button&gt;
+</av-code>
+
+<p>The <span class="cn">@bind</span> notifies Aventus that a bidirectional binding must be created between the variable
+    <span class="cn">todo_name</span> and the <span class="cn">value</span> of the input. The <span
+        class="cn">@click</span> means that when a click event is fired on the button, the function <span
+        class="cn">save</span> will be called. When you save the file, 2 errors will be displayed to notify you that
+    <span class="cn">save</span> and <span class="cn">todo_name</span> don't exist inside this component.
+</p>
+
+<p>Open the file <span class="cn">CreateForm.wcl.avt</span>.</p>
+<av-img src="/img/tuto/form/error_logic.png"></av-img>
+<p>First of all set your cursor inside the region <span class="cn">props</span> and press <span class="cn">ctrl +
+        .</span>. Inside the dropdown select <span class="cn">Import missing property todo_name</span> and fill the
+    following input with : </p>
+
+<av-img src="/img/tuto/form/error_correct_name.png"></av-img>
+<av-img src="/img/tuto/form/error_correct_type.png"></av-img>
+<av-img src="/img/tuto/form/error_correct_cb.png"></av-img>
+
+<p>After that, set your cursor inside the region <span class="cn">methods</span> and press <span class="cn">ctrl +
+        .</span>. Inside the dropdown select <span class="cn">Import missing methods</span>. Your file must be :</p>
+
+<av-code language="typescript" filename="CreateForm.wcl.avt">
+    export class CreateForm extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \t//#region static
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    &nbsp;
+    \t//#region props
+    \t@Property()
+    \tpublic todo_name: string;
+    \t//#endregion
+    &nbsp;
+    &nbsp;
+    \t//#region variables
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    &nbsp;
+    \t//#region constructor
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    &nbsp;
+    \t//#region methods
+    &nbsp;
+    \t/**
+    \t *
+    \t */
+    \tprotected save() {
+    \t\tthrow new Error("Method not implemented.");
+    \t}
+    \t//#endregion
+    &nbsp;
+    }
+</av-code>
+
+<p>Now it's time to code the logic of saving function. The only uncommon thing we must to is to manage the id inside the
+    form what is normally done by an external system.</p>
+
+<av-code language="typescript" filename="CreateForm.wcl.avt">
+    export class CreateForm extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \t...
+    &nbsp;
+    \t//#region variables
+    \tprivate todoId: number = 0;
+    \t//#endregion
+    &nbsp;
+    \t...
+    &nbsp;
+    \tprotected async save() {
+    \t\t// create a new todo
+    \t\tlet todo = new Todo();
+    \t\t// increase the id
+    \t\tthis.todoId++;
+    \t\t// Set the id to the todo
+    \t\ttodo.id = this.todoId;
+    \t\t// Set the name to the todo
+    \t\ttodo.name = this.todo_name;
+    \t\t// Save todo inside the RAM
+    \t\tawait TodoRAM.getInstance().create(todo);
+    \t\t// Reset the input value (because of bidirectional binding)
+    \t\tthis.todo_name = "";
+    \t}
+    &nbsp;
+    \t...
+    &nbsp;
+    }
+</av-code>
+
+<p>Don't forget to auto import missing element with <span class="cn">ctrl + .</span>. We are done with the logical part.
+    To show what we are doing, we must update the <span class="cn">App.wc.avt</span> file. You can replace the <span
+        class="cn">template</span> with the following content.</p>
+
+<av-code language="html" filename="App.wc.avt">
+    ...
+    &lt;template&gt;
+    \t&lt;h1&gt;Todo&lt;/h1&gt;
+    \t&lt;div class="container"&gt;
+    \t\t&lt;td-create-form&gt;&lt;/td-create-form&gt;
+    \t&lt;/div&gt;
+    &lt;/template&gt;
+    ...
+</av-code>
+
+<p>You can look inside your browser to have a preview</p>
+<av-img src="/img/tuto/form/preview.png"></av-img>
+<p>Maybe we can add a space between the input line and the button. Open the file <span
+        class="cn">CreateForm.wcs.avt</span> and use the following style.</p>
+
+<av-code language="css" filename="CreateForm.wcs.avt">
+    :host {
+    \t.input-container {
+    \t\tmargin-bottom: 16px;
+    \t}
+    }
+</av-code>
+
+<p>You can try to add one item by filling the input and clicking on the button Save. The input must be reset to empty. You can open your <span class="cn">dev tools</span> and inside the console type <span class="cn">TodoDemo.TodoRAM.getInstance().records</span></p>
+<av-img src="/img/tuto/form/inspect.png"></av-img>
+
+<p>We have a data stored, well done!</p>
+

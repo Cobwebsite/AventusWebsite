@@ -1,0 +1,120 @@
+<h1>Configuration - Build</h1>
+<p>Inside a module, you can split you code into differents submodules. Inside Aventus, this submodule is called a
+    <span class="cn">Build</span>. The build job is to transform some Aventus input files into a JavaScript file (for an
+    app) and/or a
+    Aventus Package File (for a lib).
+</p>
+
+<div class="table">
+    <av-dynamic-row class="header">
+        <av-dynamic-col size="4" center>Name</av-dynamic-col>
+        <av-dynamic-col size="8" center>Description</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>name</av-dynamic-col>
+        <av-dynamic-col size="8" center>
+            <div>This is the name for the build. If the build is exported as a library, the
+                library name
+                will be <span class="cn">$module</span>@<span class="cn">$name</span></div>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>inputPath</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is an array of string to define which folders Aventus will watch. For
+            example, if you set "./src/*", all files inside the folder "src" will be compiled.
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>outputFile</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is string to define where the compiled JavaScript file must be written.
+            <span class="constraint">Must satisfy: ^\\S+\\.js</span>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>outputPackage</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is string to define where the .package.avt file must be written.
+            <span class="constraint">Must satisfy: ^\\S+\\.package\\.avt</span>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>outsideModulePath</av-dynamic-col>
+        <av-dynamic-col size="8" center>
+            <div>This is an array of string to define which folders Aventus will watch. The
+                watched file will be compiled outside of the module. For example, if you define a class "Test" inside a
+                module "HelloWorld", you can reach the class by typing <span class="cn">window.Test</span> instead of
+                <span class="cn">window.HelloWorld.Test</span>
+            </div>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>namespaceStrategy</av-dynamic-col>
+        <av-dynamic-col size="8" center>
+            <span>This is a string to define how Aventus must deal with namespace.</span>
+            <ul>
+                <li>manual: the developer will write the namespace by himself</li>
+                <li>followFolders: the namespace will be set based on the current folder and the namespaceRoot property
+                </li>
+                <li>rules: the namespace will be set based on the namespaceRules property</li>
+            </ul>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>namespaceRoot</av-dynamic-col>
+        <av-dynamic-col size="8" center>
+            <span>This is a string to define what is the namespace root folder (only for followFolders strategy)</span>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>namespaceRules</av-dynamic-col>
+        <av-dynamic-col size="8" center>
+            <span>This is an object to define the namespace based on the uri where the key is the namespace and the
+                value is an array of string to match uri</span>
+            <av-code language="json">
+                {
+                ...,
+                namespaceRules:{
+                "Data": ["./src/data/*"]
+                }
+                }
+            </av-code>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>dependances</av-dynamic-col>
+        <av-dynamic-col size="8" center>
+            <span>This is an array of <av-router-link state="/docs/config/lib">dependance options</av-router-link> to
+                use code and/or autocompletion inside your code.</span>
+        </av-dynamic-col>
+    </av-dynamic-row>
+
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>module</av-dynamic-col>
+        <av-dynamic-col size="8" center>This will override the module value of the <av-router-link
+                state="/docs/config/basic_prop">basic config</av-router-link>.
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>version</av-dynamic-col>
+        <av-dynamic-col size="8" center>This will override the version value of the <av-router-link
+                state="/docs/config/basic_prop">basic config</av-router-link>.
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>componentPrefix</av-dynamic-col>
+        <av-dynamic-col size="8" center>This will override the componentPrefix value of the <av-router-link
+                state="/docs/config/basic_prop">basic config</av-router-link>.
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>hideWarnings</av-dynamic-col>
+        <av-dynamic-col size="8" center>This will override the hideWarnings value of the <av-router-link
+                state="/docs/config/basic_prop">basic config</av-router-link>.
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>avoidParsingInsideTags</av-dynamic-col>
+        <av-dynamic-col size="8" center>This will override the avoidParsingInsideTags value of the <av-router-link
+                state="/docs/config/basic_prop">basic config</av-router-link>.
+        </av-dynamic-col>
+    </av-dynamic-row>
+</div>

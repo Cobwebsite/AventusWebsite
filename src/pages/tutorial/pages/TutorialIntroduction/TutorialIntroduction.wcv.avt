@@ -1,0 +1,16 @@
+<h1>Introduction</h1>
+<p>In this tutorial you are going to learn Aventus core concepts. For this, we are going to create a simple todo list.</p>
+
+<av-img src="/img/tuto/introduction/final_result.png"></av-img>
+
+<p>At the end of this tutorial you will be able to :</p>
+<ul>
+    <li>Structure your project</li>
+    <li>Understand Webcomponents</li>
+    <li>Understand Data behaviour</li>
+</ul>
+
+
+<h2>Prerequisites</h2>
+<p>For this tutorial you must have Aventus install as VSCode extension.</p>
+

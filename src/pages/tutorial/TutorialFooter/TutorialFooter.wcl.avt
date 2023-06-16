@@ -1,0 +1,68 @@
+import { TutorialPage } from "../TutorialPage/TutorialPage.wcl.avt";
+
+export class TutorialFooter extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+    @Attribute()
+    public hide_previous: boolean;
+
+    @Attribute()
+    public hide_next: boolean;
+    //#endregion
+
+
+    //#region variables
+    private previousState: string;
+    private nextState: string;
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    private previousClick() {
+        if(this.previousState) {
+            Aventus.State.activate(this.previousState, Aventus.RouterStateManager.getInstance());
+        }
+    }
+    private nextClick() {
+        if(this.nextState) {
+            Aventus.State.activate(this.nextState, Aventus.RouterStateManager.getInstance());
+        }
+    }
+    protected override postCreation(): void {
+        let page = this.findParentByType(TutorialPage);
+        if(page) {
+            let currentState = Aventus.RouterStateManager.getInstance().getState().name;
+            let info = page.getNextAndPrevious(currentState);
+            if(!info.previous) {
+                this.hide_previous = true;
+            }
+            else {
+                this.previousState = info.previous;
+            }
+
+            if(!info.next) {
+                this.hide_next = true;
+            }
+            else {
+                this.nextState = info.next;
+            }
+        }
+    }
+    //#endregion
+
+}

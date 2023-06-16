@@ -1,0 +1,156 @@
+<h1>Configuration - Libraries</h1>
+<p>When you create a build, you might like to import a library to reuse some code parts. Here you are going to learn how
+    to define all libs that must be imported inside a build.</p>
+
+<h2>Properties</h2>
+<div class="table">
+    <av-dynamic-row class="header">
+        <av-dynamic-col size="4" center>Name</av-dynamic-col>
+        <av-dynamic-col size="8" center>Description</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>uri</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is a string to define where to find the file to import. To have more
+            informations about this path, you can read the next chapter.
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>version</av-dynamic-col>
+        <av-dynamic-col size="8" center>
+            <div>This is a string to define which version of the code is needed. Instead of
+                number you can use a <span class="cn">x</span> to say any number. The default value is <span
+                    class="cn">x.x.x</span>.
+                <span class="constraint">Must satisfy: <span class="cn">^[0-9x]+\\.[0-9x]+\\.[0-9x]+$</span></span>
+            </div>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>include</av-dynamic-col>
+        <av-dynamic-col size="8" center>
+            <span>This is a string to define how the lib must be included inside output js file.</span>
+            <ul>
+                <li>none: No need to include the lib inside the output file.</li>
+                <li>need: Include only the needed code inside the output file. (This is the default value)</li>
+                <li>full: Include all the code of the lib inside the ouput file.</li>
+            </ul>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>subDependancesInclude</av-dynamic-col>
+        <av-dynamic-col size="8" center>
+            <span>This is a object where the key is the sub library name and the value is the inclusion pattern. The
+                will define how the library of the library must be included inside output js file.</span>
+            <ul>
+                <li>none: No need to include the sub lib inside the output file.</li>
+                <li>need: Include only the needed code inside the output file. (This is the default value)</li>
+                <li>full: Include all the code of the sub lib inside the ouput file.</li>
+            </ul>
+        </av-dynamic-col>
+    </av-dynamic-row>
+</div>
+
+<h2>Libraries uri</h2>
+<p>You can use a few uri kinds to load a library.</p>
+<h3>Predefined</h3>
+<p>There are 2 libs with predefined uri:</p>
+<ul>
+    <li>Aventus@Main : uri is <span class="cn">@Aventus</span>. This is the core of Aventus, if you omit this lib inside
+        your build, it
+        will be
+        automaticaly added.</li>
+    <li>Aventus@UI : uri is <span class="cn">@AventusUI</span>. This lib contains some useful webcomponent to create
+        interface.</li>
+</ul>
+<h3>Local</h3>
+<p>Every package you have build will be accessible by typing <span class="cn">@local:$module@$build</span> (ex:
+    @local:Aventus@Main). You
+    can find all these librairies by typing the command Aventus : Open aventus storage and then navigate inside your
+    file explorer under the packages&gt;@locals. You should find all package files you build on your computer.</p>
+<av-img src="/img/doc/config/lib/lib_example.png"></av-img>
+<av-code language="json" filename="aventus.conf.avt">
+    {
+    \tbuild: [{
+    \t\tname: "Main",
+    \t\tdependances: [{
+    \t\t\turi: "@local:HelloAventus@Main"
+    \t\t\}]
+    \t\t...
+    \t}]
+    }
+</av-code>
+<p>This is useful if you are alone on a project or if you need to debug something, but this way is strongly discouraged
+    because it means that you have to open all your projects at least one time what is not really scalable friendly.</p>
+<h3>Same module</h3>
+<p>To include a build inside another build on the same <span class="cn">aventus.conf.avt</span>, you can type the uri
+    <span class="cn">&:$build</span>
+    (ex: &:Main) to include the main part of your module.</p>
+<av-code language="json" filename="aventus.conf.avt">
+    {
+    \tbuild: [{
+    \t\tname:"Main",
+    \t\t...
+    \t}, {
+    \t\tname: "Test",
+    \t\tdependances: [{
+    \t\t\turi: "&:Main"
+    \t\t}]
+    \t}]
+    }
+</av-code>
+<h3>File uri</h3>
+<p>You can add directly an uri that resolve a <span class="cn">.package.avt</span> file to import it.</p>
+<av-code language="json" filename="aventus.conf.avt">
+    {
+    \tbuild: [{
+    \t\tname: "Main",
+    \t\tdependances: [{
+    \t\t\turi: "./myLibs/Lib1@Main.package.avt"
+    \t\t}, {
+    \t\t\turi: "C:\\\\myLibs\\\\Lib2@Main.package.avt"
+    \t\t}],
+    \t}]
+    }
+</av-code>
+<h3>File via http</h3>
+<p>You can resolve dependance via http. There are 2 kinds of file that you can include. A <span
+        class="cn">.package.avt</span> file or a
+    json file. Both will be stored inside the Aventus <span class="cn">storage&gt;packages&gt;http</span>. In this
+    folder, you must find
+    a list
+    of subfolder where the name is the md5 value of the uri that you set as uri. The entry point is a json named
+    <span class="cn">info.json</span>
+</p>
+<av-code language="json" filename="info.json">
+    {
+    \t"name": "Aventus@Main",
+    \t"versions": {
+    \t\t"1": {
+    \t\t\t"0": {
+    \t\t\t\t"0": {
+    \t\t\t\t\t"uri": "http://mydomain.com/version/1_0_0/Aventus@Main.package.avt",
+    \t\t\t\t}
+    \t\t\t}
+    \t\t}
+    \t}
+    }
+</av-code>
+<p>When a specific version is required, Aventus will use the uri to download the file and save it inside the folder as
+    <span class="cn">$name</span>#<span class="cn">$version</span> (ex: Aventus@Main#1.0.0.package.avt) and add a <span
+        class="cn">localUri</span> property that will be
+    used inside the build.
+</p>
+<av-code language="json" filename="info.json">
+    {
+    \t"name": "Aventus@Main",
+    \t"versions": {
+    \t\t"1": {
+    \t\t\t"0": {
+    \t\t\t\t"0": {
+    \t\t\t\t\t"uri": "http://mydomain.com/version/1_0_0/Aventus@Main.package.avt",
+    \t\t\t\t\t"localUri": "C:\\\\(...)\\\\Aventus@Main#1.0.0.package.avt",
+    \t\t\t\t}
+    \t\t\t}
+    \t\t}
+    \t}
+    }
+</av-code>

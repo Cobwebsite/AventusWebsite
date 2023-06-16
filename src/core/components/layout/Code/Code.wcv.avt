@@ -1,0 +1,8 @@
+<span @element="filenameEl" class="filename">{{filename}}</span>
+<pre>
+    <code @element="codeEl" class="language-{{language}}">
+    </code>
+</pre>
+<template class="hided">
+    <slot></slot>
+</template>

@@ -1,0 +1,37 @@
+<h1>Webcomponent - Injection</h1>
+<p>In the section you are going to learn how you can inject data from parent into the child.</p>
+
+<h2>Add injection</h2>
+<p>To bind add an injection on a child inside the shadowroot, you can use the following syntax : <span
+        class="cn">:fieldOnChild=""</span></p>
+<p>With the code below, the input value will be incremented each second</p>
+<av-code language="html" filename="Timer.wcv.avt">
+    &lt;input type="text" :value="time" /&gt;
+</av-code>
+<av-code language="typescript" filename="Timer.wcl.avt">
+    export class Timer extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \t//#region static
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region props
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region variables
+    \t@Watch()
+    \tprivate time:number = 0;
+    \t//#endregion
+    &nbsp;
+    \t//#region constructor
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \tprotected override postCreation() {
+    \t\tsetTimeout(() =&gt; { this.time++ })
+    \t}
+    &nbsp;
+    }
+</av-code>
+<p>You can only use injection with <span class="cn">@Property</span> and <span class="cn">@Watch</span> values.</p>

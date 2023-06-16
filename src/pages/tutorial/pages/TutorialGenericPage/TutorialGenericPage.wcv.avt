@@ -1,0 +1,7 @@
+<av-scrollable floating_scroll>
+	<div class="page-content">
+		<av-icon icon="navicon" @press="openMenu" class="icon-menu"></av-icon>
+		<slot></slot>
+		<av-tutorial-footer></av-tutorial-footer>
+	</div>
+</av-scrollable>

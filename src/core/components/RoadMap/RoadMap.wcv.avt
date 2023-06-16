@@ -1,0 +1,5 @@
+<div class="timeline">
+    <div class="outer">
+        <slot></slot>
+    </div>
+</div>

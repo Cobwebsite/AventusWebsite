@@ -1,0 +1,34 @@
+:host {
+	display: flex;
+	position: relative;
+
+	.filename {
+		background-color: rgba(255, 255, 255, 0.3);
+		display: none;
+		font-size: 12px;
+		padding: 5px;
+		position: absolute;
+		right: 0;
+		top: 5px;
+	}
+
+	pre {
+		border-radius: 5px;
+		padding: 30px 10px;
+		width: 100%;
+	}
+
+	.hided {
+		display: none;
+	}
+
+	.language-css {
+		color: #ce9178;
+	}
+}
+
+:host([filename]) {
+	.filename {
+		display: block;
+	}
+}

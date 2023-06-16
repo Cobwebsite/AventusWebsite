@@ -1,0 +1,82 @@
+<h1>Webcomponent - State</h1>
+<p>In the section you are going to learn how you can listen to <span class="cn">state</span> inside Webcomponent.</p>
+
+<p>You can use state and stateManager to manage the lifecycle of your application. You can subscribe manually to a state
+    manager (the explanation is <av-router-link state="/docs/state/listen_changes">here</av-router-link>). To developer
+    faster, you can use <span class="cn">Decorator</span> over methods of Webcomponent. Each method has its own
+    decorator: </p>
+<ul>
+    <li>active: <span class="cn">@StateActive</span></li>
+    <li>inactive: <span class="cn">@StateInactive</span></li>
+    <li>askChange: <span class="cn">@StateChange</span></li>
+</ul>
+
+
+<p>When you set a Decorator over a method, this method will be fired when the state pattern, the manager and the method
+    matching</p>
+
+<av-code language="typescript" filename="Example.wcl.avt">
+    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \t@StateActive("/state1", MainStateManager)
+    \tpublic onStateActive(state: Aventus.State, slugs: Aventus.StateSlug) {
+    \t\tconsole.log("/state1 on");
+    \t}
+    &nbsp;
+    \t@StateInactive("/state1", MainStateManager)
+    \tpublic onStateInactive(state: Aventus.State, nextState: Aventus.State, slugs: Aventus.StateSlug) {
+    \t\tconsole.log("/state1 off");
+    \t}
+    &nbsp;
+    \t@StateChange("/state1", MainStateManager)
+    \tpublic async onAskChange(state: Aventus.State, nextState: Aventus.State, slugs: Aventus.StateSlug) {
+    \t\treturn confirm("set state1 off?")
+    \t}
+    &nbsp;
+    \t/**
+    \t* Use this method to change state
+    \t*/
+    \tpublic toggleState() {
+    \t\tlet mainState = MainStateManager.getInstance();
+    \t\tif(mainState.getState()?.name == "/state1") {
+    \t\t\tmainState.setState("/");
+    \t\t}
+    \t\telse {
+    \t\t\tmainState.setState("/state1");
+    \t\t}
+    \t}
+    }
+</av-code>
+
+<p>Inside the Decorator you must define which StateManager must be watched. You can provide a class object <span
+        class="cn">MainStateManager.getInstance()</span> or a class definition <span class="cn">MainStateManager</span>.
+    If you set a class definition, Aventus will create a instance by using : <span
+        class="cn">Aventus.Instance.get()</span>.</p>
+
+<p>You can still use parameters inside the pattern to get slugs like <span class="cn">/state/{id:number}/{action:string}</span>.</p>
+
+<p>If you need to do actions when none of your component state is active you can add two others Decorator : <span
+        class="cn">@DefaultStateActive</span> and <span class="cn">@DefaultStateInactive</span>.</p>
+
+<av-code language="typescript" filename="Example.wcl.avt">
+    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \t...
+    &nbsp;
+    \t@DefaultStateActive(MainStateManager)
+    \tpublic onDefaultStateActive() {
+    \t\tconsole.log("none of your state was active but now one is active");
+    \t}
+
+    \t@DefaultStateInactive(MainStateManager)
+    \tpublic onDefaultStateInactive() {
+    \t\tconsole.log("one of your state was active but now none is active");
+    \t}
+    &nbsp;
+    \t...
+    &nbsp;
+    }
+</av-code>
+
+<p>When you don't need anymore a component instance inside the view, don't forget to call the method <span
+        class="cn">destructor</span> to clear all state subscbriptions.</p>

@@ -1,0 +1,38 @@
+<script>
+	import { TutorialPage } from "../../pages/tutorial/TutorialPage/TutorialPage.wcl.avt";
+	import { About } from "../../pages/About/About.wcl.avt";
+	import { DocPage } from "../../pages/docs/DocPage/DocPage.wcl.avt";
+	import { Home } from "../../pages/Home/Home.wcl.avt";
+
+	export class App extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
+	    protected defineRoutes(): void {
+	        this.addRoute("/", Home);
+	        this.addRoute("/about", About);
+	        this.addRoute("^/docs/.*$", DocPage);
+	        this.addRoute("^/tutorial/.*$", TutorialPage);
+	    }
+	
+	}
+</script>
+
+<template>	
+	<block name="before">
+		<av-navbar></av-navbar>
+	</block>
+</template>
+
+<style>	
+		:host {
+			display: flex;
+			flex-direction: column;
+			font-size: 1.6rem;
+			height: 100%;
+			width: 100%;
+	
+			.content {
+				height: calc(100% - 50px);
+				width: 100%;
+			}
+		}
+	
+</style>

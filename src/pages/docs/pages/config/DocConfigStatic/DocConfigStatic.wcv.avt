@@ -1,0 +1,45 @@
+<h1>Configuration - Static</h1>
+<p>Even if Aventus is great for your project, you will need others files like .html, .png, etc. You can put your source file inside a static folder that will be exported.</p>
+
+<h2>Properties</h2>
+<div class="table">
+    <av-dynamic-row class="header">
+        <av-dynamic-col size="4" center>Name</av-dynamic-col>
+        <av-dynamic-col size="8" center>Description</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>name</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is the name for the static part. This name is only use if you use the command "Aventus : Copy static" to allow the user to choose the right folder to export.
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>inputPath</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is a string to define which folder Aventus will watch. For
+            example, if you set "./src/static/*", all files inside the folder "src/static" will be exported.
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>outputPath</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is string to define where the static files will be exported.
+        </av-dynamic-col>
+    </av-dynamic-row>
+</div>
+
+<h2>Special files</h2>
+<p>Inside the static folder, you can write some specials files that will be compiled to be supported by the browser.</p>
+
+<h3>Sass</h3>
+<p>You can write sass file inside the static folder that will be compiled to a css file. If your file name starts with a <span class="cn">_</span> Aventus will ignore it. (ex: _reset.scss)</p>
+
+<h3>Global Style</h3>
+<p>A good practice to develop a website is to declare theme variables and then use it inside your webcomponent. To do that, you can write a file <span class="cn">*.gs.avt</span> that will be compiled to a css file. The only goal of this file is to provide autocompletion for your css variables declared inside the <span class="cn">:root</span>.</p>
+<av-code language="css" filename="theme.gs.avt">
+    :root {
+        --primary-color: #20232a;
+        --light-primary-color: #282c34;
+        --aventus-color: #e5540e;
+        --primary-font-color: white;
+        --link-color: #5680ed;
+        ...
+    }
+</av-code>

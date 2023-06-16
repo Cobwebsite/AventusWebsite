@@ -1,0 +1,19 @@
+{
+  "name": "aventuswebsite",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "deploy":"git subtree push --prefix dist origin deploy"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/max529/AventusWebsite.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/max529/AventusWebsite/issues"
+  },
+  "homepage": "https://github.com/max529/AventusWebsite#readme"
+}

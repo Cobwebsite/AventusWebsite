@@ -1,0 +1,80 @@
+export class AvCode extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+    @Property((target: AvCode) => {
+        if(window['Prism']) {
+            if(!window['Prism'].languages.hasOwnProperty(target.language)) {
+                target.language = 'plain';
+            }
+        }
+    })
+    public language: string = "plain";
+
+    @Property()
+    public filename: string;
+
+    /**
+     * Number of tab to remove
+     */
+    @Attribute()
+    public tab: number;
+    //#endregion
+
+
+    //#region variables
+    @ViewElement()
+    public codeEl: HTMLElement;
+
+    @ViewElement()
+    protected filenameEl: HTMLSpanElement;
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+
+    protected override styleBefore(): string[] {
+        return super.styleBefore().concat(["Prism"]);
+    }
+    private async loadFiles() {
+        await Aventus.ResourceLoader.loadInHead('/libs/prism.js');
+        await Aventus.Style.load("Prism", '/libs/prism_vscode_theme.css');
+        this.init();
+
+    }
+    private init() {
+        if(!window['Prism'].languages.hasOwnProperty(this.language)) {
+            this.language = 'plain';
+        }
+        let code = this.innerHTML.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        code = code.split("\n").map(p => p.replace("    ", "")).join("\n");
+        this.codeEl.innerHTML = code;
+        this.innerHTML = "";
+        window['Prism'].highlightElement(this.codeEl);
+
+    }
+    protected override postCreation(): void {
+        if(!window['Prism']) {
+            this.loadFiles();
+        }
+        else {
+            this.init();
+        }
+    }
+    //#endregion
+
+}

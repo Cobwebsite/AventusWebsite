@@ -1,0 +1,22 @@
+<script>
+	export class Result extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	}
+	
+</script>
+
+<template>	
+	<slot></slot>
+</template>
+
+<style>	
+	:host {
+		align-items: center;
+		border-radius: 6px;
+		box-shadow: 0 0 3px var(--light-primary-color);
+		display: flex;
+		margin: 10px 0px;
+		padding: 15px 20px;
+		width: 100%;
+	}
+</style>

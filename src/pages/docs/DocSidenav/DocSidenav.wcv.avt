@@ -1,0 +1,98 @@
+<av-icon icon="close" class="close-icon" @press="closeNav"></av-icon>
+<av-scrollable class="menu">
+    <av-collapse>
+        <div class="title" slot="header">install</div>
+        <ul>
+            <li><av-router-link state="/docs/introduction">Introduction</av-router-link></li>
+            <li><av-router-link state="/docs/installation">Install Aventus</av-router-link></li>
+            <li><av-router-link state="/docs/experience">Dev experience</av-router-link></li>
+            <li><av-router-link state="/docs/first_app">Your first app</av-router-link></li>
+        </ul>
+    </av-collapse>
+
+    <av-collapse>
+        <div class="title" slot="header">configuration</div>
+        <ul>
+            <li><av-router-link state="/docs/config/basic_prop">Generic properties</av-router-link></li>
+            <li><av-router-link state="/docs/config/build">Builds</av-router-link></li>
+            <li><av-router-link state="/docs/config/static">Statics</av-router-link></li>
+            <li><av-router-link state="/docs/config/lib">Import libs</av-router-link></li>
+        </ul>
+    </av-collapse>
+
+    <av-collapse>
+        <div class="title" slot="header">data</div>
+        <ul>
+            <li><av-router-link state="/docs/data/create">Create</av-router-link></li>
+        </ul>
+    </av-collapse>
+    
+    <av-collapse>
+        <div class="title" slot="header">ram</div>
+        <ul>
+            <li><av-router-link state="/docs/ram/create">Create</av-router-link></li>
+            <li><av-router-link state="/docs/ram/CRUD">CRUD operation</av-router-link></li>
+            <li><av-router-link state="/docs/ram/listen_changes">Listen changes</av-router-link></li>
+            <li><av-router-link state="/docs/ram/mixin">Extend data</av-router-link></li>
+        </ul>
+    </av-collapse>
+
+    <av-collapse>
+        <div class="title" slot="header">state</div>
+        <ul>
+            <li><av-router-link state="/docs/state/create">Create</av-router-link></li>
+            <li><av-router-link state="/docs/state/change">Change state</av-router-link></li>
+            <li><av-router-link state="/docs/state/listen_changes">Listen state change</av-router-link></li>
+        </ul>
+    </av-collapse>
+
+    <av-collapse>
+        <div class="title" slot="header">socket</div>
+        <ul>
+            <li><av-router-link state="/docs/socket/create">Create</av-router-link></li>
+            <li><av-router-link state="/docs/socket/receive">Receive message</av-router-link></li>
+            <li><av-router-link state="/docs/socket/send">Send message</av-router-link></li>
+        </ul>
+    </av-collapse>
+
+    <av-collapse>
+        <div class="title" slot="header">webcomponent</div>
+        <ul>
+            <li><av-router-link state="/docs/wc/create">Create</av-router-link></li>
+            <li><av-router-link state="/docs/wc/inheritance">Inhertiance</av-router-link></li>
+            <li><av-router-link state="/docs/wc/attribute">Attribute</av-router-link></li>
+            <li><av-router-link state="/docs/wc/property">Property</av-router-link></li>
+            <li><av-router-link state="/docs/wc/watch">Watch</av-router-link></li>
+            <li><av-router-link state="/docs/wc/style">Style</av-router-link></li>
+            <li><av-router-link state="/docs/wc/interpolation">Interpolation</av-router-link></li>
+            <li><av-router-link state="/docs/wc/element">Select element</av-router-link></li>
+            <li><av-router-link state="/docs/wc/injection">Injection</av-router-link></li>
+            <li><av-router-link state="/docs/wc/loop">Loop</av-router-link></li>
+            <li><av-router-link state="/docs/wc/event">Event</av-router-link></li>
+            <li><av-router-link state="/docs/wc/binding">Binding</av-router-link></li>
+            <li><av-router-link state="/docs/wc/state">State</av-router-link></li>
+        </ul>
+    </av-collapse>
+
+    <av-collapse>
+        <div class="title" slot="header">lib</div>
+        <ul>
+            <li><av-router-link state="/docs/lib/create">Create</av-router-link></li>
+            <li><av-router-link state="/docs/lib/animation">Animation</av-router-link></li>
+            <li><av-router-link state="/docs/lib/callback">Callback</av-router-link></li>
+            <li><av-router-link state="/docs/lib/press_manager">PressManager</av-router-link></li>
+            <li><av-router-link state="/docs/lib/drag_and_drop">Drag&Drop</av-router-link></li>
+            <li><av-router-link state="/docs/lib/instance">Instance</av-router-link></li>
+            <li><av-router-link state="/docs/lib/resize_observer">ResizeObserver</av-router-link></li>
+            <li><av-router-link state="/docs/lib/resource_loader">ResourceLoader</av-router-link></li>
+            <li><av-router-link state="/docs/lib/watcher">Watcher</av-router-link></li>
+            <li><av-router-link state="/docs/lib/tools">Tools</av-router-link></li>
+        </ul>
+    </av-collapse>
+    <av-collapse>
+        <div class="title" slot="header">advanced</div>
+        <ul>
+            <li><av-router-link state="/docs/advanced/template">Template</av-router-link></li>
+        </ul>
+    </av-collapse>
+</av-scrollable>

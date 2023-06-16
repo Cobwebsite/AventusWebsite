@@ -1,0 +1,108 @@
+<h1>Library - Drag&Drop</h1>
+<p>If you need to drag&drop a visual element you can use <span class="cn">Aventus.DragAndDrop</span>. This code will
+    move a target by setting a <span class="cn">left</span> and a <span class="cn">top</span>. The drag&drop can be
+    instanciate with the following parameters: </p>
+<ul class="options">
+    <li>
+        <div class="size"><span class="cn">applyDrag</span></div>: Determine if the left and top value must be set or
+        not
+    </li>
+    <li>
+        <div class="size"><span class="cn">element</span></div>: The element that will move
+    </li>
+    <li>
+        <div class="size"><span class="cn">elementTrigger</span></div>: The element that listen the drag event; default
+        is element
+    </li>
+    <li>
+        <div class="size"><span class="cn">offsetDrag</span></div>: Set the default offset for the drag trigger; default
+        is DragAndDrop.defaultOffsetDrag
+    </li>
+    <li>
+        <div class="size"><span class="cn">shadow.enable</span></div>: If set to true, the drag and drop will create a
+        shadow element while dragging and removing it on drop. It will not move the original element anymore
+    </li>
+    <li>
+        <div class="size"><span class="cn">shadow.container</span></div>: The container where the shadow element will be
+        added, default is body
+    </li>
+    <li>
+        <div class="size"><span class="cn">shadow.removeOnStop</span></div>: Remove shadow from DOM tree at the end
+    </li>
+    <li>
+        <div class="size"><span class="cn">shadow.transform()</span></div>: Add custom transformation for the shadow
+        element like adding class
+    </li>
+    <li>
+        <div class="size"><span class="cn">strict</span></div>: If set to false, the element will be considered as in
+        the target if it touches it
+    </li>
+    <li>
+        <div class="size"><span class="cn">targets</span></div>: The targets for the drop action
+    </li>
+    <li>
+        <div class="size"><span class="cn">usePercent</span></div>: Use percent instead of pixel
+    </li>
+    <li>
+        <div class="size"><span class="cn">isDragEnable()</span></div>: Set a function to determine if drag is active or
+        not
+    </li>
+    <li>
+        <div class="size"><span class="cn">getZoom()</span></div>: Set a function to determine the current zoom; default
+        is 1
+    </li>
+    <li>
+        <div class="size"><span class="cn">getOffsetX()</span></div>: Set a function to get offset X in px related to
+        element.offsetTarget
+    </li>
+    <li>
+        <div class="size"><span class="cn">getOffsetY()</span></div>: Set a function to get offset Y in px related to
+        element.offsetTarget
+    </li>
+    <li>
+        <div class="size"><span class="cn">onPointerDown()</span></div>: Set a function that will be fired when pointer
+        down on the elementTrigger
+    </li>
+    <li>
+        <div class="size"><span class="cn">onPointerUp()</span></div>: Set a function that will be fired when pointer up
+    </li>
+    <li>
+        <div class="size"><span class="cn">onStart()</span></div>: Set a function that will be fired when drag start
+    </li>
+    <li>
+        <div class="size"><span class="cn">onMove()</span></div>: Set a function that will be fired when the element
+        move; trigger even if applyDrag = false
+    </li>
+    <li>
+        <div class="size"><span class="cn">onStop()</span></div>: Set a function that will be fired when drag stop
+    </li>
+    <li>
+        <div class="size"><span class="cn">onDrop()</span></div>: Set a function that will be fired after drop if at
+        least one target found
+    </li>
+</ul>
+
+
+<p>The simplest example is the following :</p>
+<av-code language="css" filename="Example.wcs.avt">
+    :host {
+    \twidth: 20px;
+    \theight: 20px;
+    \tbackground-color: red;
+    \tposition: absolute;
+    }
+</av-code>
+<av-code language="typescript" filename="Example.wcl.avt">
+    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \tprotected override postCreation(): void {
+    \t\tnew Aventus.DragAndDrop({
+    \t\t\telement: this
+    \t\t});
+    \t}
+    }
+</av-code>
+
+<av-result>
+    <av-doc-lib-drag-and-drop-example></av-doc-lib-drag-and-drop-example>
+</av-result>

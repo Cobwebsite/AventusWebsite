@@ -1,0 +1,25 @@
+<script>
+	export class DocLibDragAndDropExample extends Aventus.WebComponent implements Aventus.DefaultComponent {
+	
+	    protected override postCreation(): void {
+	        new Aventus.DragAndDrop({
+	            element: this
+	        });
+	    }
+	
+	}
+	
+</script>
+
+<template>	
+</template>
+
+<style>	
+	:host {
+		background-color: red;
+		height: 20px;
+		position: absolute;
+		width: 20px;
+	}
+	
+</style>

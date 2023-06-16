@@ -1,0 +1,28 @@
+import { TutorialPage } from "../../TutorialPage/TutorialPage.wcl.avt";
+import { Page } from "../../../../core/components/Page/Page.wcl.avt";
+
+export class TutorialGenericPage extends Page implements Aventus.DefaultComponent {
+    @Attribute()
+    public fade: boolean;
+
+    /**
+     * 
+     */
+    public openMenu() {
+        this.findParentByType(TutorialPage).openMenu();
+    }
+    public override async show() {
+        super.show();
+        await Aventus.sleep(100);
+        this.fade = true;
+        await Aventus.sleep(350);
+    }
+    public override async hide() {
+        this.fade = false;
+        await Aventus.sleep(350);
+        super.hide();
+    }
+    public override pageTitle(): string {
+        return "Avenuts - Tutorial";
+    }
+}

@@ -1,0 +1,84 @@
+:host {
+	height: 100%;
+	overflow: hidden;
+	position: relative;
+	width: 100%;
+
+	.info {
+		align-items: center;
+		background-color: var(--primary-color);
+		display: flex;
+		flex-direction: column;
+		font-size: 25px;
+		height: 100%;
+		justify-content: center;
+		padding: 16px;
+		width: 100%;
+		z-index: 9999;
+	}
+
+	h1 {
+		color: var(--aventus-color);
+		z-index: 9999;
+		text-align: center;
+	}
+
+	.row {
+		align-items: center;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+		justify-content: center;
+		z-index: 9999;
+
+
+		.row-split {
+			display: flex;
+			gap: 10px;
+
+			.square {
+				align-items: center;
+				background-color: var(--light-primary-color);
+				color: var(--aventus-color);
+				display: flex;
+				font-size: 25px;
+				font-weight: bold;
+				height: 100px;
+				justify-content: center;
+				width: 100px;
+			}
+		}
+	}
+
+	av-img {
+		--img-color: rgb(200, 200, 200);
+		height: 150%;
+		left: -200px;
+		opacity: 0.1;
+		pointer-events: none;
+		position: absolute;
+		top: -25px;
+		z-index: 1;
+	}
+
+	av-img:last-child {
+		left: auto;
+		right: -200px;
+		top: 30px;
+		transform: rotate(180deg);
+	}
+}
+
+@media screen and (max-width:1100px) {
+	:host {
+		av-img {
+			left: -50%;
+			top: 25%;
+		}
+
+		av-img:last-child {
+			right: -50%;
+			top: -75%;
+		}
+	}
+}

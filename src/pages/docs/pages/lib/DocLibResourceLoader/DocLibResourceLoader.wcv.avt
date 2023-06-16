@@ -1,0 +1,35 @@
+<h1>Library - ResourceLoader</h1>
+<p>To load content from uri, you can use the fetch API in mordern browser. The only problem is that every time you need
+    this resource, you have to reload it again and again. To avoid this you can use <span
+        class="cn">Aventus.ResourceLoader</span>. Two method can be used :</p>
+<ul>
+    <li><span class="cn">load</span> that will return you the resource as a string (base64 for img resource).</li>
+    <li><span class="cn">loadInHead</span> that will append a style or script tag in head.</li>
+</ul>
+
+<p>When a resource is loaded, the resource laoder will keep it in memory or prevent adding twice a tag in head.</p>
+
+
+<av-code language="typescript" filename="Example.wcl.avt">
+    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \tpublic async load() {
+    &nbsp;
+    \t\t// return the content of the svg
+    \t\tconst svgContent = await Aventus.ResourceLoader.load('/img.svg');
+    \t\tconst svgContent2 = await Aventus.ResourceLoader.load({
+    \t\t\ttype: "svg",
+    \t\t\turl: "/img.svg"
+    \t\t});
+    &nbsp;
+    \t\t// load the tag &lt;link rel="stylesheet" href="/style.css"&gt;
+    \t\tconst hasError = await Aventus.ResourceLoader.loadInHead("/style.css");
+    \t\tconst hasError2 = await Aventus.ResourceLoader.loadInHead({
+    \t\t\ttype: "css",
+    \t\t\turl: "/style.css"
+    \t\t});
+    \t}
+    &nbsp;
+    }
+</av-code>
+<p>By default Aventus will try to determine the type you want by analyze the extension set inside the uri. If it fails, you can specify the type you need by adding the <span class="cn">type</span> parameter.</p>

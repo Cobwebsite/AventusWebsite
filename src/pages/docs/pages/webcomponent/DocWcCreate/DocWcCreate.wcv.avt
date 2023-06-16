@@ -1,0 +1,185 @@
+<h1>Webcomponent - Create</h1>
+<p>In the section you are going to learn what is a webcomponent and how you can create it inside Aventus.</p>
+
+<h2>Definition</h2>
+<p>Web Components is a suite of different technologies allowing you to create reusable custom elements — with their
+    functionality encapsulated away from the rest of your code — and utilize them in your web apps. (<i><a
+            href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components"
+            target="_blank">https://developer.mozilla.org/</a></i>).</p>
+<p>With the native technologie, you are able to wrap your style, your logic and your html template inside a single html
+    tag. You can build your full webapp by building one component after another without worring about side effects (the
+    developer's worst nightmare).</p>
+
+<h2>Inside Aventus</h2>
+<p>Inside Aventus you can create web component by right clicking one the explorer part inside vscode, choose <i>Aventus
+        : Create...</i> and choose <i>Component</i>. Inside the input you can enter the name for the typescript class.
+    By convention, this name should be in Snake case. You can write your webcomponent inside a single file
+    <span class="cn">*.wc.avt</span> that
+    will contains following section :
+</p>
+<ul>
+    <li><span class="cn">&lt;template&gt;</span> : for Html part</li>
+    <li><span class="cn">&lt;style&gt;</span> : for Scss part</li>
+    <li><span class="cn">&lt;script&gt;</span> : for Js part</li>
+</ul>
+<p>or inside 3 different file. (This option is the adviced one because it allows developer to keep a well knowed
+    architecture.)</p>
+<ul>
+    <li><span class="cn">*.wcv.avt</span> : Web Componenent View for Html part</li>
+    <li><span class="cn">*.wcs.avt</span> : Web Componenent View for Scss part</li>
+    <li><span class="cn">*.wcl.avt</span> : Web Componenent View for Ts part</li>
+</ul>
+<av-dynamic-row>
+    <av-dynamic-col size_xs="12" size_sm="6">
+        <av-code language="html" filename="Example.wcv.avt">
+            &lt;slot&gt;&lt;/slot&gt;
+        </av-code>
+    </av-dynamic-col>
+    <av-dynamic-col size_xs="12" size_sm="6">
+        <av-code language="css" filename="Example.wcs.avt">
+            :host { /* insert your style here */}
+        </av-code>
+    </av-dynamic-col>
+    <av-dynamic-col size="12">
+        <av-code language="typescript" filename="Example.wcl.avt">
+            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {}
+        </av-code>
+    </av-dynamic-col>
+</av-dynamic-row>
+<h2>The Html</h2>
+<p>You can use any basic tag or any tag you imported or created. The auto-completion will help you to find knowed tags.
+    There are 2 special tags that you must know :</p>
+<h3>&lt;slot&gt;</h3>
+<p>The slot tag allows developer to define the place where the code inside the tag will be added. This slot can have an
+    attribute <span class="cn">name</span> to have multiple slots.</p>
+<av-code language="html" filename="Parent.wcv.avt">
+    &lt;slot&gt; &lt;!-- The default content appends here --&gt;&lt;/slot&gt;
+    &lt;slot style="color:red" name="error"&gt;&lt;!-- The errors appends here --&gt;&lt;/slot&gt;
+    &lt;slot style="color:green" name="success"&gt;&lt;!-- The success appends here --&gt;&lt;/slot&gt;
+</av-code>
+<av-code language="html" filename="UsingParent.wcv.avt">
+    &lt;av-parent&gt;
+    \t&lt;p&gt;I'm the default content&lt;/p&gt;
+    \t&lt;p slot="default"&gt;I'm the default content too&lt;/p&gt;
+    \t&lt;p slot="error"&gt;I'm an error in red&lt;/p&gt;
+    \t&lt;p slot="succes"&gt;I'm a success in green&lt;/p&gt;
+    &lt;/av-parent&gt;
+</av-code>
+<h3>&lt;block&gt;</h3>
+<p>The block tag must be used in case of inheritance. This will replace the slot by the block with the same name.</p>
+<av-code language="html" filename="Parent.wcv.avt">
+    &lt;slot&gt; &lt;!-- The default content appends here --&gt;&lt;/slot&gt;
+    &lt;slot style="color:red" name="error"&gt;&lt;!-- The errors appends here --&gt;&lt;/slot&gt;
+    &lt;slot style="color:green" name="success"&gt;&lt;!-- The success appends here --&gt;&lt;/slot&gt;
+</av-code>
+<av-code language="html" filename="Child.wcv.avt">
+    &lt;block name="error"&gt;
+    \t&lt;span style="color:yellow"&gt;
+    \t\t&lt;!-- The errors will be displayed in yellow now --&gt;
+    \t&lt;/span&gt;
+    &lt;/slot&gt;
+</av-code>
+<av-code language="html" filename="UsingChild.wcv.avt">
+    &lt;av-child&gt;
+    \t&lt;p&gt;I'm the default content&lt;/p&gt;
+    \t&lt;p slot="default"&gt;I'm the default content too&lt;/p&gt;
+    \t&lt;p slot="error"&gt;I'm an error in yellow&lt;/p&gt;
+    \t&lt;p slot="succes"&gt;I'm a success in green&lt;/p&gt;
+    &lt;/av-child&gt;
+</av-code>
+<p>There are sepcial attributes you can use to add feature to basic html: </p>
+<ul>
+    <li>@element : To select element(s). <av-router-link state="/docs/wc/element" class="font-sm">More info</av-router-link></li>
+    <li>@for : To create a loop. <av-router-link state="/docs/wc/loop" class="font-sm">More info</av-router-link></li>
+    <li>@bind(_<i><span class="cn">$event</span></i>)?(:<i><span class="cn">$field</span></i>)? : To bind data. <av-router-link class="font-sm"
+            state="/docs/wc/binding">More
+            info</av-router-link></li>
+    <li>:<i><span class="cn">$field</span></i> : To inject data. <av-router-link state="/docs/wc/injection" class="font-sm">More
+            info</av-router-link>
+    </li>
+    <li>@press : To add press event from PressManager. <av-router-link state="/docs/wc/event" class="font-sm">More
+            info</av-router-link>
+    </li>
+    <li>@<i><span class="cn">$eventName</span></i> : To add event listener. <av-router-link state="/docs/wc/event" class="font-sm">More
+            info</av-router-link>
+    </li>
+</ul>
+<p>You can use interpolation inside tag content and normal attribute to replace the content by <av-router-link
+        state="/docs/wc/event">the property value</av-router-link>&nbsp;or&nbsp;<av-router-link
+        state="/docs/wc/event">the watch value</av-router-link>. Right now only watch and property are available but
+    soon you will be able to write javascript code.</p>
+
+<av-code language="html">
+    &lt;div&gt;my name is {{user.name}}&lt;/div&gt;
+    &lt;img src="{{user.picture}}"/&gt;
+</av-code>
+<h2>The style</h2>
+<p>This is just a simple SCSS file. The only think to know is that the style must be wrapped inside a :host{}.</p>
+<av-code language="css" filename="TextRed.wcs.avt">
+    :host {
+    \tcolor:red; // This ll change the behavior of the current webcomponent
+    }
+</av-code>
+<p>You can find more informations about the style <av-router-link state="/docs/wc/style">here.</av-router-link></p>
+<h2>The logic</h2>
+<p>When you create a new file *.wcl.avt you can notice that the file has region. This is set to allow developer to order
+    the code. Each region has a goal. You can remove it but we advice you to keep it.</p>
+<ul>
+    <li>static : Where you can write the static properties or methods for your webcomponent.</li>
+    <li>props : Where you can define the <av-router-link state="/docs/wc/attribute">attributes</av-router-link>, the
+        <av-router-link state="/docs/wc/property">properties</av-router-link>&nbsp;and the <av-router-link
+            state="/docs/wc/watch">watch variables.</av-router-link>
+    </li>
+    <li>variables : Where you can define the variables and the pointers on <av-router-link state="/docs/wc/element">view
+            element</av-router-link></li>
+    <li>constructor : Where you can override the constructor for your webcomponent.</li>
+    <li>methods : Where you can write the methods for your webcomponent.</li>
+</ul>
+<av-code language="typescript">
+    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \t//#region static
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region props
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region variables
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region constructor
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region methods
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    }
+</av-code>
+<p>Over the classname you can add predefine Decorators :</p>
+<ul>
+    <li><span class="cn">@TagName(name:string)</span> : to define the tag for the component</li>
+    <li><span class="cn">@Debugger({ writeCompiled?: boolean, enableWatchHistory?: boolean})</span> : to debug component compilation and
+        state.
+    </li>
+    <li><span class="cn">@Dependances({ type: Type, strong?:boolean}[])</span> : to add dependance not written inside component. The
+        strong boolean define if the dependance must be loaded before the class.</li>
+    <li><span class="cn">@OverrideView({ removeViewVariables?: string[] })</span> : to fully override parent view. You can remove parent
+        ViewElement needed, but you have to be aware of what you are doing.</li>
+</ul>
+<av-code language="typescript">
+    @TagName("my-tag-name")
+    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+    }
+</av-code>
+
+<h2>Lifecycle</h2>
+<p>The webcomponent has the following lifecycle</p>
+<av-img src="/img/doc/wc/create/lifecylce.png"></av-img>
+
+<p>By default <span class="cn">postCreation</span> and <span class="cn">postDestruction</span> are empty.</p>

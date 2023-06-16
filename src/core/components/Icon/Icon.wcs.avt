@@ -1,0 +1,17 @@
+:host {
+	span {
+		display: var(--fa-display, inline-block);
+		font-family: "Font Awesome 6 Free";
+		-moz-osx-font-smoothing: grayscale;
+		-webkit-font-smoothing: antialiased;
+		font-style: normal;
+		font-variant: normal;
+		font-weight: 900;
+		line-height: 1;
+		text-rendering: auto;
+	}
+
+	span:before {
+		content: var(--icon-code);
+	}
+}

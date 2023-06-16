@@ -1,0 +1,139 @@
+<h1>Library - Tools</h1>
+<p>Finally you can use the tools provided to help you.</p>
+
+<h2>compareObject</h2>
+<p>If you want compare if two objects contains the same informations you can use the function <span
+        class="cn">Aventus.compareObject</span></p>
+
+<av-code language="typescript" filename="Example.lib.avt">
+    export function test() {
+    &nbsp;
+    \tconst obj1 = {
+    \t\tname:"John",
+    \t\ttodos: ["todo1", "todo2"]
+    \t}
+    &nbsp;
+    \tconst obj2 = {
+    \t\tname:"John",
+    \t\ttodos: ["todo2", "todo1"]
+    \t}
+    &nbsp;
+    \tconst obj3 = {
+    \t\tname:"John",
+    \t\ttodos: ["todo1", "todo3"]
+    \t}
+    &nbsp;
+    \tconsole.log(Aventus.compareObject(obj1, obj2)); // true
+    \tconsole.log(Aventus.compareObject(obj1, obj3)); // false
+    &nbsp;
+    }
+</av-code>
+
+<h2>Mutex</h2>
+<p>Because JavaScript is an event-driven language, a function can be exectued by two different stacks. If the code
+    inside the function is a critical section and must be exectued only one by one you can use the class <span
+        class="cn">Aventus.Mutex</span>. To understand what the mutex is doing you can read this <a
+        href="https://en.wikipedia.org/wiki/Mutual_exclusion" target="_blank">article</a>. </p>
+
+<av-code language="typescript" filename="Example.lib.avt">
+    export class Example {
+    &nbsp;
+    \tprivate mutex :Aventus.Mutex = new Aventus.Mutex();
+    &nbsp;
+    \tpublic async runCriticalCode(){
+    \t\tawait this.mutex.waitOne();
+    \t\t... critical code
+    \t\tthis.mutex.release();
+    \t}
+    &nbsp;
+    }
+</av-code>
+
+<h2>sleep</h2>
+<p>If you need to wait a specific time of ms you can use the <span class="cn">Aventus.sleep</span> function.</p>
+<av-code language="typescript" filename="Example.lib.avt">
+    export class Example {
+    &nbsp;
+    \tpublic async test() {
+    \t\tconsole.log(Date.now());
+    \t\tawait Aventus.sleep(5000);
+    \t\tconsole.log(Date.now());
+    \t}
+    &nbsp;
+    }
+</av-code>
+
+<h2>UUID</h2>
+<p>If you need a unique id you can use the <span class="cn">Aventus.uuidv4</span> function. More information about uuid
+    <a href="https://en.wikipedia.org/wiki/Universally_unique_identifier" target="_blank">here</a>.
+</p>
+<av-code language="typescript" filename="Example.lib.avt">
+    export class Example {
+    &nbsp;
+    \tpublic test() {
+    \t\tlet id = Aventus.uuidv4();
+    \t}
+    &nbsp;
+    }
+</av-code>
+
+<h2>Error</h2>
+<p>When you create function that can fail you can use the error strategy developed by Aventus. Instead of returning the
+    function result, the result is wrapped inside a container like this.</p>
+
+<av-code language="typescript">
+    var result = {
+    success: boolean,
+    errors: [],
+    result: any
+    }
+</av-code>
+<p>Below you can find an implementation example for a function that must transform a string in lowercase.</p>
+
+<av-code language="typescript" filename="StringExtension.lib.avt">
+    // List of available codes
+    export enum MyStringCode {
+    \tEmptyString
+    }
+    &nbsp;
+    // Error
+    export class StringError extends Aventus.GenericError&lt;MyStringCode&gt; {}
+    &nbsp;
+    // Result of the function ( = container)
+    export class StringResult extends Aventus.ResultWithError&lt;{ lower: string; }, StringError&gt; { }
+    &nbsp;
+    export class StringExtension {
+    &nbsp;
+    \tpublic static toLower(txt: string): StringResult {
+    \t\tlet result = new StringResult();
+    \t\tif(!txt) {
+    \t\t\tlet error = new StringError(MyStringCode.EmptyString, "Please provide a string");
+    \t\t\tresult.errors.push(error);
+    \t\t}
+    \t\telse {
+    \t\t\tresult.result = { lower: txt.toLowerCase() };
+    \t\t}
+    &nbsp;
+    \t\treturn result;
+    \t}
+    &nbsp;
+    }
+    &nbsp;
+    export class Test {
+    \tpublic static run() {
+    \t\tconst result = StringExtension.toLower("");
+    \t\t/*
+    \t\t\tresult.success = false
+    \t\t\tresult.errors = [ { code: 0, message: "Please provide a string" } ]
+    \t\t\tresult.result = null
+    \t\t*/
+    &nbsp;
+    \t\tconst result2 = StringExtension.toLower("HELLO");
+    \t\t/*
+    \t\t\tresult.success = true
+    \t\t\tresult.errors = []
+    \t\t\tresult.result = { lower: 'hello' }
+    \t\t*/
+    \t}
+    }
+</av-code>

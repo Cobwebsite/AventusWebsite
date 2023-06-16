@@ -1,0 +1,187 @@
+<h1>Advanced - Template</h1>
+<p>Because you will create some amazing components or patterns with Aventus, the framework includes a way to generate
+    files based on templates. For example, when you create a project with Tailwind, all your webcomponents must inherit
+    from a base component that contains the Tailwind style. This will be the example for this section.</p>
+<h2>Setup for the example</h2>
+<p>First of all you need to create a new empty project.</p>
+<av-code language="json" filename="aventus.conf.avt">
+    {
+    \t"module": "Tailwind",
+    \t"componentPrefix": "av",
+    \t"build": [
+    \t\t{
+    \t\t\t"name": "Main",
+    \t\t\t"inputPath": [
+    \t\t\t\t"./src/*"
+    \t\t\t],
+    \t\t\t"outputFile": "./dist/tailwind.js"
+    \t\t}
+    \t]
+    }
+</av-code>
+<p>With the following structure:</p>
+<ul>
+    <li>/dist/</li>
+    <li>/src/</li>
+    <li>aventus.conf.avt</li>
+</ul>
+<p>
+    Now inside the src folder, you can create a new component named <span class="cn">Tailwind</span>. For the example, we will leave the
+    files created empty.
+</p>
+<h2>Creating a template</h2>
+<p>You can create the following folder inside your workspace <span class="cn">/.aventus/templates/</span>. This is where all your
+    templates will be stored. This folder must be at your workspace root, otherwise it will not work.</p>
+
+<p>You can create a new folder named <span class="cn">TailwindTemplate</span> inside ./aventus/templates/. and inside this new folder,
+    you
+    can add a file named <span class="cn">template.avt</span>. This file define which questions must be asked to the user. In the example
+    we need to know the component name.</p>
+
+<av-code language="json" filename="template.avt">
+    {
+    \t"name": "Tailwind Template",
+    \t"description": "Create a tailwind component",
+    \t"version": "1.0.0",
+    \t"variables": {
+    \t\t"componentName":{
+    \t\t\t"question": "Provide a name for your component",
+    \t\t\t"type": "input"
+    \t\t}
+    \t}
+    }
+</av-code>
+
+<p>The variable componentName will be now available inside the template creation flow. Every files at the same depth or
+    deeper than the template.avt will be copied when template is called. We can now create template files
+    : </p>
+<ul>
+    <li>/.aventus/template/TailwindTemplate/&#36;\{{componentName}}</li>
+    <li>/.aventus/template/TailwindTemplate/&#36;\{{componentName}}/&#36;\{{componentName}}.wcl.avt</li>
+    <li>/.aventus/template/TailwindTemplate/&#36;\{{componentName}}/&#36;\{{componentName}}.wcs.avt</li>
+    <li>/.aventus/template/TailwindTemplate/&#36;\{{componentName}}/&#36;\{{componentName}}.wcv.avt</li>
+</ul>
+
+<av-code language="typescript" filename="&#36;\{{componentName}}.wcv.avt">
+    import { Tailwind } from "../Tailwind/Tailwind.wcl.avt";
+    &nbsp;
+    export class &#36;\{{componentName}} extends Tailwind implements Aventus.DefaultComponent {
+    &nbsp;
+    \t//#region static
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    &nbsp;
+    \t//#region props
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    &nbsp;
+    \t//#region variables
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    &nbsp;
+    \t//#region constructor
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    &nbsp;
+    \t//#region methods
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    }
+</av-code>
+<av-code language="css" filename="&#36;\{{componentName}}.wcs.avt">
+    :host {}
+</av-code>
+<av-code language="html" filename="&#36;\{{componentName}}.wcv.avt">
+    &lt;slot&gt;&lt;/slot&gt;
+</av-code>
+
+<p>Every &#36;\{{componentName}} will be replaced by the user answer.</p>
+
+<h2>Using the template</h2>
+<p>Now if you right click on the src folder and click on <span class="cn">Aventus : Create...</span>. You can choose the option
+    <span class="cn">Custom</span>. Inside the next dropdown, the option <span class="cn">Tailwind Template</span> must be available.
+</p>
+<av-img src="/img/doc/advanced/template/tailwind-template.png"></av-img>
+<p>If you click on it, a prompt will ask you the new component name. If you fill it with <span class="cn">NewComp</span> and press enter,
+    3 new files will be created.</p>
+<av-img src="/img/doc/advanced/template/tailwind-template-created.png"></av-img>
+
+<h2>Predefined variables</h2>
+<p>Aventus add predefined variables that you can use inside your template.</p>
+<div class="table">
+    <av-dynamic-row class="header">
+        <av-dynamic-col size="4" center>Name</av-dynamic-col>
+        <av-dynamic-col size="8" center>Description</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>path</av-dynamic-col>
+        <av-dynamic-col size="8" center>The full path of the folder where the user right click.</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>folderName</av-dynamic-col>
+        <av-dynamic-col size="8" center>The folder name where the user right click.</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>namespace</av-dynamic-col>
+        <av-dynamic-col size="8" center>The namespace that the path will have based on the namespace
+            strategy.</av-dynamic-col>
+    </av-dynamic-row>
+</div>
+
+<h2>Optimize user experience</h2>
+<p>
+    Until now, when you use the template, nothing is controlled and nothing notice the user that the creation is over.
+    We will add some check on the input and open the *.wcl.avt. To do that, open the <span class="cn">template.avt</span> and remplace
+    the content like that.
+</p>
+<av-code language="json" filename="template.avt">
+    {
+    \t"name": "Tailwind Template",
+    \t"description": "Create a tailwind component",
+    \t"version": "1.0.0",
+    \t"variables": {
+    \t\t"componentName":{
+    \t\t\t"question": "Provide a name for your component",
+    \t\t\t"type": "input",
+    \t\t\t"validation": [
+    \t\t\t\t{
+    \t\t\t\t\t"pattern": "[A-Z][A-Za-z0-9]+",
+    \t\t\t\t\t"errorMsg": "Provide a valide component name"
+    \t\t\t\t}
+    \t\t\t]
+    \t\t}
+    \t},
+    \t"filesToOpen": [
+    \t\t"/&#36;\{{componentName}}.wcl.avt$/"
+    \t]
+    }
+</av-code>
+<p>The <span class="cn">validation</span> field allows you to validate the input with a regex (<span class="cn">pattern</span>) and display a message if the check failed (<span class="cn">errorMsg</span>). The <span class="cn">filesToOpen</span> field allows you to open a file after the creation of your template. The value of filesToOpen items must be the following.</p>
+<ul>
+    <li>Starts and ends with a <span class="cn">/</span> : this is a regex</li>
+    <li>Otherwise: this is a path comparison</li>
+</ul>
+
+<h2>Expose the template globaly</h2>
+<p>
+    To use a template across multiple project, you can expose your template globaly. To complete that, you must run the command <span class="cn">Aventus : Open storage</span> and go inside the folder <span class="cn">templates</span>. Then you can copy paste the previous template here. Notice: Aventus watch the global templates folder only during starting process, so when you create a new global template, you must reload your Vscode instance.
+</p>
+
+<h2>Project</h2>
+<p>
+    In the previous section, you open the Aventus storage folder, you may have noticed that a <span class="cn">projects</span> exists. Inside this folder, you can find templates that will be used when you <span class="cn">init a new project</span>. So can you create your own template to init new project or download some from the web. You must know that if a <span class="cn">aventus.conf.avt</span> file is at the same level of a <span class="cn">template.avt</span> file, the project will not be created. It means no autocompletion, no output files, etc.
+</p>
+<p>
+    Because in most of the case, the project creation involves to run commands, you can add inside your template file a field named <span class="cn">cmdsAfter</span> and add which commands must be ran after the creation.
+</p>
+<av-code language="json" filename="template.avt">
+    {
+    \t...
+    \t"cmdsAfter": ["npm run install"]
+    }
+</av-code>

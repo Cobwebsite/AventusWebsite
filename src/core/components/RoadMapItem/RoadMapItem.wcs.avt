@@ -1,0 +1,125 @@
+:host {
+	display: flex;
+
+	/* Card container */
+	.card {
+		max-width: 400px;
+		position: relative;
+
+
+		/* Information about the timeline */
+		.info {
+			background: var(--light-primary-color);
+			border-radius: 10px;
+			color: gray;
+			display: flex;
+			flex-direction: column;
+			padding: 10px;
+
+			/* Title of the card */
+			.title {
+				color: var(--aventus-color);
+				margin: 0;
+				position: relative;
+			}
+
+			/* Timeline dot  */
+			.title::before {
+				background: var(--primary-color);
+				border: 3px solid var(--aventus-color);
+				border-radius: 999px;
+				content: "";
+				height: 10px;
+				position: absolute;
+				width: 10px;
+			}
+
+			p {
+				margin: 0;
+				padding: 0;
+			}
+		}
+
+
+	}
+
+	.card::before {
+		border: solid var(--aventus-color);
+		content: "";
+		position: absolute;
+		width: 50%;
+	}
+}
+
+:host(:nth-child(odd)) {
+	.card {
+		padding: 30px 0 30px 30px;
+
+		.info {
+			.title::before {
+				left: -45px;
+			}
+		}
+
+	}
+
+	.card::before {
+		border-radius: 50px 0 0 50px;
+		border-width: 5px 0 5px 5px;
+		bottom: -5px;
+		left: 0px;
+		top: -5px;
+	}
+}
+
+:host(:nth-child(even)) {
+	.card {
+		padding: 30px 30px 30px 0;
+
+		.info {
+			.title {
+				text-align: right;
+			}
+
+			.title::before {
+				right: -45px;
+			}
+
+			p {
+				text-align: right;
+			}
+		}
+	}
+
+	.card::before {
+		border-radius: 0 50px 50px 0;
+		border-width: 5px 5px 5px 0;
+		bottom: 0;
+		right: 0;
+		top: 0;
+	}
+}
+
+
+:host(:first-child) {
+
+	/* Removing the border if it is the first card */
+	.card::before {
+		border-top: 0;
+		border-top-left-radius: 0;
+	}
+}
+
+:host(:last-child:nth-child(odd)) {
+	.card::before {
+		border-bottom: 0;
+		border-bottom-left-radius: 0;
+	}
+}
+
+:host(:last-child:nth-child(even)) {
+	.card::before {
+		border-bottom: 0;
+		border-bottom-right-radius: 0;
+	}
+}

@@ -1,0 +1,5 @@
+<block name="before-container">
+    <av-tutorial-sidenav @element="sidenavEl"></av-tutorial-sidenav>
+    <div class="hider" @press="closeMenu"></div>
+</block>
+<av-tutorial-app></av-tutorial-app>

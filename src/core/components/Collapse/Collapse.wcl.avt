@@ -1,0 +1,39 @@
+export class Collapse extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+    @Attribute()
+    public open: boolean;
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+
+    /**
+     * Toggle between open and close state
+     */
+    protected toggleOpen() {
+        this.open = !this.open;
+    }
+    //#endregion
+
+}

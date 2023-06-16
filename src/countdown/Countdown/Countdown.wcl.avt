@@ -1,0 +1,66 @@
+export class Countdown extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+    @Property()
+    public nb_days: number;
+    @Property()
+    public nb_hours: number;
+    @Property()
+    public nb_minutes: number;
+    @Property()
+    public nb_seconds: number;
+    //#endregion
+
+
+    //#region variables
+    private rDate: Date = new Date('2023-06-16T10:00:00.000Z');
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    private change() {
+        let now = new Date();
+
+        var delta = Math.abs(this.rDate.getTime() - now.getTime()) / 1000;
+
+        // calculate (and subtract) whole days
+        var days = Math.floor(delta / 86400);
+        delta -= days * 86400;
+
+        // calculate (and subtract) whole hours
+        var hours = Math.floor(delta / 3600) % 24;
+        delta -= hours * 3600;
+
+        // calculate (and subtract) whole minutes
+        var minutes = Math.floor(delta / 60) % 60;
+        delta -= minutes * 60;
+
+        // what's left is seconds
+        var seconds = Math.floor(delta % 60);
+
+
+        this.nb_days = days;
+        this.nb_hours = hours;
+        this.nb_minutes = minutes;
+        this.nb_seconds = seconds;
+    }
+    protected override postCreation(): void {
+		this.change();
+		setInterval(() => {
+			this.change();
+		}, 1000)
+    }
+    //#endregion
+
+}

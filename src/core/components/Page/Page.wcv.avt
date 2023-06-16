@@ -1,0 +1,4 @@
+<slot name="before-container"></slot>
+<div class="container">
+    <slot></slot>
+</div>

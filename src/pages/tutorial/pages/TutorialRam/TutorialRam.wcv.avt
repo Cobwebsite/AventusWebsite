@@ -1,0 +1,29 @@
+<h1>RAM</h1>
+
+<p>To store the todo we need a RAM. To achieve that you can right click on the folder <span class="cn">ram</span> and select <span class="cn">Aventus : Create...</span>.</p>
+
+<av-img src="/img/tuto/ram/create.png"></av-img>
+
+<p>Then you can select <span class="cn">RAM</span> in the options.</p>
+<av-img src="/img/tuto/ram/ram_options.png"></av-img>
+
+<p>You can fill the input with <span class="cn">Todo</span> that is the name of the data we want to store.</p>
+<av-img src="/img/tuto/ram/name.png"></av-img>
+
+<p>A new file is created named <span class="cn">Todo.ram.avt</span>. This file contains errors because <span class="cn">Todo</span> is not known.</p>
+
+<av-img src="/img/tuto/ram/after_create.png"></av-img>
+
+<p>To correct this, you can set your cursor on first <span class="cn">Todo</span> that is underline and click on <span class="cn">ctrl + .</span>. This will open the actions available to correct the error.</p>
+
+<av-img src="/img/tuto/ram/correct.png"></av-img>
+
+<p>Select the first option to auto import the data Todo class. We didn't have anymore error so we can have a look to the functions.</p>
+
+<ul>
+    <li>getInstance : will return the unique instance for this RAM</li>
+    <li>defineIndexKey : define the name of the key inside the todo that will be used as index key</li>
+    <li>getTypeForData : return the real object based on the type we received</li>
+</ul>
+
+<p>Actually we have a data and a ram. This is the small logical part of our application.</p>

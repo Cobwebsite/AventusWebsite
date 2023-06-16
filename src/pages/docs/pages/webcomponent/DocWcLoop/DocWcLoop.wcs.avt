@@ -1,0 +1,8 @@
+:host {
+	.todos-img {
+		margin: auto;
+		max-height: none;
+		max-width: 200px;
+        display: flex;
+	}
+}

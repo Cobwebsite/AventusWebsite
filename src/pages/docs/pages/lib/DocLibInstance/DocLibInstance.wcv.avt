@@ -1,0 +1,18 @@
+<h1>Library - Instance</h1>
+<p>Sometimes you must create unique instance of a class. This pattern is named <span class="cn"><a
+            href="https://www.tutorialspoint.com/design_pattern/singleton_pattern.htm"
+            target="_blank">Singleton</a></span>. Despite the controversy over whether this pattern is a good choice for
+    use or not, Aventus include a way to create singleton quickly. You just need to call the function <span
+        class="cn">Aventus.Instance.get</span> to obtain your singleton instance.</p>
+
+<av-code language="typescript" filename="Singleton.lib.avt">
+    export class MySingleton {
+    &nbsp;
+    \tpublic static getInstance(): MySingleton {
+    \t\treturn Aventus.Instance.get(MySingleton);
+    \t}
+    &nbsp;
+    \t// To prevent class being created from outside
+    \tprivate constructor(){}
+    }
+</av-code>

@@ -1,0 +1,110 @@
+<h1>Library - Callback</h1>
+
+<p>Aventus script files are based on Typescript. The main advantage is that everything is typed but when you will use
+    <span class="cn">custom event</span> it will be a nightmare to keep your type. This is why inside Avantue you can
+    find two classes that are doing the same jobs as Event but are type friendly : <span class="cn">Callback</span> and
+    <span class="cn">CallbackGroup</span>.
+</p>
+
+
+<av-code language="typescript" filename="EmitterNoCallback.wcl.avt">
+    export class EmitterNoCallback extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \tpublic constructor() {
+    \t\tsuper();
+    \t\tsetInterval(() =&gt; {
+    \t\t\tthis.dispatchEvent(new CustomEvent("myEvent", {
+    \t\t\t\tdetail: {
+    \t\t\t\t\ttime: Date.now()
+    \t\t\t\t}
+    \t\t\t}));
+    \t\t}, 5000);
+    \t}
+    &nbsp;
+    }
+</av-code>
+
+<av-code language="typescript" filename="ReceiverNoCallback.wcl.avt">
+    export class ReceiverNoCallback extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \tprotected override postCreation(): void {
+    \t\tlet emitter = document.querySelector&lt;EmitterNoCallback&gt;("#emitter");
+    \t\temitter.addEventListener("myEvent", (e: CustomEvent) =&gt; {
+    \t\t\tconsole.log("Time is : " + e.detail.time);
+    \t\t});
+    \t}
+    &nbsp;
+    }
+</av-code>
+
+<p>There are many problems inside the code :</p>
+<ul>
+    <li>You don't know that an event <span class="cn">myEvent</span> can be emitted.</li>
+    <li>You don't know what the event will have as details ( <span class="ca">time</span> ).</li>
+    <li>If the event name change, you won't be able to detect errors inside your code.</li>
+    <li>If more details will be added, nothing told you that you can use it.</li>
+</ul>
+<p>As you can see, you really dependend on the documentation. What a nightmare when you create bigger project. Now, have
+    a look at the code below with <span class="cn">Callback</span>.</p>
+
+
+<av-code language="typescript" filename="EmitterCallback.wcl.avt">
+    export class EmitterCallback extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \tprivate _myEvent: Aventus.Callback&lt;(time: number) =&gt; void&gt; = new Aventus.Callback();
+    &nbsp;
+    \t// Use getter to prevent external set
+    \tpublic get myEvent(): Aventus.Callback&lt;(time: number) =&gt; void&gt; {
+    \t\treturn this._myEvent;
+    \t}
+    &nbsp;
+    \tpublic constructor() {
+    \t\tsuper();
+    \t\tsetInterval(() =&gt; {
+    \t\t\tthis.myEvent.trigger([Date.now()]);
+    \t\t}, 5000);
+    \t}
+    &nbsp;
+    }
+</av-code>
+<av-code language="typescript" filename="ReceiverCallback.wcl.avt">
+    export class ReceiverCallback extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \tprotected override postCreation(): void {
+    \t\tlet emitter = document.querySelector&lt;EmitterCallback&gt;("#emitter");
+    \t\temitter.myEvent.add((time: number) =&gt; {
+    \t\t\tconsole.log("Time is : " + time);
+    \t\t});
+    \t}
+    &nbsp;
+    }
+</av-code>
+
+<p>As you can see, the behavior is almost the same but typing is preserved.</p>
+
+<p>The <span class="cn">CallbackGroup</span> class is doing the same thing as the <span class="cn">Callback</span> but
+    when you <span class="cn">add</span>, <span class="cn">remove</span> or <span class="cn">trigger</span>, you must
+    provide a key (string or number) to trigger or store only a group of callbacks.</p>
+
+<av-code language="typescript" filename="Log.wcl.avt">
+    export enum LogLvl {
+    \tInfo,
+    \tWarning,
+    \tError
+    }
+    &nbsp;
+    export class LogEmitter extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    \tprivate _onNewLog: Aventus.CallbackGroup&lt;(msg: string) =&gt; void&gt; = new Aventus.CallbackGroup();
+    \t// Use getter to prevent external set
+    \tpublic get onNewLog(): Aventus.CallbackGroup&lt;(msg: string) =&gt; void&gt; {
+    \t\t return this._onNewLog;
+    \t}
+    &nbsp;
+    \t/**
+    \t* Trigger the log callback only for the lvl concerned
+    \t*/
+    \tpublic addLog(msg: string, lvl: LogLvl) {
+    \t\tthis.onNewLog.trigger(lvl, [msg]);
+    \t}
+    }
+</av-code>

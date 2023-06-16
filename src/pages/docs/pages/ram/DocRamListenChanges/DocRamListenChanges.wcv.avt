@@ -1,0 +1,109 @@
+<h1>RAM - Listen changes</h1>
+<h2>Item scoped functions</h2>
+<p>Because your component must be refreshed when your RAM item changed, the item coming from a RAM has 4 new functions.
+</p>
+<ul>
+    <li><span class="cn">onUpdate</span> : Add a callback trigger when data updated</li>
+    <li><span class="cn">offUpdate</span> : Remove a callback trigger when data updated</li>
+    <li><span class="cn">onDelete</span> : Add a callback trigger when data deleted</li>
+    <li><span class="cn">offDelete</span> : Remove a callback trigger when data deleted</li>
+</ul>
+<av-code language="typescript" filename="Test.lib.avt">
+    export async function test() {
+    \tlet person1 = await PersonRAM.getInstance().get(1);
+    \tperson1.onUpdate(onUpdate);
+    \tperson1.onDelete(onDelete);
+    }
+    &nbsp;
+    export function onUpdate(person:Person) {
+    \tconsole.log(person.name);
+    }
+    &nbsp;
+    export function onDelete(person:Aventus.RamItem&lt;Person&gt;) {
+    \tperson.offUpdate(onUpdate);
+    \tperson.offDelete(onDelete);
+    }
+</av-code>
+<p>You must care of the function scope. Inside a webcomponent if you do something like below it will not work.</p>
+<av-code language="typescript" filename="Test.lib.avt">
+    export class HelloWorld extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    \t@Attribute()
+    \tpublic id: number;
+    &nbsp;
+    \tprivate person: Aventus.RamItem&lt;Person&gt;;
+    &nbsp;
+    \tpublic async getItem() {
+    \t\tthis.person = await PersonRAM.getInstance().get(this.id);
+    \t\tp.onUpdate(this.onUpdate)
+    \t}
+    &nbsp;
+    \tprivate onUpdate(newData: Aventus.RamItem&lt;Person&gt;) {
+    \t\t// this will fail because this isn't scoped to the HelloWorld component
+    \t\tthis.person = newData;
+    \t}
+    &nbsp;
+    \tprotected override postCreation(): void {
+    \t\tthis.getItem();
+    \t}
+    }
+</av-code>
+<p>To correct this problem you can change it like that.</p>
+<av-code language="typescript" filename="Test.lib.avt">
+    export class HelloWorld extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    \t@Attribute()
+    \tpublic id: number;
+    &nbsp;
+    \tprivate person: Aventus.RamItem&lt;Person&gt;;
+    &nbsp;
+    \tpublic constructor() {
+    \tthis.onUpdate = this.onUpdate.bind(this);
+    \t}
+    \tpublic async getItem() {
+    \t\tthis.person = await PersonRAM.getInstance().get(this.id);
+    \t\tp.onUpdate(this.onUpdate)
+    \t}
+    &nbsp;
+    \tprivate onUpdate(newData: Aventus.RamItem&lt;Person&gt;) {
+    \t\tthis.person = newData; // this time the scope is HelloWorld
+    \t}
+    &nbsp;
+    \tprotected override postCreation(): void {
+    \t\tthis.getItem();
+    \t}
+    }
+</av-code>
+<h2>RAM scoped functions</h2>
+<p>To listen what is happening inside your RAM. You can subscribe to 3 listeners:</p>
+<ul>
+    <li><span class="cn">onCreated</span> : trigger when a new data is created</li>
+    <li><span class="cn">onUpdated</span> : trigger when a data is updated</li>
+    <li><span class="cn">onDeleted</span> : trigger when a data is deleted</li>
+</ul>
+<p>To remove your listeners you can use the following functions</p>
+<ul>
+    <li><span class="cn">offCreated</span></li>
+    <li><span class="cn">offUpdated</span></li>
+    <li><span class="cn">offDeleted</span></li>
+</ul>
+<av-code language="typescript" filename="Test.lib.avt">
+    export class HelloWorld extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \tprivate onCreated(createdData: Aventus.RamItem&lt;Person&gt;) {
+        &nbsp;
+    \t}
+    &nbsp;
+    \tprivate onUpdated(updatedData: Aventus.RamItem&lt;Person&gt;) {
+        &nbsp;
+    \t}
+    &nbsp;
+    \tprivate onDeleted(deletedData: Aventus.RamItem&lt;Person&gt;) {
+        &nbsp;
+    \t}
+    &nbsp;
+    \tprotected override postCreation(): void {
+    \t\tPersonRAM.getInstance().onCreated(this.onCreated);
+    \t\tPersonRAM.getInstance().onUpdated(this.onUpdated);
+    \t\tPersonRAM.getInstance().onDeleted(this.onDeleted);
+    \t}
+    }
+</av-code>

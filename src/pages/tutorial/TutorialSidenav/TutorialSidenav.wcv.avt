@@ -1,0 +1,26 @@
+<av-icon icon="close" class="close-icon" @press="closeNav"></av-icon>
+<av-scrollable class="menu">
+    <av-collapse>
+        <div class="title" slot="header">init</div>
+        <ul>
+            <li><av-router-link state="/tutorial/introduction">Introduction</av-router-link></li>
+            <li><av-router-link state="/tutorial/init">Init</av-router-link></li>
+            <li><av-router-link state="/tutorial/app">Create app</av-router-link></li>
+        </ul>
+    </av-collapse>
+    <av-collapse>
+        <div class="title" slot="header">data</div>
+        <ul>
+            <li><av-router-link state="/tutorial/data">Data</av-router-link></li>
+            <li><av-router-link state="/tutorial/ram">RAM</av-router-link></li>
+        </ul>
+    </av-collapse>
+    <av-collapse>
+        <div class="title" slot="header">component</div>
+        <ul>
+            <li><av-router-link state="/tutorial/form">Form</av-router-link></li>
+            <li><av-router-link state="/tutorial/list">List</av-router-link></li>
+            <li><av-router-link state="/tutorial/style">Style</av-router-link></li>
+        </ul>
+    </av-collapse>
+</av-scrollable>

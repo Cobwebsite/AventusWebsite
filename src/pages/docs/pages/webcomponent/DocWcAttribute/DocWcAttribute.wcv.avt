@@ -1,0 +1,77 @@
+<h1>Webcomponent - Attribute</h1>
+<p>In the section you are going to learn what is an attribute on a webcomponent and how you can create it inside
+    Aventus.</p>
+
+<h2>Implementation</h2>
+<p>An attribute is a variable inside your webcomponent. An attribute has limited type:</p>
+<ul>
+    <li><span class="cn">number</span></li>
+    <li><span class="cn">string</span></li>
+    <li><span class="cn">boolean</span></li>
+    <li><span class="cn">date</span></li>
+    <li><span class="cn">datetime</span></li>
+    <li><span class="cn">literal</span> (ex: 'value1'|'value2')</li>
+</ul>
+<p>The source code to create an attribute is the following.</p>
+
+<av-code language="typescript" filename="Example.wcl.avt">
+    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \t//#region static
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region props
+    \t/** Define if the element is active or not */
+    \t@Attribute()
+    \tpublic active: boolean;
+    \t//#endregion
+    &nbsp;
+    \t//#region variables
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region constructor
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    \t//#region methods
+    &nbsp;
+    \t//#endregion
+    &nbsp;
+    }
+</av-code>
+<av-code language="html" filename="index.html">
+    &lt;av-example&gt;&lt;av-example&gt;
+    &lt;av-example active&gt;&lt;av-example&gt;
+</av-code>
+
+<p>When you will use the tag <span class="cn">&lt;av-example&gt;</span> inside any other <span
+        class="cn">*.wcv.avt</span> file, the auto-completion will show you the attribute <span
+        class="cn">active</span>. Futhermore, you can access this property through the <span class="cn">*.wcl.avt</span>
+    file when you store a variable typed as <span class="cn">Example</span>.</p>
+
+<av-code language="typescript" filename="Test.lib.avt">
+    export function test(){
+    \tconst myExample = document.querySelector&lt;Example&gt;("av-example");
+    \tmyExample.active = false;
+    }
+</av-code>
+
+<p>The main goal of attribute is to create state for your component so that you can apply different style on it. You can
+    find more informations about style <av-router-link state="/doc/wc/style">here</av-router-link> but the code below
+    show you a quick example to display the background in red when component is active:</p>
+
+<av-code language="css" filename="Example.wcs.avt">
+    :host {
+    \tbackground: blue;
+    \ttransition: background-color 1s ease;
+    }
+    :host([active]) {
+    \tbackground: red;
+    }
+</av-code>
+
+<h2>Quick use</h2>
+<p>When you are editing a <span class="cn">*.wcl.avt</span>, you can right click where you want to create an attribute
+    and select the option <i>Aventus: create attribute</i>. You must follow the instruction to get an attribute working.</p>

@@ -1,0 +1,39 @@
+:host {
+	align-items: center;
+	display: flex;
+	justify-content: center;
+	margin: 30px 0;
+	width: 100%;
+
+	div {
+		background-color: var(--aventus-color);
+		border-radius: 5px;
+		box-shadow: 0 0 5px #555;
+		color: var(--secondary-color);
+		cursor: pointer;
+		font-size: 16px;
+		font-weight: 400;
+		margin: 0 30px;
+		padding: 5px 15px;
+		-webkit-tap-highlight-color: transparent;
+		user-select: none;
+	}
+
+	div:hover {
+		box-shadow: 0 0 3px #444;
+	}
+}
+
+:host([hide_next]) {
+	.next {
+		opacity: 0;
+		visibility: hidden;
+	}
+}
+
+:host([hide_previous]) {
+	.previous {
+		opacity: 0;
+		visibility: hidden;
+	}
+}

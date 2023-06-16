@@ -1,0 +1,14 @@
+:host {
+	padding: 10px 20px;
+    color: var(--primary-color);
+    background-color: var(--aventus-color);
+    border-radius: 10px;
+    transition:  all var(--bezier-curve) 0.5s;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+:host(:hover){
+    color: var(--aventus-color);
+    background-color: var(--secondary-color);
+}

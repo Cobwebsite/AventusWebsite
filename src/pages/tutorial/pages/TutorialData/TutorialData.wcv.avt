@@ -1,0 +1,32 @@
+<h1>Create data</h1>
+<p>First of all we have to define the backbone for the application what consists to create all data classes. For this
+    example we only need a class Todo with basics informations.</p>
+
+<p>You can right click on the folder <span class="cn">data</span> then select the option <span class="cn">Aventus :
+        Create...</span>.</p>
+
+<av-img src="/img/tuto/data/create.png"></av-img>
+
+<p>Then you can select <span class="cn">Data</span> in the options.</p>
+
+<av-img src="/img/tuto/data/data_options.png"></av-img>
+
+<p>You can fill the ouput with the name <span class="cn">Todo</span></p>
+<av-img src="/img/tuto/data/name.png"></av-img>
+
+<p>You can replace the content of the new file created by </p>
+<av-code language="typescript" filename="Todo.data.avt">
+    export enum TodoStatus {
+    \tWaiting,
+    \tProgress,
+    \tDone
+    }
+
+    export class Todo extends Aventus.Data implements Aventus.IData {
+    &nbsp;
+    \tpublic id: number = 0;
+    \tpublic name: string = "";
+    \tpublic status: TodoStatus = TodoStatus.Waiting;
+    &nbsp;
+    }
+</av-code>

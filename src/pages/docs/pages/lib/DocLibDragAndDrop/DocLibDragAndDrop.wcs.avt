@@ -1,0 +1,16 @@
+:host {
+	.options {
+        list-style: none;
+        // padding: 0;
+        margin: 0;
+		li {
+			margin: 15px 0;
+            text-align: justify;
+			.size {
+				display: inline-block;
+				width: 170px;
+			}
+		}
+
+	}
+}

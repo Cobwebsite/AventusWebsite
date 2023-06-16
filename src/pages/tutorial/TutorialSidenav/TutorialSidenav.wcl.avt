@@ -1,0 +1,80 @@
+import { Collapse } from "../../../core/components/Collapse/Collapse.wcl.avt";
+import { TutorialPage } from "../TutorialPage/TutorialPage.wcl.avt";
+
+export class TutorialSidenav extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public getNextAndPrevious(state: string): { next: string | null, previous: string | null; } {
+        let result = {
+            next: null,
+            previous: null
+        };
+        let active = this.shadowRoot.querySelector<Aventus.Navigation.RouterLink>(`av-router-link[state="${state}"]`);
+        let all = Array.from(this.shadowRoot.querySelectorAll<Aventus.Navigation.RouterLink>("av-router-link"));
+        let index = all.indexOf(active);
+        if(index > 0) {
+            result.previous = all[index - 1].state;
+        }
+        if(index < all.length - 1) {
+            result.next = all[index + 1].state;
+        }
+        return result;
+    }
+
+    private addActiveWatch() {
+        let all = Array.from(this.shadowRoot.querySelectorAll<Aventus.Navigation.RouterLink>("av-router-link"));
+        for(let item of all) {
+            this.addActiveWatchItem(item);
+        }
+    }
+    private addActiveWatchItem(item: Aventus.Navigation.RouterLink) {
+        item.onActiveChange.add((isActive) => {
+            if(isActive) {
+                let coll = item.findParentByType(Collapse);
+                if(coll) {
+                    coll.open = true;
+                }
+            }
+            else {
+                let coll = item.findParentByType(Collapse);
+                if(coll) {
+                    coll.open = false;
+                }
+            }
+        });
+    }
+
+
+    /**
+     * 
+     */
+    protected closeNav() {
+        this.findParentByType(TutorialPage).closeMenu();
+    }
+
+    protected override postCreation(): void {
+        this.addActiveWatch();
+    }
+	//#endregion
+	
+}

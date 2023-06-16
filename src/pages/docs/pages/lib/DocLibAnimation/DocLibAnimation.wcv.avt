@@ -1,0 +1,44 @@
+<h1>Library - Animation</h1>
+
+<p>The animation class allow you to execute a function at specific frames. The code is based on the <span class="cn"><a
+            href="https://developer.mozilla.org/fr/docs/Web/API/window/requestAnimationFrame"
+            target="_blank"></a>requestAnimationFrame</span>. One use case for the class can be the following : You have
+    a to run some complex calculations when the user has the mouse press and moves the cursor on the screen. The event
+    can be fired at anytime and can overload your website. To avoid that you can use the <span
+        class="cn">Animation</span> like that.</p>
+
+<av-code language="typescript" filename="Test.lib.avt">
+    export function addCalculation() {
+    \tlet savedValue = ...
+    \tconst animation = new Aventus.Animation({
+    \t\tanimate: () =&gt; {
+    \t\t\t// complex calculations
+    \t\t},
+    \t\tfps: 30,
+    \t\tstopped: () =&gt; {
+    \t\t\t// no more animate will be fired
+    \t\t}
+
+    \t})
+    &nbsp;
+    \tdocument.body.addEventListener("mousedown", (e) =&gt; {
+    \t\tsavedValue = ...
+    &nbsp;
+    \t\tanimation.start();
+    &nbsp;
+    \t\tconst mouseMove = () =&gt; {
+    \t\t\tsavedValue = ...
+    \t\t}
+    &nbsp;
+    \t\tconst mouseUp = () =&gt; {
+    \t\t\tanimation.stop();
+    \t\t\tdocument.body.removeEventListener("mousemove", mouseMove);
+    \t\t\tdocument.body.removeEventListener("mouseup", mouseUp);
+    \t\t}
+    &nbsp;
+    \t\tdocument.body.addEventListener("mousemove", mouseMove);
+    \t\tdocument.body.addEventListener("mouseup", mouseUp);
+    \t})
+    }
+</av-code>
+<p>With the code above, the code inside animate will be fired every <span class="cn">1000 / 30 ms</span> instead of each time the cursor is moving</p>

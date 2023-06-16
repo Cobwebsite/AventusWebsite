@@ -1,0 +1,31 @@
+<h1>Library</h1>
+<p>In the section you are going to learn what is a library and how you can create it inside Aventus.</p>
+
+<h2>Definition</h2>
+<p>A library is a piece of code that isn't matching any previous file type. This is the only file type that can contain
+    exported functions. The only thing that isn't allowed inside this file is to write root constants or root variables.
+</p>
+
+<av-code language="typescript" filename="Test.lib.avt">
+    export function myFunction(){
+    ...
+    }
+    &nbsp;
+    export class MyClass {
+    ...
+    }
+    &nbsp;
+    export type MyType = ...
+    &nbsp;
+    export interface MyInterface {
+    ...
+    }
+    &nbsp;
+    export enum MyEnum {
+    ...
+    }
+</av-code>
+<p>To keep a clean project, we advise you to not write all your code inside <span class="cn">*.lib.avt</span> even if
+    you can do it. The goal of Aventus is to keep everything tidy.</p>
+
+<p>The following sections are libraries that are included inside Aventus.</p>

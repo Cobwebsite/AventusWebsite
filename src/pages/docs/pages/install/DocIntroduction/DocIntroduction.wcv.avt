@@ -1,0 +1,42 @@
+<h1>Introduction</h1>
+<p>Aventus is a framework that allow you to create complex user interfaces by splitting common parts of a
+    front-end application in several well knowned files. It builds on top of standard HTML, CSS, JavaScript
+    and provide a way to keep your development under control.</p>
+<p>Here is a minimal example:</p>
+<av-code language="html" tab="1">
+    <script>
+        export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            @Property()
+            private count:number = 0;
+            private onClick(): void {
+                this.count++;
+            }
+        }
+    </script>
+    <template>
+        <button @click="onClick">Count is {{count}}</button>
+    </template>
+    <style>
+        :host {
+            button {
+                background-color: #e5540e;
+                border: none;
+                border-radius: 5px;
+                color: white;
+                cursor: pointer;
+                padding: 5px 15px;
+                box-shadow: 0 0 5px #555;
+            }
+        }
+    </style>
+</av-code>
+<av-result>
+    <av-doc-introduction-button></av-doc-introduction-button>
+</av-result>
+<p>To understand the capabilities of Aventus, you need to learn about the following:</p>
+<ul>
+    <li><span class="cn">Webcomponent</span></li>
+    <li><span class="cn">Data / Storage</span></li>
+    <li><span class="cn">States</span></li>
+    <li><span class="cn">Websocket</span></li>
+</ul>

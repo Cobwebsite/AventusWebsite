@@ -1,0 +1,11 @@
+:host {
+	.list-commands {
+        b {
+            width: 100px;
+            display: inline-block;
+        }
+        av-icon {
+            margin: 0 15px;
+        }
+    }
+}

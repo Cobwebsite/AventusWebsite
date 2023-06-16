@@ -1,0 +1,52 @@
+<h1>Webcomponent - Property</h1>
+<p>In the section you are going to learn how you can define property for your component and add a callback when the
+    attribute change.</p>
+
+<h2>Simple property</h2>
+<p>A property is defined by two things:</p>
+<ul>
+    <li>An attribute on your tag</li>
+    <li>A callback to be notified when the value of the attribute changed</li>
+</ul>
+<p>The property is based on the observe attribute behaviour on webcomponent. You can find more inforamtions about this
+    <a href="https://web.dev/custom-elements-v1/#observing-changes-to-attributes" target="_blank">here</a>
+</p>.
+
+<p>In Aventus, you can declare a property by adding a <span class="cn">decorator</span> on a field.</p>
+<av-code language="typescript" filename="Input.wcl.avt">
+    export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \t//#region props
+    \t@Property()
+    \tprivate label:string = "";
+    \t//#endregion
+    &nbsp;
+    }
+</av-code>
+<av-code language="html">
+    &lt;av-input label="Hello"&gt;&lt;/av-input&gt;
+</av-code>
+<p>A property can be used like an <span class="cn">attribute</span> but the main advantage of property is <span
+        class="cn"><av-router-link state="/docs/wc/interpolation">interpolation</av-router-link></span> and <span class="cn">callback</span>.</p>
+<av-code language="typescript" filename="Input.wcl.avt">
+    export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \t//#region props
+    \t@Property((target: Input) =&gt; {
+    \t\tconsole.log("my label changed")
+    \t})
+    \tprivate label:string = "";
+    \t//#endregion
+    &nbsp;
+    }
+</av-code>
+<av-code language="html" filename="Input.wcv.avt">
+    &lt;label&gt;{{label}}&lt;/label&gt;
+    &lt;input /&gt;
+</av-code>
+
+<p>With this code, the label inside the view will always be the same as the label property. Furthermore, when the label value changed, the callback will be called and the msg my label changed will be printed.</p>
+
+<h2>Quick use</h2>
+<p>When you are editing a <span class="cn">*.wcl.avt</span>, you can right click where you want to create an attribute
+    and select the option <i>Aventus: create attribute</i>. You must follow the instruction to get an attribute working.</p>

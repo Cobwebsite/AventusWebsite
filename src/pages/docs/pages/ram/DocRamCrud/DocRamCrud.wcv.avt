@@ -1,0 +1,165 @@
+<h1>RAM - Operations</h1>
+<p>To manage data inside your RAM, can perfom 4 kind of operations :</p>
+<ul>
+    <li>Create - To add data inside your RAM</li>
+    <li>Read - To read data inside your RAM</li>
+    <li>Update - To update data inside your RAM</li>
+    <li>Delete - To delete data from your RAM</li>
+</ul>
+
+<h2>Basic operations</h2>
+<p>Inside Aventus RAM, each function to perfom operation can be written in two format. The first format is the normal.
+    You call the function and get the result.</p>
+<av-code language="typescript" filename="Test.lib.avt">
+    export async function test() {
+    \tconst p1 = await PersonRAM.getInstance().get(1);
+    }
+</av-code>
+<p>The second format is the detailed. You call the function with <span class="cn">WithError</span> at the end to obtain more
+    informations.</p>
+<av-code language="typescript" filename="Test.lib.avt">
+    export async function test() {
+    \tconst {success, errors, result} = await PersonRAM.getInstance().getWithError(1);
+    \tif(success) {
+    \t\tconst p1 = result;
+    \t}
+    \telse {
+    \t\tfor(let error of errors) {
+    \t\t\tconsole.log(error.code + " " + error.message);
+    \t\t}
+    \t}
+    }
+</av-code>
+<p>For the future explanations, only the functions in normal format will be explained</p>
+<h3>Read</h3>
+<div class="table">
+    <av-dynamic-row class="header">
+        <av-dynamic-col size="4" center>Function</av-dynamic-col>
+        <av-dynamic-col size="8" center>Description</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>getAll</av-dynamic-col>
+        <av-dynamic-col size="8" center>Return all items stored inside the RAM like {[index: Index] : T}
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>getList</av-dynamic-col>
+        <av-dynamic-col size="8" center>Return all items stored inside the RAM like T[]
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>getById</av-dynamic-col>
+        <av-dynamic-col size="8" center>Return the item where the index is egal to the parameter
+            provide</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>get</av-dynamic-col>
+        <av-dynamic-col size="8" center><span>Alias for <span class="cn">getById</span></span></av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>getByIds</av-dynamic-col>
+        <av-dynamic-col size="8" center>Return all items where the index is inside the first parameter
+            provide</av-dynamic-col>
+    </av-dynamic-row>
+</div>
+<av-code language="typescript" filename="Test.lib.avt">
+    export async function test() {
+    \tconst person: Person = await PersonRAM.getInstance().get(1);
+    \tconst person: Person = await PersonRAM.getInstance().getById(1);
+    \tconst people: {[id: number] : Person} = await PersonRAM.getInstance().getAll();
+    \tconst people: Person[] = await PersonRAM.getInstance().getList();
+    \tconst people: Person[] = await PersonRAM.getInstance().getByIds([1, 2]);
+    }
+</av-code>
+<h3>Create</h3>
+<div class="table">
+    <av-dynamic-row class="header">
+        <av-dynamic-col size="4" center>Function</av-dynamic-col>
+        <av-dynamic-col size="8" center>Description</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>create</av-dynamic-col>
+        <av-dynamic-col size="8" center>Store an item inside the RAM and return the element stored.</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>createList</av-dynamic-col>
+        <av-dynamic-col size="8" center>Store a set of items inside the RAM and return the elements
+            stored.</av-dynamic-col>
+    </av-dynamic-row>
+</div>
+<av-code language="typescript" filename="Test.lib.avt">
+    export async function test() {
+    \tlet person1: Person = new Person();
+    \tperson1.id = 1;
+    \tperson1.name = "John Doe";
+    \tlet person2: Person = new Person();
+    \tperson2.id = 2;
+    \tperson2.name = "Jane Doe";
+    \tconst person: Person = await PersonRAM.getInstance().create(person1);
+    \tconst people: Person[] = await PersonRAM.getInstance().create([person1, person2]);
+    }
+</av-code>
+<h3>Update</h3>
+<div class="table">
+    <av-dynamic-row class="header">
+        <av-dynamic-col size="4" center>Function</av-dynamic-col>
+        <av-dynamic-col size="8" center>Description</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>update</av-dynamic-col>
+        <av-dynamic-col size="8" center>Update an item inside the RAM and return the element updated.</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>updateList</av-dynamic-col>
+        <av-dynamic-col size="8" center>Update a set of items inside the RAM and return the elements
+            stored.</av-dynamic-col>
+    </av-dynamic-row>
+</div>
+<av-code language="typescript" filename="Test.lib.avt">
+    export async function test() {
+    \tlet person1: Person = await PersonRAM.getInstance().get(1);
+    \tperson1.name = "John Doe 2";
+    \tlet person2: Person = await PersonRAM.getInstance().get(2);
+    \tperson2.name = "Jane Doe 2";
+    \tconst person: Person = await PersonRAM.getInstance().update(person1);
+    \tconst people: Person[] = await PersonRAM.getInstance().update([person1, person2]);
+    }
+</av-code>
+<h3>Delete</h3>
+<div class="table">
+    <av-dynamic-row class="header">
+        <av-dynamic-col size="4" center>Function</av-dynamic-col>
+        <av-dynamic-col size="8" center>Description</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>delete</av-dynamic-col>
+        <av-dynamic-col size="8" center>Delete an item inside the RAM and return the element updated.</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>deleteById</av-dynamic-col>
+        <av-dynamic-col size="8" center>Delete an item inside the RAM and return the element updated.</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>deleteList</av-dynamic-col>
+        <av-dynamic-col size="8" center>Delete a set of items inside the RAM and return the elements
+            stored.</av-dynamic-col>
+    </av-dynamic-row>
+</div>
+<av-code language="typescript" filename="Test.lib.avt">
+    export async function test() {
+    \tlet person1: Person = await PersonRAM.getInstance().get(1);
+    \tlet person2: Person = await PersonRAM.getInstance().get(2);
+    \tawait PersonRAM.getInstance().delete(person1);
+    \tawait PersonRAM.getInstance().deleteById(1);
+    \tawait PersonRAM.getInstance().deleteList([person1, person2]);
+    }
+</av-code>
+<p>The last thing to know is that once an item a stored inside the ram, the item reference is always the same.</p>
+<av-code language="typescript" filename="Test.lib.avt">
+    export async function test() {
+    \tlet person1: Person = await PersonRAM.getInstance().get(1);
+    \tperson1.name = "John Doe 2";
+    \tconst person: Person = await PersonRAM.getInstance().update(person1);
+    \t// person == person1 =&gt; true
+    }
+</av-code>

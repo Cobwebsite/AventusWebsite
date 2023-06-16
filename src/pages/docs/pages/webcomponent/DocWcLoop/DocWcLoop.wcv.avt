@@ -1,0 +1,48 @@
+<h1>Webcomponent - Loop</h1>
+<p>In the section you are going to learn how you can create a loop inside your view to display array.</p>
+
+<p>Inside Aventus, you can declare loop inside your <span class="cn">*.wcv.avt</span> with the following pattern :
+    <br /><span class="cn">@for="$item, $index in $data"</span>. As en example we will display a list of todos.
+</p>
+
+<av-code language="typescript" filename="Todo.data.avt">
+    export class Todo extends Aventus.Data implements Aventus.IData {
+    \tpublic id: number = 0;
+    \tpublic name: string = "";
+    \tpublic tasks: string[] = [];
+    }
+</av-code>
+
+<av-code language="typescript" filename="List.wcl.avt">
+    export class List extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    \t@Watch()
+    \tpublic todos: Todo = [];
+    &nbsp;
+    \tpublic addTodo() {
+    \t\tlet todo = new Todo();
+    \t\ttodo.name = "My todo";
+    \t\ttodo.tasks = ["task1", "task2"];
+    \t\tthis.todos.push(todo);
+    \t}
+    }
+</av-code>
+
+<av-code language="html" filename="List.wcv.avt">
+    &lt;h1&gt;Todos&lt;/h1&gt;
+    &lt;div class="todo" @for="todo, i in todos" style="margin-bottom:10px"&gt;
+    \t&lt;div class="name"&gt;{{todo.name}}&lt;/div&gt;
+    \t&lt;div class="tasks"&gt;
+    \t\t&lt;div class="task" @for="task, j in todo.tasks" style="margin-left:10px"&gt;{{i}}-{{j}}. {{task}}&lt;/div&gt;
+    \t&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;button @click="addTodo"&gt;Add&lt;/button&gt;
+</av-code>
+
+
+<av-img src="/img/doc/wc/loop/todos.png" mode="contains" class="todos-img"></av-img>
+
+<p>You can see that the <span class="cn">i</span> and the <span class="cn">j</span> value starting at 0. You can add a +1 inside the curly braces (<span class="cn">\{{i+1}}-\{{j+1}}. \{{task}}</span>) but Aventus will trigger an error. The code will compile anyway so you can write it. This is because inside Aventus future version you will be able to write Typescript code between curly braces.</p>
+
+<p>With the help on the <span class="cn"><av-router-link state="/docs/wc/watch">Watch</av-router-link></span> variable, the component can know what changed and can update only the part impacted by the change. No virtual DOM is involved and only the needed part is updated inside the DOM.</p>
+
+<p>If you use <span class="cn">@element</span> inside a loop, the variable will be imported as an array.</p>

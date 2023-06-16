@@ -1,0 +1,27 @@
+<script>
+	export class DocIntroductionButton extends Aventus.WebComponent implements Aventus.DefaultComponent {
+	    @Property()
+	    private count: number = 0;
+	    private onClick(): void {
+	        this.count++;
+	    }
+	}
+</script>
+
+<template>	
+	<button @click="onClick">Count is {{count}}</button>
+</template>
+
+<style>	
+	:host {
+		button {
+			background-color: #e5540e;
+			border: none;
+			border-radius: 5px;
+			color: white;
+			cursor: pointer;
+			padding: 5px 15px;
+			box-shadow: 0 0 5px #555;
+		}
+	}
+</style>

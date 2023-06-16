@@ -1,0 +1,84 @@
+<h1>Library - PressManager</h1>
+
+<p>The <span class="cn">PressManager</span> class is a home class to deal with <span class="cn">pointer</span>, <span
+        class="cn">touch</span> and <span class="cn">mouse</span> event. The main job of this class is to prevent the
+    parent to have a trigger on an event catch by the child. The options for the PressManager are the following:</p>
+<ul class="options">
+    <li>
+        <div class="size"><span class="cn">element</span></div>: The element to which the events must be added.
+    </li>
+    <li>
+        <div class="size"><span class="cn">delayDblPress</span></div>: The delay allowed between two click/touch to
+        trigger a double press event.
+    </li>
+    <li>
+        <div class="size"><span class="cn">delayLongPress</span></div>: The delay allowed before triggering a long press
+        event.
+    </li>
+    <li>
+        <div class="size"><span class="cn">forceDblPress</span></div>: Force trigger double press event to parent (use
+        it only if you know that the parent has a double press event because it will create latency).
+    </li>
+    <li>
+        <div class="size"><span class="cn">offsetDrag</span></div>: The distance in pixel that the user must move before
+        triggering a drag event.
+    </li>
+    <li>
+        <div class="size"><span class="cn">onDblPress</span></div>: Fired when double press event is detected.
+    </li>
+    <li>
+        <div class="size"><span class="cn">onDrag</span></div>: Fired when a drag event is detected.
+    </li>
+    <li>
+        <div class="size"><span class="cn">onDragEnd</span></div>: Fired when a drag event stopped.
+    </li>
+    <li>
+        <div class="size"><span class="cn">onDragStart</span></div>: Fired when a drag event started.
+    </li>
+    <li>
+        <div class="size"><span class="cn">onLongPress</span></div>: Fired when a long press event is detected.
+    </li>
+    <li>
+        <div class="size"><span class="cn">onPress</span></div>: Fired when a press event is detected.
+    </li>
+    <li>
+        <div class="size"><span class="cn">onPressEnd</span></div>: Fired when a press event stopped.
+    </li>
+    <li>
+        <div class="size"><span class="cn">onPressStart</span></div>: Fired when a press event started.
+    </li>
+</ul>
+
+<p>You must use only the property you need because your options will change the behavior of the PressManager. For
+    example, if you set a callback on <span class="cn">onDblPress</span>, the code must wait until the end of the <span
+        class="cn">delayDblPress</span> to trigger the <span class="cn">onPress</span>. This is not the case if you
+    don't set the options.</p>
+
+<p>Inside the <span class="cn">*.wcv.avt</span> you can use the attribute <span class="cn">@press</span> to create a
+    PressManager on this element.</p>
+
+<av-code language="html" filename="Example.wc.avt">
+    &lt;script&gt;
+    \texport class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+    &nbsp;
+    \t\t@ViewElement()
+    \t\tprotected buttonEl: HTMLButtonElement;
+    &nbsp;
+    \t\tpublic onPress() { }
+    &nbsp;
+    \t\tprotected override postCreation(): void {
+    \t\t\t// This is the same as @press="onPress"
+    \t\t\tnew Aventus.PressManager({
+    \t\t\t\telement: this.buttonEl,
+    \t\t\t\tonPress: () =&gt; {
+    \t\t\t\t\tthis.onPress();
+    \t\t\t\t}
+    \t\t\t});
+    \t\t}
+    \t}
+    &lt;/script&gt;
+    &nbsp;
+    &lt;template&gt;
+    \t&lt;button @element="buttonEl" @press="onPress"&gt;Click&lt;/button&gt;
+    &lt;/template&gt;
+</av-code>

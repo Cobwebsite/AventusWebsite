@@ -1,0 +1,53 @@
+:host {
+	position: 100%;
+
+	av-doc-sidenav {
+		transition: left 0.4s var(--bezier-curve);
+	}
+
+	.hider {
+		background-color: transparent;
+		display: none;
+		height: 100%;
+		left: 0;
+		position: absolute;
+		top: 0;
+		width: 100%;
+		z-index: 99;
+	}
+
+	& > .container {
+		width: calc(100% - 300px);
+		max-width: none;
+	}
+}
+
+:host([visible]) {
+	display: flex;
+
+}
+
+@media screen and (max-width:1100px) {
+	:host {
+		& > .container {
+			width: 100%;
+		}
+
+		av-doc-sidenav {
+			height: calc(100% - 50px);
+			left: -300px;
+			position: absolute;
+			top: 50px;
+			z-index: 100;
+		}
+	}
+
+	:host([open]) {
+		av-doc-sidenav {
+			left: 0px;
+		}
+		.hider {
+			display: block;
+		}
+	}
+}

@@ -1,0 +1,2 @@
+<div class="previous" @press="previousClick">Previous</div>
+<div class="next" @press="nextClick">Next</div>
