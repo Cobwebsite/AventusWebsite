@@ -1,0 +1,35 @@
+import { Page } from "../../core/components/Page/Page.wcl.avt";
+
+export class Page404 extends Page implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+    /**
+     * @inheritdoc
+     */
+    public override pageTitle(): string {
+        return "Aventus 404";
+    }
+	
+	//#endregion
+	
+}

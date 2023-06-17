@@ -1,0 +1,17 @@
+:host {
+	height: 100%;
+	width: 100%;
+
+	p {
+		color: var(--aventus-color);
+		font-size: 40px;
+	}
+
+	.container {
+		align-items: center;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		max-width: none;
+	}
+}

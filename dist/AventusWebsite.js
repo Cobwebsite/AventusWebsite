@@ -10,41 +10,6 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-class Callback {
-    callbacks = [];
-    /**
-     * Clear all callbacks
-     */
-    clear() {
-        this.callbacks = [];
-    }
-    /**
-     * Add a callback
-     */
-    add(cb) {
-        this.callbacks.push(cb);
-    }
-    /**
-     * Remove a callback
-     */
-    remove(cb) {
-        let index = this.callbacks.indexOf(cb);
-        if (index != -1) {
-            this.callbacks.splice(index, 1);
-        }
-    }
-    /**
-     * Trigger all callbacks
-     */
-    trigger(args) {
-        let result = [];
-        for (let callback of this.callbacks) {
-            result.push(callback.apply(null, args));
-        }
-        return result;
-    }
-}
-
 class WebComponentInstance {
     static __allDefinitions = [];
     static __allInstances = [];
@@ -813,6 +778,41 @@ class WebComponent extends HTMLElement {
     }
 }
 
+class Callback {
+    callbacks = [];
+    /**
+     * Clear all callbacks
+     */
+    clear() {
+        this.callbacks = [];
+    }
+    /**
+     * Add a callback
+     */
+    add(cb) {
+        this.callbacks.push(cb);
+    }
+    /**
+     * Remove a callback
+     */
+    remove(cb) {
+        let index = this.callbacks.indexOf(cb);
+        if (index != -1) {
+            this.callbacks.splice(index, 1);
+        }
+    }
+    /**
+     * Trigger all callbacks
+     */
+    trigger(args) {
+        let result = [];
+        for (let callback of this.callbacks) {
+            result.push(callback.apply(null, args));
+        }
+        return result;
+    }
+}
+
 class StateManager {
     subscribers = {};
     static canBeActivate(statePattern, stateName) {
@@ -820,6 +820,7 @@ class StateManager {
         return stateInfo.regex.test(stateName);
     }
     activeState;
+    afterStateChanged = new Callback();
     /**
      * Subscribe actions for a state or a state list
      */
@@ -929,6 +930,12 @@ class StateManager {
                 }
             }
         }
+    }
+    onAfterStateChanged(cb) {
+        this.afterStateChanged.add(cb);
+    }
+    offAfterStateChanged(cb) {
+        this.afterStateChanged.remove(cb);
     }
     static prepareStateString(stateName) {
         let params = [];
@@ -1057,6 +1064,7 @@ class StateManager {
             }
             stateToUse.onActivate();
         }
+        this.afterStateChanged.trigger([]);
         return true;
     }
     getState() {
@@ -3207,8 +3215,6 @@ class Animation {
 }
 sleep.Namespace='Aventus';
 Aventus.sleep=sleep;
-Callback.Namespace='Aventus';
-Aventus.Callback=Callback;
 WebComponentInstance.Namespace='Aventus';
 Aventus.WebComponentInstance=WebComponentInstance;
 ElementExtension.Namespace='Aventus';
@@ -3219,6 +3225,8 @@ Style.Namespace='Aventus';
 Aventus.Style=Style;
 WebComponent.Namespace='Aventus';
 Aventus.WebComponent=WebComponent;
+Callback.Namespace='Aventus';
+Aventus.Callback=Callback;
 StateManager.Namespace='Aventus';
 Aventus.StateManager=StateManager;
 WatchAction.Namespace='Aventus';
@@ -4310,11 +4318,13 @@ class Router extends Aventus.WebComponent {
     oldPage;
     allRoutes = {};
     activePath = "";
+    oneStateActive = false;
     get stateManager() {
         return Aventus.Instance.get(RouterStateManager);
     }
+    page404;
     static __style = `:host{display:block}`;
-    constructor() { super(); if (this.constructor == Router) { throw "can't instanciate an abstract class"; } }
+    constructor() {            super();            this.validError404 = this.validError404.bind(this);if (this.constructor == Router) { throw "can't instanciate an abstract class"; } }
     __getStatic() {
         return Router;
     }
@@ -4355,6 +4365,7 @@ class Router extends Aventus.WebComponent {
     register() {
         try {
             this.defineRoutes();
+            this.stateManager.onAfterStateChanged(this.validError404);
             for (let key in this.allRoutes) {
                 this.initRoute(key);
             }
@@ -4367,33 +4378,61 @@ class Router extends Aventus.WebComponent {
         let element = undefined;
         let allRoutes = this.allRoutes;
         this.stateManager.subscribe(path, {
-            active: async (currentState) => {
-                if (!element) {
-                    let options = allRoutes[path];
-                    if (options.scriptUrl != "") {
-                        await Aventus.ResourceLoader.loadInHead(options.scriptUrl);
+            active: (currentState) => {
+                this.oneStateActive = true;
+                const showPage = async () => {
+                    if (!element) {
+                        let options = allRoutes[path];
+                        if (options.scriptUrl != "") {
+                            await Aventus.ResourceLoader.loadInHead(options.scriptUrl);
+                        }
+                        let constructor = options.render();
+                        element = new constructor;
+                        element.currentRouter = this;
+                        this.contentEl.appendChild(element);
                     }
-                    let constructor = options.render();
-                    element = new constructor;
-                    element.currentRouter = this;
-                    this.contentEl.appendChild(element);
-                }
-                if (this.oldPage && this.oldPage != element) {
-                    await this.oldPage.hide();
-                }
-                let oldPage = this.oldPage;
-                let oldUrl = this.activePath;
-                await element.show();
-                this.oldPage = element;
-                this.activePath = path;
-                if (window.location.pathname != currentState.name) {
-                    let newUrl = window.location.origin + currentState.name;
-                    document.title = element.pageTitle();
-                    window.history.pushState({}, element.pageTitle(), newUrl);
-                }
-                this.onNewPage(oldUrl, oldPage, path, element);
+                    if (this.oldPage && this.oldPage != element) {
+                        await this.oldPage.hide();
+                    }
+                    let oldPage = this.oldPage;
+                    let oldUrl = this.activePath;
+                    await element.show();
+                    this.oldPage = element;
+                    this.activePath = path;
+                    if (window.location.pathname != currentState.name) {
+                        let newUrl = window.location.origin + currentState.name;
+                        document.title = element.pageTitle();
+                        window.history.pushState({}, element.pageTitle(), newUrl);
+                    }
+                    this.onNewPage(oldUrl, oldPage, path, element);
+                };
+                showPage();
+            },
+            inactive: () => {
+                this.oneStateActive = false;
             }
         });
+    }
+    async validError404() {
+        if (!this.oneStateActive) {
+            let Page404 = this.error404(this.stateManager.getState());
+            if (Page404) {
+                if (!this.page404) {
+                    this.page404 = new Page404();
+                    this.page404.currentRouter = this;
+                    this.contentEl.appendChild(this.page404);
+                }
+                if (this.oldPage && this.oldPage != this.page404) {
+                    await this.oldPage.hide();
+                }
+                await this.page404.show();
+                this.oldPage = this.page404;
+                this.activePath = '';
+            }
+        }
+    }
+    error404(state) {
+        return null;
     }
     onNewPage(oldUrl, oldPage, newUrl, newPage) {
     }
@@ -4551,6 +4590,12 @@ class TutorialApp extends Aventus.Navigation.Router {
         this.addRoute("/tutorial/form", TutorialForm);
         this.addRoute("/tutorial/list", TutorialList);
         this.addRoute("/tutorial/style", TutorialStyle);
+    }
+    error404(state) {
+        if (state.name.startsWith("/tutorial/")) {
+            return Page404;
+        }
+        return null;
     }
 }
 window.customElements.define('av-tutorial-app', TutorialApp);Aventus.WebComponentInstance.registerDefinition(TutorialApp);
@@ -4862,6 +4907,12 @@ class DocApp extends Aventus.Navigation.Router {
         //#region doc advanced
         this.addRoute("/docs/advanced/template", DocAdvancedTemplate);
         //#endregion
+    }
+    error404(state) {
+        if (state.name.startsWith("/docs/")) {
+            return Page404;
+        }
+        return null;
     }
 }
 window.customElements.define('av-doc-app', DocApp);Aventus.WebComponentInstance.registerDefinition(DocApp);
@@ -5339,6 +5390,30 @@ class TutorialData extends TutorialGenericPage {
     }
 }
 window.customElements.define('av-tutorial-data', TutorialData);Aventus.WebComponentInstance.registerDefinition(TutorialData);
+
+class Page404 extends Page {
+    static __style = `:host{height:100%;width:100%}:host p{color:var(--aventus-color);font-size:40px}:host .container{align-items:center;display:flex;flex-direction:column;justify-content:center;max-width:none}`;
+    __getStatic() {
+        return Page404;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Page404.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<p>404</p><p>Not found</p>` }
+    });
+}
+    getClassName() {
+        return "Page404";
+    }
+    pageTitle() {
+        return "Aventus 404";
+    }
+}
+window.customElements.define('av-page-4-0-4', Page404);Aventus.WebComponentInstance.registerDefinition(Page404);
 
 class Home extends Page {
     static __style = `:host{height:100%;width:100%}:host .container{max-width:none}:host .main{background-color:var(--light-primary-color);display:flex;flex-direction:column;height:400px;overflow:hidden;padding:50px 0;position:relative;width:100%}:host .main .icon-text{align-items:center;flex-grow:1;margin:auto;max-width:1000px;width:100%;z-index:2}:host .main .icon-text av-img{--img-color: var(--aventus-color);flex-shrink:0;height:120px;margin-right:15%;transition:all linear .5s;width:85px}:host .main .icon-text .ventus{overflow:hidden;width:calc(100% - 85px)}:host .main .icon-text .ventus span{color:var(--aventus-color);display:inline-block;font-size:165px;font-variant:small-caps;font-weight:bold;margin-top:-83px;overflow:hidden;transition:all linear .5s;width:440px}:host .main .icon-text av-dynamic-col:first-child{flex-direction:row;justify-content:right}:host .main .icon-text av-dynamic-col:nth-child(2){font-size:16px}:host .main .icon-text .title{color:var(--primary-font-color);font-size:30px}:host .main .btn-container{margin:auto;z-index:2}:host .main .btn-container av-dynamic-col{flex-direction:row;justify-content:center}:host .main .btn-container av-dynamic-col av-button{margin:0 10px}:host .main av-img.design-logo{--img-color: rgb(200, 200, 200);height:150%;left:-200px;opacity:.3;position:absolute;top:30px;z-index:1}:host .main av-img.design-logo2{--img-color: rgb(200, 200, 200);height:150%;opacity:.3;position:absolute;right:-200px;top:30px;transform:rotate(180deg);z-index:1}:host .blocks{margin:50px auto;max-width:1200px}:host .blocks av-dynamic-col{padding:10px 20px}:host .blocks av-dynamic-col .block{background-color:var(--light-primary-color);border-radius:5px;box-shadow:0 2px 4px -1px rgba(0,0,0,.2),0 4px 5px 0 rgba(0,0,0,.14),0 1px 10px 0 rgba(0,0,0,.12);color:var(--secondary-color);display:flex;flex-direction:column;height:100%;padding:30px;width:100%}:host .blocks av-dynamic-col .block .title{font-size:28px;font-weight:bold;letter-spacing:1px}:host .blocks av-dynamic-col .block p{align-items:center;display:flex;flex-grow:1;text-align:justify}:host .blocks av-dynamic-col:nth-child(2) .block{background-color:var(--aventus-color)}:host .separator{background:linear-gradient(90deg, transparent 0%, var(--light-primary-color) 50%, transparent 100%);height:1px;margin:auto;width:75%}:host .why{margin:50px auto;max-width:1200px;padding:0 50px}:host .why h2{color:var(--light-primary-color)}:host .why p{font-size:18px;text-align:justify}:host .why .important{font-size:20px;font-weight:600}`;
@@ -9208,6 +9283,9 @@ class App extends Aventus.Navigation.Router {
         this.addRoute("^/docs/.*$", DocPage);
         this.addRoute("^/tutorial/.*$", TutorialPage);
     }
+    error404(state) {
+        return Page404;
+    }
 }
 window.customElements.define('av-app', App);Aventus.WebComponentInstance.registerDefinition(App);
 
@@ -9296,6 +9374,8 @@ TutorialForm.Namespace='AventusWebsite';
 AventusWebsite.TutorialForm=TutorialForm;
 TutorialData.Namespace='AventusWebsite';
 AventusWebsite.TutorialData=TutorialData;
+Page404.Namespace='AventusWebsite';
+AventusWebsite.Page404=Page404;
 Home.Namespace='AventusWebsite';
 AventusWebsite.Home=Home;
 DocGenericPage.Namespace='AventusWebsite';

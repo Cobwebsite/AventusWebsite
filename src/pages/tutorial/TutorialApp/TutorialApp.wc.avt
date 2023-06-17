@@ -8,6 +8,7 @@ import { TutorialRam } from "../pages/TutorialRam/TutorialRam.wcl.avt";
 import { TutorialForm } from "../pages/TutorialForm/TutorialForm.wcl.avt";
 import { TutorialList } from "../pages/TutorialList/TutorialList.wcl.avt";
 import { TutorialStyle } from "../pages/TutorialStyle/TutorialStyle.wcl.avt";
+import { Page404 } from "../../Page404/Page404.wcl.avt";
 
 	export class TutorialApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
 	    private tutorialPage: TutorialPage;
@@ -23,6 +24,13 @@ import { TutorialStyle } from "../pages/TutorialStyle/TutorialStyle.wcl.avt";
 	        this.addRoute("/tutorial/style", TutorialStyle);
 	        
 	    }
+
+		protected override error404(state: Aventus.State): new () => Aventus.Navigation.Page {
+			if(state.name.startsWith("/tutorial/")){
+				return Page404;
+			}
+			return null;
+		}
 	}
 	
 	

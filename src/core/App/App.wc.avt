@@ -3,6 +3,7 @@
 	import { About } from "../../pages/About/About.wcl.avt";
 	import { DocPage } from "../../pages/docs/DocPage/DocPage.wcl.avt";
 	import { Home } from "../../pages/Home/Home.wcl.avt";
+import { Page404 } from "../../pages/Page404/Page404.wcl.avt";
 
 	export class App extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
 	    protected defineRoutes(): void {
@@ -11,7 +12,9 @@
 	        this.addRoute("^/docs/.*$", DocPage);
 	        this.addRoute("^/tutorial/.*$", TutorialPage);
 	    }
-	
+		protected override error404(state: Aventus.State): new () => Aventus.Navigation.Page {
+			return Page404;
+		}
 	}
 </script>
 

@@ -43,6 +43,7 @@ import { DocLibResizeObserver } from "../pages/lib/DocLibResizeObserver/DocLibRe
 import { DocLibResourceLoader } from "../pages/lib/DocLibResourceLoader/DocLibResourceLoader.wcl.avt";
 import { DocLibWatcher } from "../pages/lib/DocLibWatcher/DocLibWatcher.wcl.avt";
 import { DocLibTools } from "../pages/lib/DocLibTools/DocLibTools.wcl.avt";
+import { Page404 } from "../../Page404/Page404.wcl.avt";
 
 
 	export class DocApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
@@ -118,6 +119,13 @@ import { DocLibTools } from "../pages/lib/DocLibTools/DocLibTools.wcl.avt";
 	        this.addRoute("/docs/advanced/template", DocAdvancedTemplate);
 	        //#endregion
 	    }
+
+		protected override error404(state: Aventus.State): new () => Aventus.Navigation.Page {
+			if(state.name.startsWith("/docs/")){
+				return Page404;
+			}
+			return null;
+		}
 	}
 	
 	
