@@ -1,6 +1,13 @@
 @font-face {
 	font-family: "Font Awesome 6 Free";
-	src: url("/css/fa-regular-400.woff2") format("woff");
+	src: url("/font/fa-regular-400.woff2") format("woff");
+}
+
+@font-face {
+    font-family: "Roboto";
+    src: url("/font/Roboto-Regular.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
 }
 
 :root {
