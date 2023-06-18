@@ -120,6 +120,12 @@
 			.tab.active {
 				display: block;
 			}
+
+			p {
+				font-size: 18px;
+				text-align: justify;
+				line-height: 1.8;
+			}
 		}
 
 		h2 {
@@ -128,8 +134,6 @@
 		}
 
 		.help-us {
-			font-size: 18px;
-			line-height: 1.8;
 			margin: auto;
 			max-width: 530px;
 			text-align: justify;
@@ -197,6 +201,7 @@
 					margin-bottom: 10px;
 					padding: 5px 15px;
 					transition: border 0.2s linear;
+					text-decoration: none;
 
 					svg {
 						fill: var(--secondary-color);
@@ -248,9 +253,7 @@
 
 		.tab[name="sponsor"] {
 			padding-bottom: 40px;
-			p {
-				font-size: 18px;
-			}
+			
 		}
 	}
 }
