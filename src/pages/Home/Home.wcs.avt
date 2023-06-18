@@ -175,3 +175,28 @@
 	}
 
 }
+
+@media screen and (max-width:505px) {
+	:host {
+		.main {
+			.icon-text {
+				flex-direction: column;
+
+				av-dynamic-col {
+					justify-content: center!important;
+					width: 100%;
+					text-align: center;
+				}
+
+				av-img {
+					margin-right: 0;
+				}
+
+				/* av-dynamic-col:nth-child(2) {*/
+				/* 	width: 100%;*/
+				/* 	text-align: center;*/
+				/* }*/
+			}
+		}
+	}
+}

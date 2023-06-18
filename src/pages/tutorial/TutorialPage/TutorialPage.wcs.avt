@@ -1,7 +1,7 @@
 :host {
 	position: 100%;
 
-	av-doc-sidenav {
+	av-tutorial-sidenav {
 		transition: left 0.4s var(--bezier-curve);
 	}
 
@@ -33,7 +33,7 @@
 			width: 100%;
 		}
 
-		av-doc-sidenav {
+		av-tutorial-sidenav {
 			height: calc(100% - 50px);
 			left: -300px;
 			position: absolute;
@@ -43,7 +43,7 @@
 	}
 
 	:host([open]) {
-		av-doc-sidenav {
+		av-tutorial-sidenav {
 			left: 0px;
 		}
 		.hider {

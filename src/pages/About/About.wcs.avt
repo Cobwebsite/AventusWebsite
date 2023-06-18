@@ -232,8 +232,8 @@
 					width: 30px;
 
 					svg {
-						fill: var(--secondary-color);
 						cursor: pointer;
+						fill: var(--secondary-color);
 						transition: 0.2s fill linear;
 					}
 				}
@@ -243,6 +243,13 @@
 						fill: black;
 					}
 				}
+			}
+		}
+
+		.tab[name="sponsor"] {
+			padding-bottom: 40px;
+			p {
+				font-size: 18px;
 			}
 		}
 	}
