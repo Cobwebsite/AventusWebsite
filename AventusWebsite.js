@@ -10,41 +10,6 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-class Callback {
-    callbacks = [];
-    /**
-     * Clear all callbacks
-     */
-    clear() {
-        this.callbacks = [];
-    }
-    /**
-     * Add a callback
-     */
-    add(cb) {
-        this.callbacks.push(cb);
-    }
-    /**
-     * Remove a callback
-     */
-    remove(cb) {
-        let index = this.callbacks.indexOf(cb);
-        if (index != -1) {
-            this.callbacks.splice(index, 1);
-        }
-    }
-    /**
-     * Trigger all callbacks
-     */
-    trigger(args) {
-        let result = [];
-        for (let callback of this.callbacks) {
-            result.push(callback.apply(null, args));
-        }
-        return result;
-    }
-}
-
 class WebComponentInstance {
     static __allDefinitions = [];
     static __allInstances = [];
@@ -813,6 +778,143 @@ class WebComponent extends HTMLElement {
     }
 }
 
+class Callback {
+    callbacks = [];
+    /**
+     * Clear all callbacks
+     */
+    clear() {
+        this.callbacks = [];
+    }
+    /**
+     * Add a callback
+     */
+    add(cb) {
+        this.callbacks.push(cb);
+    }
+    /**
+     * Remove a callback
+     */
+    remove(cb) {
+        let index = this.callbacks.indexOf(cb);
+        if (index != -1) {
+            this.callbacks.splice(index, 1);
+        }
+    }
+    /**
+     * Trigger all callbacks
+     */
+    trigger(args) {
+        let result = [];
+        for (let callback of this.callbacks) {
+            result.push(callback.apply(null, args));
+        }
+        return result;
+    }
+}
+
+class Mutex {
+    waitingList = [];
+    isLocked = false;
+    /**
+     * Wait the mutex to be free then get it
+     */
+    waitOne() {
+        return new Promise((resolve) => {
+            if (this.isLocked) {
+                this.waitingList.push((run) => {
+                    resolve(run);
+                });
+            }
+            else {
+                this.isLocked = true;
+                resolve(true);
+            }
+        });
+    }
+    /**
+     * Release the mutex
+     */
+    release() {
+        let nextFct = this.waitingList.shift();
+        if (nextFct) {
+            nextFct(true);
+        }
+        else {
+            this.isLocked = false;
+        }
+    }
+    /**
+     * Release the mutex
+     */
+    releaseOnlyLast() {
+        if (this.waitingList.length > 0) {
+            let lastFct = this.waitingList.pop();
+            for (let fct of this.waitingList) {
+                fct(false);
+            }
+            this.waitingList = [];
+            lastFct(true);
+        }
+        else {
+            this.isLocked = false;
+        }
+    }
+    /**
+     * Clear mutex
+     */
+    dispose() {
+        this.waitingList = [];
+        this.isLocked = false;
+    }
+    async safeRun(cb) {
+        let result = null;
+        await this.waitOne();
+        try {
+            result = cb.apply(null, []);
+        }
+        catch (e) {
+        }
+        await this.release();
+        return result;
+    }
+    async safeRunAsync(cb) {
+        let result = null;
+        await this.waitOne();
+        try {
+            result = await cb.apply(null, []);
+        }
+        catch (e) {
+        }
+        await this.release();
+        return result;
+    }
+    async safeRunLast(cb) {
+        let result = null;
+        if (await this.waitOne()) {
+            try {
+                result = cb.apply(null, []);
+            }
+            catch (e) {
+            }
+            await this.releaseOnlyLast();
+        }
+        return result;
+    }
+    async safeRunLastAsync(cb) {
+        let result = null;
+        if (await this.waitOne()) {
+            try {
+                result = await cb.apply(null, []);
+            }
+            catch (e) {
+            }
+            await this.releaseOnlyLast();
+        }
+        return result;
+    }
+}
+
 class StateManager {
     subscribers = {};
     static canBeActivate(statePattern, stateName) {
@@ -820,6 +922,8 @@ class StateManager {
         return stateInfo.regex.test(stateName);
     }
     activeState;
+    changeStateMutex = new Mutex();
+    afterStateChanged = new Callback();
     /**
      * Subscribe actions for a state or a state list
      */
@@ -930,6 +1034,12 @@ class StateManager {
             }
         }
     }
+    onAfterStateChanged(cb) {
+        this.afterStateChanged.add(cb);
+    }
+    offAfterStateChanged(cb) {
+        this.afterStateChanged.remove(cb);
+    }
     static prepareStateString(stateName) {
         let params = [];
         let i = 0;
@@ -964,100 +1074,104 @@ class StateManager {
      * Activate a current state
      */
     async setState(state) {
-        let stateToUse;
-        if (typeof state == "string") {
-            stateToUse = new EmptyState(state);
-        }
-        else {
-            stateToUse = state;
-        }
-        if (!stateToUse) {
-            this._log("state is undefined", "error");
-            return false;
-        }
-        let canChange = true;
-        if (this.activeState) {
-            let activeToInactive = [];
-            let inactiveToActive = [];
-            let triggerActive = [];
-            canChange = await this.activeState.askChange(this.activeState, stateToUse);
-            if (canChange) {
-                for (let statePattern in this.subscribers) {
-                    let subscriber = this.subscribers[statePattern];
-                    if (subscriber.isActive) {
-                        let clone = [...subscriber.callbacks.askChange];
-                        let currentSlug = this.getInternalStateSlugs(subscriber, this.activeState.name);
-                        for (let i = 0; i < clone.length; i++) {
-                            let askChange = clone[i];
-                            if (!await askChange(this.activeState, stateToUse, currentSlug)) {
-                                canChange = false;
-                                break;
+        return await this.changeStateMutex.safeRunLastAsync(async () => {
+            let stateToUse;
+            if (typeof state == "string") {
+                stateToUse = new EmptyState(state);
+            }
+            else {
+                stateToUse = state;
+            }
+            if (!stateToUse) {
+                this._log("state is undefined", "error");
+                this.changeStateMutex.release();
+                return false;
+            }
+            let canChange = true;
+            if (this.activeState) {
+                let activeToInactive = [];
+                let inactiveToActive = [];
+                let triggerActive = [];
+                canChange = await this.activeState.askChange(this.activeState, stateToUse);
+                if (canChange) {
+                    for (let statePattern in this.subscribers) {
+                        let subscriber = this.subscribers[statePattern];
+                        if (subscriber.isActive) {
+                            let clone = [...subscriber.callbacks.askChange];
+                            let currentSlug = this.getInternalStateSlugs(subscriber, this.activeState.name);
+                            for (let i = 0; i < clone.length; i++) {
+                                let askChange = clone[i];
+                                if (!await askChange(this.activeState, stateToUse, currentSlug)) {
+                                    canChange = false;
+                                    break;
+                                }
+                            }
+                            let slugs = this.getInternalStateSlugs(subscriber, stateToUse.name);
+                            if (slugs === null) {
+                                activeToInactive.push(subscriber);
+                            }
+                            else {
+                                triggerActive.push({
+                                    subscriber: subscriber,
+                                    params: slugs
+                                });
                             }
                         }
-                        let slugs = this.getInternalStateSlugs(subscriber, stateToUse.name);
-                        if (slugs === null) {
-                            activeToInactive.push(subscriber);
-                        }
                         else {
-                            triggerActive.push({
-                                subscriber: subscriber,
-                                params: slugs
-                            });
+                            let slugs = this.getInternalStateSlugs(subscriber, stateToUse.name);
+                            if (slugs) {
+                                inactiveToActive.push({
+                                    subscriber,
+                                    params: slugs
+                                });
+                            }
+                        }
+                        if (!canChange) {
+                            break;
                         }
                     }
-                    else {
-                        let slugs = this.getInternalStateSlugs(subscriber, stateToUse.name);
-                        if (slugs) {
-                            inactiveToActive.push({
-                                subscriber,
-                                params: slugs
-                            });
-                        }
+                }
+                if (canChange) {
+                    const oldState = this.activeState;
+                    this.activeState = stateToUse;
+                    oldState.onInactivate(stateToUse);
+                    for (let subscriber of activeToInactive) {
+                        subscriber.isActive = false;
+                        let oldSlug = this.getInternalStateSlugs(subscriber, oldState.name);
+                        [...subscriber.callbacks.inactive].forEach(callback => {
+                            callback(oldState, stateToUse, oldSlug);
+                        });
                     }
-                    if (!canChange) {
-                        break;
+                    for (let trigger of triggerActive) {
+                        [...trigger.subscriber.callbacks.active].forEach(callback => {
+                            callback(stateToUse, trigger.params);
+                        });
                     }
+                    for (let trigger of inactiveToActive) {
+                        trigger.subscriber.isActive = true;
+                        [...trigger.subscriber.callbacks.active].forEach(callback => {
+                            callback(stateToUse, trigger.params);
+                        });
+                    }
+                    stateToUse.onActivate();
                 }
             }
-            if (canChange) {
-                const oldState = this.activeState;
+            else {
                 this.activeState = stateToUse;
-                oldState.onInactivate(stateToUse);
-                for (let subscriber of activeToInactive) {
-                    subscriber.isActive = false;
-                    let oldSlug = this.getInternalStateSlugs(subscriber, oldState.name);
-                    [...subscriber.callbacks.inactive].forEach(callback => {
-                        callback(oldState, stateToUse, oldSlug);
-                    });
-                }
-                for (let trigger of triggerActive) {
-                    [...trigger.subscriber.callbacks.active].forEach(callback => {
-                        callback(stateToUse, trigger.params);
-                    });
-                }
-                for (let trigger of inactiveToActive) {
-                    trigger.subscriber.isActive = true;
-                    [...trigger.subscriber.callbacks.active].forEach(callback => {
-                        callback(stateToUse, trigger.params);
-                    });
+                for (let key in this.subscribers) {
+                    let slugs = this.getInternalStateSlugs(this.subscribers[key], stateToUse.name);
+                    if (slugs) {
+                        this.subscribers[key].isActive = true;
+                        [...this.subscribers[key].callbacks.active].forEach(callback => {
+                            callback(stateToUse, slugs);
+                        });
+                    }
                 }
                 stateToUse.onActivate();
             }
-        }
-        else {
-            this.activeState = stateToUse;
-            for (let key in this.subscribers) {
-                let slugs = this.getInternalStateSlugs(this.subscribers[key], stateToUse.name);
-                if (slugs) {
-                    this.subscribers[key].isActive = true;
-                    [...this.subscribers[key].callbacks.active].forEach(callback => {
-                        callback(stateToUse, slugs);
-                    });
-                }
-            }
-            stateToUse.onActivate();
-        }
-        return true;
+            this.afterStateChanged.trigger([]);
+            return true;
+        });
     }
     getState() {
         return this.activeState;
@@ -3207,8 +3321,6 @@ class Animation {
 }
 sleep.Namespace='Aventus';
 Aventus.sleep=sleep;
-Callback.Namespace='Aventus';
-Aventus.Callback=Callback;
 WebComponentInstance.Namespace='Aventus';
 Aventus.WebComponentInstance=WebComponentInstance;
 ElementExtension.Namespace='Aventus';
@@ -3219,6 +3331,10 @@ Style.Namespace='Aventus';
 Aventus.Style=Style;
 WebComponent.Namespace='Aventus';
 Aventus.WebComponent=WebComponent;
+Callback.Namespace='Aventus';
+Aventus.Callback=Callback;
+Mutex.Namespace='Aventus';
+Aventus.Mutex=Mutex;
 StateManager.Namespace='Aventus';
 Aventus.StateManager=StateManager;
 WatchAction.Namespace='Aventus';
@@ -4310,11 +4426,14 @@ class Router extends Aventus.WebComponent {
     oldPage;
     allRoutes = {};
     activePath = "";
+    oneStateActive = false;
+    showPageMutex = new Aventus.Mutex();
     get stateManager() {
         return Aventus.Instance.get(RouterStateManager);
     }
+    page404;
     static __style = `:host{display:block}`;
-    constructor() { super(); if (this.constructor == Router) { throw "can't instanciate an abstract class"; } }
+    constructor() {            super();            this.validError404 = this.validError404.bind(this);if (this.constructor == Router) { throw "can't instanciate an abstract class"; } }
     __getStatic() {
         return Router;
     }
@@ -4355,6 +4474,7 @@ class Router extends Aventus.WebComponent {
     register() {
         try {
             this.defineRoutes();
+            this.stateManager.onAfterStateChanged(this.validError404);
             for (let key in this.allRoutes) {
                 this.initRoute(key);
             }
@@ -4367,33 +4487,60 @@ class Router extends Aventus.WebComponent {
         let element = undefined;
         let allRoutes = this.allRoutes;
         this.stateManager.subscribe(path, {
-            active: async (currentState) => {
-                if (!element) {
-                    let options = allRoutes[path];
-                    if (options.scriptUrl != "") {
-                        await Aventus.ResourceLoader.loadInHead(options.scriptUrl);
+            active: (currentState) => {
+                this.oneStateActive = true;
+                this.showPageMutex.safeRunLastAsync(async () => {
+                    if (!element) {
+                        let options = allRoutes[path];
+                        if (options.scriptUrl != "") {
+                            await Aventus.ResourceLoader.loadInHead(options.scriptUrl);
+                        }
+                        let constructor = options.render();
+                        element = new constructor;
+                        element.currentRouter = this;
+                        this.contentEl.appendChild(element);
                     }
-                    let constructor = options.render();
-                    element = new constructor;
-                    element.currentRouter = this;
-                    this.contentEl.appendChild(element);
-                }
-                if (this.oldPage && this.oldPage != element) {
-                    await this.oldPage.hide();
-                }
-                let oldPage = this.oldPage;
-                let oldUrl = this.activePath;
-                await element.show();
-                this.oldPage = element;
-                this.activePath = path;
-                if (window.location.pathname != currentState.name) {
-                    let newUrl = window.location.origin + currentState.name;
-                    document.title = element.pageTitle();
-                    window.history.pushState({}, element.pageTitle(), newUrl);
-                }
-                this.onNewPage(oldUrl, oldPage, path, element);
+                    if (this.oldPage && this.oldPage != element) {
+                        await this.oldPage.hide();
+                    }
+                    let oldPage = this.oldPage;
+                    let oldUrl = this.activePath;
+                    await element.show();
+                    this.oldPage = element;
+                    this.activePath = path;
+                    if (window.location.pathname != currentState.name) {
+                        let newUrl = window.location.origin + currentState.name;
+                        document.title = element.pageTitle();
+                        window.history.pushState({}, element.pageTitle(), newUrl);
+                    }
+                    this.onNewPage(oldUrl, oldPage, path, element);
+                });
+            },
+            inactive: () => {
+                this.oneStateActive = false;
             }
         });
+    }
+    async validError404() {
+        if (!this.oneStateActive) {
+            let Page404 = this.error404(this.stateManager.getState());
+            if (Page404) {
+                if (!this.page404) {
+                    this.page404 = new Page404();
+                    this.page404.currentRouter = this;
+                    this.contentEl.appendChild(this.page404);
+                }
+                if (this.oldPage && this.oldPage != this.page404) {
+                    await this.oldPage.hide();
+                }
+                await this.page404.show();
+                this.oldPage = this.page404;
+                this.activePath = '';
+            }
+        }
+    }
+    error404(state) {
+        return null;
     }
     onNewPage(oldUrl, oldPage, newUrl, newPage) {
     }
@@ -4551,6 +4698,12 @@ class TutorialApp extends Aventus.Navigation.Router {
         this.addRoute("/tutorial/form", TutorialForm);
         this.addRoute("/tutorial/list", TutorialList);
         this.addRoute("/tutorial/style", TutorialStyle);
+    }
+    error404(state) {
+        if (state.name.startsWith("/tutorial/")) {
+            return Page404;
+        }
+        return null;
     }
 }
 window.customElements.define('av-tutorial-app', TutorialApp);Aventus.WebComponentInstance.registerDefinition(TutorialApp);
@@ -4863,6 +5016,12 @@ class DocApp extends Aventus.Navigation.Router {
         this.addRoute("/docs/advanced/template", DocAdvancedTemplate);
         //#endregion
     }
+    error404(state) {
+        if (state.name.startsWith("/docs/")) {
+            return Page404;
+        }
+        return null;
+    }
 }
 window.customElements.define('av-doc-app', DocApp);Aventus.WebComponentInstance.registerDefinition(DocApp);
 
@@ -5084,7 +5243,7 @@ class TutorialPage extends Page {
                 } else{
                     this.removeAttribute('open');
                 }
-            }    static __style = `:host{position:100%}:host av-doc-sidenav{transition:left .4s var(--bezier-curve)}:host .hider{background-color:rgba(0,0,0,0);display:none;height:100%;left:0;position:absolute;top:0;width:100%;z-index:99}:host>.container{width:calc(100% - 300px);max-width:none}:host([visible]){display:flex}@media screen and (max-width: 1100px){:host>.container{width:100%}:host av-doc-sidenav{height:calc(100% - 50px);left:-300px;position:absolute;top:50px;z-index:100}:host([open]) av-doc-sidenav{left:0px}:host([open]) .hider{display:block}}`;
+            }    static __style = `:host{position:100%}:host av-tutorial-sidenav{transition:left .4s var(--bezier-curve)}:host .hider{background-color:rgba(0,0,0,0);display:none;height:100%;left:0;position:absolute;top:0;width:100%;z-index:99}:host>.container{width:calc(100% - 300px);max-width:none}:host([visible]){display:flex}@media screen and (max-width: 1100px){:host>.container{width:100%}:host av-tutorial-sidenav{height:calc(100% - 50px);left:-300px;position:absolute;top:50px;z-index:100}:host([open]) av-tutorial-sidenav{left:0px}:host([open]) .hider{display:block}}`;
     __getStatic() {
         return TutorialPage;
     }
@@ -5340,8 +5499,32 @@ class TutorialData extends TutorialGenericPage {
 }
 window.customElements.define('av-tutorial-data', TutorialData);Aventus.WebComponentInstance.registerDefinition(TutorialData);
 
+class Page404 extends Page {
+    static __style = `:host{height:100%;width:100%}:host p{color:var(--aventus-color);font-size:40px}:host .container{align-items:center;display:flex;flex-direction:column;justify-content:center;max-width:none}`;
+    __getStatic() {
+        return Page404;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Page404.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<p>404</p><p>Not found</p>` }
+    });
+}
+    getClassName() {
+        return "Page404";
+    }
+    pageTitle() {
+        return "Aventus 404";
+    }
+}
+window.customElements.define('av-page-4-0-4', Page404);Aventus.WebComponentInstance.registerDefinition(Page404);
+
 class Home extends Page {
-    static __style = `:host{height:100%;width:100%}:host .container{max-width:none}:host .main{background-color:var(--light-primary-color);display:flex;flex-direction:column;height:400px;overflow:hidden;padding:50px 0;position:relative;width:100%}:host .main .icon-text{align-items:center;flex-grow:1;margin:auto;max-width:1000px;width:100%;z-index:2}:host .main .icon-text av-img{--img-color: var(--aventus-color);flex-shrink:0;height:120px;margin-right:15%;transition:all linear .5s;width:85px}:host .main .icon-text .ventus{overflow:hidden;width:calc(100% - 85px)}:host .main .icon-text .ventus span{color:var(--aventus-color);display:inline-block;font-size:165px;font-variant:small-caps;font-weight:bold;margin-top:-83px;overflow:hidden;transition:all linear .5s;width:440px}:host .main .icon-text av-dynamic-col:first-child{flex-direction:row;justify-content:right}:host .main .icon-text av-dynamic-col:nth-child(2){font-size:16px}:host .main .icon-text .title{color:var(--primary-font-color);font-size:30px}:host .main .btn-container{margin:auto;z-index:2}:host .main .btn-container av-dynamic-col{flex-direction:row;justify-content:center}:host .main .btn-container av-dynamic-col av-button{margin:0 10px}:host .main av-img.design-logo{--img-color: rgb(200, 200, 200);height:150%;left:-200px;opacity:.3;position:absolute;top:30px;z-index:1}:host .main av-img.design-logo2{--img-color: rgb(200, 200, 200);height:150%;opacity:.3;position:absolute;right:-200px;top:30px;transform:rotate(180deg);z-index:1}:host .blocks{margin:50px auto;max-width:1200px}:host .blocks av-dynamic-col{padding:10px 20px}:host .blocks av-dynamic-col .block{background-color:var(--light-primary-color);border-radius:5px;box-shadow:0 2px 4px -1px rgba(0,0,0,.2),0 4px 5px 0 rgba(0,0,0,.14),0 1px 10px 0 rgba(0,0,0,.12);color:var(--secondary-color);display:flex;flex-direction:column;height:100%;padding:30px;width:100%}:host .blocks av-dynamic-col .block .title{font-size:28px;font-weight:bold;letter-spacing:1px}:host .blocks av-dynamic-col .block p{align-items:center;display:flex;flex-grow:1;text-align:justify}:host .blocks av-dynamic-col:nth-child(2) .block{background-color:var(--aventus-color)}:host .separator{background:linear-gradient(90deg, transparent 0%, var(--light-primary-color) 50%, transparent 100%);height:1px;margin:auto;width:75%}:host .why{margin:50px auto;max-width:1200px;padding:0 50px}:host .why h2{color:var(--light-primary-color)}:host .why p{font-size:18px;text-align:justify}:host .why .important{font-size:20px;font-weight:600}`;
+    static __style = `:host{height:100%;width:100%}:host .container{max-width:none}:host .main{background-color:var(--light-primary-color);display:flex;flex-direction:column;height:400px;overflow:hidden;padding:50px 0;position:relative;width:100%}:host .main .icon-text{align-items:center;flex-grow:1;margin:auto;max-width:1000px;width:100%;z-index:2}:host .main .icon-text av-img{--img-color: var(--aventus-color);flex-shrink:0;height:120px;margin-right:15%;transition:all linear .5s;width:85px}:host .main .icon-text .ventus{overflow:hidden;width:calc(100% - 85px)}:host .main .icon-text .ventus span{color:var(--aventus-color);display:inline-block;font-size:165px;font-variant:small-caps;font-weight:bold;margin-top:-83px;overflow:hidden;transition:all linear .5s;width:440px}:host .main .icon-text av-dynamic-col:first-child{flex-direction:row;justify-content:right}:host .main .icon-text av-dynamic-col:nth-child(2){font-size:16px}:host .main .icon-text .title{color:var(--primary-font-color);font-size:30px}:host .main .btn-container{margin:auto;z-index:2}:host .main .btn-container av-dynamic-col{flex-direction:row;justify-content:center}:host .main .btn-container av-dynamic-col av-button{margin:0 10px}:host .main av-img.design-logo{--img-color: rgb(200, 200, 200);height:150%;left:-200px;opacity:.3;position:absolute;top:30px;z-index:1}:host .main av-img.design-logo2{--img-color: rgb(200, 200, 200);height:150%;opacity:.3;position:absolute;right:-200px;top:30px;transform:rotate(180deg);z-index:1}:host .blocks{margin:50px auto;max-width:1200px}:host .blocks av-dynamic-col{padding:10px 20px}:host .blocks av-dynamic-col .block{background-color:var(--light-primary-color);border-radius:5px;box-shadow:0 2px 4px -1px rgba(0,0,0,.2),0 4px 5px 0 rgba(0,0,0,.14),0 1px 10px 0 rgba(0,0,0,.12);color:var(--secondary-color);display:flex;flex-direction:column;height:100%;padding:30px;width:100%}:host .blocks av-dynamic-col .block .title{font-size:28px;font-weight:bold;letter-spacing:1px}:host .blocks av-dynamic-col .block p{align-items:center;display:flex;flex-grow:1;text-align:justify}:host .blocks av-dynamic-col:nth-child(2) .block{background-color:var(--aventus-color)}:host .separator{background:linear-gradient(90deg, transparent 0%, var(--light-primary-color) 50%, transparent 100%);height:1px;margin:auto;width:75%}:host .why{margin:50px auto;max-width:1200px;padding:0 50px}:host .why h2{color:var(--light-primary-color)}:host .why p{font-size:18px;text-align:justify}:host .why .important{font-size:20px;font-weight:600}@media screen and (max-width: 505px){:host .main .icon-text{flex-direction:column}:host .main .icon-text av-dynamic-col{justify-content:center !important;width:100%;text-align:center}:host .main .icon-text av-img{margin-right:0}}`;
     __getStatic() {
         return Home;
     }
@@ -6370,7 +6553,7 @@ class DocPage extends Page {
 window.customElements.define('av-doc-page', DocPage);Aventus.WebComponentInstance.registerDefinition(DocPage);
 
 class About extends Page {
-    static __style = `:host{height:100%;width:100%}:host>.container{max-width:none}:host .main{background-color:var(--light-primary-color);display:flex;flex-direction:column;height:400px;overflow:hidden;padding:50px 0;position:relative;width:100%}:host .main .title{align-items:center;color:var(--aventus-color);display:flex;font-size:100px;font-variant:small-caps;font-weight:bold;height:100%;justify-content:center;letter-spacing:2px;margin-bottom:40px;padding:0px 20px;text-align:center;width:100%;z-index:2}:host .main av-img.design-logo{--img-color: rgb(200, 200, 200);height:150%;left:-200px;opacity:.3;position:absolute;top:30px;z-index:1}:host .main av-img.design-logo2{--img-color: rgb(200, 200, 200);height:150%;opacity:.3;position:absolute;right:-200px;top:30px;transform:rotate(180deg);z-index:1}:host av-scrollable .container{display:flex}:host .tabs{width:100%}:host .tabs .header{align-items:center;border-bottom:1px solid rgba(229,84,14,.5333333333);display:flex;height:50px;margin-top:50px;padding:0px 10px;width:100%}:host .tabs .header .tab{align-items:center;background-color:#f0f0f0;border-top-left-radius:5px;border-top-right-radius:5px;cursor:pointer;display:flex;height:100%;margin:0 5px;padding:0 15px;position:relative}:host .tabs .header .tab:not(.active):hover{background-color:rgba(229,84,14,.1333333333)}:host .tabs .header .tab:first-child{margin-left:0}:host .tabs .header .tab.active{background-color:rgba(229,84,14,.2666666667)}:host .tabs .header .tab.active::after{background-color:#b9b9b9;bottom:0px;content:"";display:block;height:1px;left:0;position:absolute;width:100%}:host .tabs .body{padding:0 15px}:host .tabs .body .tab{display:none}:host .tabs .body .tab.active{display:block}:host .tabs h2{color:var(--light-primary-color);text-align:center}:host .tabs .help-us{font-size:18px;line-height:1.8;margin:auto;max-width:530px;text-align:justify}:host .tabs .cards{align-items:center;display:flex;justify-content:center;margin-bottom:40px;margin-top:40px;width:100%}:host .tabs .cards .card{align-items:center;background-color:var(--light-primary-color);border-radius:15px;display:flex;flex-direction:column;flex-grow:1;justify-content:center;max-width:500px;position:relative}:host .tabs .cards .card .img{background-position:center center;background-repeat:no-repeat;background-size:cover;border-radius:100px;height:200px;margin:20px 0;width:200px}:host .tabs .cards .card .name{color:var(--aventus-color);font-size:25px}:host .tabs .cards .card .position{color:rgba(229,84,14,.6);font-size:20px;margin-bottom:10px}:host .tabs .cards .card .location{color:var(--secondary-color);font-size:16px}:host .tabs .cards .card .language{color:var(--secondary-color);font-size:16px;margin-bottom:20px}:host .tabs .cards .card .sponsor{align-items:center;border:1px solid var(--secondary-color);border-radius:5px;cursor:pointer;display:flex;justify-content:center;margin-bottom:10px;padding:5px 15px;transition:border .2s linear}:host .tabs .cards .card .sponsor svg{fill:var(--secondary-color);height:20px;transition:fill .2s linear;width:20px}:host .tabs .cards .card .sponsor span{color:var(--secondary-color);margin-left:10px;transition:color .2s linear}:host .tabs .cards .card .sponsor:hover{border:1px solid var(--aventus-color)}:host .tabs .cards .card .sponsor:hover svg{fill:var(--aventus-color)}:host .tabs .cards .card .sponsor:hover span{color:var(--aventus-color)}:host .tabs .cards .card .github{height:30px;position:absolute;right:20px;top:20px;width:30px}:host .tabs .cards .card .github svg{fill:var(--secondary-color);cursor:pointer;transition:.2s fill linear}:host .tabs .cards .card .github:hover svg{fill:#000}@media screen and (max-width: 400px){:host .main .title{font-size:80px}}`;
+    static __style = `:host{height:100%;width:100%}:host>.container{max-width:none}:host .main{background-color:var(--light-primary-color);display:flex;flex-direction:column;height:400px;overflow:hidden;padding:50px 0;position:relative;width:100%}:host .main .title{align-items:center;color:var(--aventus-color);display:flex;font-size:100px;font-variant:small-caps;font-weight:bold;height:100%;justify-content:center;letter-spacing:2px;margin-bottom:40px;padding:0px 20px;text-align:center;width:100%;z-index:2}:host .main av-img.design-logo{--img-color: rgb(200, 200, 200);height:150%;left:-200px;opacity:.3;position:absolute;top:30px;z-index:1}:host .main av-img.design-logo2{--img-color: rgb(200, 200, 200);height:150%;opacity:.3;position:absolute;right:-200px;top:30px;transform:rotate(180deg);z-index:1}:host av-scrollable .container{display:flex}:host .tabs{width:100%}:host .tabs .header{align-items:center;border-bottom:1px solid rgba(229,84,14,.5333333333);display:flex;height:50px;margin-top:50px;padding:0px 10px;width:100%}:host .tabs .header .tab{align-items:center;background-color:#f0f0f0;border-top-left-radius:5px;border-top-right-radius:5px;cursor:pointer;display:flex;height:100%;margin:0 5px;padding:0 15px;position:relative}:host .tabs .header .tab:not(.active):hover{background-color:rgba(229,84,14,.1333333333)}:host .tabs .header .tab:first-child{margin-left:0}:host .tabs .header .tab.active{background-color:rgba(229,84,14,.2666666667)}:host .tabs .header .tab.active::after{background-color:#b9b9b9;bottom:0px;content:"";display:block;height:1px;left:0;position:absolute;width:100%}:host .tabs .body{padding:0 15px}:host .tabs .body .tab{display:none}:host .tabs .body .tab.active{display:block}:host .tabs .body p{font-size:18px;text-align:justify;line-height:1.8}:host .tabs h2{color:var(--light-primary-color);text-align:center}:host .tabs .help-us{margin:auto;max-width:530px;text-align:justify}:host .tabs .cards{align-items:center;display:flex;justify-content:center;margin-bottom:40px;margin-top:40px;width:100%}:host .tabs .cards .card{align-items:center;background-color:var(--light-primary-color);border-radius:15px;display:flex;flex-direction:column;flex-grow:1;justify-content:center;max-width:500px;position:relative}:host .tabs .cards .card .img{background-position:center center;background-repeat:no-repeat;background-size:cover;border-radius:100px;height:200px;margin:20px 0;width:200px}:host .tabs .cards .card .name{color:var(--aventus-color);font-size:25px}:host .tabs .cards .card .position{color:rgba(229,84,14,.6);font-size:20px;margin-bottom:10px}:host .tabs .cards .card .location{color:var(--secondary-color);font-size:16px}:host .tabs .cards .card .language{color:var(--secondary-color);font-size:16px;margin-bottom:20px}:host .tabs .cards .card .sponsor{align-items:center;border:1px solid var(--secondary-color);border-radius:5px;cursor:pointer;display:flex;justify-content:center;margin-bottom:10px;padding:5px 15px;transition:border .2s linear;text-decoration:none}:host .tabs .cards .card .sponsor svg{fill:var(--secondary-color);height:20px;transition:fill .2s linear;width:20px}:host .tabs .cards .card .sponsor span{color:var(--secondary-color);margin-left:10px;transition:color .2s linear}:host .tabs .cards .card .sponsor:hover{border:1px solid var(--aventus-color)}:host .tabs .cards .card .sponsor:hover svg{fill:var(--aventus-color)}:host .tabs .cards .card .sponsor:hover span{color:var(--aventus-color)}:host .tabs .cards .card .github{height:30px;position:absolute;right:20px;top:20px;width:30px}:host .tabs .cards .card .github svg{cursor:pointer;fill:var(--secondary-color);transition:.2s fill linear}:host .tabs .cards .card .github:hover svg{fill:#000}:host .tabs .tab[name=sponsor]{padding-bottom:40px}@media screen and (max-width: 400px){:host .main .title{font-size:80px}}`;
     __getStatic() {
         return About;
     }
@@ -6381,7 +6564,7 @@ class About extends Page {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<av-scrollable floating_scroll>    <div class="main">        <div class="title">            about aventus        </div>        <av-img class="design-logo" src="/img/logo.svg"></av-img>        <av-img class="design-logo2" src="/img/logo.svg"></av-img>    </div>    <div class="container">        <div class="tabs">            <div class="header">                <div class="tab active" tab-name="map" _id="about_0">Roadmap</div>                <div class="tab" tab-name="team" _id="about_1">Team</div>            </div>            <div class="body">                <div class="tab active" name="map">                    <h2>Aventus Roadmap</h2>                    <p>The road map will depend of the community feedbacks, but the team has already agreed on the                        following points.</p>                    <div class="road-map">                        <av-road-map>                            <av-road-map-item name="Aventus@UI">End the Aventus@UI package to provide a simple solution                                to create user interface.</av-road-map-item>                            <av-road-map-item name="SCSS">Improve SCSS autocompletion and improve usability by creating                                scss tree based on the DOM.</av-road-map-item>                            <av-road-map-item name="i18n">Add a method to translate your application based on the i18n                                logic.</av-road-map-item>                            <av-road-map-item name="AventusSharp">End the AventusSharp library to write fullstack                                application with Aventus.</av-road-map-item>                            <av-road-map-item name="Data">Auto manage data link inside the RAM to get a perfect data                                sync.</av-road-map-item>                        </av-road-map>                    </div>                </div>                <div class="tab" name="team">                    <h2>Team</h2>                    <p class="help-us">Aventus is a product develop by Cobwebsite company. We are looking for support to                        ensure that this project lasts. If you would like to help us directly with the project, please                        send an email to <a href="mailto:info@cobwebsite.ch">info@cobwebsite.ch</a>. You can also give                        us financial support via github donations.</p>                    <div class="cards">                        <div class="card">                            <div class="img" style="background-image:url(https://avatars.githubusercontent.com/u/19285564?v=4)">                            </div>                            <div class="name">Maxime Bétrisey</div>                            <div class="position">Creator</div>                            <div class="location">Switzerland</div>                            <div class="language">French - English</div>                            <a class="github" href="https://github.com/max529" target="_blank">                                <svg data-v-a71028e4="" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" viewBox="0 0 24 24" class="social-icon">                                    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12">                                    </path>                                </svg>                            </a>                        </div>                    </div>                </div>            </div>        </div>    </div>    <av-footer></av-footer></av-scrollable>` }
+        blocks: { 'default':`<av-scrollable floating_scroll>    <div class="main">        <div class="title">            about aventus        </div>        <av-img class="design-logo" src="/img/logo.svg"></av-img>        <av-img class="design-logo2" src="/img/logo.svg"></av-img>    </div>    <div class="container">        <div class="tabs">            <div class="header">                <div class="tab active" tab-name="map" _id="about_0">Roadmap</div>                <div class="tab" tab-name="team" _id="about_1">Team</div>                <div class="tab" tab-name="sponsor" _id="about_2">Sponsor</div>            </div>            <div class="body">                <div class="tab active" name="map">                    <h2>Aventus Roadmap</h2>                    <p>The road map will depend of the community feedbacks, but the team has already agreed on the                        following points.</p>                    <div class="road-map">                        <av-road-map>                            <av-road-map-item name="Aventus@UI">End the Aventus@UI package to provide a simple solution                                to create user interface.</av-road-map-item>                            <av-road-map-item name="SCSS">Improve SCSS autocompletion and improve usability by creating                                scss tree based on the DOM.</av-road-map-item>                            <av-road-map-item name="i18n">Add a method to translate your application based on the i18n                                logic.</av-road-map-item>                            <av-road-map-item name="AventusSharp">End the AventusSharp library to write fullstack                                application with Aventus.</av-road-map-item>                            <av-road-map-item name="Data">Auto manage data link inside the RAM to get a perfect data                                sync.</av-road-map-item>                        </av-road-map>                    </div>                </div>                <div class="tab" name="team">                    <h2>Team</h2>                    <p class="help-us">Aventus is a product develop by Cobwebsite company. We are looking for support to                        ensure that this project lasts. If you would like to help us directly with the project, please                        send an email to <a href="mailto:info@cobwebsite.ch">info@cobwebsite.ch</a>. You can also give                        us financial support via github donations.</p>                    <div class="cards">                        <div class="card">                            <div class="img" style="background-image:url(https://avatars.githubusercontent.com/u/19285564?v=4)">                            </div>                            <div class="name">Maxime Bétrisey</div>                            <div class="position">Creator</div>                            <a class="sponsor" href="https://github.com/sponsors/max529" target="_blank">                                <svg data-v-a71028e4="" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" viewBox="0 0 24 24" class="sponsor-icon">                                    <path d="M12,22.2c-0.3,0-0.5-0.1-0.7-0.3l-8.8-8.8c-2.5-2.5-2.5-6.7,0-9.2c2.5-2.5,6.7-2.5,9.2,0L12,4.3l0.4-0.4c0,0,0,0,0,0C13.6,2.7,15.2,2,16.9,2c0,0,0,0,0,0c1.7,0,3.4,0.7,4.6,1.9l0,0c1.2,1.2,1.9,2.9,1.9,4.6c0,1.7-0.7,3.4-1.9,4.6l-8.8,8.8C12.5,22.1,12.3,22.2,12,22.2zM7,4C5.9,4,4.7,4.4,3.9,5.3c-1.8,1.8-1.8,4.6,0,6.4l8.1,8.1l8.1-8.1c0.9-0.9,1.3-2,1.3-3.2c0-1.2-0.5-2.3-1.3-3.2l0,0C19.3,4.5,18.2,4,17,4c0,0,0,0,0,0c-1.2,0-2.3,0.5-3.2,1.3c0,0,0,0,0,0l-1.1,1.1c-0.4,0.4-1,0.4-1.4,0l-1.1-1.1C9.4,4.4,8.2,4,7,4z">                                    </path>                                </svg>                                <span>Sponsor</span>                            </a>                            <div class="location">Switzerland</div>                            <div class="language">French - English</div>                            <a class="github" href="https://github.com/max529" target="_blank">                                <svg data-v-a71028e4="" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" viewBox="0 0 24 24" class="social-icon">                                    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12">                                    </path>                                </svg>                            </a>                        </div>                    </div>                </div>                <div class="tab" name="sponsor">                    <h2>Sponsor</h2>                    <h3>Become a Sponsor of Aventus</h3>                    <p>Join us in our mission to advance web development by becoming a sponsor of Aventus. Your support plays a vital role in our ability to enhance Aventus, expand its capabilities, and empower developers like you to create exceptional web experiences. Together, we can invest more time and resources into making Aventus even more powerful and providing new opportunities for programming professionals.</p>                    <h3 style="display:none">Our Generous Sponsors</h3>                    <p style="display:none">We would like to express our deep gratitude to the individuals and companies who support Aventus. Their trust and ongoing support inspire us to go further and push the boundaries of web development. Here is a list of the sponsors who put their trust in us and accompany us on our journey towards excellence:</p>                    <av-sponsor-logo style="display:none"></av-sponsor-logo>                    <p style="display:none">We extend heartfelt thanks to all our sponsors for their invaluable support. It is through their contributions that we are able to continue our work, develop Aventus, and provide developers with an exceptional platform to build cutting-edge web applications.</p>                </div>            </div>        </div>    </div>    <av-footer></av-footer></av-scrollable>` }
     });
 }
     __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
@@ -6392,6 +6575,10 @@ class About extends Page {
     },
     {
       "id": "about_1",
+      "onPress": (e, pressInstance, c) => { c.component.changeTab(e, pressInstance); }
+    },
+    {
+      "id": "about_2",
       "onPress": (e, pressInstance, c) => { c.component.changeTab(e, pressInstance); }
     }
   ]
@@ -9208,6 +9395,9 @@ class App extends Aventus.Navigation.Router {
         this.addRoute("^/docs/.*$", DocPage);
         this.addRoute("^/tutorial/.*$", TutorialPage);
     }
+    error404(state) {
+        return Page404;
+    }
 }
 window.customElements.define('av-app', App);Aventus.WebComponentInstance.registerDefinition(App);
 
@@ -9296,6 +9486,8 @@ TutorialForm.Namespace='AventusWebsite';
 AventusWebsite.TutorialForm=TutorialForm;
 TutorialData.Namespace='AventusWebsite';
 AventusWebsite.TutorialData=TutorialData;
+Page404.Namespace='AventusWebsite';
+AventusWebsite.Page404=Page404;
 Home.Namespace='AventusWebsite';
 AventusWebsite.Home=Home;
 DocGenericPage.Namespace='AventusWebsite';
