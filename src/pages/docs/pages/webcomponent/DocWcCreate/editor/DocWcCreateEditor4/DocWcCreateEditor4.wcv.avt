@@ -1,0 +1,105 @@
+<av-code-editor name="Component Example" @element="editorEl">
+    <av-code language="json" filename="ComponentExample/aventus.conf.avt">
+        <pre>
+            {
+                "module": "ComponentExample",
+                "componentPrefix": "av",
+                "build": [
+                    {
+                        "name": "Main",
+                        "src": [
+                            "./src/*"
+                        ],
+                        "compile": [
+                            {
+                                "output": "./dist/demo.js"
+                            }
+                        ]
+                    }
+                ],
+                "static": [{
+                    "name": "Static",
+                    "input": "./static/*",
+                    "output": "./dist/"
+                }]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="ComponentExample/src/Clock/Clock.wcl.avt">
+        <pre>
+            export class Clock extends Aventus.Component implements Aventus.DefaultComponent {
+                &nbsp;
+                //#region static
+                &nbsp;
+                //#endregion
+                &nbsp;
+                &nbsp;
+                //#region props
+                @Property()
+                public color: string = "red";
+                //#endregion
+                &nbsp;
+                &nbsp;
+                //#region variables
+                @Watch()
+                public timeTxt!: string;
+                //#endregion
+                &nbsp;
+                &nbsp;
+                //#region constructor
+                &nbsp;
+                //#endregion
+                &nbsp;
+                &nbsp;
+                //#region methods
+                private calcTime() {
+                    const d = new Date();
+                    this.timeTxt = ((d.getHours() < 10) ? "0" : "") + d.getHours()
+                        + ":" + ((d.getMinutes() < 10) ? "0" : "") + d.getMinutes()
+                        + ":" + ((d.getSeconds() < 10) ? "0" : "") + d.getSeconds();
+                }
+                &nbsp;
+                protected override postCreation(): void {
+                    // When the component is rendered
+                    this.calcTime();
+                    setInterval(() => {
+                        this.calcTime();
+                    }, 1000);
+                }
+                //#endregion
+                &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="html" filename="ComponentExample/src/Clock/Clock.wcv.avt">
+        <pre>
+            &lt;p style="color:{{ this.color }}"&gt;Time : {{ this.timeTxt }}&lt;/p&gt;
+        </pre>
+    </av-code>
+    <av-code language="css" filename="ComponentExample/src/Clock/Clock.wcs.avt">
+        <pre>
+            :host {
+                
+            }
+        </pre>
+    </av-code>
+    <av-code language="html" filename="ComponentExample/static/index.html">
+        <pre>
+            &lt;!DOCTYPE html&gt;
+            &lt;html lang="en"&gt;
+            &lt;head&gt;
+                &lt;meta charset="UTF-8"&gt;
+                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+                &lt;title&gt;Aventus Demo&lt;/title&gt;
+                &lt;script src="/demo.js"&gt;&lt;/script&gt;
+            &lt;/head&gt;
+            &lt;body&gt;
+                &lt;av-clock&gt;&lt;/av-clock&gt;
+            &lt;/body&gt;
+            &lt;/html&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+
+    <av-doc-wc-create-editor-4-clock slot="result"></av-doc-wc-create-editor-4-clock>
+</av-code-editor>

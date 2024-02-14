@@ -15,9 +15,6 @@ import { DocRamMixin } from "../pages/ram/DocRamMixin/DocRamMixin.wcl.avt";
 import { DocStateCreate } from "../pages/state/DocStateCreate/DocStateCreate.wcl.avt";
 import { DocStateChange } from "../pages/state/DocStateChange/DocStateChange.wcl.avt";
 import { DocStateListen } from "../pages/state/DocStateListen/DocStateListen.wcl.avt";
-import { DocSocketCreate } from "../pages/socket/DocSocketCreate/DocSocketCreate.wcl.avt";
-import { DocSocketSend } from "../pages/socket/DocSocketSend/DocSocketSend.wcl.avt";
-import { DocSocketReceive } from "../pages/socket/DocSocketReceive/DocSocketReceive.wcl.avt";
 import { DocWcCreate } from "../pages/webcomponent/DocWcCreate/DocWcCreate.wcl.avt";
 import { DocWcInheritance } from "../pages/webcomponent/DocWcInheritance/DocWcInheritance.wcl.avt";
 import { DocWcAttribute } from "../pages/webcomponent/DocWcAttribute/DocWcAttribute.wcl.avt";
@@ -78,12 +75,6 @@ import { Page404 } from "../../Page404/Page404.wcl.avt";
 	        this.addRoute("/docs/state/create", DocStateCreate);
 	        this.addRoute("/docs/state/change", DocStateChange);
 	        this.addRoute("/docs/state/listen_changes", DocStateListen);
-	        //#endregion
-
-	        //#region doc socket
-	        this.addRoute("/docs/socket/create", DocSocketCreate);
-	        this.addRoute("/docs/socket/send", DocSocketSend);
-	        this.addRoute("/docs/socket/receive", DocSocketReceive);
 	        //#endregion
 
 	        //#region doc webcomponent

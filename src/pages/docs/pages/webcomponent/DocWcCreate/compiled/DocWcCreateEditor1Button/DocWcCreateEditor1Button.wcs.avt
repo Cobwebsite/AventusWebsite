@@ -1,0 +1,8 @@
+:host {
+	background-color: #e5540e;
+	border-radius: 5px;
+	color: white;
+	cursor: pointer;
+	padding: 5px 15px;
+	user-select: none;
+}

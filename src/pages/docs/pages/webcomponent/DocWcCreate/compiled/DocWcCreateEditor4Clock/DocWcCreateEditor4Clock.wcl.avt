@@ -1,0 +1,40 @@
+export class DocWcCreateEditor4Clock extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	//#region static
+
+    //#endregion
+
+
+    //#region props
+    @Property()
+    public color: string = "red";
+    @Watch()
+    public timeTxt!: string;
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    private calcTime() {
+        const d = new Date();
+        this.timeTxt = ((d.getHours() < 10) ? "0" : "") + d.getHours() + ":" + ((d.getMinutes() < 10) ? "0" : "") + d.getMinutes() + ":" + ((d.getSeconds() < 10) ? "0" : "") + d.getSeconds();
+    }
+    protected override postCreation(): void {
+        // When the component is rendered
+        this.calcTime();
+        setInterval(() => {
+            this.calcTime();
+        }, 1000);
+    }
+    //#endregion
+	
+}

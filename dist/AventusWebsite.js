@@ -5725,6 +5725,147 @@ Result.Tag=`av-result`;
 _.Result=Result;
 if(!window.customElements.get('av-result')){window.customElements.define('av-result', Result);Aventus.WebComponentInstance.registerDefinition(Result);}
 
+const DocWcCreateEditor4Clock = class DocWcCreateEditor4Clock extends Aventus.WebComponent {
+    static get observedAttributes() {return ["color"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'color'() { return this.getStringProp('color') }
+    set 'color'(val) { this.setStringAttr('color', val) }    get 'timeTxt'() {
+						return this.__watch["timeTxt"];
+					}
+					set 'timeTxt'(val) {
+						this.__watch["timeTxt"] = val;
+					}    __registerWatchesActions() {
+    this.__addWatchesActions("timeTxt");    super.__registerWatchesActions();
+}
+    static __style = ``;
+    __getStatic() {
+        return DocWcCreateEditor4Clock;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcCreateEditor4Clock.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<p _id="docwccreateeditor4clock_0"></p>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "content": {
+    "docwccreateeditor4clock_0°style": {
+      "fct": (c) => `color:${c.print(c.comp.__6b9c757412ba964f03ffab65e03430e2method0())}`,
+      "once": true
+    },
+    "docwccreateeditor4clock_0°@HTML": {
+      "fct": (c) => `Time : ${c.print(c.comp.__6b9c757412ba964f03ffab65e03430e2method1())}`,
+      "once": true
+    }
+  }
+}); }
+    getClassName() {
+        return "DocWcCreateEditor4Clock";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('color')){ this['color'] = "red"; } }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["timeTxt"] = undefined; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('color'); }
+    calcTime() {
+        const d = new Date();
+        this.timeTxt = ((d.getHours() < 10) ? "0" : "") + d.getHours() + ":" + ((d.getMinutes() < 10) ? "0" : "") + d.getMinutes() + ":" + ((d.getSeconds() < 10) ? "0" : "") + d.getSeconds();
+    }
+    postCreation() {
+        // When the component is rendered
+        this.calcTime();
+        setInterval(() => {
+            this.calcTime();
+        }, 1000);
+    }
+    __6b9c757412ba964f03ffab65e03430e2method0() {
+        return this.color;
+    }
+    __6b9c757412ba964f03ffab65e03430e2method1() {
+        return this.timeTxt;
+    }
+}
+DocWcCreateEditor4Clock.Namespace=`${moduleName}`;
+DocWcCreateEditor4Clock.Tag=`av-doc-wc-create-editor-4-clock`;
+_.DocWcCreateEditor4Clock=DocWcCreateEditor4Clock;
+if(!window.customElements.get('av-doc-wc-create-editor-4-clock')){window.customElements.define('av-doc-wc-create-editor-4-clock', DocWcCreateEditor4Clock);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor4Clock);}
+
+const DocWcCreateEditor2Error = class DocWcCreateEditor2Error extends Aventus.WebComponent {
+    static __style = ``;
+    __getStatic() {
+        return DocWcCreateEditor2Error;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcCreateEditor2Error.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot> </slot>`,'error':`<slot style="color:red" name="error"></slot>`,'success':`<slot style="color:green" name="success"></slot>` }, 
+        blocks: { 'default':`<slot> </slot><slot style="color:red" name="error"></slot><slot style="color:green" name="success"></slot>` }
+    });
+}
+    getClassName() {
+        return "DocWcCreateEditor2Error";
+    }
+}
+DocWcCreateEditor2Error.Namespace=`${moduleName}`;
+DocWcCreateEditor2Error.Tag=`av-doc-wc-create-editor-2-error`;
+_.DocWcCreateEditor2Error=DocWcCreateEditor2Error;
+if(!window.customElements.get('av-doc-wc-create-editor-2-error')){window.customElements.define('av-doc-wc-create-editor-2-error', DocWcCreateEditor2Error);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor2Error);}
+
+const DocWcCreateEditor3ErrorYellow = class DocWcCreateEditor3ErrorYellow extends DocWcCreateEditor2Error {
+    static __style = ``;
+    __getStatic() {
+        return DocWcCreateEditor3ErrorYellow;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcCreateEditor3ErrorYellow.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'error':`<slot name="error"></slot>` }, 
+        blocks: { 'error':`	<span style="color:yellow">        <slot name="error"></slot>	</span>` }
+    });
+}
+    getClassName() {
+        return "DocWcCreateEditor3ErrorYellow";
+    }
+}
+DocWcCreateEditor3ErrorYellow.Namespace=`${moduleName}`;
+DocWcCreateEditor3ErrorYellow.Tag=`av-doc-wc-create-editor-3-error-yellow`;
+_.DocWcCreateEditor3ErrorYellow=DocWcCreateEditor3ErrorYellow;
+if(!window.customElements.get('av-doc-wc-create-editor-3-error-yellow')){window.customElements.define('av-doc-wc-create-editor-3-error-yellow', DocWcCreateEditor3ErrorYellow);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor3ErrorYellow);}
+
+const DocWcCreateEditor1Button = class DocWcCreateEditor1Button extends Aventus.WebComponent {
+    static __style = `:host{background-color:#e5540e;border-radius:5px;color:#fff;cursor:pointer;padding:5px 15px;user-select:none}`;
+    __getStatic() {
+        return DocWcCreateEditor1Button;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcCreateEditor1Button.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocWcCreateEditor1Button";
+    }
+}
+DocWcCreateEditor1Button.Namespace=`${moduleName}`;
+DocWcCreateEditor1Button.Tag=`av-doc-wc-create-editor-1-button`;
+_.DocWcCreateEditor1Button=DocWcCreateEditor1Button;
+if(!window.customElements.get('av-doc-wc-create-editor-1-button')){window.customElements.define('av-doc-wc-create-editor-1-button', DocWcCreateEditor1Button);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor1Button);}
+
 const DocuImg = class DocuImg extends Aventus.Img {
     static __style = ``;
     __getStatic() {
@@ -9833,102 +9974,6 @@ DocWcInheritance.Tag=`av-doc-wc-inheritance`;
 _.DocWcInheritance=DocWcInheritance;
 if(!window.customElements.get('av-doc-wc-inheritance')){window.customElements.define('av-doc-wc-inheritance', DocWcInheritance);Aventus.WebComponentInstance.registerDefinition(DocWcInheritance);}
 
-const DocWcCreate = class DocWcCreate extends DocGenericPage {
-    static __style = `:host av-router-link.font-sm{font-size:13px}`;
-    __getStatic() {
-        return DocWcCreate;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocWcCreate.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Webcomponent - Create</h1><p>In the section you are going to learn what is a webcomponent and how you can create it inside Aventus.</p><h2>Definition</h2><p>Web Components is a suite of different technologies allowing you to create reusable custom elements — with their    functionality encapsulated away from the rest of your code — and utilize them in your web apps. (<i><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components" target="_blank">https://developer.mozilla.org/</a></i>).</p><p>With the native technologie, you are able to wrap your style, your logic and your html template inside a single html    tag. You can build your full webapp by building one component after another without worring about side effects (the    developer's worst nightmare).</p><h2>Inside Aventus</h2><p>Inside Aventus you can create web component by right clicking one the explorer part inside vscode, choose <i>Aventus        : Create...</i> and choose <i>Component</i>. Inside the input you can enter the name for the typescript class.    By convention, this name should be in Snake case. You can write your webcomponent inside a single file    <span class="cn">*.wc.avt</span> that    will contains following section :</p><ul>    <li><span class="cn">&lt;template&gt;</span> : for Html part</li>    <li><span class="cn">&lt;style&gt;</span> : for Scss part</li>    <li><span class="cn">&lt;script&gt;</span> : for Js part</li></ul><p>or inside 3 different file. (This option is the adviced one because it allows developer to keep a well knowed    architecture.)</p><ul>    <li><span class="cn">*.wcv.avt</span> : Web Componenent View for Html part</li>    <li><span class="cn">*.wcs.avt</span> : Web Componenent View for Scss part</li>    <li><span class="cn">*.wcl.avt</span> : Web Componenent View for Ts part</li></ul><av-dynamic-row>    <av-dynamic-col size_xs="12" size_sm="6">        <av-code language="html" filename="Example.wcv.avt">            &lt;slot&gt;&lt;/slot&gt;        </av-code></av-code>    </av-dynamic-col>    <av-dynamic-col size_xs="12" size_sm="6">        <av-code language="css" filename="Example.wcs.avt">            :host { /* insert your style here */}        </av-code></av-code>    </av-dynamic-col>    <av-dynamic-col size="12">        <av-code language="typescript" filename="Example.wcl.avt">            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {}        </av-code></av-code>    </av-dynamic-col></av-dynamic-row><h2>The Html</h2><p>You can use any basic tag or any tag you imported or created. The auto-completion will help you to find knowed tags.    There are 2 special tags that you must know :</p><h3>&lt;slot&gt;</h3><p>The slot tag allows developer to define the place where the code inside the tag will be added. This slot can have an    attribute <span class="cn">name</span> to have multiple slots.</p><av-code language="html" filename="Parent.wcv.avt">    &lt;slot&gt; &lt;!-- The default content appends here --&gt;&lt;/slot&gt;    &lt;slot style="color:red" name="error"&gt;&lt;!-- The errors appends here --&gt;&lt;/slot&gt;    &lt;slot style="color:green" name="success"&gt;&lt;!-- The success appends here --&gt;&lt;/slot&gt;</av-code></av-code><av-code language="html" filename="UsingParent.wcv.avt">    &lt;av-parent&gt;    \t&lt;p&gt;I'm the default content&lt;/p&gt;    \t&lt;p slot="default"&gt;I'm the default content too&lt;/p&gt;    \t&lt;p slot="error"&gt;I'm an error in red&lt;/p&gt;    \t&lt;p slot="succes"&gt;I'm a success in green&lt;/p&gt;    &lt;/av-parent&gt;</av-code></av-code><h3>&lt;block&gt;</h3><p>The block tag must be used in case of inheritance. This will replace the slot by the block with the same name.</p><av-code language="html" filename="Parent.wcv.avt">    &lt;slot&gt; &lt;!-- The default content appends here --&gt;&lt;/slot&gt;    &lt;slot style="color:red" name="error"&gt;&lt;!-- The errors appends here --&gt;&lt;/slot&gt;    &lt;slot style="color:green" name="success"&gt;&lt;!-- The success appends here --&gt;&lt;/slot&gt;</av-code></av-code><av-code language="html" filename="Child.wcv.avt">    &lt;block name="error"&gt;    \t&lt;span style="color:yellow"&gt;    \t\t&lt;!-- The errors will be displayed in yellow now --&gt;    \t&lt;/span&gt;    &lt;/slot&gt;</av-code></av-code><av-code language="html" filename="UsingChild.wcv.avt">    &lt;av-child&gt;    \t&lt;p&gt;I'm the default content&lt;/p&gt;    \t&lt;p slot="default"&gt;I'm the default content too&lt;/p&gt;    \t&lt;p slot="error"&gt;I'm an error in yellow&lt;/p&gt;    \t&lt;p slot="succes"&gt;I'm a success in green&lt;/p&gt;    &lt;/av-child&gt;</av-code></av-code><p>There are sepcial attributes you can use to add feature to basic html: </p><ul>    <li>@element : To select element(s). <av-router-link state="/docs/wc/element" class="font-sm">More info</av-router-link></li>    <li>@for : To create a loop. <av-router-link state="/docs/wc/loop" class="font-sm">More info</av-router-link></li>    <li>@bind(_<i><span class="cn">$event</span></i>)?(:<i><span class="cn">$field</span></i>)? : To bind data. <av-router-link class="font-sm" state="/docs/wc/binding">More            info</av-router-link></li>    <li>:<i><span class="cn">$field</span></i> : To inject data. <av-router-link state="/docs/wc/injection" class="font-sm">More            info</av-router-link>    </li>    <li>@press : To add press event from PressManager. <av-router-link state="/docs/wc/event" class="font-sm">More            info</av-router-link>    </li>    <li>@<i><span class="cn">$eventName</span></i> : To add event listener. <av-router-link state="/docs/wc/event" class="font-sm">More            info</av-router-link>    </li></ul><p>You can use interpolation inside tag content and normal attribute to replace the content by <av-router-link state="/docs/wc/event">the property value</av-router-link>&nbsp;or&nbsp;<av-router-link state="/docs/wc/event">the watch value</av-router-link>. Right now only watch and property are available but    soon you will be able to write javascript code.</p><av-code language="html">    &lt;div&gt;my name is {{user.name}}&lt;/div&gt;    &lt;img src="{{user.picture}}"/&gt;</av-code></av-code><h2>The style</h2><p>This is just a simple SCSS file. The only think to know is that the style must be wrapped inside a :host{}.</p><av-code language="css" filename="TextRed.wcs.avt">    :host {    \tcolor:red; // This ll change the behavior of the current webcomponent    }</av-code></av-code><p>You can find more informations about the style <av-router-link state="/docs/wc/style">here.</av-router-link></p><h2>The logic</h2><p>When you create a new file *.wcl.avt you can notice that the file has region. This is set to allow developer to order    the code. Each region has a goal. You can remove it but we advice you to keep it.</p><ul>    <li>static : Where you can write the static properties or methods for your webcomponent.</li>    <li>props : Where you can define the <av-router-link state="/docs/wc/attribute">attributes</av-router-link>, the        <av-router-link state="/docs/wc/property">properties</av-router-link>&nbsp;and the <av-router-link state="/docs/wc/watch">watch variables.</av-router-link>    </li>    <li>variables : Where you can define the variables and the pointers on <av-router-link state="/docs/wc/element">view            element</av-router-link></li>    <li>constructor : Where you can override the constructor for your webcomponent.</li>    <li>methods : Where you can write the methods for your webcomponent.</li></ul><av-code language="typescript">    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region static    &nbsp;    \t//#endregion    &nbsp;    \t//#region props    &nbsp;    \t//#endregion    &nbsp;    \t//#region variables    &nbsp;    \t//#endregion    &nbsp;    \t//#region constructor    &nbsp;    \t//#endregion    &nbsp;    \t//#region methods    &nbsp;    \t//#endregion    &nbsp;    }</av-code></av-code><p>Over the classname you can add predefine Decorators :</p><ul>    <li><span class="cn">@TagName(name:string)</span> : to define the tag for the component</li>    <li><span class="cn">@Debugger({ writeCompiled?: boolean, enableWatchHistory?: boolean})</span> : to debug component compilation and        state.    </li>    <li><span class="cn">@Dependances({ type: Type, strong?:boolean}[])</span> : to add dependance not written inside component. The        strong boolean define if the dependance must be loaded before the class.</li>    <li><span class="cn">@OverrideView({ removeViewVariables?: string[] })</span> : to fully override parent view. You can remove parent        ViewElement needed, but you have to be aware of what you are doing.</li></ul><av-code language="typescript">    @TagName("my-tag-name")    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    }</av-code></av-code><h2>Lifecycle</h2><p>The webcomponent has the following lifecycle</p><av-img src="/img/doc/wc/create/lifecylce.png"></av-img><p>By default <span class="cn">postCreation</span> and <span class="cn">postDestruction</span> are empty.</p>` }
-    });
-}
-    getClassName() {
-        return "DocWcCreate";
-    }
-}
-DocWcCreate.Namespace=`${moduleName}`;
-DocWcCreate.Tag=`av-doc-wc-create`;
-_.DocWcCreate=DocWcCreate;
-if(!window.customElements.get('av-doc-wc-create')){window.customElements.define('av-doc-wc-create', DocWcCreate);Aventus.WebComponentInstance.registerDefinition(DocWcCreate);}
-
-const DocSocketReceive = class DocSocketReceive extends DocGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return DocSocketReceive;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocSocketReceive.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Socket - Receive message</h1><p>To receive message from the backend you must declare the route you want to listen to.</p><av-code language="typescript" filename="Test.lib.avt">    export function test() {    \tAventus.Instance.get(LoginSocket).addRoute({    \t\tchannel: "/login/response",    \t\tcallback: (data: { success: boolean; }) =&gt; {    \t\t\tconsole.log("login result "+ data.success);    \t\t}    \t})    }</av-code></av-code><p>The <span class="cn">channel</span> is the unique route name where the server will send the message. The callback is the function    triggered when a message is received on the channel. Because it comes from outisde, it's very important to type the    data received inside the callback.</p><p>As an example, the code below is the C# sender to emit message from the server to the client.</p><av-code language="csharp" filename="LoginResponse.cs">    public class LoginResponse : WebSocketSender&lt;LoginResponse, LoginResponse.Body&gt;    {    \tpublic override string defineName()    \t{    \t\treturn "/login/response";    \t}    \tpublic LoginResponse() { }    \tpublic LoginResponse(bool success)    \t{    \t\tthis.body.success = success;    \t}    \tpublic class Body    \t{    \t\tpublic bool success { get; set; }    \t}    }</av-code></av-code>` }
-    });
-}
-    getClassName() {
-        return "DocSocketReceive";
-    }
-}
-DocSocketReceive.Namespace=`${moduleName}`;
-DocSocketReceive.Tag=`av-doc-socket-receive`;
-_.DocSocketReceive=DocSocketReceive;
-if(!window.customElements.get('av-doc-socket-receive')){window.customElements.define('av-doc-socket-receive', DocSocketReceive);Aventus.WebComponentInstance.registerDefinition(DocSocketReceive);}
-
-const DocSocketSend = class DocSocketSend extends DocGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return DocSocketSend;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocSocketSend.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Socket - Send message</h1><h2>Simple send</h2><p>To send message from the client to the server you must call the function <span class="cn">sendMessage</span>.</p><av-code language="typescript" filename="Test.lib.avt">    export function login(username: string, password: string) {    \tAventus.Instance.get(LoginSocket).sendMessage("/login", { username, password });    }</av-code></av-code><p>This code will send a message to the unique route named <span class="cn">/login</span> and provide username and password as    <span class="cn">body</span>. The code below is the receiver written in C# to handle the message.</p><av-code language="csharp">    public class Login : WebSocketReceiver&lt;Login, Login.Body&gt;    {    \tpublic override string defineTrigger()    \t{    \t\treturn "/login";    \t}    &nbsp;    \tpublic override void defineWebSockets()    \t{    \t\tsetWebSocket&lt;DefaultSocket&gt;();    \t}    &nbsp;    \tpublic override async Task onMessage(WebSocketData socketData, Body message)    \t{    \t\tConsole.WriteLine("Login for " + message.username + " with password " + message.password);    \t}    &nbsp;    \tpublic class Body    \t{    \t\tpublic string username { get; set; }    \t\tpublic string password { get; set; }    \t}    }</av-code></av-code><h2>Send with responses</h2><p>Because most of the time, the communication is used to send data and waiting a response, for example if you want to    create a new user, you want to know if the user is created or if an error occured. To send a message and wait    answer, you can use the method <span class="cn">sendMessageAndWait</span>. The behaviour of this method is similar to the sendMessage    but you must add potentials route result.</p><av-code language="typescript" filename="Test.lib.avt">    export function login(username: string, password: string) {    \tAventus.Instance.get(LoginSocket).sendMessageAndWait("/login",    \t\t{    \t\t\tusername,    \t\t\tpassword    \t\t},    \t\t{    \t\t\t"/login/response": (data: { success: boolean; }) =&gt; {    \t\t\t\tconsole.log("login result "+ data.success);    \t\t\t},    \t\t\t"/login/error": (data: { errors: string[] }) =&gt; {    &nbsp;    \t\t\t}    \t\t}    \t);    }</av-code></av-code><p>To match query and response, Aventus add an <span class="cn">uid</span> inside the message and if the message from the server contains    the    same uid as the query, it means that the message is the response for the query.</p><av-code language="json">    {    \t"channel": "/login",    \t"data": {    \t\t"username":"root",    \t\t"password":"root"    \t},    \tuid: "_8f34mbk7g"    }</av-code></av-code><p>The code below is an example of the login receiver written in C#</p><av-code language="csharp">    public class Login : WebSocketReceiverAnswer&lt;Login, Login.Body&gt;    {    &nbsp;    \tpublic override string defineTrigger()    \t{    \t\treturn "/login";    \t}    &nbsp;    \tpublic override void defineWebSockets()    \t{    \t\tsetWebSocket&lt;DefaultSocket&gt;();    \t}    \tpublic override void defineAnswers()    \t{    \t\tsetAnswer&lt;LoginResponse&gt;();    \t}    &nbsp;    \tpublic override async Task&lt;IWebSocketSender&gt; onMessage(WebSocketData socketData, Body message,    WebSocketAnswerOptions options)    \t{    \t\tif (message.username == "root" && message.password == "root")    \t\t{    \t\t\treturn new LoginResponse(success: true);    \t\t}    \t\treturn new LoginResponse(success: false);    \t}    &nbsp;    \tpublic class Body    \t{    \t\tpublic string username { get; set; }    \t\tpublic string password { get; set; }    \t}    }</av-code></av-code><h2>Good pratice</h2><p>To avoid writting the communication function everywhere in your code, you should add function inside the socket class    with a specific return type.</p><av-code language="typescript" filename="Login.socket.avt">    export class LoginSocket extends Aventus.Socket implements Aventus.ISocket {    &nbsp;    \t...    &nbsp;    \tpublic login(username:string, password:string): Promise&lt;boolean&gt; {    \t\treturn new Promise&lt;boolean&gt;(() =&gt; {    \t\t\tthis.sendMessageAndWait("/login",    \t\t\t\t{    \t\t\t\t\tusername,    \t\t\t\t\tpassword    \t\t\t\t},    \t\t\t\t{    \t\t\t\t\t"/login/response": (data: { success: boolean; }) =&gt; {    \t\t\t\t\t\tresolve(data.success);    \t\t\t\t\t},    \t\t\t\t\t"/login/error": (data: { errors: string[] }) =&gt; {    \t\t\t\t\t\tresolve(false);    \t\t\t\t\t}    \t\t\t\t}    \t\t\t);    \t\t})    \t}    }</av-code></av-code><av-code language="typescript" filename="Test.lib.avt">    export async function test(){    \tconst success = await LoginSocket.getInstance().login("root", "root")    }</av-code></av-code>` }
-    });
-}
-    getClassName() {
-        return "DocSocketSend";
-    }
-}
-DocSocketSend.Namespace=`${moduleName}`;
-DocSocketSend.Tag=`av-doc-socket-send`;
-_.DocSocketSend=DocSocketSend;
-if(!window.customElements.get('av-doc-socket-send')){window.customElements.define('av-doc-socket-send', DocSocketSend);Aventus.WebComponentInstance.registerDefinition(DocSocketSend);}
-
-const DocSocketCreate = class DocSocketCreate extends DocGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return DocSocketCreate;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocSocketCreate.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Socket - Create</h1><p>In the section you are going to learn what is a socket and how you can create it inside Aventus.</p><h2>Definition</h2><p>A socket is a way define by Aventus to communicate with your backend through the <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API" target="_blank">websocket protocol</a>.    The goal of this class is to create a bidirectional communication to keep your interface up to date.</p><h2>Inside Aventus</h2><p>Inside Aventus you can create a new socket class by right clicking on the explorer part inside vscode, choose    <i>Aventus        : Create...</i> and choose <i>Socket</i>. Inside the input you can enter the name for the socket. This will    create    a basic socket class:</p><av-code language="typescript" filename="Login.socket.avt">    export class LoginSocket extends Aventus.Socket implements Aventus.ISocket {    &nbsp;    \t/**    \t* Get the instance of the websocket    \t*/    \tpublic static getInstance() {    \t\treturn Aventus.Instance.get(LoginSocket);    \t}    &nbsp;    \t/**    \t* @inheritdoc    \t*/    \tprotected override configure(options: Aventus.SocketOptions): Aventus.SocketOptions {    \t\treturn options;    \t}    &nbsp;    }</av-code></av-code><p>Usually, a socket should be a singleton because you only want one connection to be opened with your backend. You can    configure socket options to do the job you want.</p><div class="table">    <av-dynamic-row class="header">        <av-dynamic-col size="4" center>Name</av-dynamic-col>        <av-dynamic-col size="8" center>Description</av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>host</av-dynamic-col>        <av-dynamic-col size="8" center>Define the host to open the websocket connection. By default it is the same as            your current url.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>port</av-dynamic-col>        <av-dynamic-col size="8" center>Define the port to open the websocket connection. By default it is the same as            your current url.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>useHttps</av-dynamic-col>        <av-dynamic-col size="8" center>Define if the protocol is wss or ws. By default it is the same as your current            url.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>routes</av-dynamic-col>        <av-dynamic-col size="8" center>Add default custom routes to listen messages from the server.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>socketName</av-dynamic-col>        <av-dynamic-col size="8" center>You can create different socket inside your backend differentiate by an url. The            base url is <b>/ws/</b>. If you set a socket name, the socket url will be <b>/ws/{socketName}</b>.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>log</av-dynamic-col>        <av-dynamic-col size="8" center>Enable or disable log. By default the value is false.        </av-dynamic-col>    </av-dynamic-row></div><p> Inside the class you can override 3 methods to manage your <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebSocket#events" target="_blank">socket life cycle</a>.</p><ul>    <li>onOpen: Fired when the websocket is opened.</li>    <li>onError: Fired when the websocket connection has been closed due to an error.</li>    <li>onClose: Fired when then websocket connection is closed</li></ul><av-code language="typescript" filename="Login.socket.avt">    export class LoginSocket extends Aventus.Socket implements Aventus.ISocket {    &nbsp;    \t...    &nbsp;    \tprotected override onOpen(): void {    \t\tconsole.log("Connection is now open");    \t}    &nbsp;    \tprotected override onClose(event: Event): void {    \t\tconsole.log("Connection is now close");    \t}    &nbsp;    \tprotected override onError(event: Event): void {    \t\tconsole.log("An error occured");    \t}    }</av-code></av-code><p>The websocket message format is specific to Aventus. A message look like the following :</p><av-code language="json">    {    \t"channel": "/login",    \t"data": {    \t\t"username":"root",    \t\t"password":"root"    \t}    }</av-code></av-code><p>Where channel is a unique name to identify a route between the client and the server and data is the content of the message.</p><p>The different implementation for backend language is under developement. If you want to help you can join us here.</p>` }
-    });
-}
-    getClassName() {
-        return "DocSocketCreate";
-    }
-}
-DocSocketCreate.Namespace=`${moduleName}`;
-DocSocketCreate.Tag=`av-doc-socket-create`;
-_.DocSocketCreate=DocSocketCreate;
-if(!window.customElements.get('av-doc-socket-create')){window.customElements.define('av-doc-socket-create', DocSocketCreate);Aventus.WebComponentInstance.registerDefinition(DocSocketCreate);}
-
 const DocConfigLib = class DocConfigLib extends DocGenericPage {
     static __style = `:host .table av-dynamic-row:not(.header) av-dynamic-col:nth-child(2){text-align:justify}:host .table av-dynamic-row:not(.header) av-router-link,:host .table av-dynamic-row:not(.header) b,:host .table av-dynamic-row:not(.header) i{display:contents}:host .table .constraint{display:block;font-size:14px;margin-top:5px}`;
     __getStatic() {
@@ -10061,7 +10106,7 @@ const CodeEditor = class CodeEditor extends Aventus.WebComponent {
     set 'show'(val) { this.setStringAttr('show', val) }    info = {};
     files = {};
     openedFile;
-    static __style = `:host{--_code-editor-menu-width: var(--code-editor-menu-width, 250px)}:host{--code-padding: 0;background-color:#1e1e1e;color:#fff;display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;margin-bottom:15px;max-height:600px;min-height:300px;width:100%;overflow:hidden;border-radius:5px}:host .header{align-items:center;border-bottom:1px solid #414141;display:flex;height:50px;justify-content:center;padding:10px;position:relative;width:100%;flex-shrink:0}:host .header mi-icon.download{right:10px;position:absolute;cursor:pointer;transition:background-color .5s var(--bezier-curve)}:host .header mi-icon.download:hover{background-color:rgba(255,255,255,.1)}:host .header span{display:block;padding:0 50px;text-align:center;width:100%}:host .content{display:flex;flex-grow:1;height:calc(100% - 50px);padding:0 10px}:host .content .menu{flex-shrink:0;height:100%;min-width:20px;min-width:20px;padding-bottom:10px;width:var(--_code-editor-menu-width)}:host .content .separator{cursor:col-resize;flex-grow:0;flex-shrink:0;inset:0;position:relative;width:5px}:host .content .separator::after{background-color:#414141;bottom:0;content:"";left:2px;position:absolute;top:0;width:1px}:host .content .display{--scrollbar-content-padding: 5px 15px;height:100%;padding-bottom:10px;width:100%}:host .result{display:none;border:1px solid #1e1e1e;border-top:1px solid #414141;padding:15px}:host .result .title{margin-bottom:15px}:host .hidden{display:none}:host([has_result]) .result{display:block}`;
+    static __style = `:host{--_code-editor-menu-width: var(--code-editor-menu-width, 250px)}:host{--code-padding: 0;background-color:#1e1e1e;border-radius:5px;color:#fff;display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;margin-bottom:15px;overflow:hidden;width:100%}:host .header{align-items:center;border-bottom:1px solid #414141;display:flex;flex-shrink:0;height:50px;justify-content:center;padding:10px;position:relative;width:100%}:host .header mi-icon.download{cursor:pointer;position:absolute;right:10px;transition:background-color .5s var(--bezier-curve)}:host .header mi-icon.download:hover{background-color:rgba(255,255,255,.1)}:host .header span{display:block;padding:0 50px;text-align:center;width:100%}:host .content{display:flex;flex-grow:1;height:calc(100% - 50px);max-height:550px;min-height:300px;padding:0 10px}:host .content .menu{flex-shrink:0;height:100%;min-width:20px;min-width:20px;padding-bottom:10px;width:var(--_code-editor-menu-width)}:host .content .separator{cursor:col-resize;flex-grow:0;flex-shrink:0;inset:0;position:relative;width:5px}:host .content .separator::after{background-color:#414141;bottom:0;content:"";left:2px;position:absolute;top:0;width:1px}:host .content .display{--scrollbar-content-padding: 5px 15px;height:100%;padding-bottom:10px;width:100%}:host .result{border:1px solid #1e1e1e;border-top:1px solid #414141;display:none;padding:15px}:host .result .title{margin-bottom:15px}:host .hidden{display:none}:host([has_result]) .result{display:block}`;
     __getStatic() {
         return CodeEditor;
     }
@@ -11543,6 +11588,194 @@ DocStateListen.Tag=`av-doc-state-listen`;
 _.DocStateListen=DocStateListen;
 if(!window.customElements.get('av-doc-state-listen')){window.customElements.define('av-doc-state-listen', DocStateListen);Aventus.WebComponentInstance.registerDefinition(DocStateListen);}
 
+const DocWcCreateEditor1 = class DocWcCreateEditor1 extends Aventus.WebComponent {
+    static __style = `:host{width:100%}`;
+    __getStatic() {
+        return DocWcCreateEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcCreateEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Component Example" _id="docwccreateeditor1_0">    <av-code language="json" filename="ComponentExample/aventus.conf.avt">        <pre>            {                "module": "ComponentExample",                "componentPrefix": "av",                "build": [                    {                        "name": "Main",                        "src": [                            "./src/*"                        ],                        "compile": [                            {                                "output": "./dist/demo.js"                            }                        ]                    }                ],                "static": [{                    "name": "Static",                    "input": "./static/*",                    "output": "./dist/"                }]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="ComponentExample/src/Button/Button.wcl.avt">        <pre>            export class Button extends Aventus.Component implements Aventus.DefaultComponent {                &nbsp;                //#region static                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region props                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region variables                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region constructor                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region methods                &nbsp;                //#endregion                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/src/Button/Button.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="css" filename="ComponentExample/src/Button/Button.wcs.avt">        <pre>            :host {                background-color: #e5540e;                border-radius: 5px;                color: white;                cursor: pointer;                padding: 5px 15px;                user-select: none;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Aventus Demo&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-button&gt;Click me&lt;/av-button&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot>    <av-doc-wc-create-editor-1-button slot="result">Click me</av-doc-wc-create-editor-1-button></av-code-editor>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "editorEl",
+      "ids": [
+        "docwccreateeditor1_0"
+      ]
+    }
+  ]
+}); }
+    getClassName() {
+        return "DocWcCreateEditor1";
+    }
+    startupFile() {
+        return "ComponentExample/static/index.html";
+    }
+    postCreation() {
+        this.editorEl.show = this.startupFile();
+    }
+}
+DocWcCreateEditor1.Namespace=`${moduleName}`;
+DocWcCreateEditor1.Tag=`av-doc-wc-create-editor-1`;
+_.DocWcCreateEditor1=DocWcCreateEditor1;
+if(!window.customElements.get('av-doc-wc-create-editor-1')){window.customElements.define('av-doc-wc-create-editor-1', DocWcCreateEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor1);}
+
+const DocWcCreateEditor2 = class DocWcCreateEditor2 extends Aventus.WebComponent {
+    static __style = `:host{width:100%}`;
+    __getStatic() {
+        return DocWcCreateEditor2;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcCreateEditor2.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Component Example" _id="docwccreateeditor2_0">    <av-code language="json" filename="ComponentExample/aventus.conf.avt">        <pre>            {                "module": "ComponentExample",                "componentPrefix": "av",                "build": [                    {                        "name": "Main",                        "src": [                            "./src/*"                        ],                        "compile": [                            {                                "output": "./dist/demo.js"                            }                        ]                    }                ],                "static": [{                    "name": "Static",                    "input": "./static/*",                    "output": "./dist/"                }]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="ComponentExample/src/Error/Error.wcl.avt">        <pre>            export class Error extends Aventus.Component implements Aventus.DefaultComponent {                &nbsp;                //#region static                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region props                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region variables                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region constructor                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region methods                &nbsp;                //#endregion                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/src/Error/Error.wcv.avt">        <pre>            &lt;slot&gt; &lt;!-- The default content appends here --&gt;&lt;/slot&gt;            &lt;slot style="color:red" name="error"&gt;&lt;!-- The errors appends here --&gt;&lt;/slot&gt;            &lt;slot style="color:green" name="success"&gt;&lt;!-- The success appends here --&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="css" filename="ComponentExample/src/Error/Error.wcs.avt">        <pre>            :host {            }        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Aventus Demo&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-error&gt;                    &lt;p&gt;I'm the default content&lt;/p&gt;                    &lt;p slot=""&gt;I'm the default content too&lt;/p&gt;                    &lt;p slot="error"&gt;I'm an error in red&lt;/p&gt;                    &lt;p slot="success"&gt;I'm a success in green&lt;/p&gt;                &lt;/av-error&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot>    <av-doc-wc-create-editor-2-error slot="result">        <p>I'm the default content</p>        <p slot="">I'm the default content too</p>        <p slot="error">I'm an error in red</p>        <p slot="success">I'm a success in green</p>    </av-doc-wc-create-editor-2-error></av-code-editor>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "editorEl",
+      "ids": [
+        "docwccreateeditor2_0"
+      ]
+    }
+  ]
+}); }
+    getClassName() {
+        return "DocWcCreateEditor2";
+    }
+    startupFile() {
+        return "ComponentExample/src/Error/Error.wcv.avt";
+    }
+    postCreation() {
+        this.editorEl.show = this.startupFile();
+    }
+}
+DocWcCreateEditor2.Namespace=`${moduleName}`;
+DocWcCreateEditor2.Tag=`av-doc-wc-create-editor-2`;
+_.DocWcCreateEditor2=DocWcCreateEditor2;
+if(!window.customElements.get('av-doc-wc-create-editor-2')){window.customElements.define('av-doc-wc-create-editor-2', DocWcCreateEditor2);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor2);}
+
+const DocWcCreateEditor3 = class DocWcCreateEditor3 extends Aventus.WebComponent {
+    static __style = `:host{width:100%}`;
+    __getStatic() {
+        return DocWcCreateEditor3;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcCreateEditor3.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Component Example" _id="docwccreateeditor3_0">    <av-code language="json" filename="ComponentExample/aventus.conf.avt">        <pre>            {                "module": "ComponentExample",                "componentPrefix": "av",                "build": [                    {                        "name": "Main",                        "src": [                            "./src/*"                        ],                        "compile": [                            {                                "output": "./dist/demo.js"                            }                        ]                    }                ],                "static": [{                    "name": "Static",                    "input": "./static/*",                    "output": "./dist/"                }]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="ComponentExample/src/Error/Error.wcl.avt">        <pre>            export class Error extends Aventus.Component implements Aventus.DefaultComponent {                &nbsp;                //#region static                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region props                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region variables                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region constructor                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region methods                &nbsp;                //#endregion                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/src/Error/Error.wcv.avt">        <pre>            &lt;slot&gt; &lt;!-- The default content appends here --&gt;&lt;/slot&gt;            &lt;slot style="color:red" name="error"&gt;&lt;!-- The errors appends here --&gt;&lt;/slot&gt;            &lt;slot style="color:green" name="success"&gt;&lt;!-- The success appends here --&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="css" filename="ComponentExample/src/Error/Error.wcs.avt">        <pre>            :host {            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="ComponentExample/src/ErrorYellow/ErrorYellow.wcl.avt">        <pre>            import { Error } from "../Error/Error.wcl.avt";            &nbsp;            export class ErrorYellow extends Error implements Aventus.DefaultComponent {                &nbsp;                //#region static                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region props                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region variables                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region constructor                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region methods                &nbsp;                //#endregion                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/src/ErrorYellow/ErrorYellow.wcv.avt">        <pre>            &lt;block name="error"&gt;                &lt;span style="color:yellow"&gt;                    &lt;!-- The errors will be displayed in yellow now --&gt;                    &lt;slot name="error"&gt;&lt;/slot&gt;                &lt;/span&gt;            &lt;/block>        </pre>    </av-code></av-code>    <av-code language="css" filename="ComponentExample/src/ErrorYellow/ErrorYellow.wcs.avt">        <pre>            :host {            }        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Aventus Demo&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-error&gt;                    &lt;p&gt;I'm the default content&lt;/p&gt;                    &lt;p slot=""&gt;I'm the default content too&lt;/p&gt;                    &lt;p slot="error"&gt;I'm an error in red&lt;/p&gt;                    &lt;p slot="success"&gt;I'm a success in green&lt;/p&gt;                &lt;/av-error&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot>    <av-doc-wc-create-editor-3-error-yellow slot="result">        <p>I'm the default content</p>        <p slot="">I'm the default content too</p>        <p slot="error">I'm an error in yellow</p>        <p slot="success">I'm a success in green</p>    </av-doc-wc-create-editor-3-error-yellow></av-code-editor>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "editorEl",
+      "ids": [
+        "docwccreateeditor3_0"
+      ]
+    }
+  ]
+}); }
+    getClassName() {
+        return "DocWcCreateEditor3";
+    }
+    startupFile() {
+        return "ComponentExample/src/ErrorYellow/ErrorYellow.wcv.avt";
+    }
+    postCreation() {
+        this.editorEl.show = this.startupFile();
+    }
+}
+DocWcCreateEditor3.Namespace=`${moduleName}`;
+DocWcCreateEditor3.Tag=`av-doc-wc-create-editor-3`;
+_.DocWcCreateEditor3=DocWcCreateEditor3;
+if(!window.customElements.get('av-doc-wc-create-editor-3')){window.customElements.define('av-doc-wc-create-editor-3', DocWcCreateEditor3);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor3);}
+
+const DocWcCreateEditor4 = class DocWcCreateEditor4 extends Aventus.WebComponent {
+    static __style = `:host{width:100%}`;
+    __getStatic() {
+        return DocWcCreateEditor4;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcCreateEditor4.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Component Example" _id="docwccreateeditor4_0">    <av-code language="json" filename="ComponentExample/aventus.conf.avt">        <pre>            {                "module": "ComponentExample",                "componentPrefix": "av",                "build": [                    {                        "name": "Main",                        "src": [                            "./src/*"                        ],                        "compile": [                            {                                "output": "./dist/demo.js"                            }                        ]                    }                ],                "static": [{                    "name": "Static",                    "input": "./static/*",                    "output": "./dist/"                }]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="ComponentExample/src/Clock/Clock.wcl.avt">        <pre>            export class Clock extends Aventus.Component implements Aventus.DefaultComponent {                &nbsp;                //#region static                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region props                @Property()                public color: string = "red";                //#endregion                &nbsp;                &nbsp;                //#region variables                @Watch()                public timeTxt!: string;                //#endregion                &nbsp;                &nbsp;                //#region constructor                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region methods                private calcTime() {                    const d = new Date();                    this.timeTxt = ((d.getHours() < 10) ? "0" : "") + d.getHours()                        + ":" + ((d.getMinutes() < 10) ? "0" : "") + d.getMinutes()                        + ":" + ((d.getSeconds() < 10) ? "0" : "") + d.getSeconds();                }                &nbsp;                protected override postCreation(): void {                    // When the component is rendered                    this.calcTime();                    setInterval(() => {                        this.calcTime();                    }, 1000);                }                //#endregion                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/src/Clock/Clock.wcv.avt">        <pre>            &lt;p style="color:{{ this.color }}"&gt;Time : {{ this.timeTxt }}&lt;/p&gt;        </pre>    </av-code></av-code>    <av-code language="css" filename="ComponentExample/src/Clock/Clock.wcs.avt">        <pre>            :host {            }        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Aventus Demo&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-clock&gt;&lt;/av-clock&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot>    <av-doc-wc-create-editor-4-clock slot="result"></av-doc-wc-create-editor-4-clock></av-code-editor>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "editorEl",
+      "ids": [
+        "docwccreateeditor4_0"
+      ]
+    }
+  ]
+}); }
+    getClassName() {
+        return "DocWcCreateEditor4";
+    }
+    startupFile() {
+        return "ComponentExample/src/Clock/Clock.wcv.avt";
+    }
+    postCreation() {
+        this.editorEl.show = this.startupFile();
+    }
+}
+DocWcCreateEditor4.Namespace=`${moduleName}`;
+DocWcCreateEditor4.Tag=`av-doc-wc-create-editor-4`;
+_.DocWcCreateEditor4=DocWcCreateEditor4;
+if(!window.customElements.get('av-doc-wc-create-editor-4')){window.customElements.define('av-doc-wc-create-editor-4', DocWcCreateEditor4);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor4);}
+
+const DocWcCreate = class DocWcCreate extends DocGenericPage {
+    static __style = `:host av-router-link.font-sm{font-size:13px}`;
+    __getStatic() {
+        return DocWcCreate;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcCreate.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Webcomponent - Create</h1><p>In the section you are going to learn what is a webcomponent and how you can create it inside Aventus.</p><h2>Definition</h2><p>Web Components is a suite of different technologies allowing you to create reusable custom elements — with their    functionality encapsulated away from the rest of your code — and utilize them in your web apps. (<i><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components" target="_blank">https://developer.mozilla.org/</a></i>).</p><p>With the native technologie, you are able to wrap your style, your logic and your html template inside a single html    tag. You can build your full webapp by building one component after another without worring about side effects (the    developer's worst nightmare).</p><h2>Inside Aventus</h2><p>Inside Aventus you can create web component by right clicking one the explorer part inside vscode, choose <i>Aventus        : Create...</i> and choose <i>Component</i>. Inside the input you can enter the name for the typescript class.    By convention, this name should be in Snake case. You can write your webcomponent inside a single file    <span class="cn">*.wc.avt</span> that    will contains following section :</p><ul>    <li><span class="cn">&lt;template&gt;</span> : for Html part</li>    <li><span class="cn">&lt;style&gt;</span> : for Scss part</li>    <li><span class="cn">&lt;script&gt;</span> : for Js part</li></ul><p>or inside 3 different file. (This option is the adviced one because it allows developer to keep a well knowed    architecture.)</p><ul>    <li><span class="cn">*.wcv.avt</span> : Web Componenent View for Html part</li>    <li><span class="cn">*.wcs.avt</span> : Web Componenent View for Scss part</li>    <li><span class="cn">*.wcl.avt</span> : Web Componenent View for Ts part</li></ul><av-doc-wc-create-editor-1></av-doc-wc-create-editor-1><h2>The Html</h2><p>You can use any basic tag or any tag you imported or created. The auto-completion will help you to find knowed tags.    There are 2 special tags that you must know :</p><h3>&lt;slot&gt;</h3><p>The slot tag allows developer to define the place where the code inside the tag will be added. This slot can have an    attribute <span class="cn">name</span> to have multiple slots.</p><av-doc-wc-create-editor-2></av-doc-wc-create-editor-2><h3>&lt;block&gt;</h3><p>The block tag must be used in case of inheritance. This will replace the slot by the block with the same name.</p><av-doc-wc-create-editor-3></av-doc-wc-create-editor-3><p>There are sepcial attributes you can use to add feature to basic html: </p><ul>    <li>@element : To select element(s). <av-router-link state="/docs/wc/element" class="font-sm">More            info</av-router-link></li>    <li>@for : To create a loop. <av-router-link state="/docs/wc/loop" class="font-sm">More info</av-router-link></li>    <li>@bind(_<i><span class="cn">$event</span></i>)?(:<i><span class="cn">$field</span></i>)? : To bind data.        <av-router-link class="font-sm" state="/docs/wc/binding">More            info</av-router-link>    </li>    <li>:<i><span class="cn">$field</span></i> : To inject data. <av-router-link state="/docs/wc/injection" class="font-sm">More            info</av-router-link>    </li>    <li>@press : To add press event from PressManager. <av-router-link state="/docs/wc/event" class="font-sm">More            info</av-router-link>    </li>    <li>@<i><span class="cn">$eventName</span></i> : To add event listener. <av-router-link state="/docs/wc/event" class="font-sm">More            info</av-router-link>    </li></ul><p>You can use interpolation inside tag content and normal attribute to have dynamic content. If you use <av-router-link state="/docs/wc/event">a property value</av-router-link>&nbsp;or&nbsp;<av-router-link state="/docs/wc/event">a        watch value</av-router-link> the content will be refreshed.</p><av-doc-wc-create-editor-4></av-doc-wc-create-editor-4><h2>The style</h2><p>This is just a simple SCSS file. The only think to know is that the style must be wrapped inside a :host{}.</p><av-code language="css" filename="TextRed.wcs.avt">    :host {    \tcolor: red; // This ll change the behavior of the current webcomponent    }</av-code></av-code><p>You can find more informations about the style <av-router-link state="/docs/wc/style">here.</av-router-link></p><h2>The logic</h2><p>When you create a new file *.wcl.avt you can notice that the file has region. This is set to allow developer to order    the code. Each region has a goal. You can remove it but we advice you to keep it.</p><ul>    <li>static : Where you can write the static properties or methods for your webcomponent.</li>    <li>props : Where you can define the <av-router-link state="/docs/wc/attribute">attributes</av-router-link>, the        <av-router-link state="/docs/wc/property">properties</av-router-link>&nbsp;and the <av-router-link state="/docs/wc/watch">watch variables.</av-router-link>    </li>    <li>variables : Where you can define the variables and the pointers on <av-router-link state="/docs/wc/element">view            element</av-router-link></li>    <li>constructor : Where you can override the constructor for your webcomponent.</li>    <li>methods : Where you can write the methods for your webcomponent.</li></ul><av-code language="typescript">    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region static    &nbsp;    \t//#endregion    &nbsp;    \t//#region props    &nbsp;    \t//#endregion    &nbsp;    \t//#region variables    &nbsp;    \t//#endregion    &nbsp;    \t//#region constructor    &nbsp;    \t//#endregion    &nbsp;    \t//#region methods    &nbsp;    \t//#endregion    &nbsp;    }</av-code></av-code><p>Over the classname you can add predefine Decorators :</p><ul>    <li><span class="cn">@TagName(name:string)</span> : to define the tag for the component</li>    <li><span class="cn">@Debugger({ writeCompiled?: boolean, enableWatchHistory?: boolean})</span> : to debug component        compilation and        state.    </li>    <li><span class="cn">@Dependances({ type: Type, strong?:boolean}[])</span> : to add dependance not written inside        component. The        strong boolean define if the dependance must be loaded before the class.</li>    <li><span class="cn">@OverrideView({ removeViewVariables?: string[] })</span> : to fully override parent view. You        can remove parent        ViewElement needed, but you have to be aware of what you are doing.</li>    <li><span class="cn">@Internal()</span> : to allow exporting class only in the current package but the class won't be usable for someone else that is using the package.</li>    <li><span class="cn">@Required()</span> : to force the class to be exported inside the *.js file.</li>    <li><span class="cn">@Convertible(name: string = "Fullname")</span> : to notify the compiler that the class can be converted from JSON. The parameter <span class="cn">name</span> define the key to detect the class to build.</li></ul><av-code language="typescript">    @TagName("my-tag-name")    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    }</av-code></av-code><h2>Lifecycle</h2><p>The webcomponent has the following lifecycle</p><av-img src="/img/doc/wc/create/lifecylce.png"></av-img><p>By default <span class="cn">postCreation</span> and <span class="cn">postDestruction</span> are empty.</p>` }
+    });
+}
+    getClassName() {
+        return "DocWcCreate";
+    }
+}
+DocWcCreate.Namespace=`${moduleName}`;
+DocWcCreate.Tag=`av-doc-wc-create`;
+_.DocWcCreate=DocWcCreate;
+if(!window.customElements.get('av-doc-wc-create')){window.customElements.define('av-doc-wc-create', DocWcCreate);Aventus.WebComponentInstance.registerDefinition(DocWcCreate);}
+
 const DocLibDragAndDrop = class DocLibDragAndDrop extends DocGenericPage {
     static __style = `:host .options{list-style:none;margin:0}:host .options li{margin:15px 0;text-align:justify}:host .options li .size{display:inline-block;width:170px}`;
     __getStatic() {
@@ -11612,11 +11845,6 @@ const DocApp = class DocApp extends Aventus.Navigation.Router {
         this.addRoute("/docs/state/create", DocStateCreate);
         this.addRoute("/docs/state/change", DocStateChange);
         this.addRoute("/docs/state/listen_changes", DocStateListen);
-        //#endregion
-        //#region doc socket
-        this.addRoute("/docs/socket/create", DocSocketCreate);
-        this.addRoute("/docs/socket/send", DocSocketSend);
-        this.addRoute("/docs/socket/receive", DocSocketReceive);
         //#endregion
         //#region doc webcomponent
         this.addRoute("/docs/wc/create", DocWcCreate);
