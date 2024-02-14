@@ -1,0 +1,29 @@
+import { DocRamMixinEditor4 } from "../DocRamMixinEditor4/DocRamMixinEditor4.wcl.avt";
+
+export class DocRamMixinEditor5 extends DocRamMixinEditor4 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	
+	//#endregion
+	
+}

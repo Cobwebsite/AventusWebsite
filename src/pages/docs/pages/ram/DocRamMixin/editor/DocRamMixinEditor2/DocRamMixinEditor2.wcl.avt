@@ -1,0 +1,31 @@
+import { DocRamMixinEditor1 } from "../DocRamMixinEditor1/DocRamMixinEditor1.wcl.avt";
+
+export class DocRamMixinEditor2 extends DocRamMixinEditor1 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+		return "ExampleRAM/src/Person.ram.avt";
+	}
+	//#endregion
+	
+}

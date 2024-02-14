@@ -1,0 +1,16 @@
+<div class="header">
+    <span>{{ this.name }}</span>
+    <mi-icon class="download" icon="download" @press="download"></mi-icon>
+</div>
+<div class="content" @element="contentEl">
+    <av-scrollable class="menu" @element="menuEl"></av-scrollable>
+    <div class="separator" @element="separatorEl"></div>
+    <av-scrollable class="display" @element="displayEl" x_scroll></av-scrollable>
+</div>
+<div class="result">
+    <div class="title">Result : </div>
+    <slot name="result"></slot>
+</div>
+<div class="hidden">
+    <slot></slot>
+</div>

@@ -1,0 +1,35 @@
+import type { CodeEditor } from "../../../../../../../core/components/layout/CodeEditor/CodeEditor.wcl.avt";
+
+export class DocRamCrudEditor1 extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	@ViewElement()
+    protected editorEl!: CodeEditor;
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public startupFile(): string {
+        return "ExampleRAM/src/Test.lib.avt";
+    }
+    protected override postCreation(): void {
+        this.editorEl.show = this.startupFile();
+    }
+	//#endregion
+	
+}

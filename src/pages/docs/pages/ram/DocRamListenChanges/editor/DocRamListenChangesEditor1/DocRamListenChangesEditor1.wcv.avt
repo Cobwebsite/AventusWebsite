@@ -1,0 +1,80 @@
+<av-code-editor name="Example RAM" @element="editorEl">
+    <av-code language="json" filename="ExampleRAM/aventus.conf.avt">
+        <pre>
+            {
+                "module": "ExampleRAM",
+                "build": [
+                    {
+                        "name": "Main",
+                        "src": [
+                            "./src/*"
+                        ]
+                    }
+                ]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="ExampleRAM/src/Person.data.avt">
+        <pre>
+            export class Person extends Aventus.Data implements Aventus.IData {
+                public id: number = 0;
+                public firstname!: string;
+                public lastname!: string;
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="ExampleRAM/src/Person.ram.avt">
+        <pre>
+            import { Person } from "./Person.data.avt";
+            &nbsp;
+            export class PersonRAM extends Aventus.Ram&lt;Person&gt; implements Aventus.IRam {
+                &nbsp;
+                /**
+                * Create a singleton to store data
+                */
+                public static getInstance() {
+                    return Aventus.Instance.get(PersonRAM);
+                }
+                &nbsp;
+                /**
+                * @inheritdoc
+                */
+                public override defineIndexKey(): keyof Person {
+                    return 'id';
+                }
+                &nbsp;
+                /**
+                * @inheritdoc
+                */
+                protected override getTypeForData(objJson: Aventus.KeysObject&lt;Person&gt; | Person): new () => Person {
+                    return Person;
+                }
+                &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="ExampleRAM/src/Test.lib.avt">
+        <pre>
+            import { PersonRAM } from "./Person.ram.avt";
+            import { Person } from "./Person.data.avt";
+            &nbsp;
+            export async function loadFirstPerson() {
+                let person1 = await PersonRAM.getInstance().get(1);
+                if(!person1) return;
+                &nbsp;
+                person1.onUpdate(onUpdate);
+                person1.onDelete(onDelete);
+            }
+            &nbsp;
+            export function onUpdate(person: Person) {
+                console.log("person updated : " + person.firstname);
+            }
+            &nbsp;
+            export function onDelete(person: Aventus.RamItem&lt;Person&gt;) {
+                person.offUpdate(onUpdate);
+                person.offDelete(onDelete);
+            }
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

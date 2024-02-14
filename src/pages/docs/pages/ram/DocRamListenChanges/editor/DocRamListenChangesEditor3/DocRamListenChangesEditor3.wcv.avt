@@ -1,0 +1,54 @@
+<av-code language="typescript" filename="ExampleRAM/src/DisplayPerson/DisplayPerson.wcl.avt">
+    <pre>
+        import { PersonRAM } from "../Person.ram.avt";
+        import type { Person } from "../Person.data.avt";
+        &nbsp;
+        export class DisplayPerson extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+            //#region static
+            &nbsp;
+            //#endregion
+            &nbsp;
+            &nbsp;
+            //#region props
+            &nbsp;
+            //#endregion
+            &nbsp;
+            &nbsp;
+            //#region variables
+            &nbsp;
+            //#endregion
+            &nbsp;
+            &nbsp;
+            //#region constructor
+            &nbsp;
+            //#endregion
+            &nbsp;
+            &nbsp;
+            //#region methods
+            @BindThis()
+            private onCreated(createdData: Aventus.RamItem&lt;Person&gt;) {
+                &nbsp;
+            }
+            &nbsp;
+            @BindThis()
+            private onUpdated(updatedData: Aventus.RamItem&lt;Person&gt;) {
+                &nbsp;
+            }
+            &nbsp;
+            @BindThis()
+            private onDeleted(deletedData: Aventus.RamItem&lt;Person&gt;) {
+                &nbsp;
+            }
+            &nbsp;
+            protected override postCreation(): void {
+                PersonRAM.getInstance().onCreated(this.onCreated);
+                PersonRAM.getInstance().onUpdated(this.onUpdated);
+                PersonRAM.getInstance().onDeleted(this.onDeleted);
+            }
+            //#endregion
+            &nbsp;
+        }
+    </pre>
+</av-code>
+<slot></slot>

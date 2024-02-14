@@ -7,7 +7,7 @@ export class RoadMapItem extends Aventus.WebComponent implements Aventus.Default
 
     //#region props
     @Property()
-    public name: string;
+    public name?: string;
     //#endregion
 
 

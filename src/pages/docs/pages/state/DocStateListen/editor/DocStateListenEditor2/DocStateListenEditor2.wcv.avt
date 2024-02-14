@@ -1,0 +1,36 @@
+<av-code language="typescript" filename="StateExample/src/Test.lib.avt">
+    <pre>
+        import { MainStateManager } from "./Main.state.avt";
+        &nbsp;
+        export async function subscribe() {
+            MainStateManager.getInstance().subscribe("/user/{id:number}", {
+                active: (state: Aventus.State, slugs: Aventus.StateSlug) => {
+                    console.log("user active is " + slugs.id);
+                },
+                inactive: (state: Aventus.State, nextState: Aventus.State, oldSlugs: Aventus.StateSlug) => {
+                    console.log("new state is " + nextState.name);
+                },
+                askChange: async (state: Aventus.State, nextState: Aventus.State, slugs: Aventus.StateSlug) => {
+                    &#105;f(slugs.id == 3) {
+                        return false;
+                    }
+                    return true;
+                }
+            });
+        }
+        &nbsp;
+        export async function setUser(id: number) {
+            MainStateManager.getInstance().setState("/user/" + id);
+        }
+        &nbsp;
+        export async function removeUser() {
+            MainStateManager.getInstance().setState("/other");
+        }
+        &nbsp;
+        export async function inactiveNotFired() {
+            await MainStateManager.getInstance().setState("/user/1");
+            await MainStateManager.getInstance().setState("/user/2");
+        }
+    </pre>
+</av-code>
+<slot></slot>

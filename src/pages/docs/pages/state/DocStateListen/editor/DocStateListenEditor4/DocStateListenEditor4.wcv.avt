@@ -1,0 +1,40 @@
+<av-code language="typescript" filename="StateExample/src/CreatePerson.state.avt">
+    <pre>
+        import type { Person } from "./Person.data.avt";
+        &nbsp;
+        export class CreatePerson extends Aventus.State implements Aventus.IState {
+            &nbsp;
+            public editingPerson?: Person;
+            &nbsp;
+            /**
+            * @inheritdoc
+            */
+            public override get name(): string {
+                return "/person/create";;
+            }
+            &nbsp;
+            /**
+            * @inheritdoc
+            */
+            public override onActivate(): void {
+                console.log("active");
+            }
+            &nbsp;
+            /**
+            * @inheritdoc
+            */
+            public override onInactivate(nextState: Aventus.State): void {
+                console.log("inactive");
+            }
+            &nbsp;
+            /**
+            * @inheritdoc
+            */
+            public override async askChange(state: Aventus.State, nextState: Aventus.State): Promise&lt;boolean&gt; {
+                return true;
+            }
+            &nbsp;
+        }
+    </pre>
+</av-code>
+<slot></slot>

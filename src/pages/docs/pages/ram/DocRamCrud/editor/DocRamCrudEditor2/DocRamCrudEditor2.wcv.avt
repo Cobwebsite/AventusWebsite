@@ -1,0 +1,18 @@
+<av-code language="typescript" filename="ExampleRAM/src/Test.lib.avt">
+    <pre>
+        import type { Person } from "./Person.data.avt";
+        import { PersonRAM } from "./Person.ram.avt";
+        &nbsp;
+        /**
+        * All the read actions available on a RAM
+        */
+        export async function readFunction() {
+            const person1: Aventus.RamItem&lt;Person&gt; | undefined = await PersonRAM.getInstance().get(1);
+            const person2: Aventus.RamItem&lt;Person&gt; | undefined = await PersonRAM.getInstance().getById(1);
+            const people1: Map&lt;number, Aventus.RamItem&lt;Person&gt;&gt; = await PersonRAM.getInstance().getAll();
+            const people2: Aventus.RamItem&lt;Person&gt;[] = await PersonRAM.getInstance().getList();
+            const people3: Aventus.RamItem&lt;Person&gt;[] = await PersonRAM.getInstance().getByIds([1, 2]);
+        }
+    </pre>
+</av-code>
+<slot></slot>

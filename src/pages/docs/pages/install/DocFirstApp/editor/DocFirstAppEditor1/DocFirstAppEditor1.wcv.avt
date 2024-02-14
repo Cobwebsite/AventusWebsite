@@ -1,0 +1,20 @@
+<av-code-editor name="First Project" @element="editorEl">
+    <av-code language="json" filename="HelloAventus/aventus.conf.avt">
+        <pre>
+            {
+                "module": "HelloAventus",
+                "componentPrefix": "ha",
+                "build": [
+                    {
+                        "name": "Main",
+                        "src": [],
+                        "compile": [{
+                            "output": "./dist/helloaventus.js"
+                        }]
+                    }
+                ]
+            }
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

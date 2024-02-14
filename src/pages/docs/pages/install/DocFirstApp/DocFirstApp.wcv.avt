@@ -1,56 +1,43 @@
 <h1>Create your first project</h1>
 <h2>Init the project</h2>
 <p>In your file explorer create a new folder <span class="cn">HelloAventus</span> and open it with vscode.</p>
-<p>You can create a new file named <span class="cn">aventus.conf.avt</span>. The minimal content for your config file is the following
+<p>You can create a new file named <span class="cn">aventus.conf.avt</span>. The minimal content for your config file is
+    the following
 </p>
-<av-code language="json" filename="aventus.conf.avt">
-    {
-    \t"module": "HelloAventus",
-    \t"componentPrefix": "ha",
-    \t"build": [{
-    \t\t"name": "Main",
-    \t\t"inputPath": [],
-    \t\t"outputFile": "./dist/helloaventus.js"
-    \t}]
-    }
-</av-code>
-<p>The section <span class="cn">module</span> define the container name for the compiled code. Following the best practice, we minimize
-    the use of global variables by wrapping the final code inside module. In this example, you can reach your compiled code
+<av-doc-first-app-editor-1></av-doc-first-app-editor-1>
+<p>The section <span class="cn">module</span> define the container name for the compiled code. Following the best
+    practice, we minimize
+    the use of global variables by wrapping the final code inside module. In this example, you can reach your compiled
+    code
     by typing <i>HelloWorld.*</i> inside the dev console.</p>
-<p>The section <span class="cn">componentPrefix</span> define the prefix for the webcomponents. For example the tag name for a
+<p>The section <span class="cn">componentPrefix</span> define the prefix for the webcomponents. For example the tag name
+    for a
     webcomponent class <i>Test</i> will be <i>ha-test</i>.</p>
-<p>The section <span class="cn">build</span> define all builds informations. A build is a set of Aventus input file compiled as a single
-    js file. You must provide at least 3 fields. <span class="cn">name</span> that define the unique name for your build,
-    <span class="cn">inputPath</span> that define where the compiler must look for Aventus file and <span class="cn">outputFile</span> that define where
+<p>The section <span class="cn">build</span> define all builds informations. A build is a set of Aventus input file
+    compiled as a single
+    js file. You must provide at least 3 fields. <span class="cn">name</span> that define the unique name for your
+    build,
+    <span class="cn">src</span> that define where the compiler must look for Aventus file and <span
+        class="cn">compile[0].output</span> that define where
     the compiler must write the compiled file. For the example the field <i>includeBase</i> is added to auto import
     Aventus source code.
 </p>
-<p>When you save the config file a new file is created inside your workspace : <i>/dist/helloaventus.js</i>. The js file is your code compiled. Actually the file is empty because we didn't write any code.
+<p>When you save the config file a new file is created inside your workspace : <i>/dist/helloaventus.js</i>. The js file
+    is your code compiled. Actually the file is empty because we didn't write any code.
 </p>
 <p>There are more options for the config file that you can read <av-router-link>here</av-router-link></p>
-<p>Now you can create a new folder named <span class="cn">src</span> and edit the field build.inputPath like that</p>
-<av-code language="json" filename="aventus.conf.avt">
-    {
-    \t"module": "HelloAventus",
-    \t"componentPrefix": "ha",
-    \t"build": [{
-    \t\t"name": "Main",
-    \t\t"inputPath": [
-    \t\t\t"./src/*"
-    \t\t],
-    \t\t"outputFile": "./dist/helloaventus.js"
-    \t}]
-    }
-</av-code>
-
+<p>Now you can create a new folder named <span class="cn">src</span> and edit the field build.src like that</p>
+<av-doc-first-app-editor-2></av-doc-first-app-editor-2>
 <p>This means that any <span class="cn">*.avt</span> file found will be compiled inside this build.</p>
-<p>Now it's time to create your first webcomponent. You can right click inside the explorer part and click on <span class="cn">Aventus
+<p>Now it's time to create your first webcomponent. You can right click inside the explorer part and click on <span
+        class="cn">Aventus
         : Create...</span></p>
 <av-img src="/img/doc/install/firstapp/create_option.png"></av-img>
 <p>A dropdown appears. Select the option : <span class="cn">Component</span></p>
 <av-img src="/img/doc/install/firstapp/create_menu.png"></av-img>
 <p>Then you must enter the name for your WebComponent, call it MyComponent
-    (<span class="cn">&lt;ha-my-component&gt;&lt;/ha-my-component&gt;</span>), press enter and select multiple files. Three new files are
+    (<span class="cn">&lt;ha-my-component&gt;&lt;/ha-my-component&gt;</span>), press enter and select multiple files.
+    Three new files are
     created</p>
 <ul>
     <li><span class="cn">MyComponent.wcl.avt</span> - the file for the logic written in Typescript</li>
@@ -58,56 +45,17 @@
     <li><span class="cn">MyComponent.wcv.avt</span> - the file for the view written in Html</li>
 </ul>
 <p>We will add some code inside the component to write an hello Aventus text in orange</p>
-<av-code language="html" filename="MyComponent.wcv.avt">
-    <p>Hello <span class="orange">Aventus</span></p>
-</av-code>
-<av-code language="css" filename="MyComponent.wcs.avt">
-    :host { // :host is the style apply on your component
-    \tbackground-color: gray;
-    \t.orange {
-    \t\tcolor: #e5540e;
-    \t}
-    }
-</av-code>
+<av-doc-first-app-editor-3></av-doc-first-app-editor-3>
 <av-separator></av-separator>
-<p>To show your first component you need an index file. Create a <span class="cn">/src/static</span>  folder and a <span class="cn">/src/static/index.html</span> and add
+<p>To show your first component you need an index file. Create a <span class="cn">/src/static</span> folder and a <span
+        class="cn">/src/static/index.html</span> and add
     the content below:</p>
-<av-code language="html" filename="index.html">
-    &lt;!DOCTYPE html&gt;
-    &lt;html lang="en"&gt;
-    \t&lt;head&gt;
-    \t\t&lt;meta charset="UTF-8"&gt;
-    \t\t&lt;meta http-equiv="X-UA-Compatible" content="IE=edge"&gt;
-    \t\t&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
-    \t\t&lt;title&gt;Hello Aventus&lt;/title&gt;
-    \t\t&lt;script src="/helloaventus.js"&gt;&lt;/script&gt;
-    \t&lt;/head&gt;
-    \t&lt;body&gt;
-    \t\t&lt;ha-my-component&gt;&lt;/ha-my-component&gt;
-    \t&lt;/body&gt;
-    &lt;/html&gt;
-</av-code>
+<av-doc-first-app-editor-4></av-doc-first-app-editor-4>
 <p>This code will load the compiled file <i>helloaventus.js</i> in your dist folder. To export static file, you need to
     add a new section inside your config.</p>
-<av-code language="json" filename="aventus.conf.avt">
-    {
-    \t"module": "aventus_todo",
-    \t"componentPrefix": "av",
-    \t"build": [{
-    \t\t"name": "Main",
-    \t\t"inputPath": [
-    \t\t\t"./src/*"
-    \t\t],
-    \t\t"outputFile": "./dist/aventus_todo.js"
-    \t}],
-    \t"static":[{
-    \t\t"name": "Static",
-    \t\t"inputPath": "./src/static/",
-    \t\t"outputPath": "./dist/"
-    \t}]
-    }
-</av-code>
-<p>This code will export every file from <span class="cn">/src/static</span> to <span class="cn">/dist</span>. You can save your config file.</p>
+<av-doc-first-app-editor-5></av-doc-first-app-editor-5>
+<p>This code will export every file from <span class="cn">/static</span> to <span class="cn">/dist</span>. You can
+    save your config file.</p>
 <p>Now you can launch the Aventus live server by clicking on the start server button.</p>
 <av-img src="/img/doc/install/firstapp/start_server.png"></av-img>
 <p>Well done, you created your first Aventus App.</p>

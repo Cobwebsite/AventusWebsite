@@ -1,4 +1,4 @@
-import { IconLib, IconList } from "./IconLib.lib.avt";
+import { IconLib, type IconList } from "./IconLib.lib.avt";
 
 export class Icon extends Aventus.WebComponent implements Aventus.DefaultComponent {
 
@@ -13,13 +13,13 @@ export class Icon extends Aventus.WebComponent implements Aventus.DefaultCompone
             target.spanEl.style.setProperty("--icon-code", IconLib.getIcon(target.icon));
         }
     })
-    public icon: IconList;
+    public icon?: IconList;
     //#endregion
 
 
     //#region variables
 	@ViewElement()
-    protected spanEl: HTMLSpanElement;
+    protected spanEl!: HTMLSpanElement;
     //#endregion
 
 

@@ -8,7 +8,7 @@ export class Navbar extends Aventus.WebComponent implements Aventus.DefaultCompo
     //#region props
 
     @Attribute()
-    public open: boolean;
+    public open!: boolean;
 
     //#endregion
 

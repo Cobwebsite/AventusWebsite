@@ -5,57 +5,103 @@ var Aventus;
 (Aventus||(Aventus = {}));
 (function (Aventus) {
 const moduleName = `Aventus`;
+const _ = {};
 
-class WebComponentInstance {
-    static __allDefinitions = [];
-    static __allInstances = [];
-    /**
-     * Last definition insert datetime
-     */
-    static lastDefinition = 0;
-    static registerDefinition(def) {
-        WebComponentInstance.lastDefinition = Date.now();
-        WebComponentInstance.__allDefinitions.push(def);
-    }
-    /**
-     * Get all sub classes of type
-     */
-    static getAllClassesOf(type) {
-        let result = [];
-        for (let def of WebComponentInstance.__allDefinitions) {
-            if (def.prototype instanceof type) {
-                result.push(def);
+
+let _n;
+var WatchAction;
+(function (WatchAction) {
+    WatchAction[WatchAction["CREATED"] = 0] = "CREATED";
+    WatchAction[WatchAction["UPDATED"] = 1] = "UPDATED";
+    WatchAction[WatchAction["DELETED"] = 2] = "DELETED";
+})(WatchAction || (WatchAction = {}));
+
+_.WatchAction=WatchAction;
+const compareObject=function compareObject(obj1, obj2) {
+    if (Array.isArray(obj1)) {
+        if (!Array.isArray(obj2)) {
+            return false;
+        }
+        obj2 = obj2.slice();
+        if (obj1.length !== obj2.length) {
+            return false;
+        }
+        for (let i = 0; i < obj1.length; i++) {
+            let foundElement = false;
+            for (let j = 0; j < obj2.length; j++) {
+                if (compareObject(obj1[i], obj2[j])) {
+                    obj2.splice(j, 1);
+                    foundElement = true;
+                    break;
+                }
+            }
+            if (!foundElement) {
+                return false;
             }
         }
-        return result;
+        return true;
     }
-    /**
-     * Get all registered definitions
-     */
-    static getAllDefinitions() {
-        return WebComponentInstance.__allDefinitions;
+    else if (obj1 instanceof Date) {
+        return obj1.toString() === obj2.toString();
     }
-    static addInstance(instance) {
-        this.__allInstances.push(instance);
-    }
-    static removeInstance(instance) {
-        let index = this.__allInstances.indexOf(instance);
-        if (index > -1) {
-            this.__allInstances.splice(index, 1);
+    else if (typeof obj1 === 'object' && obj1 !== undefined && obj1 !== null) {
+        if (typeof obj2 !== 'object' || obj2 === undefined || obj2 === null) {
+            return false;
         }
-    }
-    static getAllInstances(type) {
-        let result = [];
-        for (let instance of this.__allInstances) {
-            if (instance instanceof type) {
-                result.push(instance);
+        if (Object.keys(obj1).length !== Object.keys(obj2).length) {
+            return false;
+        }
+        for (let key in obj1) {
+            if (!(key in obj2)) {
+                return false;
+            }
+            if (!compareObject(obj1[key], obj2[key])) {
+                return false;
             }
         }
-        return result;
+        return true;
+    }
+    else {
+        return obj1 === obj2;
     }
 }
 
-class ElementExtension {
+_.compareObject=compareObject;
+const setValueToObject=function setValueToObject(path, obj, value) {
+    path = path.replace(/\[(.*?)\]/g, '.$1');
+    let splitted = path.split(".");
+    for (let i = 0; i < splitted.length - 1; i++) {
+        let split = splitted[i];
+        if (!obj[split]) {
+            obj[split] = {};
+        }
+        obj = obj[split];
+    }
+    obj[splitted[splitted.length - 1]] = value;
+}
+
+_.setValueToObject=setValueToObject;
+const getValueFromObject=function getValueFromObject(path, obj) {
+    path = path.replace(/\[(.*?)\]/g, '.$1');
+    if (path == "") {
+        return obj;
+    }
+    let splitted = path.split(".");
+    for (let i = 0; i < splitted.length - 1; i++) {
+        let split = splitted[i];
+        if (!obj[split] || typeof obj[split] !== 'object') {
+            return undefined;
+        }
+        obj = obj[split];
+    }
+    if (!obj || typeof obj !== 'object') {
+        return undefined;
+    }
+    return obj[splitted[splitted.length - 1]];
+}
+
+_.getValueFromObject=getValueFromObject;
+const ElementExtension=class ElementExtension {
     /**
      * Find a parent by tagname if exist Static.findParentByTag(this, "av-img")
      */
@@ -230,7 +276,7 @@ class ElementExtension {
     /**
      * Get element inside slot
      */
-    static getElementsInSlot(element, slotName = null) {
+    static getElementsInSlot(element, slotName) {
         if (element.shadowRoot) {
             let slotEl;
             if (slotName) {
@@ -265,14 +311,14 @@ class ElementExtension {
     /**
      * Get deeper element inside dom at the position X and Y
      */
-    static getElementAtPosition(x, y, startFrom = null) {
+    static getElementAtPosition(x, y, startFrom) {
         var _realTarget = (el, i = 0) => {
             if (i == 50) {
                 debugger;
             }
             if (el.shadowRoot && x !== undefined && y !== undefined) {
                 var newEl = el.shadowRoot.elementFromPoint(x, y);
-                if (newEl && newEl != el) {
+                if (newEl && newEl != el && el.shadowRoot.contains(newEl)) {
                     return _realTarget(newEl, i + 1);
                 }
             }
@@ -284,8 +330,9 @@ class ElementExtension {
         return _realTarget(startFrom);
     }
 }
-
-class Instance {
+ElementExtension.Namespace=`${moduleName}`;
+_.ElementExtension=ElementExtension;
+const Instance=class Instance {
     static elements = new Map();
     static get(type) {
         let result = this.elements.get(type);
@@ -309,11 +356,13 @@ class Instance {
         return this.elements.delete(cst);
     }
 }
-
-class Style {
+Instance.Namespace=`${moduleName}`;
+_.Instance=Instance;
+const Style=class Style {
     static instance;
+    static noAnimation;
     static defaultStyleSheets = {
-        "@general": `:host{display:inline-block;box-sizing:border-box}:host *{box-sizing:border-box}`
+        "@general": `:host{display:inline-block;box-sizing:border-box}:host *{box-sizing:border-box}`,
     };
     static store(name, content) {
         this.getInstance().store(name, content);
@@ -334,11 +383,14 @@ class Style {
         for (let name in Style.defaultStyleSheets) {
             this.store(name, Style.defaultStyleSheets[name]);
         }
+        Style.noAnimation = new CSSStyleSheet();
+        Style.noAnimation.replaceSync(`:host{-webkit-transition: none !important;-moz-transition: none !important;-ms-transition: none !important;-o-transition: none !important;transition: none !important;}:host *{-webkit-transition: none !important;-moz-transition: none !important;-ms-transition: none !important;-o-transition: none !important;transition: none !important;}`);
     }
     stylesheets = new Map();
     async load(name, url) {
         try {
-            if (!this.stylesheets.has(name) || this.stylesheets.get(name).cssRules.length == 0) {
+            let style = this.stylesheets.get(name);
+            if (!style || style.cssRules.length == 0) {
                 let txt = await (await fetch(url)).text();
                 this.store(name, txt);
             }
@@ -347,434 +399,29 @@ class Style {
         }
     }
     store(name, content) {
-        if (!this.stylesheets.has(name)) {
+        let style = this.stylesheets.get(name);
+        if (!style) {
             const sheet = new CSSStyleSheet();
             sheet.replaceSync(content);
             this.stylesheets.set(name, sheet);
+            return sheet;
         }
         else {
-            this.stylesheets.get(name).replaceSync(content);
+            style.replaceSync(content);
+            return style;
         }
     }
     get(name) {
-        if (!this.stylesheets.has(name)) {
-            this.store(name, "");
+        let style = this.stylesheets.get(name);
+        if (!style) {
+            style = this.store(name, "");
         }
-        return this.stylesheets.get(name);
+        return style;
     }
 }
-
-class WebComponent extends HTMLElement {
-    /**
-     * Add attributes informations
-     */
-    static get observedAttributes() {
-        return [];
-    }
-    _first;
-    _isReady;
-    /**
-     * Determine if the component is ready (postCreation done)
-     */
-    get isReady() {
-        return this._isReady;
-    }
-    /**
-     * The current namespace
-     */
-    static get Namespace() { return ""; }
-    /**
-     * Get the unique type for the data. Define it as the namespace + class name
-     */
-    static get Fullname() { return this.Namespace + "." + this.name; }
-    /**
-     * The current namespace
-     */
-    get namespace() {
-        return this.constructor['Namespace'];
-    }
-    /**
-     * Get the name of the component class
-     */
-    getClassName() {
-        return this.constructor.name;
-    }
-    /**
-    * Get the unique type for the data. Define it as the namespace + class name
-    */
-    get $type() {
-        return this.constructor['Fullname'];
-    }
-    __onChangeFct = {};
-    __watch;
-    __watchActions = {};
-    __watchActionsCb = {};
-    __pressManagers = [];
-    __isDefaultState = true;
-    __defaultActiveState = new Map();
-    __defaultInactiveState = new Map();
-    __statesList = {};
-    constructor() {
-        super();
-        if (this.constructor == WebComponent) {
-            throw "can't instanciate an abstract class";
-        }
-        this._first = true;
-        this._isReady = false;
-        this.__renderTemplate();
-        this.__registerWatchesActions();
-        this.__registerPropertiesActions();
-        this.__createStates();
-        this.__subscribeState();
-    }
-    /**
-     * Remove all listeners
-     * State + press
-     */
-    destructor() {
-        WebComponentInstance.removeInstance(this);
-        this.__unsubscribeState();
-        for (let press of this.__pressManagers) {
-            press.destroy();
-        }
-        // TODO add missing info for destructor();
-    }
-    __addWatchesActions(name, fct) {
-        if (!this.__watchActions[name]) {
-            this.__watchActions[name] = [];
-            this.__watchActionsCb[name] = (action, path, value) => {
-                for (let fct of this.__watchActions[name]) {
-                    fct(this, action, path, value);
-                }
-                if (this.__onChangeFct[name]) {
-                    for (let fct of this.__onChangeFct[name]) {
-                        fct(path);
-                    }
-                }
-            };
-        }
-        if (fct) {
-            this.__watchActions[name].push(fct);
-        }
-    }
-    __registerWatchesActions() {
-        if (Object.keys(this.__watchActions).length > 0) {
-            if (!this.__watch) {
-                this.__watch = Watcher.get({}, (type, path, element) => {
-                    let action = this.__watchActionsCb[path.split(".")[0]] || this.__watchActionsCb[path.split("[")[0]];
-                    action(type, path, element);
-                });
-            }
-        }
-    }
-    __addPropertyActions(name, fct) {
-        if (!this.__onChangeFct[name]) {
-            this.__onChangeFct[name] = [];
-        }
-        if (fct) {
-            this.__onChangeFct[name].push(() => {
-                fct(this);
-            });
-        }
-    }
-    __registerPropertiesActions() { }
-    static __style = ``;
-    static __template;
-    __templateInstance;
-    styleBefore() {
-        return ["@general"];
-    }
-    styleAfter() {
-        return [];
-    }
-    __getStyle() {
-        return [WebComponent.__style];
-    }
-    __getHtml() { }
-    __getStatic() {
-        return WebComponent;
-    }
-    static __styleSheets = {};
-    __renderStyles() {
-        let sheets = {};
-        let befores = this.styleBefore();
-        for (let before of befores) {
-            let sheet = Style.get(before);
-            if (sheet) {
-                sheets[before] = sheet;
-            }
-        }
-        let localStyle = new CSSStyleSheet();
-        let styleTxt = this.__getStyle().join("\r\n");
-        if (styleTxt.length > 0) {
-            localStyle.replace(styleTxt);
-            sheets['@local'] = localStyle;
-        }
-        let afters = this.styleAfter();
-        for (let after of afters) {
-            let sheet = Style.get(after);
-            if (sheet) {
-                sheets[after] = sheet;
-            }
-        }
-        return sheets;
-    }
-    __renderTemplate() {
-        let staticInstance = this.__getStatic();
-        if (!staticInstance.__template) {
-            staticInstance.__template = new WebComponentTemplate();
-            this.__getHtml();
-            this.__registerTemplateAction();
-            staticInstance.__template.generateTemplate();
-            staticInstance.__styleSheets = this.__renderStyles();
-        }
-        this.__templateInstance = staticInstance.__template.createInstance(this);
-        let shadowRoot = this.attachShadow({ mode: 'open' });
-        shadowRoot.adoptedStyleSheets = Object.values(staticInstance.__styleSheets);
-        this.shadowRoot.appendChild(this.__templateInstance.content);
-        customElements.upgrade(this.shadowRoot);
-    }
-    __registerTemplateAction() {
-    }
-    connectedCallback() {
-        if (this._first) {
-            WebComponentInstance.addInstance(this);
-            this._first = false;
-            this.__defaultValues();
-            this.__upgradeAttributes();
-            this.__templateInstance.render();
-            setTimeout(() => {
-                this.postCreation();
-                this._isReady = true;
-                this.dispatchEvent(new CustomEvent('postCreationDone'));
-            });
-        }
-    }
-    __defaultValues() { }
-    __upgradeAttributes() { }
-    __listBoolProps() {
-        return [];
-    }
-    __upgradeProperty(prop) {
-        let boolProps = this.__listBoolProps();
-        if (boolProps.indexOf(prop) != -1) {
-            if (this.hasAttribute(prop) && (this.getAttribute(prop) === "true" || this.getAttribute(prop) === "")) {
-                let value = this.getAttribute(prop);
-                delete this[prop];
-                this[prop] = value;
-            }
-            else {
-                this.removeAttribute(prop);
-                this[prop] = false;
-            }
-        }
-        else {
-            if (this.hasAttribute(prop)) {
-                let value = this.getAttribute(prop);
-                delete this[prop];
-                this[prop] = value;
-            }
-        }
-    }
-    __getStateManager(managerClass) {
-        let mClass;
-        if (managerClass instanceof StateManager) {
-            mClass = managerClass;
-        }
-        else {
-            mClass = Instance.get(managerClass);
-        }
-        return mClass;
-    }
-    __addActiveDefState(managerClass, cb) {
-        let mClass = this.__getStateManager(managerClass);
-        if (!this.__defaultActiveState.has(mClass)) {
-            this.__defaultActiveState.set(mClass, []);
-        }
-        this.__defaultActiveState.get(mClass).push(cb);
-    }
-    __addInactiveDefState(managerClass, cb) {
-        let mClass = this.__getStateManager(managerClass);
-        if (!this.__defaultInactiveState.has(mClass)) {
-            this.__defaultInactiveState.set(mClass, []);
-        }
-        this.__defaultInactiveState.get(mClass).push(cb);
-    }
-    __addActiveState(statePattern, managerClass, cb) {
-        let mClass = this.__getStateManager(managerClass);
-        this.__statesList[statePattern].get(mClass).active.push(cb);
-    }
-    __addInactiveState(statePattern, managerClass, cb) {
-        let mClass = this.__getStateManager(managerClass);
-        this.__statesList[statePattern].get(mClass).inactive.push(cb);
-    }
-    __addAskChangeState(statePattern, managerClass, cb) {
-        let mClass = this.__getStateManager(managerClass);
-        this.__statesList[statePattern].get(mClass).askChange.push(cb);
-    }
-    __createStates() { }
-    __createStatesList(statePattern, managerClass) {
-        if (!this.__statesList[statePattern]) {
-            this.__statesList[statePattern] = new Map();
-        }
-        let mClass = this.__getStateManager(managerClass);
-        if (!this.__statesList[statePattern].has(mClass)) {
-            this.__statesList[statePattern].set(mClass, {
-                active: [],
-                inactive: [],
-                askChange: []
-            });
-        }
-    }
-    __inactiveDefaultState(managerClass) {
-        if (this.__isDefaultState) {
-            this.__isDefaultState = false;
-            let mClass = this.__getStateManager(managerClass);
-            if (this.__defaultInactiveState.has(mClass)) {
-                let fcts = this.__defaultInactiveState.get(mClass);
-                for (let fct of fcts) {
-                    fct.bind(this)();
-                }
-            }
-        }
-    }
-    __activeDefaultState(nextStep, managerClass) {
-        if (!this.__isDefaultState) {
-            for (let pattern in this.__statesList) {
-                if (StateManager.canBeActivate(pattern, nextStep)) {
-                    let mClass = this.__getStateManager(managerClass);
-                    if (this.__statesList[pattern].has(mClass)) {
-                        return;
-                    }
-                }
-            }
-            this.__isDefaultState = true;
-            let mClass = this.__getStateManager(managerClass);
-            if (this.__defaultActiveState.has(mClass)) {
-                let fcts = this.__defaultActiveState.get(mClass);
-                for (let fct of fcts) {
-                    fct.bind(this)();
-                }
-            }
-        }
-    }
-    __subscribeState() {
-        if (!this.isReady && this.__stateCleared) {
-            return;
-        }
-        for (let route in this.__statesList) {
-            for (const managerClass of this.__statesList[route].keys()) {
-                managerClass.subscribe(route, this.__statesList[route].get(managerClass));
-            }
-        }
-    }
-    __stateCleared;
-    __unsubscribeState() {
-        for (let route in this.__statesList) {
-            for (const managerClass of this.__statesList[route].keys()) {
-                managerClass.unsubscribe(route, this.__statesList[route].get(managerClass));
-            }
-        }
-        this.__stateCleared = true;
-    }
-    dateToString(d) {
-        if (d instanceof Date) {
-            return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
-        }
-        return null;
-    }
-    dateTimeToString(dt) {
-        if (dt instanceof Date) {
-            return new Date(dt.getTime() - (dt.getTimezoneOffset() * 60000)).toISOString().slice(0, -1);
-        }
-        return null;
-    }
-    stringToDate(s) {
-        let td = new Date(s);
-        let d = new Date(td.getTime() + (td.getTimezoneOffset() * 60000));
-        if (isNaN(d)) {
-            return null;
-        }
-        return d;
-    }
-    stringToDateTime(s) {
-        let td = new Date(s);
-        let d = new Date(td.getTime() + (td.getTimezoneOffset() * 60000));
-        if (isNaN(d)) {
-            return null;
-        }
-        return d;
-    }
-    getBoolean(val) {
-        if (val === true || val === 1 || val === 'true' || val === '') {
-            return true;
-        }
-        else if (val === false || val === 0 || val === 'false' || val === null || val === undefined) {
-            return false;
-        }
-        console.error("error parsing boolean value " + val);
-        return false;
-    }
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (oldValue !== newValue || !this.isReady) {
-            if (this.__onChangeFct.hasOwnProperty(name)) {
-                for (let fct of this.__onChangeFct[name]) {
-                    fct('');
-                }
-            }
-        }
-    }
-    remove() {
-        super.remove();
-        this.postDestruction();
-    }
-    /**
-     * Function triggered when the component is removed from the DOM
-     */
-    postDestruction() { }
-    /**
-     * Function triggered the first time the component is rendering inside DOM
-     */
-    postCreation() { }
-    /**
-     * Find a parent by tagname if exist
-     */
-    findParentByTag(tagname, untilNode) {
-        return ElementExtension.findParentByTag(this, tagname, untilNode);
-    }
-    /**
-     * Find a parent by class name if exist
-     */
-    findParentByClass(classname, untilNode) {
-        return ElementExtension.findParentByClass(this, classname, untilNode);
-    }
-    /**
-     * Find a parent by type if exist
-     */
-    findParentByType(type, untilNode) {
-        return ElementExtension.findParentByType(this, type, untilNode);
-    }
-    /**
-     * Find list of parents by tagname
-     */
-    findParents(tagname, untilNode) {
-        return ElementExtension.findParents(this, tagname, untilNode);
-    }
-    /**
-     * Check if element contains a child
-     */
-    containsChild(el) {
-        return ElementExtension.containsChild(this, el);
-    }
-    /**
-     * Get element inside slot
-     */
-    getElementsInSlot(slotName = null) {
-        return ElementExtension.getElementsInSlot(this, slotName);
-    }
-}
-
-class Callback {
+Style.Namespace=`${moduleName}`;
+_.Style=Style;
+const Callback=class Callback {
     callbacks = [];
     /**
      * Clear all callbacks
@@ -802,14 +449,16 @@ class Callback {
      */
     trigger(args) {
         let result = [];
-        for (let callback of this.callbacks) {
-            result.push(callback.apply(null, args));
+        let cbs = [...this.callbacks];
+        for (let cb of cbs) {
+            result.push(cb.apply(null, args));
         }
         return result;
     }
 }
-
-class Mutex {
+Callback.Namespace=`${moduleName}`;
+_.Callback=Callback;
+const Mutex=class Mutex {
     waitingList = [];
     isLocked = false;
     /**
@@ -850,7 +499,9 @@ class Mutex {
                 fct(false);
             }
             this.waitingList = [];
-            lastFct(true);
+            if (lastFct) {
+                lastFct(true);
+            }
         }
         else {
             this.isLocked = false;
@@ -898,7 +549,7 @@ class Mutex {
         return result;
     }
     async safeRunLastAsync(cb) {
-        let result = null;
+        let result;
         if (await this.waitOne()) {
             try {
                 result = await cb.apply(null, []);
@@ -910,11 +561,1255 @@ class Mutex {
         return result;
     }
 }
-
-class StateManager {
+Mutex.Namespace=`${moduleName}`;
+_.Mutex=Mutex;
+const PressManager=class PressManager {
+    static create(options) {
+        if (Array.isArray(options.element)) {
+            let result = [];
+            for (let el of options.element) {
+                let cloneOpt = { ...options };
+                cloneOpt.element = el;
+                result.push(new PressManager(cloneOpt));
+            }
+            return result;
+        }
+        else {
+            return new PressManager(options);
+        }
+    }
+    options;
+    element;
+    delayDblPress = 150;
+    delayLongPress = 700;
+    nbPress = 0;
+    offsetDrag = 20;
+    state = {
+        oneActionTriggered: false,
+        isMoving: false,
+    };
+    startPosition = { x: 0, y: 0 };
+    customFcts = {};
+    timeoutDblPress = 0;
+    timeoutLongPress = 0;
+    downEventSaved;
+    actionsName = {
+        press: "press",
+        longPress: "longPress",
+        dblPress: "dblPress",
+        drag: "drag"
+    };
+    useDblPress = false;
+    stopPropagation = () => true;
+    functionsBinded = {
+        downAction: (e) => { },
+        upAction: (e) => { },
+        moveAction: (e) => { },
+        childPressStart: (e) => { },
+        childPressEnd: (e) => { },
+        childPress: (e) => { },
+        childDblPress: (e) => { },
+        childLongPress: (e) => { },
+        childDragStart: (e) => { },
+    };
+    /**
+     * @param {*} options - The options
+     * @param {HTMLElement | HTMLElement[]} options.element - The element to manage
+     */
+    constructor(options) {
+        if (options.element === void 0) {
+            throw 'You must provide an element';
+        }
+        this.element = options.element;
+        this.checkDragConstraint(options);
+        this.assignValueOption(options);
+        this.options = options;
+        this.init();
+    }
+    /**
+     * Get the current element focused by the PressManager
+     */
+    getElement() {
+        return this.element;
+    }
+    checkDragConstraint(options) {
+        if (options.onDrag !== void 0) {
+            if (options.onDragStart === void 0) {
+                options.onDragStart = (e) => { };
+            }
+            if (options.onDragEnd === void 0) {
+                options.onDragEnd = (e) => { };
+            }
+        }
+        if (options.onDragStart !== void 0) {
+            if (options.onDrag === void 0) {
+                options.onDrag = (e) => { };
+            }
+            if (options.onDragEnd === void 0) {
+                options.onDragEnd = (e) => { };
+            }
+        }
+        if (options.onDragEnd !== void 0) {
+            if (options.onDragStart === void 0) {
+                options.onDragStart = (e) => { };
+            }
+            if (options.onDrag === void 0) {
+                options.onDrag = (e) => { };
+            }
+        }
+    }
+    assignValueOption(options) {
+        if (options.delayDblPress !== undefined) {
+            this.delayDblPress = options.delayDblPress;
+        }
+        if (options.delayLongPress !== undefined) {
+            this.delayLongPress = options.delayLongPress;
+        }
+        if (options.offsetDrag !== undefined) {
+            this.offsetDrag = options.offsetDrag;
+        }
+        if (options.onDblPress !== undefined) {
+            this.useDblPress = true;
+        }
+        if (options.forceDblPress) {
+            this.useDblPress = true;
+        }
+        if (typeof options.stopPropagation == 'function') {
+            this.stopPropagation = options.stopPropagation;
+        }
+        else if (options.stopPropagation === false) {
+            this.stopPropagation = () => false;
+        }
+        if (!options.buttonAllowed)
+            options.buttonAllowed = [0];
+    }
+    bindAllFunction() {
+        this.functionsBinded.downAction = this.downAction.bind(this);
+        this.functionsBinded.moveAction = this.moveAction.bind(this);
+        this.functionsBinded.upAction = this.upAction.bind(this);
+        this.functionsBinded.childDblPress = this.childDblPress.bind(this);
+        this.functionsBinded.childDragStart = this.childDragStart.bind(this);
+        this.functionsBinded.childLongPress = this.childLongPress.bind(this);
+        this.functionsBinded.childPress = this.childPress.bind(this);
+        this.functionsBinded.childPressStart = this.childPressStart.bind(this);
+        this.functionsBinded.childPressEnd = this.childPressEnd.bind(this);
+    }
+    init() {
+        this.bindAllFunction();
+        this.element.addEventListener("pointerdown", this.functionsBinded.downAction);
+        this.element.addEventListener("trigger_pointer_press", this.functionsBinded.childPress);
+        this.element.addEventListener("trigger_pointer_pressstart", this.functionsBinded.childPressStart);
+        this.element.addEventListener("trigger_pointer_pressend", this.functionsBinded.childPressEnd);
+        this.element.addEventListener("trigger_pointer_dblpress", this.functionsBinded.childDblPress);
+        this.element.addEventListener("trigger_pointer_longpress", this.functionsBinded.childLongPress);
+        this.element.addEventListener("trigger_pointer_dragstart", this.functionsBinded.childDragStart);
+    }
+    downAction(e) {
+        if (!this.options.buttonAllowed?.includes(e.button)) {
+            return;
+        }
+        this.downEventSaved = e;
+        if (this.stopPropagation()) {
+            e.stopImmediatePropagation();
+        }
+        this.customFcts = {};
+        if (this.nbPress == 0) {
+            this.state.oneActionTriggered = false;
+            clearTimeout(this.timeoutDblPress);
+        }
+        this.startPosition = { x: e.pageX, y: e.pageY };
+        document.addEventListener("pointerup", this.functionsBinded.upAction);
+        document.addEventListener("pointermove", this.functionsBinded.moveAction);
+        this.timeoutLongPress = setTimeout(() => {
+            if (!this.state.oneActionTriggered) {
+                if (this.options.onLongPress) {
+                    this.state.oneActionTriggered = true;
+                    this.options.onLongPress(e, this);
+                    this.triggerEventToParent(this.actionsName.longPress, e);
+                }
+                else {
+                    this.emitTriggerFunction(this.actionsName.longPress, e);
+                }
+            }
+        }, this.delayLongPress);
+        if (this.options.onPressStart) {
+            this.options.onPressStart(e, this);
+            this.emitTriggerFunctionParent("pressstart", e);
+        }
+        else {
+            this.emitTriggerFunction("pressstart", e);
+        }
+    }
+    upAction(e) {
+        if (this.stopPropagation()) {
+            e.stopImmediatePropagation();
+        }
+        document.removeEventListener("pointerup", this.functionsBinded.upAction);
+        document.removeEventListener("pointermove", this.functionsBinded.moveAction);
+        clearTimeout(this.timeoutLongPress);
+        if (this.state.isMoving) {
+            this.state.isMoving = false;
+            if (this.options.onDragEnd) {
+                this.options.onDragEnd(e, this);
+            }
+            else if (this.customFcts.src && this.customFcts.onDragEnd) {
+                this.customFcts.onDragEnd(e, this.customFcts.src);
+            }
+        }
+        else {
+            if (this.useDblPress) {
+                this.nbPress++;
+                if (this.nbPress == 2) {
+                    if (!this.state.oneActionTriggered) {
+                        this.state.oneActionTriggered = true;
+                        this.nbPress = 0;
+                        if (this.options.onDblPress) {
+                            this.options.onDblPress(e, this);
+                            this.triggerEventToParent(this.actionsName.dblPress, e);
+                        }
+                        else {
+                            this.emitTriggerFunction(this.actionsName.dblPress, e);
+                        }
+                    }
+                }
+                else if (this.nbPress == 1) {
+                    this.timeoutDblPress = setTimeout(() => {
+                        this.nbPress = 0;
+                        if (!this.state.oneActionTriggered) {
+                            if (this.options.onPress) {
+                                this.state.oneActionTriggered = true;
+                                this.options.onPress(e, this);
+                                this.triggerEventToParent(this.actionsName.press, e);
+                            }
+                            else {
+                                this.emitTriggerFunction(this.actionsName.press, e);
+                            }
+                        }
+                    }, this.delayDblPress);
+                }
+            }
+            else {
+                if (!this.state.oneActionTriggered) {
+                    if (this.options.onPress) {
+                        this.state.oneActionTriggered = true;
+                        this.options.onPress(e, this);
+                        this.triggerEventToParent(this.actionsName.press, e);
+                    }
+                    else {
+                        this.emitTriggerFunction("press", e);
+                    }
+                }
+            }
+        }
+        if (this.options.onPressEnd) {
+            this.options.onPressEnd(e, this);
+            this.emitTriggerFunctionParent("pressend", e);
+        }
+        else {
+            this.emitTriggerFunction("pressend", e);
+        }
+    }
+    moveAction(e) {
+        if (!this.state.isMoving && !this.state.oneActionTriggered) {
+            if (this.stopPropagation()) {
+                e.stopImmediatePropagation();
+            }
+            let xDist = e.pageX - this.startPosition.x;
+            let yDist = e.pageY - this.startPosition.y;
+            let distance = Math.sqrt(xDist * xDist + yDist * yDist);
+            if (distance > this.offsetDrag && this.downEventSaved) {
+                this.state.oneActionTriggered = true;
+                if (this.options.onDragStart) {
+                    this.state.isMoving = true;
+                    this.options.onDragStart(this.downEventSaved, this);
+                    this.triggerEventToParent(this.actionsName.drag, e);
+                }
+                else {
+                    this.emitTriggerFunction("dragstart", this.downEventSaved);
+                }
+            }
+        }
+        else if (this.state.isMoving) {
+            if (this.options.onDrag) {
+                this.options.onDrag(e, this);
+            }
+            else if (this.customFcts.src && this.customFcts.onDrag) {
+                this.customFcts.onDrag(e, this.customFcts.src);
+            }
+        }
+    }
+    triggerEventToParent(eventName, pointerEvent) {
+        if (this.element.parentNode) {
+            this.element.parentNode.dispatchEvent(new CustomEvent("pressaction_trigger", {
+                bubbles: true,
+                cancelable: false,
+                composed: true,
+                detail: {
+                    target: this.element,
+                    eventName: eventName,
+                    realEvent: pointerEvent
+                }
+            }));
+        }
+    }
+    childPressStart(e) {
+        if (this.options.onPressStart) {
+            this.options.onPressStart(e.detail.realEvent, this);
+        }
+    }
+    childPressEnd(e) {
+        if (this.options.onPressEnd) {
+            this.options.onPressEnd(e.detail.realEvent, this);
+        }
+    }
+    childPress(e) {
+        if (this.options.onPress) {
+            if (this.stopPropagation()) {
+                e.stopImmediatePropagation();
+            }
+            e.detail.state.oneActionTriggered = true;
+            this.options.onPress(e.detail.realEvent, this);
+            this.triggerEventToParent(this.actionsName.press, e.detail.realEvent);
+        }
+    }
+    childDblPress(e) {
+        if (this.options.onDblPress) {
+            if (this.stopPropagation()) {
+                e.stopImmediatePropagation();
+            }
+            if (e.detail.state) {
+                e.detail.state.oneActionTriggered = true;
+            }
+            this.options.onDblPress(e.detail.realEvent, this);
+            this.triggerEventToParent(this.actionsName.dblPress, e.detail.realEvent);
+        }
+    }
+    childLongPress(e) {
+        if (this.options.onLongPress) {
+            if (this.stopPropagation()) {
+                e.stopImmediatePropagation();
+            }
+            e.detail.state.oneActionTriggered = true;
+            this.options.onLongPress(e.detail.realEvent, this);
+            this.triggerEventToParent(this.actionsName.longPress, e.detail.realEvent);
+        }
+    }
+    childDragStart(e) {
+        if (this.options.onDragStart) {
+            if (this.stopPropagation()) {
+                e.stopImmediatePropagation();
+            }
+            e.detail.state.isMoving = true;
+            e.detail.customFcts.src = this;
+            e.detail.customFcts.onDrag = this.options.onDrag;
+            e.detail.customFcts.onDragEnd = this.options.onDragEnd;
+            e.detail.customFcts.offsetDrag = this.options.offsetDrag;
+            this.options.onDragStart(e.detail.realEvent, this);
+            this.triggerEventToParent(this.actionsName.drag, e.detail.realEvent);
+        }
+    }
+    emitTriggerFunctionParent(action, e) {
+        let el = this.element.parentElement;
+        if (el == null) {
+            let parentNode = this.element.parentNode;
+            if (parentNode instanceof ShadowRoot) {
+                this.emitTriggerFunction(action, e, parentNode.host);
+            }
+        }
+        else {
+            this.emitTriggerFunction(action, e, el);
+        }
+    }
+    emitTriggerFunction(action, e, el) {
+        let ev = new CustomEvent("trigger_pointer_" + action, {
+            bubbles: true,
+            cancelable: true,
+            composed: true,
+            detail: {
+                state: this.state,
+                customFcts: this.customFcts,
+                realEvent: e
+            }
+        });
+        if (!el) {
+            el = this.element;
+        }
+        el.dispatchEvent(ev);
+    }
+    /**
+     * Destroy the Press instance byremoving all events
+     */
+    destroy() {
+        if (this.element) {
+            this.element.removeEventListener("pointerdown", this.functionsBinded.downAction);
+            this.element.removeEventListener("trigger_pointer_press", this.functionsBinded.childPress);
+            this.element.removeEventListener("trigger_pointer_pressstart", this.functionsBinded.childPressStart);
+            this.element.removeEventListener("trigger_pointer_pressend", this.functionsBinded.childPressEnd);
+            this.element.removeEventListener("trigger_pointer_dblpress", this.functionsBinded.childDblPress);
+            this.element.removeEventListener("trigger_pointer_longpress", this.functionsBinded.childLongPress);
+            this.element.removeEventListener("trigger_pointer_dragstart", this.functionsBinded.childDragStart);
+        }
+    }
+}
+PressManager.Namespace=`${moduleName}`;
+_.PressManager=PressManager;
+const Effect=class Effect {
+    callbacks = [];
+    isInit = false;
+    isDestroy = false;
+    __subscribes = [];
+    __allowChanged = [];
+    version = 0;
+    fct;
+    constructor(fct) {
+        this.fct = fct;
+        if (this.autoInit()) {
+            this.init();
+        }
+    }
+    autoInit() {
+        return true;
+    }
+    init() {
+        this.isInit = true;
+        this.run();
+    }
+    run() {
+        this.version++;
+        Watcher._registering.push(this);
+        let result = this.fct();
+        Watcher._registering.splice(Watcher._registering.length - 1, 1);
+        for (let i = 0; i < this.callbacks.length; i++) {
+            if (this.callbacks[i].version != this.version) {
+                this.callbacks[i].receiver.unsubscribe(this.callbacks[i].cb);
+                this.callbacks.splice(i, 1);
+                i--;
+            }
+        }
+        return result;
+    }
+    register(receiver, path, version, fullPath) {
+        for (let info of this.callbacks) {
+            if (info.receiver == receiver && info.path == path && receiver.__path == info.registerPath) {
+                info.version = version;
+                info.fullPath = fullPath;
+                return;
+            }
+        }
+        let cb;
+        if (path == "*") {
+            cb = (action, changePath, value) => { this.onChange(action, changePath, value); };
+        }
+        else {
+            cb = (action, changePath, value) => {
+                let full = fullPath;
+                if (changePath == path) {
+                    this.onChange(action, changePath, value);
+                }
+            };
+        }
+        this.callbacks.push({
+            receiver,
+            path,
+            registerPath: receiver.__path,
+            cb,
+            version,
+            fullPath
+        });
+        receiver.subscribe(cb);
+    }
+    canChange(fct) {
+        this.__allowChanged.push(fct);
+    }
+    checkCanChange(action, changePath, value) {
+        if (this.isDestroy) {
+            return false;
+        }
+        for (let fct of this.__allowChanged) {
+            if (!fct(action, changePath, value)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    onChange(action, changePath, value) {
+        if (!this.checkCanChange(action, changePath, value)) {
+            return;
+        }
+        this.run();
+        for (let fct of this.__subscribes) {
+            fct(action, changePath, value);
+        }
+    }
+    destroy() {
+        this.isDestroy = true;
+        for (let pair of this.callbacks) {
+            pair.receiver.unsubscribe(pair.cb);
+        }
+        this.callbacks = [];
+        this.isInit = false;
+    }
+    subscribe(fct) {
+        let index = this.__subscribes.indexOf(fct);
+        if (index == -1) {
+            this.__subscribes.push(fct);
+        }
+    }
+    unsubscribe(fct) {
+        let index = this.__subscribes.indexOf(fct);
+        if (index > -1) {
+            this.__subscribes.splice(index, 1);
+        }
+    }
+}
+Effect.Namespace=`${moduleName}`;
+_.Effect=Effect;
+const Watcher=class Watcher {
+    static _registering = [];
+    static get _register() {
+        return this._registering[this._registering.length - 1];
+    }
+    /**
+     * Transform object into a watcher
+     */
+    static get(obj, onDataChanged) {
+        if (obj == undefined) {
+            console.error("You must define an objet / array for your proxy");
+            return;
+        }
+        if (obj.__isProxy) {
+            if (onDataChanged)
+                obj.subscribe(onDataChanged);
+            return obj;
+        }
+        const reservedName = {
+            __path: '__path',
+        };
+        const clearReservedNames = (data) => {
+            if (data instanceof Object && !data.__isProxy) {
+                for (let key in reservedName) {
+                    delete data[key];
+                }
+            }
+        };
+        let setProxyPath = (newProxy, newPath) => {
+            if (newProxy instanceof Object && newProxy.__isProxy) {
+                newProxy.__path = newPath;
+            }
+        };
+        let jsonReplacer = (key, value) => {
+            if (reservedName[key])
+                return undefined;
+            return value;
+        };
+        let addAlias = (otherBaseData, name, cb) => {
+            let cbs = aliases.get(otherBaseData);
+            if (!cbs) {
+                cbs = [];
+                aliases.set(otherBaseData, cbs);
+            }
+            cbs.push({
+                name: name,
+                fct: cb
+            });
+        };
+        let deleteAlias = (otherBaseData, name) => {
+            let cbs = aliases.get(otherBaseData);
+            if (!cbs)
+                return;
+            for (let i = 0; i < cbs.length; i++) {
+                if (cbs[i].name == name) {
+                    cbs.splice(i, 1);
+                    if (cbs.length == 0) {
+                        aliases.delete(otherBaseData);
+                    }
+                    return;
+                }
+            }
+        };
+        let replaceByAlias = (target, element, prop, receiver) => {
+            let fullInternalPath = "";
+            if (Array.isArray(target)) {
+                if (prop != "length") {
+                    if (target.__path) {
+                        fullInternalPath = target.__path;
+                    }
+                    fullInternalPath += "[" + prop + "]";
+                }
+            }
+            else {
+                if (target.__path) {
+                    fullInternalPath = target.__path + '.';
+                }
+                fullInternalPath += prop;
+            }
+            if (receiver && internalAliases[fullInternalPath]) {
+                internalAliases[fullInternalPath].unbind();
+            }
+            if (element instanceof Object && element.__isProxy) {
+                let root = element.__root;
+                if (root != proxyData.baseData) {
+                    let oldPath = element.__path;
+                    let unbindElement = getValueFromObject(oldPath, root);
+                    if (receiver == null) {
+                        receiver = getValueFromObject(target.__path, realProxy);
+                        if (internalAliases[fullInternalPath]) {
+                            internalAliases[fullInternalPath].unbind();
+                        }
+                    }
+                    let result = Reflect.set(target, prop, unbindElement, receiver);
+                    element.__addAlias(proxyData.baseData, oldPath, (type, target, receiver2, value, prop2, dones) => {
+                        let triggerPath;
+                        if (prop2.startsWith("[") || fullInternalPath == "" || prop2 == "") {
+                            triggerPath = fullInternalPath + prop2;
+                        }
+                        else {
+                            triggerPath = fullInternalPath + "." + prop2;
+                        }
+                        triggerPath = triggerPath.replace(/\[(.*?)\]/g, '.$1');
+                        if (type == 'DELETED' && internalAliases[triggerPath]) {
+                            internalAliases[triggerPath].unbind();
+                        }
+                        let splitted = triggerPath.split(".");
+                        let newProp = splitted.pop();
+                        let newReceiver = getValueFromObject(splitted.join("."), realProxy);
+                        trigger(type, target, newReceiver, value, newProp, dones);
+                    });
+                    internalAliases[fullInternalPath] = {
+                        unbind: () => {
+                            delete internalAliases[fullInternalPath];
+                            element.__deleteAlias(proxyData.baseData, oldPath);
+                            deleteAlias(root, prop);
+                        }
+                    };
+                    addAlias(root, prop, (type, target, receiver2, value, prop2, dones) => {
+                        let proxy = element.__getProxy;
+                        let triggerPath;
+                        if (prop2.startsWith("[") || oldPath == "" || prop2 == "") {
+                            triggerPath = oldPath + prop2;
+                        }
+                        else {
+                            triggerPath = oldPath + "." + prop2;
+                        }
+                        triggerPath = triggerPath.replace(/\[(.*?)\]/g, '.$1');
+                        let splitted = triggerPath.split(".");
+                        let newProp = splitted.pop();
+                        let newReceiver = getValueFromObject(splitted.join("."), proxy);
+                        element.__trigger(type, target, newReceiver, value, newProp, dones);
+                    });
+                    return unbindElement;
+                }
+            }
+            return element;
+        };
+        let currentTrace = new Error().stack?.split("\n") ?? [];
+        currentTrace.shift();
+        currentTrace.shift();
+        const aliases = new Map();
+        const internalAliases = {};
+        let proxyData = {
+            baseData: {},
+            callbacks: {},
+            callbacksReverse: new Map(),
+            avoidUpdate: [],
+            pathToRemove: [],
+            history: [{
+                    object: JSON.parse(JSON.stringify(obj, jsonReplacer)),
+                    trace: currentTrace,
+                    action: 'init',
+                    path: ''
+                }],
+            useHistory: false,
+            getProxyObject(target, element, prop) {
+                let newProxy;
+                element = replaceByAlias(target, element, prop, null);
+                if (element instanceof Object && element.__isProxy) {
+                    newProxy = element;
+                }
+                else {
+                    try {
+                        if (element instanceof Computed) {
+                            return element;
+                        }
+                        if (element instanceof Object) {
+                            newProxy = new Proxy(element, this);
+                        }
+                        else {
+                            return element;
+                        }
+                    }
+                    catch {
+                        return element;
+                    }
+                }
+                let newPath = '';
+                if (Array.isArray(target)) {
+                    if (/^[0-9]*$/g.exec(prop)) {
+                        if (target.__path) {
+                            newPath = target.__path;
+                        }
+                        newPath += "[" + prop + "]";
+                        setProxyPath(newProxy, newPath);
+                    }
+                    else {
+                        newPath += "." + prop;
+                        setProxyPath(newProxy, newPath);
+                    }
+                }
+                else if (element instanceof Date) {
+                    return element;
+                }
+                else {
+                    if (target.__path) {
+                        newPath = target.__path + '.';
+                    }
+                    newPath += prop;
+                    setProxyPath(newProxy, newPath);
+                }
+                return newProxy;
+            },
+            tryCustomFunction(target, prop, receiver) {
+                if (prop == "__isProxy") {
+                    return true;
+                }
+                else if (prop == "__getProxy") {
+                    return realProxy;
+                }
+                else if (prop == "__root") {
+                    return this.baseData;
+                }
+                else if (prop == "__callbacks") {
+                    return this.callbacks;
+                }
+                else if (prop == "subscribe") {
+                    let path = receiver.__path;
+                    return (cb) => {
+                        if (!this.callbacks[path]) {
+                            this.callbacks[path] = [];
+                        }
+                        this.callbacks[path].push(cb);
+                        this.callbacksReverse.set(cb, path);
+                    };
+                }
+                else if (prop == "unsubscribe") {
+                    return (cb) => {
+                        let oldPath = this.callbacksReverse.get(cb);
+                        if (oldPath === undefined)
+                            return;
+                        if (!this.callbacks[oldPath]) {
+                            return;
+                        }
+                        let index = this.callbacks[oldPath].indexOf(cb);
+                        if (index > -1) {
+                            this.callbacks[oldPath].splice(index, 1);
+                        }
+                        this.callbacksReverse.delete(cb);
+                    };
+                }
+                else if (prop == "getHistory") {
+                    return () => {
+                        return this.history;
+                    };
+                }
+                else if (prop == "clearHistory") {
+                    this.history = [];
+                }
+                else if (prop == "enableHistory") {
+                    return () => {
+                        this.useHistory = true;
+                    };
+                }
+                else if (prop == "disableHistory") {
+                    return () => {
+                        this.useHistory = false;
+                    };
+                }
+                else if (prop == "toJSON") {
+                    if (Array.isArray(target)) {
+                        return () => {
+                            let result = [];
+                            for (let element of target) {
+                                result.push(element);
+                            }
+                            return result;
+                        };
+                    }
+                    return () => {
+                        let result = {};
+                        for (let key of Object.keys(target)) {
+                            if (reservedName[key]) {
+                                continue;
+                            }
+                            result[key] = target[key];
+                        }
+                        return result;
+                    };
+                }
+                else if (prop == "__addAlias") {
+                    return addAlias;
+                }
+                else if (prop == "__deleteAlias") {
+                    return deleteAlias;
+                }
+                else if (prop == "__trigger") {
+                    return trigger;
+                }
+                return undefined;
+            },
+            get(target, prop, receiver) {
+                if (reservedName[prop]) {
+                    return target[prop];
+                }
+                let customResult = this.tryCustomFunction(target, prop, receiver);
+                if (customResult !== undefined) {
+                    return customResult;
+                }
+                let element = target[prop];
+                if (typeof (element) == 'function') {
+                    if (Array.isArray(target)) {
+                        let result;
+                        if (prop == 'push') {
+                            if (target.__isProxy) {
+                                result = (el) => {
+                                    let index = target.push(el);
+                                    return index;
+                                };
+                            }
+                            else {
+                                result = (el) => {
+                                    let index = target.push(el);
+                                    target.splice(target.length - 1, 1, el);
+                                    trigger('CREATED', target, receiver, receiver[index - 1], "[" + (index - 1) + "]");
+                                    trigger('UPDATED', target, receiver, target.length, "length");
+                                    return index;
+                                };
+                            }
+                        }
+                        else if (prop == 'splice') {
+                            if (target.__isProxy) {
+                                result = (index, nbRemove, ...insert) => {
+                                    let res = target.splice(index, nbRemove, ...insert);
+                                    return res;
+                                };
+                            }
+                            else {
+                                result = (index, nbRemove, ...insert) => {
+                                    let oldValues = [];
+                                    for (let i = index; i < index + nbRemove; i++) {
+                                        oldValues.push(receiver[i]);
+                                    }
+                                    let updateLength = nbRemove != insert.length;
+                                    let res = target.splice(index, nbRemove, ...insert);
+                                    for (let i = 0; i < oldValues.length; i++) {
+                                        trigger('DELETED', target, receiver, oldValues[i], "[" + index + "]");
+                                    }
+                                    for (let i = 0; i < insert.length; i++) {
+                                        target.splice((index + i), 1, insert[i]);
+                                        trigger('CREATED', target, receiver, receiver[(index + i)], "[" + (index + i) + "]");
+                                    }
+                                    // for(let i = fromIndex, j = 0; i < target.length; i++, j++) {
+                                    //     let proxyEl = this.getProxyObject(target, target[i], i);
+                                    //     let recuUpdate = (childEl) => {
+                                    //         if(Array.isArray(childEl)) {
+                                    //             for(let i = 0; i < childEl.length; i++) {
+                                    //                 if(childEl[i] instanceof Object && childEl[i].__path) {
+                                    //                     let newProxyEl = this.getProxyObject(childEl, childEl[i], i);
+                                    //                     recuUpdate(newProxyEl);
+                                    //         else if(childEl instanceof Object && !(childEl instanceof Date)) {
+                                    //             for(let key in childEl) {
+                                    //                 if(childEl[key] instanceof Object && childEl[key].__path) {
+                                    //                     let newProxyEl = this.getProxyObject(childEl, childEl[key], key);
+                                    //                     recuUpdate(newProxyEl);
+                                    //     recuUpdate(proxyEl);
+                                    if (updateLength)
+                                        trigger('UPDATED', target, receiver, target.length, "length");
+                                    return res;
+                                };
+                            }
+                        }
+                        else if (prop == 'pop') {
+                            if (target.__isProxy) {
+                                result = () => {
+                                    let res = target.pop();
+                                    return res;
+                                };
+                            }
+                            else {
+                                result = () => {
+                                    let index = target.length - 1;
+                                    let oldValue = receiver.length ? receiver[receiver.length] : undefined;
+                                    let res = target.pop();
+                                    trigger('DELETED', target, receiver, oldValue, "[" + index + "]");
+                                    trigger('UPDATED', target, receiver, target.length, "length");
+                                    return res;
+                                };
+                            }
+                        }
+                        else {
+                            result = element.bind(target);
+                        }
+                        return result;
+                    }
+                    return element.bind(target);
+                }
+                if (element instanceof Computed) {
+                    return element.value;
+                }
+                if (Watcher._registering.length > 0) {
+                    let currentPath;
+                    let fullPath;
+                    let isArray = Array.isArray(receiver);
+                    if (isArray && /^[0-9]*$/g.exec(prop)) {
+                        fullPath = receiver.__path + "[" + prop + "]";
+                        currentPath = "[" + prop + "]";
+                    }
+                    else {
+                        fullPath = receiver.__path ? receiver.__path + '.' + prop : prop;
+                        currentPath = prop;
+                    }
+                    Watcher._register?.register(receiver, currentPath, Watcher._register.version, fullPath);
+                }
+                if (typeof (element) == 'object') {
+                    return this.getProxyObject(target, element, prop);
+                }
+                return Reflect.get(target, prop, receiver);
+            },
+            set(target, prop, value, receiver) {
+                value = replaceByAlias(target, value, prop, receiver);
+                let triggerChange = false;
+                if (!reservedName[prop]) {
+                    if (Array.isArray(target)) {
+                        if (prop != "length") {
+                            triggerChange = true;
+                        }
+                    }
+                    else {
+                        let oldValue = Reflect.get(target, prop, receiver);
+                        if (!compareObject(value, oldValue)) {
+                            triggerChange = true;
+                        }
+                    }
+                }
+                let result = Reflect.set(target, prop, value, receiver);
+                if (triggerChange) {
+                    let index = this.avoidUpdate.indexOf(prop);
+                    if (index == -1) {
+                        trigger('UPDATED', target, receiver, value, prop);
+                    }
+                    else {
+                        this.avoidUpdate.splice(index, 1);
+                    }
+                }
+                return result;
+            },
+            deleteProperty(target, prop) {
+                let triggerChange = false;
+                let pathToDelete = '';
+                if (!reservedName[prop]) {
+                    if (Array.isArray(target)) {
+                        if (prop != "length") {
+                            if (target.__path) {
+                                pathToDelete = target.__path;
+                            }
+                            pathToDelete += "[" + prop + "]";
+                            triggerChange = true;
+                        }
+                    }
+                    else {
+                        if (target.__path) {
+                            pathToDelete = target.__path + '.';
+                        }
+                        pathToDelete += prop;
+                        triggerChange = true;
+                    }
+                }
+                if (internalAliases[pathToDelete]) {
+                    internalAliases[pathToDelete].unbind();
+                }
+                if (target.hasOwnProperty(prop)) {
+                    let oldValue = target[prop];
+                    if (oldValue instanceof Effect) {
+                        oldValue.destroy();
+                    }
+                    delete target[prop];
+                    if (triggerChange) {
+                        clearReservedNames(oldValue);
+                        trigger('DELETED', target, null, oldValue, prop);
+                    }
+                    return true;
+                }
+                return false;
+            },
+            defineProperty(target, prop, descriptor) {
+                let triggerChange = false;
+                let newPath = '';
+                if (!reservedName[prop]) {
+                    if (Array.isArray(target)) {
+                        if (prop != "length") {
+                            if (target.__path) {
+                                newPath = target.__path;
+                            }
+                            newPath += "[" + prop + "]";
+                            if (!target.hasOwnProperty(prop)) {
+                                triggerChange = true;
+                            }
+                        }
+                    }
+                    else {
+                        if (target.__path) {
+                            newPath = target.__path + '.';
+                        }
+                        newPath += prop;
+                        if (!target.hasOwnProperty(prop)) {
+                            triggerChange = true;
+                        }
+                    }
+                }
+                let result = Reflect.defineProperty(target, prop, descriptor);
+                if (triggerChange) {
+                    this.avoidUpdate.push(prop);
+                    let proxyEl = this.getProxyObject(target, descriptor.value, prop);
+                    target[prop] = proxyEl;
+                    trigger('CREATED', target, null, proxyEl, prop);
+                }
+                return result;
+            },
+            ownKeys(target) {
+                let result = Reflect.ownKeys(target);
+                for (let i = 0; i < result.length; i++) {
+                    if (reservedName[result[i]]) {
+                        result.splice(i, 1);
+                        i--;
+                    }
+                }
+                return result;
+            },
+        };
+        if (onDataChanged) {
+            proxyData.callbacks[''] = [onDataChanged];
+        }
+        const trigger = (type, target, receiver, value, prop, dones = []) => {
+            if (target.__isProxy) {
+                return;
+            }
+            let rootPath;
+            if (receiver == null) {
+                rootPath = target.__path;
+            }
+            else {
+                rootPath = receiver.__path;
+            }
+            if (rootPath != "") {
+                if (Array.isArray(target)) {
+                    if (!prop.startsWith("[")) {
+                        if (/^[0-9]*$/g.exec(prop)) {
+                            rootPath += "[" + prop + "]";
+                        }
+                        else {
+                            rootPath += "." + prop;
+                        }
+                    }
+                    else {
+                        rootPath += prop;
+                    }
+                }
+                else {
+                    if (!prop.startsWith("[")) {
+                        rootPath += ".";
+                    }
+                    rootPath += prop;
+                }
+            }
+            else {
+                rootPath = prop;
+            }
+            let stacks = [];
+            if (proxyData.useHistory) {
+                let allStacks = new Error().stack?.split("\n") ?? [];
+                for (let i = allStacks.length - 1; i >= 0; i--) {
+                    let current = allStacks[i].trim().replace("at ", "");
+                    if (current.startsWith("Object.set") || current.startsWith("Proxy.result")) {
+                        break;
+                    }
+                    stacks.push(current);
+                }
+            }
+            dones.push(proxyData.baseData);
+            let aliasesDone = [];
+            for (let name in proxyData.callbacks) {
+                let pathToSend = rootPath;
+                if (name !== "") {
+                    let regex = new RegExp("^" + name.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + "(\\.|(\\[)|$)");
+                    if (!regex.test(rootPath)) {
+                        continue;
+                    }
+                    pathToSend = rootPath.replace(regex, "$2");
+                }
+                if (name === "" && proxyData.useHistory) {
+                    proxyData.history.push({
+                        object: JSON.parse(JSON.stringify(proxyData.baseData, jsonReplacer)),
+                        trace: stacks.reverse(),
+                        action: WatchAction[type],
+                        path: pathToSend
+                    });
+                }
+                let cbs = [...proxyData.callbacks[name]];
+                for (let cb of cbs) {
+                    try {
+                        cb(WatchAction[type], pathToSend, value);
+                    }
+                    catch (e) {
+                        console.log(e);
+                    }
+                }
+                for (let [key, infos] of aliases) {
+                    if (!dones.includes(key)) {
+                        for (let info of infos) {
+                            if (info.name == name) {
+                                aliasesDone.push(key);
+                                info.fct(type, target, receiver, value, prop, dones);
+                            }
+                        }
+                    }
+                }
+            }
+            for (let [key, infos] of aliases) {
+                if (!dones.includes(key) && !aliasesDone.includes(key)) {
+                    for (let info of infos) {
+                        let regex = new RegExp("^" + info.name.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + "(\\.|(\\[)|$)");
+                        if (!regex.test(rootPath)) {
+                            continue;
+                        }
+                        let name = rootPath.replace(regex, "$2");
+                        info.fct(type, target, receiver, value, name, dones);
+                    }
+                }
+            }
+        };
+        var realProxy = new Proxy(obj, proxyData);
+        proxyData.baseData = obj;
+        setProxyPath(realProxy, '');
+        return realProxy;
+    }
+    /**
+     * Create a computed variable that will watch any changes
+     */
+    static computed(fct) {
+        const comp = new Computed(fct);
+        return comp;
+    }
+    /**
+     * Create an effect variable that will watch any changes
+     */
+    static effect(fct) {
+        const comp = new Effect(fct);
+        return comp;
+    }
+}
+Watcher.Namespace=`${moduleName}`;
+_.Watcher=Watcher;
+const Uri=class Uri {
+    static prepare(uri) {
+        let params = [];
+        let i = 0;
+        let regexState = uri.replace(/{.*?}/g, (group, position) => {
+            group = group.slice(1, -1);
+            let splitted = group.split(":");
+            let name = splitted[0].trim();
+            let type = "string";
+            let result = "([^\\/]+)";
+            i++;
+            if (splitted.length > 1) {
+                if (splitted[1].trim() == "number") {
+                    result = "([0-9]+)";
+                    type = "number";
+                }
+            }
+            params.push({
+                name,
+                type,
+                position: i
+            });
+            return result;
+        });
+        regexState = regexState.replace(/\*/g, ".*?").toLowerCase();
+        regexState = "^" + regexState + '$';
+        return {
+            regex: new RegExp(regexState),
+            params
+        };
+    }
+    static getParams(from, current) {
+        if (typeof from == "string") {
+            from = this.prepare(from);
+        }
+        let matches = from.regex.exec(current);
+        if (matches) {
+            let slugs = {};
+            for (let param of from.params) {
+                if (param.type == "number") {
+                    slugs[param.name] = Number(matches[param.position]);
+                }
+                else {
+                    slugs[param.name] = matches[param.position];
+                }
+            }
+            return slugs;
+        }
+        return null;
+    }
+    static isActive(from, current) {
+        if (typeof from == "string") {
+            from = this.prepare(from);
+        }
+        return from.regex.test(current);
+    }
+}
+Uri.Namespace=`${moduleName}`;
+_.Uri=Uri;
+const State=class State {
+    /**
+     * Activate a custom state inside a specific manager
+     * It ll be a generic state with no information inside exept name
+     */
+    static async activate(stateName, manager) {
+        return await manager.setState(stateName);
+    }
+    /**
+     * Activate this state inside a specific manager
+     */
+    async activate(manager) {
+        return await manager.setState(this);
+    }
+    onActivate() {
+    }
+    onInactivate(nextState) {
+    }
+    async askChange(state, nextState) {
+        return true;
+    }
+}
+State.Namespace=`${moduleName}`;
+_.State=State;
+const EmptyState=class EmptyState extends State {
+    localName;
+    constructor(stateName) {
+        super();
+        this.localName = stateName;
+    }
+    /**
+     * @inheritdoc
+     */
+    get name() {
+        return this.localName;
+    }
+}
+EmptyState.Namespace=`${moduleName}`;
+_.EmptyState=EmptyState;
+const StateManager=class StateManager {
     subscribers = {};
     static canBeActivate(statePattern, stateName) {
-        let stateInfo = this.prepareStateString(statePattern);
+        let stateInfo = Uri.prepare(statePattern);
         return stateInfo.regex.test(stateName);
     }
     activeState;
@@ -933,7 +1828,7 @@ class StateManager {
         }
         for (let statePattern of statePatterns) {
             if (!this.subscribers.hasOwnProperty(statePattern)) {
-                let res = StateManager.prepareStateString(statePattern);
+                let res = Uri.prepare(statePattern);
                 let isActive = this.activeState !== undefined && res.regex.test(this.activeState.name);
                 this.subscribers[statePattern] = {
                     "regex": res.regex,
@@ -952,9 +1847,11 @@ class StateManager {
                 }
                 for (let activeFct of callbacks.active) {
                     this.subscribers[statePattern].callbacks.active.push(activeFct);
-                    if (this.subscribers[statePattern].isActive) {
-                        let slugs = this.getInternalStateSlugs(this.subscribers[statePattern], this.activeState.name);
-                        activeFct(this.activeState, slugs);
+                    if (this.subscribers[statePattern].isActive && this.activeState) {
+                        let slugs = Uri.getParams(this.subscribers[statePattern], this.activeState.name);
+                        if (slugs) {
+                            activeFct(this.activeState, slugs);
+                        }
                     }
                 }
             }
@@ -1036,44 +1933,17 @@ class StateManager {
     offAfterStateChanged(cb) {
         this.afterStateChanged.remove(cb);
     }
-    static prepareStateString(stateName) {
-        let params = [];
-        let i = 0;
-        let regexState = stateName.replace(/{.*?}/g, (group, position) => {
-            group = group.slice(1, -1);
-            let splitted = group.split(":");
-            let name = splitted[0].trim();
-            let type = "string";
-            let result = "([^\\/]+)";
-            i++;
-            if (splitted.length > 1) {
-                if (splitted[1].trim() == "number") {
-                    result = "([0-9]+)";
-                    type = "number";
-                }
-            }
-            params.push({
-                name,
-                type,
-                position: i
-            });
-            return result;
-        });
-        regexState = regexState.replace(/\*/g, ".*?");
-        regexState = "^" + regexState + '$';
-        return {
-            regex: new RegExp(regexState),
-            params
-        };
+    assignDefaultState(stateName) {
+        return new EmptyState(stateName);
     }
     /**
      * Activate a current state
      */
     async setState(state) {
-        return await this.changeStateMutex.safeRunLastAsync(async () => {
+        let result = await this.changeStateMutex.safeRunLastAsync(async () => {
             let stateToUse;
             if (typeof state == "string") {
-                stateToUse = new EmptyState(state);
+                stateToUse = this.assignDefaultState(state);
             }
             else {
                 stateToUse = state;
@@ -1094,15 +1964,17 @@ class StateManager {
                         let subscriber = this.subscribers[statePattern];
                         if (subscriber.isActive) {
                             let clone = [...subscriber.callbacks.askChange];
-                            let currentSlug = this.getInternalStateSlugs(subscriber, this.activeState.name);
-                            for (let i = 0; i < clone.length; i++) {
-                                let askChange = clone[i];
-                                if (!await askChange(this.activeState, stateToUse, currentSlug)) {
-                                    canChange = false;
-                                    break;
+                            let currentSlug = Uri.getParams(subscriber, this.activeState.name);
+                            if (currentSlug) {
+                                for (let i = 0; i < clone.length; i++) {
+                                    let askChange = clone[i];
+                                    if (!await askChange(this.activeState, stateToUse, currentSlug)) {
+                                        canChange = false;
+                                        break;
+                                    }
                                 }
                             }
-                            let slugs = this.getInternalStateSlugs(subscriber, stateToUse.name);
+                            let slugs = Uri.getParams(subscriber, stateToUse.name);
                             if (slugs === null) {
                                 activeToInactive.push(subscriber);
                             }
@@ -1114,7 +1986,7 @@ class StateManager {
                             }
                         }
                         else {
-                            let slugs = this.getInternalStateSlugs(subscriber, stateToUse.name);
+                            let slugs = Uri.getParams(subscriber, stateToUse.name);
                             if (slugs) {
                                 inactiveToActive.push({
                                     subscriber,
@@ -1133,10 +2005,13 @@ class StateManager {
                     oldState.onInactivate(stateToUse);
                     for (let subscriber of activeToInactive) {
                         subscriber.isActive = false;
-                        let oldSlug = this.getInternalStateSlugs(subscriber, oldState.name);
-                        [...subscriber.callbacks.inactive].forEach(callback => {
-                            callback(oldState, stateToUse, oldSlug);
-                        });
+                        let oldSlug = Uri.getParams(subscriber, oldState.name);
+                        if (oldSlug) {
+                            let oldSlugNotNull = oldSlug;
+                            [...subscriber.callbacks.inactive].forEach(callback => {
+                                callback(oldState, stateToUse, oldSlugNotNull);
+                            });
+                        }
                     }
                     for (let trigger of triggerActive) {
                         [...trigger.subscriber.callbacks.active].forEach(callback => {
@@ -1155,11 +2030,12 @@ class StateManager {
             else {
                 this.activeState = stateToUse;
                 for (let key in this.subscribers) {
-                    let slugs = this.getInternalStateSlugs(this.subscribers[key], stateToUse.name);
+                    let slugs = Uri.getParams(this.subscribers[key], stateToUse.name);
                     if (slugs) {
+                        let slugsNotNull = slugs;
                         this.subscribers[key].isActive = true;
                         [...this.subscribers[key].callbacks.active].forEach(callback => {
-                            callback(stateToUse, slugs);
+                            callback(stateToUse, slugsNotNull);
                         });
                     }
                 }
@@ -1168,47 +2044,22 @@ class StateManager {
             this.afterStateChanged.trigger([]);
             return true;
         });
+        return result ?? false;
     }
     getState() {
         return this.activeState;
-    }
-    getInternalStateSlugs(subscriber, stateName) {
-        let matches = subscriber.regex.exec(stateName);
-        if (matches) {
-            let slugs = {};
-            for (let param of subscriber.params) {
-                if (param.type == "number") {
-                    slugs[param.name] = Number(matches[param.position]);
-                }
-                else {
-                    slugs[param.name] = matches[param.position];
-                }
-            }
-            return slugs;
-        }
-        return null;
     }
     /**
      * Check if a state is in the subscribers and active, return true if it is, false otherwise
      */
     isStateActive(statePattern) {
-        return StateManager.prepareStateString(statePattern).regex.test(this.activeState.name);
+        return Uri.isActive(statePattern, this.activeState?.name ?? '');
     }
     /**
      * Get slugs information for the current state, return null if state isn't active
      */
     getStateSlugs(statePattern) {
-        let prepared = StateManager.prepareStateString(statePattern);
-        return this.getInternalStateSlugs({
-            regex: prepared.regex,
-            params: prepared.params,
-            isActive: false,
-            callbacks: {
-                active: [],
-                inactive: [],
-                askChange: [],
-            }
-        }, this.activeState.name);
+        return Uri.getParams(statePattern, this.activeState?.name ?? '');
     }
     // 0 = error only / 1 = errors and warning / 2 = error, warning and logs (not implemented)
     logLevel() {
@@ -1226,863 +2077,762 @@ class StateManager {
         }
     }
 }
-
-var WatchAction;
-(function (WatchAction) {
-    WatchAction[WatchAction["CREATED"] = 0] = "CREATED";
-    WatchAction[WatchAction["UPDATED"] = 1] = "UPDATED";
-    WatchAction[WatchAction["DELETED"] = 2] = "DELETED";
-})(WatchAction || (WatchAction = {}));
-
-class Watcher {
-    static __maxProxyData = 0;
-    /**
-     * Transform object into a watcher
-     */
-    static get(obj, onDataChanged) {
-        if (obj == undefined) {
-            console.error("You must define an objet / array for your proxy");
+StateManager.Namespace=`${moduleName}`;
+_.StateManager=StateManager;
+const Computed=class Computed extends Effect {
+    _value;
+    __path = "*";
+    get value() {
+        if (!this.isInit) {
+            this.init();
+        }
+        Watcher._register?.register(this, "*", Watcher._register.version, "*");
+        return this._value;
+    }
+    autoInit() {
+        return false;
+    }
+    constructor(fct) {
+        super(fct);
+    }
+    init() {
+        this.isInit = true;
+        this.computedValue();
+    }
+    computedValue() {
+        this._value = this.run();
+    }
+    onChange(action, changePath, value) {
+        if (!this.checkCanChange(action, changePath, value)) {
             return;
         }
-        if (obj.__isProxy) {
-            obj.__subscribe(onDataChanged);
-            return obj;
+        let oldValue = this._value;
+        this.computedValue();
+        if (oldValue === this._value) {
+            return;
         }
-        Watcher.__maxProxyData++;
-        let setProxyPath = (newProxy, newPath) => {
-            if (newProxy instanceof Object && newProxy.__isProxy) {
-                newProxy.__path = newPath;
-                if (!newProxy.__proxyData) {
-                    newProxy.__proxyData = {};
-                }
-                if (!newProxy.__proxyData[newPath]) {
-                    newProxy.__proxyData[newPath] = [];
-                }
-                if (newProxy.__proxyData[newPath].indexOf(proxyData) == -1) {
-                    newProxy.__proxyData[newPath].push(proxyData);
-                }
-            }
-        };
-        let removeProxyPath = (oldValue, pathToDelete, recursive = true) => {
-            if (oldValue instanceof Object && oldValue.__isProxy) {
-                let allProxies = oldValue.__proxyData;
-                for (let triggerPath in allProxies) {
-                    if (triggerPath == pathToDelete) {
-                        for (let i = 0; i < allProxies[triggerPath].length; i++) {
-                            if (allProxies[triggerPath][i] == proxyData) {
-                                allProxies[triggerPath].splice(i, 1);
-                                i--;
-                            }
-                        }
-                        if (allProxies[triggerPath].length == 0) {
-                            delete allProxies[triggerPath];
-                            if (Object.keys(allProxies).length == 0) {
-                                delete oldValue.__proxyData;
-                            }
-                        }
+        for (let fct of this.__subscribes) {
+            fct(action, changePath, value);
+        }
+    }
+}
+Computed.Namespace=`${moduleName}`;
+_.Computed=Computed;
+const ComputedNoRecomputed=class ComputedNoRecomputed extends Computed {
+    init() {
+        this.isInit = true;
+        Watcher._registering.push(this);
+        this._value = this.fct();
+        Watcher._registering.splice(Watcher._registering.length - 1, 1);
+    }
+    computedValue() {
+        this._value = this.fct();
+    }
+    run() { }
+}
+ComputedNoRecomputed.Namespace=`${moduleName}`;
+_.ComputedNoRecomputed=ComputedNoRecomputed;
+const TemplateContext=class TemplateContext {
+    data = {};
+    comp;
+    computeds = [];
+    watch;
+    constructor(component, data = {}, parentContext) {
+        this.comp = component;
+        this.watch = Watcher.get({});
+        let that = this;
+        for (let key in data) {
+            if (data[key].__isProxy) {
+                Object.defineProperty(this.data, key, {
+                    get() {
+                        return data[key];
                     }
-                }
-            }
-        };
-        let jsonReplacer = (key, value) => {
-            if (key == "__path")
-                return undefined;
-            else if (key == "__proxyData")
-                return undefined;
-            else
-                return value;
-        };
-        let currentTrace = new Error().stack.split("\n");
-        currentTrace.shift();
-        currentTrace.shift();
-        let onlyDuringInit = true;
-        let proxyData = {
-            baseData: {},
-            id: Watcher.__maxProxyData,
-            callbacks: [onDataChanged],
-            avoidUpdate: [],
-            pathToRemove: [],
-            history: [{
-                    object: JSON.parse(JSON.stringify(obj, jsonReplacer)),
-                    trace: currentTrace,
-                    action: 'init',
-                    path: ''
-                }],
-            useHistory: false,
-            getProxyObject(target, element, prop) {
-                let newProxy;
-                if (element instanceof Object && element.__isProxy) {
-                    newProxy = element;
-                }
-                else {
-                    try {
-                        if (element instanceof Object) {
-                            newProxy = new Proxy(element, this);
-                        }
-                        else {
-                            return element;
-                        }
-                    }
-                    catch {
-                        return element;
-                    }
-                }
-                let newPath = '';
-                if (Array.isArray(target)) {
-                    if (prop != "length") {
-                        if (target.__path) {
-                            newPath = target.__path;
-                        }
-                        newPath += "[" + prop + "]";
-                        setProxyPath(newProxy, newPath);
-                    }
-                }
-                else if (element instanceof Date) {
-                    return element;
-                }
-                else {
-                    if (target.__path) {
-                        newPath = target.__path + '.';
-                    }
-                    newPath += prop;
-                    setProxyPath(newProxy, newPath);
-                }
-                return newProxy;
-            },
-            tryCustomFunction(target, prop, receiver) {
-                if (prop == "__isProxy") {
-                    return true;
-                }
-                else if (prop == "__subscribe") {
-                    return (cb) => {
-                        this.callbacks.push(cb);
-                    };
-                }
-                else if (prop == "__unsubscribe") {
-                    return (cb) => {
-                        let index = this.callbacks.indexOf(cb);
-                        if (index > -1) {
-                            this.callbacks.splice(index, 1);
-                        }
-                    };
-                }
-                else if (prop == "__proxyId") {
-                    return this.id;
-                }
-                else if (prop == "getHistory") {
-                    return () => {
-                        return this.history;
-                    };
-                }
-                else if (prop == "clearHistory") {
-                    this.history = [];
-                }
-                else if (prop == "enableHistory") {
-                    return () => {
-                        this.useHistory = true;
-                    };
-                }
-                else if (prop == "disableHistory") {
-                    return () => {
-                        this.useHistory = false;
-                    };
-                }
-                else if (prop == "__getTarget" && onlyDuringInit) {
-                    return () => {
-                        return target;
-                    };
-                }
-                return undefined;
-            },
-            get(target, prop, receiver) {
-                if (prop == "__proxyData") {
-                    return target[prop];
-                }
-                let customResult = this.tryCustomFunction(target, prop, receiver);
-                if (customResult !== undefined) {
-                    return customResult;
-                }
-                let element = target[prop];
-                if (typeof (element) == 'object') {
-                    return this.getProxyObject(target, element, prop);
-                }
-                else if (typeof (element) == 'function') {
-                    if (Array.isArray(target)) {
-                        let result;
-                        if (prop == 'push') {
-                            if (target.__isProxy) {
-                                result = (el) => {
-                                    let index = target.push(el);
-                                    return index;
-                                };
-                            }
-                            else {
-                                result = (el) => {
-                                    let index = target.push(el);
-                                    let proxyEl = this.getProxyObject(target, el, (index - 1));
-                                    target.splice(target.length - 1, 1, proxyEl);
-                                    trigger('CREATED', target, receiver, proxyEl, "[" + (index - 1) + "]");
-                                    return index;
-                                };
-                            }
-                        }
-                        else if (prop == 'splice') {
-                            if (target.__isProxy) {
-                                result = (index, nbRemove, ...insert) => {
-                                    let res = target.splice(index, nbRemove, ...insert);
-                                    return res;
-                                };
-                            }
-                            else {
-                                result = (index, nbRemove, ...insert) => {
-                                    let res = target.splice(index, nbRemove, ...insert);
-                                    let path = target.__path ? target.__path : '';
-                                    for (let i = 0; i < res.length; i++) {
-                                        trigger('DELETED', target, receiver, res[i], "[" + index + "]");
-                                        removeProxyPath(res[i], path + "[" + (index + i) + "]");
-                                    }
-                                    for (let i = 0; i < insert.length; i++) {
-                                        let proxyEl = this.getProxyObject(target, insert[i], (index + i));
-                                        target.splice((index + i), 1, proxyEl);
-                                        trigger('CREATED', target, receiver, proxyEl, "[" + (index + i) + "]");
-                                    }
-                                    let fromIndex = index + insert.length;
-                                    let baseDiff = index - insert.length + res.length + 1;
-                                    for (let i = fromIndex, j = 0; i < target.length; i++, j++) {
-                                        let oldPath = path + "[" + (j + baseDiff) + "]";
-                                        removeProxyPath(target[i], oldPath, false);
-                                        let proxyEl = this.getProxyObject(target, target[i], i);
-                                        let recuUpdate = (childEl) => {
-                                            if (Array.isArray(childEl)) {
-                                                for (let i = 0; i < childEl.length; i++) {
-                                                    if (childEl[i] instanceof Object && childEl[i].__path) {
-                                                        let oldPathRecu = proxyEl[i].__path.replace(proxyEl.__path, oldPath);
-                                                        removeProxyPath(childEl[i], oldPathRecu, false);
-                                                        let newProxyEl = this.getProxyObject(childEl, childEl[i], i);
-                                                        recuUpdate(newProxyEl);
-                                                    }
-                                                }
-                                            }
-                                            else if (childEl instanceof Object && !(childEl instanceof Date)) {
-                                                for (let key in childEl) {
-                                                    if (childEl[key] instanceof Object && childEl[key].__path) {
-                                                        let oldPathRecu = proxyEl[key].__path.replace(proxyEl.__path, oldPath);
-                                                        removeProxyPath(childEl[key], oldPathRecu, false);
-                                                        let newProxyEl = this.getProxyObject(childEl, childEl[key], key);
-                                                        recuUpdate(newProxyEl);
-                                                    }
-                                                }
-                                            }
-                                        };
-                                        recuUpdate(proxyEl);
-                                    }
-                                    return res;
-                                };
-                            }
-                        }
-                        else if (prop == 'pop') {
-                            if (target.__isProxy) {
-                                result = () => {
-                                    let res = target.pop();
-                                    return res;
-                                };
-                            }
-                            else {
-                                result = () => {
-                                    let index = target.length - 1;
-                                    let res = target.pop();
-                                    let path = target.__path ? target.__path : '';
-                                    trigger('DELETED', target, receiver, res, "[" + index + "]");
-                                    removeProxyPath(res, path + "[" + index + "]");
-                                    return res;
-                                };
-                            }
-                        }
-                        else {
-                            result = element.bind(target);
-                        }
-                        return result;
-                    }
-                    return element.bind(target);
-                }
-                return Reflect.get(target, prop, receiver);
-            },
-            set(target, prop, value, receiver) {
-                let triggerChange = false;
-                if (["__path", "__proxyData"].indexOf(prop) == -1) {
-                    if (Array.isArray(target)) {
-                        if (prop != "length") {
-                            triggerChange = true;
-                        }
-                    }
-                    else {
-                        let oldValue = Reflect.get(target, prop, receiver);
-                        if (oldValue !== value) {
-                            triggerChange = true;
-                        }
-                    }
-                }
-                let result = Reflect.set(target, prop, value, receiver);
-                if (triggerChange) {
-                    let index = this.avoidUpdate.indexOf(prop);
-                    if (index == -1) {
-                        trigger('UPDATED', target, receiver, value, prop);
-                    }
-                    else {
-                        this.avoidUpdate.splice(index, 1);
-                    }
-                }
-                return result;
-            },
-            deleteProperty(target, prop) {
-                let triggerChange = false;
-                let pathToDelete = '';
-                if (prop != "__path") {
-                    if (Array.isArray(target)) {
-                        if (prop != "length") {
-                            if (target.__path) {
-                                pathToDelete = target.__path;
-                            }
-                            pathToDelete += "[" + prop + "]";
-                            triggerChange = true;
-                        }
-                    }
-                    else {
-                        if (target.__path) {
-                            pathToDelete = target.__path + '.';
-                        }
-                        pathToDelete += prop;
-                        triggerChange = true;
-                    }
-                }
-                if (target.hasOwnProperty(prop)) {
-                    let oldValue = target[prop];
-                    delete target[prop];
-                    if (triggerChange) {
-                        trigger('DELETED', target, null, oldValue, prop);
-                        removeProxyPath(oldValue, pathToDelete);
-                    }
-                    return true;
-                }
-                return false;
-            },
-            defineProperty(target, prop, descriptor) {
-                let triggerChange = false;
-                let newPath = '';
-                if (["__path", "__proxyData"].indexOf(prop) == -1) {
-                    if (Array.isArray(target)) {
-                        if (prop != "length") {
-                            if (target.__path) {
-                                newPath = target.__path;
-                            }
-                            newPath += "[" + prop + "]";
-                            if (!target.hasOwnProperty(prop)) {
-                                triggerChange = true;
-                            }
-                        }
-                    }
-                    else {
-                        if (target.__path) {
-                            newPath = target.__path + '.';
-                        }
-                        newPath += prop;
-                        if (!target.hasOwnProperty(prop)) {
-                            triggerChange = true;
-                        }
-                    }
-                }
-                let result = Reflect.defineProperty(target, prop, descriptor);
-                if (triggerChange) {
-                    this.avoidUpdate.push(prop);
-                    let proxyEl = this.getProxyObject(target, descriptor.value, prop);
-                    target[prop] = proxyEl;
-                    trigger('CREATED', target, null, proxyEl, prop);
-                }
-                return result;
-            }
-        };
-        const trigger = (type, target, receiver, value, prop) => {
-            if (target.__isProxy) {
-                return;
-            }
-            let allProxies = target.__proxyData;
-            let receiverId = 0;
-            if (receiver == null) {
-                receiverId = proxyData.id;
+                });
             }
             else {
-                receiverId = receiver.__proxyId;
-            }
-            if (proxyData.id == receiverId) {
-                let stacks = [];
-                let allStacks = new Error().stack.split("\n");
-                for (let i = allStacks.length - 1; i >= 0; i--) {
-                    let current = allStacks[i].trim().replace("at ", "");
-                    if (current.startsWith("Object.set") || current.startsWith("Proxy.result")) {
-                        break;
+                this.watch[key] = data[key];
+                Object.defineProperty(this.data, key, {
+                    get() {
+                        return that.watch[key];
                     }
-                    stacks.push(current);
+                });
+            }
+        }
+        if (parentContext) {
+            const descriptors = Object.getOwnPropertyDescriptors(parentContext.data);
+            for (let name in descriptors) {
+                Object.defineProperty(this.data, name, {
+                    get() {
+                        return parentContext.data[name];
+                    }
+                });
+            }
+        }
+    }
+    print(value) {
+        return value == null ? "" : value + "";
+    }
+    registerIndex() {
+        let name = "index";
+        let i = 0;
+        let fullName = name + i;
+        while (this.watch[fullName] !== undefined) {
+            i++;
+            fullName = name + i;
+        }
+        return fullName;
+    }
+    registerLoop(dataName, _indexValue, _indexName, indexName, itemName) {
+        this.watch[_indexName] = _indexValue;
+        let getItems;
+        let mustBeRecomputed = /if|switch|\?|\[.+?\]/g.test(dataName);
+        let _class = mustBeRecomputed ? Computed : ComputedNoRecomputed;
+        if (!dataName.startsWith("this.")) {
+            getItems = new _class(() => {
+                return getValueFromObject(dataName, this.data);
+            });
+        }
+        else {
+            dataName = dataName.replace(/^this\./, '');
+            getItems = new _class(() => {
+                return getValueFromObject(dataName, this.comp);
+            });
+        }
+        let getIndex = new ComputedNoRecomputed(() => {
+            let items = getItems.value;
+            if (!items)
+                throw 'impossible';
+            let keys = Object.keys(items);
+            let index = keys[_getIndex.value];
+            if (/^[0-9]+$/g.test(index))
+                return Number(index);
+            return index;
+        });
+        let getItem = new ComputedNoRecomputed(() => {
+            let items = getItems.value;
+            if (!items)
+                throw 'impossible';
+            let keys = Object.keys(items);
+            let index = keys[_getIndex.value];
+            return items[index];
+        });
+        let _getIndex = new ComputedNoRecomputed(() => {
+            return this.watch[_indexName];
+        });
+        this.computeds.push(getIndex);
+        this.computeds.push(getItem);
+        this.computeds.push(_getIndex);
+        if (itemName) {
+            Object.defineProperty(this.data, itemName, {
+                get() {
+                    return getItem.value;
                 }
-                for (let triggerPath in allProxies) {
-                    for (let currentProxyData of allProxies[triggerPath]) {
-                        let pathToSend = triggerPath;
-                        if (pathToSend != "") {
-                            if (Array.isArray(target)) {
-                                if (!prop.startsWith("[")) {
-                                    pathToSend += "[" + prop + "]";
-                                }
-                                else {
-                                    pathToSend += prop;
-                                }
-                            }
-                            else {
-                                if (!prop.startsWith("[")) {
-                                    pathToSend += ".";
-                                }
-                                pathToSend += prop;
-                            }
-                        }
-                        else {
-                            pathToSend = prop;
-                        }
-                        if (proxyData.useHistory) {
-                            proxyData.history.push({
-                                object: JSON.parse(JSON.stringify(currentProxyData.baseData, jsonReplacer)),
-                                trace: stacks.reverse(),
-                                action: WatchAction[type],
-                                path: pathToSend
-                            });
-                        }
-                        [...currentProxyData.callbacks].forEach((cb) => {
-                            cb(WatchAction[type], pathToSend, value);
+            });
+        }
+        if (indexName) {
+            Object.defineProperty(this.data, indexName, {
+                get() {
+                    return getIndex.value;
+                }
+            });
+        }
+    }
+    updateIndex(newIndex, _indexName) {
+        // let items: any[] | {};
+        // if(!dataName.startsWith("this.")) {
+        //     let comp = new Computed(() => {
+        //         return getValueFromObject(dataName, this.data);
+        //     });
+        //     fullName = dataName.replace(/^this\./, '');
+        //     items = getValueFromObject(fullName, this.comp);
+        // if(Array.isArray(items)) {
+        //     let regex = new RegExp("^(" + fullName.replace(/\./g, "\\.") + ")\\[(\\d+?)\\]");
+        //     for(let computed of computeds) {
+        //         for(let cb of computed.callbacks) {
+        //             cb.path = cb.path.replace(regex, "$1[" + newIndex + "]");
+        //     let oldKey = Object.keys(items)[this.watch[_indexName]]
+        //     let newKey = Object.keys(items)[newIndex]
+        //     let regex = new RegExp("^(" + fullName.replace(/\./g, "\\.") + "\\.)(" + oldKey + ")($|\\.)");
+        //     for (let computed of computeds) {
+        //         for (let cb of computed.callbacks) {
+        //             cb.path = cb.path.replace(regex, "$1" + newKey + "$3")
+        this.watch[_indexName] = newIndex;
+    }
+    increaseIndex(_indexName) {
+        this.updateIndex(this.watch[_indexName] + 1, _indexName);
+    }
+    decreaseIndex(_indexName) {
+        this.updateIndex(this.watch[_indexName] - 1, _indexName);
+    }
+    destructor() {
+        for (let computed of this.computeds) {
+            computed.destroy();
+        }
+        this.computeds = [];
+    }
+    registerWatch(name, value) {
+        let that = this;
+        that.watch[name] = value;
+        Object.defineProperty(that.data, name, {
+            get() {
+                return that.watch[name];
+            }
+        });
+    }
+    updateWatch(name, value) {
+        this.watch[name] = value;
+    }
+    getValueFromItem(name) {
+        let result = getValueFromObject(name, this.data);
+        if (result !== undefined) {
+            return result;
+        }
+        result = getValueFromObject(name, this.comp);
+        if (result !== undefined) {
+            return result;
+        }
+        return undefined;
+    }
+    setValueToItem(name, value) {
+        setValueToObject(name, this.comp, value);
+    }
+}
+TemplateContext.Namespace=`${moduleName}`;
+_.TemplateContext=TemplateContext;
+const TemplateInstance=class TemplateInstance {
+    context;
+    content;
+    actions;
+    component;
+    _components = {};
+    firstRenderUniqueCb = {};
+    firstRenderCb = [];
+    firstChild;
+    lastChild;
+    computeds = [];
+    renderingComputeds = [];
+    loopRegisteries = {};
+    loops = [];
+    ifs = [];
+    constructor(component, content, actions, loops, ifs, context) {
+        this.component = component;
+        this.content = content;
+        this.actions = actions;
+        this.ifs = ifs;
+        this.loops = loops;
+        this.context = context ? context : new TemplateContext(component);
+        this.firstChild = content.firstElementChild;
+        this.lastChild = content.lastElementChild;
+        this.selectElements();
+        this.transformActionsListening();
+    }
+    render() {
+        this.updateContext();
+        this.bindEvents();
+        for (let cb of this.firstRenderCb) {
+            cb();
+        }
+        for (let key in this.firstRenderUniqueCb) {
+            this.firstRenderUniqueCb[key]();
+        }
+        this.renderSubTemplate();
+    }
+    destructor() {
+        for (let name in this.loopRegisteries) {
+            for (let item of this.loopRegisteries[name].templates) {
+                item.destructor();
+            }
+            for (let item of this.loopRegisteries[name].computeds) {
+                item.destroy();
+            }
+        }
+        this.loopRegisteries = {};
+        this.context.destructor();
+        for (let computed of this.computeds) {
+            computed.destroy();
+        }
+        for (let computed of this.renderingComputeds) {
+            computed.destroy();
+        }
+        this.computeds = [];
+        this.removeFromDOM();
+    }
+    removeFromDOM(avoidTrigger = false) {
+        if (avoidTrigger) {
+            let node = this.firstChild;
+            while (node && node != this.lastChild) {
+                let next = node.nextElementSibling;
+                node.parentNode?.removeChild(node);
+                node = next;
+            }
+            this.lastChild?.parentNode?.removeChild(this.lastChild);
+        }
+        else {
+            let node = this.firstChild;
+            while (node && node != this.lastChild) {
+                let next = node.nextElementSibling;
+                node.remove();
+                node = next;
+            }
+            this.lastChild?.remove();
+        }
+    }
+    selectElements() {
+        this._components = {};
+        let idEls = Array.from(this.content.querySelectorAll('[_id]'));
+        for (let idEl of idEls) {
+            let id = idEl.attributes['_id'].value;
+            if (!this._components[id]) {
+                this._components[id] = [];
+            }
+            this._components[id].push(idEl);
+        }
+        if (this.actions.elements) {
+            for (let element of this.actions.elements) {
+                let components = [];
+                for (let id of element.ids) {
+                    if (this._components[id]) {
+                        components = [...components, ...this._components[id]];
+                    }
+                }
+                if (element.isArray) {
+                    setValueToObject(element.name, this.component, components);
+                }
+                else if (components[0]) {
+                    setValueToObject(element.name, this.component, components[0]);
+                }
+            }
+        }
+    }
+    updateContext() {
+        if (this.actions.contextEdits) {
+            for (let contextEdit of this.actions.contextEdits) {
+                this.renderContextEdit(contextEdit);
+            }
+        }
+    }
+    renderContextEdit(edit) {
+        let _class = edit.once ? ComputedNoRecomputed : Computed;
+        let computed = new _class(() => {
+            return edit.fct(this.context);
+        });
+        computed.subscribe((action, path, value) => {
+            for (let key in computed.value) {
+                let newValue = computed.value[key];
+                this.context.updateWatch(key, newValue);
+            }
+        });
+        this.computeds.push(computed);
+        for (let key in computed.value) {
+            this.context.registerWatch(key, computed.value[key]);
+        }
+    }
+    bindEvents() {
+        if (this.actions.events) {
+            for (let event of this.actions.events) {
+                this.bindEvent(event);
+            }
+        }
+        if (this.actions.pressEvents) {
+            for (let event of this.actions.pressEvents) {
+                this.bindPressEvent(event);
+            }
+        }
+    }
+    bindEvent(event) {
+        if (!this._components[event.id]) {
+            return;
+        }
+        if (event.isCallback) {
+            for (let el of this._components[event.id]) {
+                let cb = getValueFromObject(event.eventName, el);
+                cb?.add((...args) => {
+                    event.fct(this.context, args);
+                });
+            }
+        }
+        else {
+            for (let el of this._components[event.id]) {
+                el.addEventListener(event.eventName, (e) => { event.fct(e, this.context); });
+            }
+        }
+    }
+    bindPressEvent(event) {
+        let id = event['id'];
+        if (id && this._components[id]) {
+            let clone = {};
+            for (let temp in event) {
+                if (temp != 'id') {
+                    if (event[temp] instanceof Function) {
+                        clone[temp] = (e, pressInstance) => { event[temp](e, pressInstance, this.context); };
+                    }
+                    else {
+                        clone[temp] = event[temp];
+                    }
+                }
+            }
+            clone.element = this._components[id];
+            PressManager.create(clone);
+        }
+    }
+    transformActionsListening() {
+        if (this.actions.content) {
+            for (let name in this.actions.content) {
+                this.transformChangeAction(name, this.actions.content[name]);
+            }
+        }
+        if (this.actions.injection) {
+            for (let injection of this.actions.injection) {
+                this.transformInjectionAction(injection);
+            }
+        }
+        if (this.actions.bindings) {
+            for (let binding of this.actions.bindings) {
+                this.transformBindigAction(binding);
+            }
+        }
+    }
+    transformChangeAction(name, change) {
+        const [id, attr] = name.split("°");
+        if (!this._components[id])
+            return;
+        let apply = () => { };
+        if (attr == "@HTML") {
+            apply = () => {
+                let value = this.context.print(computed.value);
+                for (const el of this._components[id])
+                    el.innerHTML = value;
+            };
+        }
+        else {
+            apply = () => {
+                let value = this.context.print(computed.value);
+                if (value === "false") {
+                    for (const el of this._components[id]) {
+                        el.removeAttribute(attr);
+                    }
+                }
+                else {
+                    for (const el of this._components[id]) {
+                        el.setAttribute(attr, value);
+                    }
+                }
+            };
+        }
+        let _class = change.once ? ComputedNoRecomputed : Computed;
+        let computed = new _class(() => {
+            return change.fct(this.context);
+        });
+        let timeout;
+        computed.subscribe((action, path, value) => {
+            clearTimeout(timeout);
+            // add timeout to group change that append on the same frame (for example index update)
+            timeout = setTimeout(() => {
+                apply();
+            });
+        });
+        this.renderingComputeds.push(computed);
+        this.firstRenderUniqueCb[name] = () => {
+            apply();
+        };
+    }
+    transformInjectionAction(injection) {
+        if (!this._components[injection.id])
+            return;
+        let _class = injection.once ? ComputedNoRecomputed : Computed;
+        let computed = new _class(() => {
+            return injection.inject(this.context);
+        });
+        this.computeds.push(computed);
+        computed.subscribe(() => {
+            for (const el of this._components[injection.id]) {
+                el[injection.injectionName] = computed.value;
+            }
+        });
+        this.firstRenderCb.push(() => {
+            for (const el of this._components[injection.id]) {
+                el[injection.injectionName] = computed.value;
+            }
+        });
+    }
+    transformBindigAction(binding) {
+        let isLocalChange = false;
+        let _class = binding.once ? ComputedNoRecomputed : Computed;
+        let computed = new _class(() => {
+            return binding.inject(this.context);
+        });
+        this.computeds.push(computed);
+        computed.subscribe(() => {
+            if (isLocalChange)
+                return;
+            for (const el of this._components[binding.id]) {
+                el[binding.injectionName] = computed.value;
+            }
+        });
+        this.firstRenderCb.push(() => {
+            for (const el of this._components[binding.id]) {
+                el[binding.injectionName] = computed.value;
+            }
+        });
+        if (binding.isCallback) {
+            this.firstRenderCb.push(() => {
+                for (var el of this._components[binding.id]) {
+                    for (let fct of binding.eventNames) {
+                        let cb = getValueFromObject(fct, el);
+                        cb?.add((value) => {
+                            let valueToSet = getValueFromObject(binding.injectionName, el);
+                            isLocalChange = true;
+                            binding.extract(this.context, valueToSet);
+                            isLocalChange = false;
                         });
                     }
                 }
-            }
-        };
-        var realProxy = new Proxy(obj, proxyData);
-        proxyData.baseData = realProxy.__getTarget();
-        onlyDuringInit = false;
-        setProxyPath(realProxy, '');
-        return realProxy;
-    }
-}
-
-class PressManager {
-    options;
-    element;
-    subPressManager = [];
-    delayDblPress = 150;
-    delayLongPress = 700;
-    nbPress = 0;
-    offsetDrag = 20;
-    state = {
-        oneActionTriggered: false,
-        isMoving: false,
-    };
-    startPosition = { x: 0, y: 0 };
-    customFcts = {};
-    timeoutDblPress = 0;
-    timeoutLongPress = 0;
-    downEventSaved;
-    actionsName = {
-        press: "press",
-        longPress: "longPress",
-        dblPress: "dblPress",
-        drag: "drag"
-    };
-    useDblPress = false;
-    functionsBinded = {
-        downAction: (e) => { },
-        upAction: (e) => { },
-        moveAction: (e) => { },
-        childPressStart: (e) => { },
-        childPressEnd: (e) => { },
-        childPress: (e) => { },
-        childDblPress: (e) => { },
-        childLongPress: (e) => { },
-        childDragStart: (e) => { },
-    };
-    /**
-     * @param {*} options - The options
-     * @param {HTMLElement | HTMLElement[]} options.element - The element to manage
-     */
-    constructor(options) {
-        if (options.element === void 0) {
-            throw 'You must provide an element';
-        }
-        if (Array.isArray(options.element)) {
-            for (let el of options.element) {
-                let cloneOpt = { ...options };
-                cloneOpt.element = el;
-                this.subPressManager.push(new PressManager(cloneOpt));
-            }
+            });
         }
         else {
-            this.element = options.element;
-            this.checkDragConstraint(options);
-            this.assignValueOption(options);
-            this.options = options;
-            this.init();
+            this.firstRenderCb.push(() => {
+                for (var el of this._components[binding.id]) {
+                    for (let fct of binding.eventNames) {
+                        el.addEventListener(fct, (e) => {
+                            let valueToSet = getValueFromObject(binding.injectionName, e.target);
+                            isLocalChange = true;
+                            binding.extract(this.context, valueToSet);
+                            isLocalChange = false;
+                        });
+                    }
+                }
+            });
         }
     }
-    /**
-     * Get the current element focused by the PressManager
-     */
-    getElement() {
-        return this.element;
-    }
-    checkDragConstraint(options) {
-        if (options.onDrag !== void 0) {
-            if (options.onDragStart === void 0) {
-                options.onDragStart = (e) => { };
-            }
-            if (options.onDragEnd === void 0) {
-                options.onDragEnd = (e) => { };
-            }
+    renderSubTemplate() {
+        for (let loop of this.loops) {
+            this.renderLoop(loop);
         }
-        if (options.onDragStart !== void 0) {
-            if (options.onDrag === void 0) {
-                options.onDrag = (e) => { };
-            }
-            if (options.onDragEnd === void 0) {
-                options.onDragEnd = (e) => { };
-            }
-        }
-        if (options.onDragEnd !== void 0) {
-            if (options.onDragStart === void 0) {
-                options.onDragStart = (e) => { };
-            }
-            if (options.onDrag === void 0) {
-                options.onDrag = (e) => { };
-            }
+        for (let _if of this.ifs) {
+            this.renderIf(_if);
         }
     }
-    assignValueOption(options) {
-        if (options.delayDblPress !== undefined) {
-            this.delayDblPress = options.delayDblPress;
+    renderLoop(loop) {
+        if (loop.func) {
+            this.renderLoopComplex(loop);
         }
-        if (options.delayLongPress !== undefined) {
-            this.delayLongPress = options.delayLongPress;
-        }
-        if (options.offsetDrag !== undefined) {
-            this.offsetDrag = options.offsetDrag;
-        }
-        if (options.onDblPress !== undefined) {
-            this.useDblPress = true;
-        }
-        if (options.forceDblPress) {
-            this.useDblPress = true;
+        else if (loop.simple) {
+            this.renderLoopSimple(loop, loop.simple);
         }
     }
-    bindAllFunction() {
-        this.functionsBinded.downAction = this.downAction.bind(this);
-        this.functionsBinded.moveAction = this.moveAction.bind(this);
-        this.functionsBinded.upAction = this.upAction.bind(this);
-        this.functionsBinded.childDblPress = this.childDblPress.bind(this);
-        this.functionsBinded.childDragStart = this.childDragStart.bind(this);
-        this.functionsBinded.childLongPress = this.childLongPress.bind(this);
-        this.functionsBinded.childPress = this.childPress.bind(this);
-        this.functionsBinded.childPressStart = this.childPressStart.bind(this);
-        this.functionsBinded.childPressEnd = this.childPressEnd.bind(this);
-    }
-    init() {
-        this.bindAllFunction();
-        this.element.addEventListener("pointerdown", this.functionsBinded.downAction);
-        this.element.addEventListener("trigger_pointer_press", this.functionsBinded.childPress);
-        this.element.addEventListener("trigger_pointer_pressstart", this.functionsBinded.childPressStart);
-        this.element.addEventListener("trigger_pointer_pressend", this.functionsBinded.childPressEnd);
-        this.element.addEventListener("trigger_pointer_dblpress", this.functionsBinded.childDblPress);
-        this.element.addEventListener("trigger_pointer_longpress", this.functionsBinded.childLongPress);
-        this.element.addEventListener("trigger_pointer_dragstart", this.functionsBinded.childDragStart);
-    }
-    downAction(e) {
-        this.downEventSaved = e;
-        e.stopImmediatePropagation();
-        this.customFcts = {};
-        if (this.nbPress == 0) {
-            this.state.oneActionTriggered = false;
-            clearTimeout(this.timeoutDblPress);
+    resetLoop(loop) {
+        if (this.loopRegisteries[loop.anchorId]) {
+            for (let item of this.loopRegisteries[loop.anchorId].templates) {
+                item.destructor();
+            }
+            for (let item of this.loopRegisteries[loop.anchorId].computeds) {
+                item.destroy();
+            }
+            if (loop.simple && this.loopRegisteries[loop.anchorId].sub) {
+                let elements = this.context.getValueFromItem(loop.simple.data.replace(/^this\./, ''));
+                if (elements) {
+                    elements.unsubscribe(this.loopRegisteries[loop.anchorId].sub);
+                }
+            }
         }
-        this.startPosition = { x: e.pageX, y: e.pageY };
-        document.addEventListener("pointerup", this.functionsBinded.upAction);
-        document.addEventListener("pointermove", this.functionsBinded.moveAction);
-        this.timeoutLongPress = setTimeout(() => {
-            if (!this.state.oneActionTriggered) {
-                if (this.options.onLongPress) {
-                    this.state.oneActionTriggered = true;
-                    this.options.onLongPress(e, this);
-                    this.triggerEventToParent(this.actionsName.longPress, e);
+        this.loopRegisteries[loop.anchorId] = {
+            templates: [],
+            computeds: [],
+        };
+    }
+    renderLoopComplex(loop) {
+        if (!loop.func)
+            return;
+        let fctsTemp = loop.func.bind(this.component)(this.context);
+        let fcts = {
+            apply: fctsTemp.apply,
+            condition: fctsTemp.condition,
+            transform: fctsTemp.transform ?? (() => { })
+        };
+        this.resetLoop(loop);
+        let computedsCondition = [];
+        let alreadyRecreated = false;
+        const createComputedCondition = () => {
+            let compCondition = new Computed(() => {
+                return fcts.condition();
+            });
+            compCondition.value;
+            compCondition.subscribe((action, path, value) => {
+                if (!alreadyRecreated) {
+                    alreadyRecreated = true;
+                    this.renderLoopComplex(loop);
+                }
+            });
+            computedsCondition.push(compCondition);
+            this.loopRegisteries[loop.anchorId].computeds.push(compCondition);
+            return compCondition;
+        };
+        let result = [];
+        let compCondition = createComputedCondition();
+        while (compCondition.value) {
+            result.push(fcts.apply());
+            fcts.transform();
+            compCondition = createComputedCondition();
+        }
+        let anchor = this._components[loop.anchorId][0];
+        for (let i = 0; i < result.length; i++) {
+            let context = new TemplateContext(this.component, result[i], this.context);
+            let content = loop.template.template?.content.cloneNode(true);
+            let actions = loop.template.actions;
+            let instance = new TemplateInstance(this.component, content, actions, loop.template.loops, loop.template.ifs, context);
+            instance.render();
+            anchor.parentNode?.insertBefore(instance.content, anchor);
+            this.loopRegisteries[loop.anchorId].templates.push(instance);
+        }
+    }
+    renderLoopSimple(loop, simple) {
+        this.resetLoop(loop);
+        let basePath = simple.data.replace(/^this\./, '');
+        let getElements = () => this.context.getValueFromItem(basePath);
+        let elements = getElements();
+        let indexName = this.context.registerIndex();
+        let keys = Object.keys(elements);
+        if (elements.__isProxy) {
+            let regexArray = new RegExp("^\\[(\\d+?)\\]$");
+            let regexObject = new RegExp("^([^\\.]*)$");
+            let sub = (action, path, value) => {
+                if (path == "") {
+                    this.renderLoopSimple(loop, simple);
+                    return;
+                }
+                if (action == WatchAction.UPDATED) {
+                    return;
+                }
+                let index = undefined;
+                regexArray.lastIndex = 0;
+                regexObject.lastIndex = 0;
+                let resultArray = regexArray.exec(path);
+                if (resultArray) {
+                    index = Number(resultArray[1]);
                 }
                 else {
-                    this.emitTriggerFunction("longpress", e);
+                    let resultObject = regexObject.exec(path);
+                    if (resultObject) {
+                        let oldKey = resultObject[1];
+                        if (action == WatchAction.CREATED) {
+                            keys = Object.keys(getElements());
+                            index = keys.indexOf(oldKey);
+                        }
+                        else if (action == WatchAction.DELETED) {
+                            index = keys.indexOf(oldKey);
+                            keys = Object.keys(getElements());
+                        }
+                    }
                 }
-            }
-        }, this.delayLongPress);
-        if (this.options.onPressStart) {
-            this.options.onPressStart(e, this);
-            this.emitTriggerFunction("pressstart", e, this.element.parentElement);
-        }
-        else {
-            this.emitTriggerFunction("pressstart", e);
-        }
-    }
-    upAction(e) {
-        e.stopImmediatePropagation();
-        document.removeEventListener("pointerup", this.functionsBinded.upAction);
-        document.removeEventListener("pointermove", this.functionsBinded.moveAction);
-        clearTimeout(this.timeoutLongPress);
-        if (this.state.isMoving) {
-            this.state.isMoving = false;
-            if (this.options.onDragEnd) {
-                this.options.onDragEnd(e, this);
-            }
-            else if (this.customFcts.src && this.customFcts.onDragEnd) {
-                this.customFcts.onDragEnd(e, this.customFcts.src);
-            }
-        }
-        else {
-            if (this.useDblPress) {
-                this.nbPress++;
-                if (this.nbPress == 2) {
-                    if (!this.state.oneActionTriggered) {
-                        this.state.oneActionTriggered = true;
-                        this.nbPress = 0;
-                        if (this.options.onDblPress) {
-                            this.options.onDblPress(e, this);
-                            this.triggerEventToParent(this.actionsName.dblPress, e);
+                if (index !== undefined) {
+                    let registry = this.loopRegisteries[loop.anchorId];
+                    if (action == WatchAction.CREATED) {
+                        let context = new TemplateContext(this.component, {}, this.context);
+                        context.registerLoop(simple.data, index, indexName, simple.index, simple.item);
+                        let content = loop.template.template?.content.cloneNode(true);
+                        let actions = loop.template.actions;
+                        let instance = new TemplateInstance(this.component, content, actions, loop.template.loops, loop.template.ifs, context);
+                        instance.render();
+                        let anchor;
+                        if (index < registry.templates.length) {
+                            anchor = registry.templates[index].firstChild;
                         }
                         else {
-                            this.emitTriggerFunction("dblpress", e);
+                            anchor = this._components[loop.anchorId][0];
+                        }
+                        anchor?.parentNode?.insertBefore(instance.content, anchor);
+                        registry.templates.splice(index, 0, instance);
+                        for (let i = index + 1; i < registry.templates.length; i++) {
+                            registry.templates[i].context.increaseIndex(indexName);
+                        }
+                    }
+                    else if (action == WatchAction.DELETED) {
+                        registry.templates[index].destructor();
+                        registry.templates.splice(index, 1);
+                        for (let i = index; i < registry.templates.length; i++) {
+                            registry.templates[i].context.decreaseIndex(indexName);
                         }
                     }
                 }
-                else if (this.nbPress == 1) {
-                    this.timeoutDblPress = setTimeout(() => {
-                        this.nbPress = 0;
-                        if (!this.state.oneActionTriggered) {
-                            if (this.options.onPress) {
-                                this.state.oneActionTriggered = true;
-                                this.options.onPress(e, this);
-                                this.triggerEventToParent(this.actionsName.press, e);
-                            }
-                            else {
-                                this.emitTriggerFunction("press", e);
-                            }
-                        }
-                    }, this.delayDblPress);
+            };
+            elements.subscribe(sub);
+        }
+        let anchor = this._components[loop.anchorId][0];
+        for (let i = 0; i < keys.length; i++) {
+            let context = new TemplateContext(this.component, {}, this.context);
+            context.registerLoop(simple.data, i, indexName, simple.index, simple.item);
+            let content = loop.template.template?.content.cloneNode(true);
+            let actions = loop.template.actions;
+            let instance = new TemplateInstance(this.component, content, actions, loop.template.loops, loop.template.ifs, context);
+            instance.render();
+            anchor.parentNode?.insertBefore(instance.content, anchor);
+            this.loopRegisteries[loop.anchorId].templates.push(instance);
+        }
+    }
+    renderIf(_if) {
+        let computeds = [];
+        let instances = [];
+        let anchor = this._components[_if.anchorId][0];
+        let currentActive = -1;
+        const calculateActive = () => {
+            let newActive = -1;
+            for (let i = 0; i < _if.parts.length; i++) {
+                if (computeds[i].value) {
+                    newActive = i;
+                    break;
                 }
             }
-            else {
-                if (!this.state.oneActionTriggered) {
-                    if (this.options.onPress) {
-                        this.state.oneActionTriggered = true;
-                        this.options.onPress(e, this);
-                        this.triggerEventToParent(this.actionsName.press, e);
-                    }
-                    else {
-                        this.emitTriggerFunction("press", e);
-                    }
+            if (newActive == currentActive) {
+                return;
+            }
+            if (currentActive != -1) {
+                let instance = instances[currentActive];
+                let node = instance.firstChild;
+                while (node && node != instance.lastChild) {
+                    let next = node.nextElementSibling;
+                    instance.content.appendChild(node);
+                    node = next;
                 }
+                if (instance.lastChild)
+                    instance.content.appendChild(instance.lastChild);
             }
+            currentActive = newActive;
+            if (instances[currentActive])
+                anchor.parentNode?.insertBefore(instances[currentActive].content, anchor);
+        };
+        for (let i = 0; i < _if.parts.length; i++) {
+            const part = _if.parts[i];
+            let _class = part.once ? ComputedNoRecomputed : Computed;
+            let computed = new _class(() => {
+                return part.condition(this.context);
+            });
+            computeds.push(computed);
+            computed.subscribe(() => {
+                calculateActive();
+            });
+            this.computeds.push(computed);
+            let context = new TemplateContext(this.component, {}, this.context);
+            let content = part.template.template?.content.cloneNode(true);
+            let actions = part.template.actions;
+            let instance = new TemplateInstance(this.component, content, actions, part.template.loops, part.template.ifs, context);
+            instances.push(instance);
+            instance.render();
         }
-        if (this.options.onPressEnd) {
-            this.options.onPressEnd(e, this);
-            this.emitTriggerFunction("pressend", e, this.element.parentElement);
-        }
-        else {
-            this.emitTriggerFunction("pressend", e);
-        }
-    }
-    moveAction(e) {
-        if (!this.state.isMoving && !this.state.oneActionTriggered) {
-            e.stopImmediatePropagation();
-            let xDist = e.pageX - this.startPosition.x;
-            let yDist = e.pageY - this.startPosition.y;
-            let distance = Math.sqrt(xDist * xDist + yDist * yDist);
-            if (distance > this.offsetDrag) {
-                this.state.oneActionTriggered = true;
-                if (this.options.onDragStart) {
-                    this.state.isMoving = true;
-                    this.options.onDragStart(this.downEventSaved, this);
-                    this.triggerEventToParent(this.actionsName.drag, e);
-                }
-                else {
-                    this.emitTriggerFunction("dragstart", this.downEventSaved);
-                }
-            }
-        }
-        else if (this.state.isMoving) {
-            if (this.options.onDrag) {
-                this.options.onDrag(e, this);
-            }
-            else if (this.customFcts.src && this.customFcts.onDrag) {
-                this.customFcts.onDrag(e, this.customFcts.src);
-            }
-        }
-    }
-    triggerEventToParent(eventName, pointerEvent) {
-        if (this.element.parentNode) {
-            this.element.parentNode.dispatchEvent(new CustomEvent("pressaction_trigger", {
-                bubbles: true,
-                cancelable: false,
-                composed: true,
-                detail: {
-                    target: this.element,
-                    eventName: eventName,
-                    realEvent: pointerEvent
-                }
-            }));
-        }
-    }
-    childPressStart(e) {
-        if (this.options.onPressStart) {
-            this.options.onPressStart(e.detail.realEvent, this);
-        }
-    }
-    childPressEnd(e) {
-        if (this.options.onPressEnd) {
-            this.options.onPressEnd(e.detail.realEvent, this);
-        }
-    }
-    childPress(e) {
-        if (this.options.onPress) {
-            e.stopImmediatePropagation();
-            e.detail.state.oneActionTriggered = true;
-            this.options.onPress(e.detail.realEvent, this);
-            this.triggerEventToParent(this.actionsName.press, e.detail.realEvent);
-        }
-    }
-    childDblPress(e) {
-        if (this.options.onDblPress) {
-            e.stopImmediatePropagation();
-            if (e.detail.state) {
-                e.detail.state.oneActionTriggered = true;
-            }
-            this.options.onDblPress(e.detail.realEvent, this);
-            this.triggerEventToParent(this.actionsName.dblPress, e.detail.realEvent);
-        }
-    }
-    childLongPress(e) {
-        if (this.options.onLongPress) {
-            e.stopImmediatePropagation();
-            e.detail.state.oneActionTriggered = true;
-            this.options.onLongPress(e.detail.realEvent, this);
-            this.triggerEventToParent(this.actionsName.longPress, e.detail.realEvent);
-        }
-    }
-    childDragStart(e) {
-        if (this.options.onDragStart) {
-            e.stopImmediatePropagation();
-            e.detail.state.isMoving = true;
-            e.detail.customFcts.src = this;
-            e.detail.customFcts.onDrag = this.options.onDrag;
-            e.detail.customFcts.onDragEnd = this.options.onDragEnd;
-            e.detail.customFcts.offsetDrag = this.options.offsetDrag;
-            this.options.onDragStart(e.detail.realEvent, this);
-            this.triggerEventToParent(this.actionsName.drag, e.detail.realEvent);
-        }
-    }
-    emitTriggerFunction(action, e, el = null) {
-        let ev = new CustomEvent("trigger_pointer_" + action, {
-            bubbles: true,
-            cancelable: true,
-            composed: true,
-            detail: {
-                state: this.state,
-                customFcts: this.customFcts,
-                realEvent: e
-            }
-        });
-        if (!el) {
-            el = this.element;
-        }
-        el.dispatchEvent(ev);
-    }
-    /**
-     * Destroy the Press instance byremoving all events
-     */
-    destroy() {
-        for (let sub of this.subPressManager) {
-            sub.destroy();
-        }
-        if (this.element) {
-            this.element.removeEventListener("pointerdown", this.functionsBinded.downAction);
-            this.element.removeEventListener("trigger_pointer_press", this.functionsBinded.childPress);
-            this.element.removeEventListener("trigger_pointer_pressstart", this.functionsBinded.childPressStart);
-            this.element.removeEventListener("trigger_pointer_pressend", this.functionsBinded.childPressEnd);
-            this.element.removeEventListener("trigger_pointer_dblpress", this.functionsBinded.childDblPress);
-            this.element.removeEventListener("trigger_pointer_longpress", this.functionsBinded.childLongPress);
-            this.element.removeEventListener("trigger_pointer_dragstart", this.functionsBinded.childDragStart);
-        }
+        calculateActive();
     }
 }
-
-class State {
-    /**
-     * Activate a custom state inside a specific manager
-     * It ll be a generic state with no information inside exept name
-     */
-    static async activate(stateName, manager) {
-        return await new EmptyState(stateName).activate(manager);
-    }
-    /**
-     * Activate this state inside a specific manager
-     */
-    async activate(manager) {
-        return await manager.setState(this);
-    }
-    onActivate() {
-    }
-    onInactivate(nextState) {
-    }
-    async askChange(state, nextState) {
-        return true;
-    }
-}
-
-class EmptyState extends State {
-    localName;
-    constructor(stateName) {
-        super();
-        this.localName = stateName;
-    }
-    /**
-     * @inheritdoc
-     */
-    get name() {
-        return this.localName;
-    }
-}
-
-class WebComponentTemplate {
-    static setValueToItem(path, obj, value) {
-        let splitted = path.split(".");
-        for (let i = 0; i < splitted.length - 1; i++) {
-            let split = splitted[i];
-            if (!obj[split]) {
-                obj[split] = {};
-            }
-            obj = obj[split];
-        }
-        obj[splitted[splitted.length - 1]] = value;
-    }
-    static getValueFromItem(path, obj) {
-        let splitted = path.split(".");
-        for (let i = 0; i < splitted.length - 1; i++) {
-            let split = splitted[i];
-            if (typeof obj[split] !== 'object') {
-                return undefined;
-            }
-            obj = obj[split];
-        }
-        return obj[splitted[splitted.length - 1]];
-    }
+TemplateInstance.Namespace=`${moduleName}`;
+_.TemplateInstance=TemplateInstance;
+const Template=class Template {
     static validatePath(path, pathToCheck) {
-        if (path.startsWith(pathToCheck)) {
+        if (pathToCheck.startsWith(path)) {
             return true;
         }
         return false;
+    }
+    cst;
+    constructor(component) {
+        this.cst = component;
     }
     htmlParts = [];
     setHTML(data) {
@@ -2107,18 +2857,16 @@ class WebComponentTemplate {
         }
         this.template.innerHTML = currentHTML;
     }
+    /**
+     * Used by the for loop and the if
+     * @param template
+     */
     setTemplate(template) {
         this.template = document.createElement('template');
         this.template.innerHTML = template;
     }
-    contextSchema = {
-        globals: [],
-        locals: [],
-        loops: []
-    };
     template;
     actions = {};
-    loops = [];
     setActions(actions) {
         if (!this.actions) {
             this.actions = actions;
@@ -2152,7 +2900,7 @@ class WebComponentTemplate {
                             this.actions.content[contextProp] = actions.content[contextProp];
                         }
                         else {
-                            this.actions.content[contextProp] = { ...actions.content[contextProp], ...this.actions.content[contextProp] };
+                            throw 'this should be impossible';
                         }
                     }
                 }
@@ -2187,507 +2935,813 @@ class WebComponentTemplate {
                     }
                 }
             }
+            if (actions.contextEdits) {
+                if (!this.actions.contextEdits) {
+                    this.actions.contextEdits = [];
+                }
+                this.actions.contextEdits = [...actions.contextEdits, ...this.actions.contextEdits];
+            }
         }
     }
-    setSchema(contextSchema) {
-        if (contextSchema.globals) {
-            this.contextSchema.globals = [...this.contextSchema.globals, ...contextSchema.globals];
-        }
-        if (contextSchema.locals) {
-            this.contextSchema.locals = [...this.contextSchema.locals, ...contextSchema.locals];
-        }
-        if (contextSchema.loops) {
-            this.contextSchema.loops = [...this.contextSchema.loops, ...contextSchema.loops];
-        }
-    }
-    createInstance(component) {
-        let context = new WebComponentTemplateContext(component, this.contextSchema, []);
-        let content = this.template.content.cloneNode(true);
-        let actions = this.actions;
-        let instance = new WebComponentTemplateInstance(context, content, actions, component, this.loops);
-        return instance;
-    }
+    loops = [];
     addLoop(loop) {
         this.loops.push(loop);
     }
+    ifs = [];
+    addIf(_if) {
+        this.ifs.push(_if);
+    }
+    createInstance(component) {
+        let content = this.template.content.cloneNode(true);
+        return new TemplateInstance(component, content, this.actions, this.loops, this.ifs);
+    }
 }
-
-class WebComponentTemplateContext {
-    __changes = {};
-    component;
-    fctsToRemove = [];
-    c = {};
-    isRendered = false;
-    schema;
-    constructor(component, schema, locals) {
-        this.component = component;
-        this.schema = { ...schema };
-        this.schema.locals = [...this.schema.locals, ...locals];
-        5;
-        this.buildSchema();
+Template.Namespace=`${moduleName}`;
+_.Template=Template;
+const WebComponent=class WebComponent extends HTMLElement {
+    /**
+     * Add attributes informations
+     */
+    static get observedAttributes() {
+        return [];
     }
+    _first;
+    _isReady;
+    /**
+     * Determine if the component is ready (postCreation done)
+     */
+    get isReady() {
+        return this._isReady;
+    }
+    /**
+     * The current namespace
+     */
+    static Namespace = "";
+    /**
+     * The current Tag / empty if abstract class
+     */
+    static Tag = "";
+    /**
+     * Get the unique type for the data. Define it as the namespace + class name
+     */
+    static get Fullname() { return this.Namespace + "." + this.name; }
+    /**
+     * The current namespace
+     */
+    get namespace() {
+        return this.constructor['Namespace'];
+    }
+    /**
+     * Get the name of the component class
+     */
+    getClassName() {
+        return this.constructor.name;
+    }
+    /**
+     * The current tag
+     */
+    get tag() {
+        return this.constructor['Tag'];
+    }
+    /**
+    * Get the unique type for the data. Define it as the namespace + class name
+    */
+    get $type() {
+        return this.constructor['Fullname'];
+    }
+    __onChangeFct = {};
+    __watch;
+    __watchActions = {};
+    __watchActionsCb = {};
+    __watchFunctions = {};
+    __watchFunctionsComputed = {};
+    __pressManagers = [];
+    __isDefaultState = true;
+    __defaultActiveState = new Map();
+    __defaultInactiveState = new Map();
+    __statesList = {};
+    constructor() {
+        super();
+        if (this.constructor == WebComponent) {
+            throw "can't instanciate an abstract class";
+        }
+        this.__removeNoAnimations = this.__removeNoAnimations.bind(this);
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", this.__removeNoAnimations);
+        }
+        this._first = true;
+        this._isReady = false;
+        this.__renderTemplate();
+        this.__registerWatchesActions();
+        this.__registerPropertiesActions();
+        this.__createStates();
+        this.__subscribeState();
+    }
+    /**
+     * Remove all listeners
+     * State + press
+     */
     destructor() {
-        for (let toRemove of this.fctsToRemove) {
-            let index = this.component['__onChangeFct'][toRemove.name].indexOf(toRemove.fct);
-            if (index != -1) {
-                this.component['__onChangeFct'][toRemove.name].splice(index, 1);
-            }
+        WebComponentInstance.removeInstance(this);
+        this.__unsubscribeState();
+        for (let press of this.__pressManagers) {
+            press.destroy();
         }
+        for (let name in this.__watchFunctionsComputed) {
+            this.__watchFunctionsComputed[name].destroy();
+        }
+        // TODO add missing info for destructor();
     }
-    buildSchema() {
-        for (let global of this.schema.globals) {
-            this.createGlobal(global);
-        }
-        for (let loop of this.schema.loops) {
-            this.createLoop(loop);
-        }
-        for (let local of this.schema.locals) {
-            this.createLocal(local);
-        }
-    }
-    createGlobal(global) {
-        let comp = this.component;
-        Object.defineProperty(this.c, global, {
-            get() {
-                return WebComponentTemplate.getValueFromItem(global, comp);
-            },
-            set(value) {
-                WebComponentTemplate.setValueToItem(global, comp, value);
-            }
-        });
-        let name = global.split(".")[0];
-        this.__changes[name] = [];
-        if (!this.component['__onChangeFct'][name]) {
-            this.component['__onChangeFct'][name] = [];
-        }
-        let fct = (path) => {
-            if (this.isRendered) {
-                for (let change of this.__changes[name]) {
-                    change(path);
+    __addWatchesActions(name, fct) {
+        if (!this.__watchActions[name]) {
+            this.__watchActions[name] = [];
+            this.__watchActionsCb[name] = (action, path, value) => {
+                for (let fct of this.__watchActions[name]) {
+                    fct(this, action, path, value);
                 }
+                if (this.__onChangeFct[name]) {
+                    for (let fct of this.__onChangeFct[name]) {
+                        fct(path);
+                    }
+                }
+            };
+        }
+        if (fct) {
+            this.__watchActions[name].push(fct);
+        }
+    }
+    __addWatchesFunctions(infos) {
+        for (let info of infos) {
+            let realName;
+            let autoInit;
+            if (typeof info == "string") {
+                realName = info;
+                autoInit = false;
+            }
+            else {
+                realName = info.name;
+                autoInit = info.autoInit;
+            }
+            if (!this.__watchFunctions[realName]) {
+                this.__watchFunctions[realName] = { autoInit };
+            }
+        }
+    }
+    __registerWatchesActions() {
+        if (Object.keys(this.__watchActions).length > 0) {
+            if (!this.__watch) {
+                let defaultValue = {};
+                this.__defaultValuesWatch(defaultValue);
+                this.__watch = Watcher.get(defaultValue, (type, path, element) => {
+                    let action = this.__watchActionsCb[path.split(".")[0]] || this.__watchActionsCb[path.split("[")[0]];
+                    action(type, path, element);
+                });
+            }
+        }
+        for (let name in this.__watchFunctions) {
+            this.__watchFunctionsComputed[name] = Watcher.computed(this[name].bind(this));
+            if (this.__watchFunctions[name].autoInit) {
+                this.__watchFunctionsComputed[name].value;
+            }
+        }
+    }
+    __addPropertyActions(name, fct) {
+        if (!this.__onChangeFct[name]) {
+            this.__onChangeFct[name] = [];
+        }
+        if (fct) {
+            this.__onChangeFct[name].push(() => {
+                fct(this);
+            });
+        }
+    }
+    __registerPropertiesActions() { }
+    static __style = ``;
+    static __template;
+    __templateInstance;
+    styleBefore(addStyle) {
+        addStyle("@general");
+    }
+    styleAfter(addStyle) {
+    }
+    __getStyle() {
+        return [WebComponent.__style];
+    }
+    __getHtml() { }
+    __getStatic() {
+        return WebComponent;
+    }
+    static __styleSheets = {};
+    __renderStyles() {
+        let sheets = {};
+        const addStyle = (name) => {
+            let sheet = Style.get(name);
+            if (sheet) {
+                sheets[name] = sheet;
             }
         };
-        this.fctsToRemove.push({ name, fct });
-        this.component['__onChangeFct'][name].push(fct);
-    }
-    createLoop(loop) {
-        Object.defineProperty(this.c, loop.item, {
-            get() {
-                let indexValue = this[loop.index];
-                return WebComponentTemplate.getValueFromItem(loop.data, this)[indexValue];
-            }
-        });
-        let name = loop.data.split(".")[0];
-        this.__changes[loop.item] = [];
-        this.__changes[name].push((path) => {
-            if (this.isRendered) {
-                let currentPath = `${loop.data}[${this.c[loop.index]}]`;
-                if (path.startsWith(currentPath)) {
-                    let localPath = path.replace(currentPath, loop.item);
-                    for (let change of this.__changes[loop.item]) {
-                        change(localPath);
-                    }
-                }
-            }
-        });
-    }
-    createLocal(local) {
-        let localValue = local.value;
-        let changes = this.__changes;
-        Object.defineProperty(this.c, local.name, {
-            get() {
-                return localValue;
-            },
-            set(value) {
-                localValue = value;
-                if (changes[local.name]) {
-                    for (let change of changes[local.name]) {
-                        change(local.name);
-                    }
-                }
-            }
-        });
-    }
-    addChange(on, fct) {
-        if (!this.__changes[on]) {
-            this.__changes[on] = [];
+        this.styleBefore(addStyle);
+        let localStyle = new CSSStyleSheet();
+        let styleTxt = this.__getStyle().join("\r\n");
+        if (styleTxt.length > 0) {
+            localStyle.replace(styleTxt);
+            sheets['@local'] = localStyle;
         }
-        this.__changes[on].push(fct);
+        this.styleAfter(addStyle);
+        return sheets;
+    }
+    __renderTemplate() {
+        let staticInstance = this.__getStatic();
+        if (!staticInstance.__template || staticInstance.__template.cst != staticInstance) {
+            staticInstance.__template = new Template(staticInstance);
+            this.__getHtml();
+            this.__registerTemplateAction();
+            staticInstance.__template.generateTemplate();
+            staticInstance.__styleSheets = this.__renderStyles();
+        }
+        this.__templateInstance = staticInstance.__template.createInstance(this);
+        let shadowRoot = this.attachShadow({ mode: 'open' });
+        shadowRoot.adoptedStyleSheets = [...Object.values(staticInstance.__styleSheets), Style.noAnimation];
+        shadowRoot.appendChild(this.__templateInstance.content);
+        customElements.upgrade(shadowRoot);
+        return shadowRoot;
+    }
+    __registerTemplateAction() {
+    }
+    connectedCallback() {
+        if (this._first) {
+            WebComponentInstance.addInstance(this);
+            this._first = false;
+            this.__defaultValues();
+            this.__upgradeAttributes();
+            this.__templateInstance?.render();
+            this.__removeNoAnimations();
+        }
+    }
+    __removeNoAnimations() {
+        if (document.readyState !== "loading") {
+            this.offsetWidth;
+            setTimeout(() => {
+                this.postCreation();
+                this._isReady = true;
+                this.dispatchEvent(new CustomEvent('postCreationDone'));
+                this.shadowRoot.adoptedStyleSheets = Object.values(this.__getStatic().__styleSheets);
+                document.removeEventListener("DOMContentLoaded", this.__removeNoAnimations);
+            }, 50);
+        }
+    }
+    __defaultValues() { }
+    __defaultValuesWatch(w) { }
+    __upgradeAttributes() { }
+    __listBoolProps() {
+        return [];
+    }
+    __upgradeProperty(prop) {
+        let boolProps = this.__listBoolProps();
+        if (boolProps.indexOf(prop) != -1) {
+            if (this.hasAttribute(prop) && (this.getAttribute(prop) === "true" || this.getAttribute(prop) === "")) {
+                let value = this.getAttribute(prop);
+                delete this[prop];
+                this[prop] = value;
+            }
+            else {
+                this.removeAttribute(prop);
+                this[prop] = false;
+            }
+        }
+        else {
+            if (this.hasAttribute(prop)) {
+                let value = this.getAttribute(prop);
+                delete this[prop];
+                this[prop] = value;
+            }
+        }
+    }
+    __getStateManager(managerClass) {
+        let mClass;
+        if (managerClass instanceof StateManager) {
+            mClass = managerClass;
+        }
+        else {
+            mClass = Instance.get(managerClass);
+        }
+        return mClass;
+    }
+    __addActiveDefState(managerClass, cb) {
+        let mClass = this.__getStateManager(managerClass);
+        if (!this.__defaultActiveState.has(mClass)) {
+            this.__defaultActiveState.set(mClass, []);
+        }
+        this.__defaultActiveState.get(mClass)?.push(cb);
+    }
+    __addInactiveDefState(managerClass, cb) {
+        let mClass = this.__getStateManager(managerClass);
+        if (!this.__defaultInactiveState.has(mClass)) {
+            this.__defaultInactiveState.set(mClass, []);
+        }
+        this.__defaultInactiveState.get(mClass)?.push(cb);
+    }
+    __addActiveState(statePattern, managerClass, cb) {
+        let mClass = this.__getStateManager(managerClass);
+        this.__statesList[statePattern].get(mClass)?.active.push(cb);
+    }
+    __addInactiveState(statePattern, managerClass, cb) {
+        let mClass = this.__getStateManager(managerClass);
+        this.__statesList[statePattern].get(mClass)?.inactive.push(cb);
+    }
+    __addAskChangeState(statePattern, managerClass, cb) {
+        let mClass = this.__getStateManager(managerClass);
+        this.__statesList[statePattern].get(mClass)?.askChange.push(cb);
+    }
+    __createStates() { }
+    __createStatesList(statePattern, managerClass) {
+        if (!this.__statesList[statePattern]) {
+            this.__statesList[statePattern] = new Map();
+        }
+        let mClass = this.__getStateManager(managerClass);
+        if (!this.__statesList[statePattern].has(mClass)) {
+            this.__statesList[statePattern].set(mClass, {
+                active: [],
+                inactive: [],
+                askChange: []
+            });
+        }
+    }
+    __inactiveDefaultState(managerClass) {
+        if (this.__isDefaultState) {
+            this.__isDefaultState = false;
+            let mClass = this.__getStateManager(managerClass);
+            if (this.__defaultInactiveState.has(mClass)) {
+                let fcts = this.__defaultInactiveState.get(mClass) ?? [];
+                for (let fct of fcts) {
+                    fct.bind(this)();
+                }
+            }
+        }
+    }
+    __activeDefaultState(nextStep, managerClass) {
+        if (!this.__isDefaultState) {
+            for (let pattern in this.__statesList) {
+                if (StateManager.canBeActivate(pattern, nextStep)) {
+                    let mClass = this.__getStateManager(managerClass);
+                    if (this.__statesList[pattern].has(mClass)) {
+                        return;
+                    }
+                }
+            }
+            this.__isDefaultState = true;
+            let mClass = this.__getStateManager(managerClass);
+            if (this.__defaultActiveState.has(mClass)) {
+                let fcts = this.__defaultActiveState.get(mClass) ?? [];
+                for (let fct of fcts) {
+                    fct.bind(this)();
+                }
+            }
+        }
+    }
+    __subscribeState() {
+        if (!this.isReady && this.__stateCleared) {
+            return;
+        }
+        for (let route in this.__statesList) {
+            for (const managerClass of this.__statesList[route].keys()) {
+                let el = this.__statesList[route].get(managerClass);
+                if (el) {
+                    managerClass.subscribe(route, el);
+                }
+            }
+        }
+    }
+    __stateCleared = false;
+    __unsubscribeState() {
+        for (let route in this.__statesList) {
+            for (const managerClass of this.__statesList[route].keys()) {
+                let el = this.__statesList[route].get(managerClass);
+                if (el) {
+                    managerClass.unsubscribe(route, el);
+                }
+            }
+        }
+        this.__stateCleared = true;
+    }
+    dateToString(d) {
+        if (d instanceof Date) {
+            return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+        }
+        return null;
+    }
+    dateTimeToString(dt) {
+        if (dt instanceof Date) {
+            return new Date(dt.getTime() - (dt.getTimezoneOffset() * 60000)).toISOString().slice(0, -1);
+        }
+        return null;
+    }
+    stringToDate(s) {
+        let td = new Date(s);
+        let d = new Date(td.getTime() + (td.getTimezoneOffset() * 60000));
+        if (isNaN(d)) {
+            return null;
+        }
+        return d;
+    }
+    stringToDateTime(s) {
+        let td = new Date(s);
+        let d = new Date(td.getTime() + (td.getTimezoneOffset() * 60000));
+        if (isNaN(d)) {
+            return null;
+        }
+        return d;
+    }
+    getBoolean(val) {
+        if (val === true || val === 1 || val === 'true' || val === '') {
+            return true;
+        }
+        else if (val === false || val === 0 || val === 'false' || val === null || val === undefined) {
+            return false;
+        }
+        console.error("error parsing boolean value " + val);
+        return false;
+    }
+    __registerPropToWatcher(name) {
+        if (Watcher._register) {
+            Watcher._register.register(this.getReceiver(name), name, Watcher._register.version, name);
+        }
+    }
+    getStringAttr(name) {
+        return this.getAttribute(name) ?? undefined;
+    }
+    setStringAttr(name, val) {
+        if (val === undefined || val === null) {
+            this.removeAttribute(name);
+        }
+        else {
+            this.setAttribute(name, val);
+        }
+    }
+    getStringProp(name) {
+        this.__registerPropToWatcher(name);
+        return this.getStringAttr(name);
+    }
+    getNumberAttr(name) {
+        return Number(this.getAttribute(name));
+    }
+    setNumberAttr(name, val) {
+        if (val === undefined || val === null) {
+            this.removeAttribute(name);
+        }
+        else {
+            this.setAttribute(name, val);
+        }
+    }
+    getNumberProp(name) {
+        this.__registerPropToWatcher(name);
+        return this.getNumberAttr(name);
+    }
+    getBoolAttr(name) {
+        return this.hasAttribute(name);
+    }
+    setBoolAttr(name, val) {
+        val = this.getBoolean(val);
+        if (val) {
+            this.setAttribute(name, 'true');
+        }
+        else {
+            this.removeAttribute(name);
+        }
+    }
+    getBoolProp(name) {
+        this.__registerPropToWatcher(name);
+        return this.getBoolAttr(name);
+    }
+    getDateAttr(name) {
+        if (!this.hasAttribute(name)) {
+            return undefined;
+        }
+        return this.stringToDate(this.getAttribute(name));
+    }
+    setDateAttr(name, val) {
+        let valTxt = this.dateToString(val);
+        if (valTxt === null) {
+            this.removeAttribute(name);
+        }
+        else {
+            this.setAttribute(name, valTxt);
+        }
+    }
+    getDateProp(name) {
+        this.__registerPropToWatcher(name);
+        return this.getDateAttr(name);
+    }
+    getDateTimeAttr(name) {
+        if (!this.hasAttribute(name))
+            return undefined;
+        return this.stringToDateTime(this.getAttribute(name));
+    }
+    setDateTimeAttr(name, val) {
+        let valTxt = this.dateTimeToString(val);
+        if (valTxt === null) {
+            this.removeAttribute(name);
+        }
+        else {
+            this.setAttribute(name, valTxt);
+        }
+    }
+    getDateTimeProp(name) {
+        this.__registerPropToWatcher(name);
+        return this.getDateTimeAttr(name);
+    }
+    __propertyReceivers = {};
+    getReceiver(name) {
+        if (!this.__propertyReceivers[name]) {
+            let that = this;
+            let result = {
+                __subscribes: [],
+                subscribe(fct) {
+                    let index = this.__subscribes.indexOf(fct);
+                    if (index == -1) {
+                        this.__subscribes.push(fct);
+                    }
+                },
+                unsubscribe(fct) {
+                    let index = this.__subscribes.indexOf(fct);
+                    if (index > -1) {
+                        this.__subscribes.splice(index, 1);
+                    }
+                },
+                onChange() {
+                    for (let fct of this.__subscribes) {
+                        fct(WatchAction.UPDATED, name, that[name]);
+                    }
+                },
+                __path: name
+            };
+            this.__propertyReceivers[name] = result;
+        }
+        return this.__propertyReceivers[name];
+    }
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (oldValue !== newValue || !this.isReady) {
+            if (this.__propertyReceivers.hasOwnProperty(name)) {
+                this.__propertyReceivers[name].onChange();
+            }
+            if (this.__onChangeFct.hasOwnProperty(name)) {
+                for (let fct of this.__onChangeFct[name]) {
+                    fct('');
+                }
+            }
+        }
+    }
+    remove() {
+        super.remove();
+        this.postDestruction();
+    }
+    /**
+     * Function triggered when the component is removed from the DOM
+     */
+    postDestruction() { }
+    /**
+     * Function triggered the first time the component is rendering inside DOM
+     */
+    postCreation() { }
+    /**
+     * Find a parent by tagname if exist
+     */
+    findParentByTag(tagname, untilNode) {
+        return ElementExtension.findParentByTag(this, tagname, untilNode);
+    }
+    /**
+     * Find a parent by class name if exist
+     */
+    findParentByClass(classname, untilNode) {
+        return ElementExtension.findParentByClass(this, classname, untilNode);
+    }
+    /**
+     * Find a parent by type if exist
+     */
+    findParentByType(type, untilNode) {
+        return ElementExtension.findParentByType(this, type, untilNode);
+    }
+    /**
+     * Find list of parents by tagname
+     */
+    findParents(tagname, untilNode) {
+        return ElementExtension.findParents(this, tagname, untilNode);
+    }
+    /**
+     * Check if element contains a child
+     */
+    containsChild(el) {
+        return ElementExtension.containsChild(this, el);
+    }
+    /**
+     * Get element inside slot
+     */
+    getElementsInSlot(slotName) {
+        return ElementExtension.getElementsInSlot(this, slotName);
     }
 }
-
-class WebComponentTemplateInstance {
-    context;
-    content;
-    actions;
-    component;
-    _components;
-    firstRenderUniqueCb = {};
-    firstRenderCb = [];
-    fctsToRemove = [];
-    loopRegisteries = {};
-    firstChild;
-    lastChild;
-    loops = [];
-    constructor(context, content, actions, component, loops) {
-        this.context = context;
-        this.content = content;
-        this.actions = actions;
-        this.component = component;
-        this.loops = loops;
-        this.firstChild = content.firstChild;
-        this.lastChild = content.lastChild;
-        this.transformActionsListening();
-        this.selectElements();
-        this.bindEvents();
+WebComponent.Namespace=`${moduleName}`;
+_.WebComponent=WebComponent;
+const WebComponentInstance=class WebComponentInstance {
+    static __allDefinitions = [];
+    static __allInstances = [];
+    /**
+     * Last definition insert datetime
+     */
+    static lastDefinition = 0;
+    static registerDefinition(def) {
+        WebComponentInstance.lastDefinition = Date.now();
+        WebComponentInstance.__allDefinitions.push(def);
     }
-    render() {
-        for (let cb of this.firstRenderCb) {
-            cb();
-        }
-        for (let key in this.firstRenderUniqueCb) {
-            this.firstRenderUniqueCb[key]();
-        }
-        this.renderSubTemplate();
-        this.context.isRendered = true;
-    }
-    destructor() {
-        this.firstChild.remove();
-        this.context.destructor();
-        for (let toRemove of this.fctsToRemove) {
-            let index = this.component['__watchActions'][toRemove.name].indexOf(toRemove.fct);
-            if (index != -1) {
-                this.component['__watchActions'][toRemove.name].splice(index, 1);
-            }
+    static removeDefinition(def) {
+        WebComponentInstance.lastDefinition = Date.now();
+        let index = WebComponentInstance.__allDefinitions.indexOf(def);
+        if (index > -1) {
+            WebComponentInstance.__allDefinitions.splice(index, 1);
         }
     }
-    selectElements() {
-        this._components = {};
-        let idEls = Array.from(this.content.querySelectorAll('[_id]'));
-        for (let idEl of idEls) {
-            let id = idEl.attributes['_id'].value;
-            if (!this._components[id]) {
-                this._components[id] = [];
+    /**
+     * Get all sub classes of type
+     */
+    static getAllClassesOf(type) {
+        let result = [];
+        for (let def of WebComponentInstance.__allDefinitions) {
+            if (def.prototype instanceof type) {
+                result.push(def);
             }
-            this._components[id].push(idEl);
         }
-        if (this.actions.elements) {
-            for (let element of this.actions.elements) {
-                let components = [];
-                for (let id of element.ids) {
-                    if (this._components[id]) {
-                        components = [...components, ...this._components[id]];
-                    }
-                }
-                if (element.isArray) {
-                    WebComponentTemplate.setValueToItem(element.name, this.component, components);
-                }
-                else {
-                    WebComponentTemplate.setValueToItem(element.name, this.component, components[0]);
-                }
-            }
+        return result;
+    }
+    /**
+     * Get all registered definitions
+     */
+    static getAllDefinitions() {
+        return WebComponentInstance.__allDefinitions;
+    }
+    static addInstance(instance) {
+        this.__allInstances.push(instance);
+    }
+    static removeInstance(instance) {
+        let index = this.__allInstances.indexOf(instance);
+        if (index > -1) {
+            this.__allInstances.splice(index, 1);
         }
     }
-    bindEvents() {
-        if (this.actions.events) {
-            for (let event of this.actions.events) {
-                this.bindEvent(event);
+    static getAllInstances(type) {
+        let result = [];
+        for (let instance of this.__allInstances) {
+            if (instance instanceof type) {
+                result.push(instance);
             }
         }
-        if (this.actions.pressEvents) {
-            for (let event of this.actions.pressEvents) {
-                this.bindPressEvent(event);
-            }
-        }
+        return result;
     }
-    bindEvent(event) {
-        if (event.isCallback) {
-            for (let el of this._components[event.id]) {
-                let cb = WebComponentTemplate.getValueFromItem(event.eventName, el);
-                cb?.add((...args) => {
-                    event.fct(this.context, args);
-                });
-            }
+    static create(type) {
+        let _class = customElements.get(type);
+        if (_class) {
+            return new _class();
         }
-        else {
-            for (let el of this._components[event.id]) {
-                el.addEventListener(event.eventName, (e) => { event.fct(e, this.context); });
-            }
+        let splitted = type.split(".");
+        let current = window;
+        for (let part of splitted) {
+            current = current[part];
         }
+        if (current && current.prototype instanceof Aventus.WebComponent) {
+            return new current();
+        }
+        return null;
     }
-    bindPressEvent(event) {
-        let id = event['id'];
-        if (id) {
-            let clone = {};
-            for (let temp in event) {
-                if (temp != 'id') {
-                    if (event[temp] instanceof Function) {
-                        clone[temp] = (e, pressInstance) => { event[temp](e, pressInstance, this.context); };
-                    }
-                    else {
-                        clone[temp] = event[temp];
-                    }
-                }
-            }
-            clone.element = this._components[id];
-            new PressManager(clone);
-        }
-    }
-    transformActionsListening() {
-        if (this.actions.content) {
-            for (let name in this.actions.content) {
-                for (let change of this.actions.content[name]) {
-                    this.transformChangeAction(name, change);
-                }
-            }
-        }
-        if (this.actions.injection) {
-            for (let name in this.actions.injection) {
-                for (let injection of this.actions.injection[name]) {
-                    this.transformInjectionAction(name, injection);
-                }
-            }
-        }
-        if (this.actions.bindings) {
-            for (let name in this.actions.bindings) {
-                for (let binding of this.actions.bindings[name]) {
-                    this.transformBindigAction(name, binding);
-                }
-            }
-        }
-    }
-    transformChangeAction(name, change) {
-        let key = change.id + "_" + change.attrName;
-        if (change.attrName == "@HTML") {
-            if (change.path) {
-                this.context.addChange(name, (path) => {
-                    if (WebComponentTemplate.validatePath(path, change.path)) {
-                        for (const el of this._components[change.id]) {
-                            el.innerHTML = change.render(this.context.c);
+}
+WebComponentInstance.Namespace=`${moduleName}`;
+_.WebComponentInstance=WebComponentInstance;
+const ResizeObserver=class ResizeObserver {
+    callback;
+    targets;
+    fpsInterval = -1;
+    nextFrame;
+    entriesChangedEvent;
+    willTrigger;
+    static resizeObserverClassByObject = {};
+    static uniqueInstance;
+    static getUniqueInstance() {
+        if (!ResizeObserver.uniqueInstance) {
+            ResizeObserver.uniqueInstance = new window.ResizeObserver(entries => {
+                let allClasses = [];
+                for (let j = 0; j < entries.length; j++) {
+                    let entry = entries[j];
+                    let index = entry.target['sourceIndex'];
+                    if (ResizeObserver.resizeObserverClassByObject[index]) {
+                        for (let i = 0; i < ResizeObserver.resizeObserverClassByObject[index].length; i++) {
+                            let classTemp = ResizeObserver.resizeObserverClassByObject[index][i];
+                            classTemp.entryChanged(entry);
+                            if (allClasses.indexOf(classTemp) == -1) {
+                                allClasses.push(classTemp);
+                            }
                         }
                     }
-                });
-            }
-            else {
-                this.context.addChange(name, (path) => {
-                    for (const el of this._components[change.id]) {
-                        el.innerHTML = change.render(this.context.c);
-                    }
-                });
-            }
-            if (!this.firstRenderUniqueCb[key]) {
-                this.firstRenderUniqueCb[key] = () => {
-                    for (const el of this._components[change.id]) {
-                        el.innerHTML = change.render(this.context.c);
-                    }
-                };
-            }
-        }
-        else if (change.isBool) {
-            this.context.addChange(name, () => {
-                for (const el of this._components[change.id]) {
-                    if (this.context.c[name]) {
-                        el.setAttribute(change.attrName, "true");
-                    }
-                    else {
-                        el.removeAttribute(change.attrName);
-                    }
+                }
+                for (let i = 0; i < allClasses.length; i++) {
+                    allClasses[i].triggerCb();
                 }
             });
-            if (!this.firstRenderUniqueCb[key]) {
-                this.firstRenderUniqueCb[key] = () => {
-                    for (const el of this._components[change.id]) {
-                        if (this.context.c[name]) {
-                            el.setAttribute(change.attrName, "true");
-                        }
-                        else {
-                            el.removeAttribute(change.attrName);
-                        }
-                    }
-                };
-            }
+        }
+        return ResizeObserver.uniqueInstance;
+    }
+    constructor(options) {
+        let realOption;
+        if (options instanceof Function) {
+            realOption = {
+                callback: options,
+            };
         }
         else {
-            if (change.path) {
-                this.context.addChange(name, (path) => {
-                    if (WebComponentTemplate.validatePath(path, change.path)) {
-                        for (const el of this._components[change.id]) {
-                            el.setAttribute(change.attrName, change.render(this.context.c));
-                        }
-                    }
-                });
-            }
-            else {
-                this.context.addChange(name, (path) => {
-                    for (const el of this._components[change.id]) {
-                        el.setAttribute(change.attrName, change.render(this.context.c));
-                    }
-                });
-            }
-            if (!this.firstRenderUniqueCb[key]) {
-                this.firstRenderUniqueCb[key] = () => {
-                    for (const el of this._components[change.id]) {
-                        el.setAttribute(change.attrName, change.render(this.context.c));
-                    }
-                };
-            }
+            realOption = options;
+        }
+        this.callback = realOption.callback;
+        this.targets = [];
+        if (!realOption.fps) {
+            realOption.fps = 60;
+        }
+        if (realOption.fps != -1) {
+            this.fpsInterval = 1000 / realOption.fps;
+        }
+        this.nextFrame = 0;
+        this.entriesChangedEvent = {};
+        this.willTrigger = false;
+    }
+    /**
+     * Observe size changing for the element
+     */
+    observe(target) {
+        if (!target["sourceIndex"]) {
+            target["sourceIndex"] = Math.random().toString(36);
+            this.targets.push(target);
+            ResizeObserver.resizeObserverClassByObject[target["sourceIndex"]] = [];
+            ResizeObserver.getUniqueInstance().observe(target);
+        }
+        if (ResizeObserver.resizeObserverClassByObject[target["sourceIndex"]].indexOf(this) == -1) {
+            ResizeObserver.resizeObserverClassByObject[target["sourceIndex"]].push(this);
         }
     }
-    transformInjectionAction(name, injection) {
-        if (injection.path) {
-            this.context.addChange(name, (path) => {
-                if (WebComponentTemplate.validatePath(path, injection.path)) {
-                    for (const el of this._components[injection.id]) {
-                        el[injection.injectionName] = injection.inject(this.context.c);
-                    }
+    /**
+     * Stop observing size changing for the element
+     */
+    unobserve(target) {
+        for (let i = 0; this.targets.length; i++) {
+            let tempTarget = this.targets[i];
+            if (tempTarget == target) {
+                let position = ResizeObserver.resizeObserverClassByObject[target['sourceIndex']].indexOf(this);
+                if (position != -1) {
+                    ResizeObserver.resizeObserverClassByObject[target['sourceIndex']].splice(position, 1);
                 }
-            });
-        }
-        else {
-            this.context.addChange(name, (path) => {
-                for (const el of this._components[injection.id]) {
-                    el[injection.injectionName] = injection.inject(this.context.c);
+                if (ResizeObserver.resizeObserverClassByObject[target['sourceIndex']].length == 0) {
+                    delete ResizeObserver.resizeObserverClassByObject[target['sourceIndex']];
                 }
-            });
-        }
-        this.firstRenderCb.push(() => {
-            for (const el of this._components[injection.id]) {
-                el[injection.injectionName] = injection.inject(this.context.c);
-            }
-        });
-    }
-    transformBindigAction(name, binding) {
-        if (binding.path) {
-            this.context.addChange(name, (path) => {
-                if (WebComponentTemplate.validatePath(path, binding.path)) {
-                    let valueToSet = WebComponentTemplate.getValueFromItem(binding.path, this.context.c);
-                    for (const el of this._components[binding.id]) {
-                        WebComponentTemplate.setValueToItem(binding.valueName, el, valueToSet);
-                    }
-                }
-            });
-        }
-        else {
-            binding.path = name;
-            this.context.addChange(name, (path) => {
-                let valueToSet = WebComponentTemplate.getValueFromItem(binding.path, this.context.c);
-                for (const el of this._components[binding.id]) {
-                    WebComponentTemplate.setValueToItem(binding.valueName, el, valueToSet);
-                }
-            });
-        }
-        if (binding.isCallback) {
-            this.firstRenderCb.push(() => {
-                for (var el of this._components[binding.id]) {
-                    for (let fct of binding.eventNames) {
-                        let cb = WebComponentTemplate.getValueFromItem(fct, el);
-                        cb?.add((value) => {
-                            WebComponentTemplate.setValueToItem(binding.path, this.context.c, value);
-                        });
-                    }
-                    let valueToSet = WebComponentTemplate.getValueFromItem(binding.path, this.context.c);
-                    WebComponentTemplate.setValueToItem(binding.valueName, el, valueToSet);
-                }
-            });
-        }
-        else {
-            this.firstRenderCb.push(() => {
-                for (var el of this._components[binding.id]) {
-                    for (let fct of binding.eventNames) {
-                        el.addEventListener(fct, (e) => {
-                            let valueToSet = WebComponentTemplate.getValueFromItem(binding.valueName, e.target);
-                            WebComponentTemplate.setValueToItem(binding.path, this.context.c, valueToSet);
-                        });
-                    }
-                    let valueToSet = WebComponentTemplate.getValueFromItem(binding.path, this.context.c);
-                    WebComponentTemplate.setValueToItem(binding.valueName, el, valueToSet);
-                }
-            });
-        }
-    }
-    renderSubTemplate() {
-        for (let loop of this.loops) {
-            let localContext = JSON.parse(JSON.stringify(this.context.schema));
-            localContext.loops.push({
-                data: loop.data,
-                index: loop.index,
-                item: loop.item
-            });
-            this.renderLoop(loop, localContext);
-            this.registerLoopWatchEvent(loop, localContext);
-        }
-    }
-    renderLoop(loop, localContext) {
-        if (this.loopRegisteries[loop.anchorId]) {
-            for (let item of this.loopRegisteries[loop.anchorId]) {
-                item.destructor();
-            }
-        }
-        this.loopRegisteries[loop.anchorId] = [];
-        let result = WebComponentTemplate.getValueFromItem(loop.data, this.context.c);
-        let anchor = this._components[loop.anchorId][0];
-        for (let i = 0; i < result.length; i++) {
-            let context = new WebComponentTemplateContext(this.component, localContext, [{ name: loop.index, value: i }]);
-            let content = loop.template.template.content.cloneNode(true);
-            let actions = loop.template.actions;
-            let instance = new WebComponentTemplateInstance(context, content, actions, this.component, loop.template.loops);
-            instance.render();
-            anchor.parentNode.insertBefore(instance.content, anchor);
-            this.loopRegisteries[loop.anchorId].push(instance);
-        }
-    }
-    registerLoopWatchEvent(loop, localContext) {
-        let fullPath = loop.data;
-        let watchName = fullPath.split(".")[0];
-        if (!this.component['__watchActions'][watchName]) {
-            this.component['__watchActions'][watchName] = [];
-        }
-        let regex = new RegExp(fullPath.replace(/\./g, "\\.") + "\\[(\\d+?)\\]$");
-        this.component['__watchActions'][watchName].push((element, action, path, value) => {
-            if (path == fullPath) {
-                this.renderLoop(loop, localContext);
+                ResizeObserver.getUniqueInstance().unobserve(target);
+                this.targets.splice(i, 1);
                 return;
             }
-            regex.lastIndex = 0;
-            let result = regex.exec(path);
-            if (result) {
-                let registry = this.loopRegisteries[loop.anchorId];
-                let index = Number(result[1]);
-                if (action == WatchAction.CREATED) {
-                    let context = new WebComponentTemplateContext(this.component, localContext, [{ name: loop.index, value: index }]);
-                    let content = loop.template.template.content.cloneNode(true);
-                    let actions = loop.template.actions;
-                    let instance = new WebComponentTemplateInstance(context, content, actions, this.component, loop.template.loops);
-                    instance.render();
-                    let anchor;
-                    if (index < registry.length) {
-                        anchor = registry[index].firstChild;
-                    }
-                    else {
-                        anchor = this._components[loop.anchorId][0];
-                    }
-                    anchor.parentNode.insertBefore(instance.content, anchor);
-                    registry.splice(index, 0, instance);
-                    for (let i = index + 1; i < registry.length; i++) {
-                        registry[i].context.c[loop.index] = registry[i].context.c[loop.index] + 1;
-                    }
-                }
-                else if (action == WatchAction.UPDATED) {
-                    registry[index].render();
-                }
-                else if (action == WatchAction.DELETED) {
-                    registry[index].destructor();
-                    registry.splice(index, 1);
-                    for (let i = index; i < registry.length; i++) {
-                        registry[i].context.c[loop.index] = registry[i].context.c[loop.index] - 1;
-                    }
-                }
-            }
-        });
+        }
+    }
+    /**
+     * Destroy the resize observer
+     */
+    disconnect() {
+        for (let i = 0; this.targets.length; i++) {
+            this.unobserve(this.targets[i]);
+        }
+    }
+    entryChanged(entry) {
+        let index = entry.target.sourceIndex;
+        this.entriesChangedEvent[index] = entry;
+    }
+    triggerCb() {
+        if (!this.willTrigger) {
+            this.willTrigger = true;
+            this._triggerCb();
+        }
+    }
+    _triggerCb() {
+        let now = window.performance.now();
+        let elapsed = now - this.nextFrame;
+        if (this.fpsInterval != -1 && elapsed <= this.fpsInterval) {
+            requestAnimationFrame(() => {
+                this._triggerCb();
+            });
+            return;
+        }
+        this.nextFrame = now - (elapsed % this.fpsInterval);
+        let changed = Object.values(this.entriesChangedEvent);
+        this.entriesChangedEvent = {};
+        this.willTrigger = false;
+        setTimeout(() => {
+            this.callback(changed);
+        }, 0);
     }
 }
-
-class ResourceLoader {
+ResizeObserver.Namespace=`${moduleName}`;
+_.ResizeObserver=ResizeObserver;
+const ResourceLoader=class ResourceLoader {
     static headerLoaded = {};
     static headerWaiting = {};
     /**
@@ -2773,6 +3827,10 @@ class ResourceLoader {
                 blob = true;
             }
             let content = await this.fetching(options.url, blob);
+            if (options.type == "img" && content.startsWith("data:text/html;")) {
+                console.error("Can't load img " + options.url);
+                content = "";
+            }
             this.requestLoaded[options.url] = content;
             this.releaseAwaitFct(options.url);
             return content;
@@ -2850,74 +3908,29 @@ class ResourceLoader {
         return result;
     }
 }
-WebComponentInstance.Namespace='Aventus';
-Aventus.WebComponentInstance=WebComponentInstance;
-ElementExtension.Namespace='Aventus';
-Aventus.ElementExtension=ElementExtension;
-Instance.Namespace='Aventus';
-Aventus.Instance=Instance;
-Style.Namespace='Aventus';
-Aventus.Style=Style;
-WebComponent.Namespace='Aventus';
-Aventus.WebComponent=WebComponent;
-Callback.Namespace='Aventus';
-Aventus.Callback=Callback;
-Mutex.Namespace='Aventus';
-Aventus.Mutex=Mutex;
-StateManager.Namespace='Aventus';
-Aventus.StateManager=StateManager;
-WatchAction.Namespace='Aventus';
-Aventus.WatchAction=WatchAction;
-Watcher.Namespace='Aventus';
-Aventus.Watcher=Watcher;
-PressManager.Namespace='Aventus';
-Aventus.PressManager=PressManager;
-State.Namespace='Aventus';
-Aventus.State=State;
-EmptyState.Namespace='Aventus';
-Aventus.EmptyState=EmptyState;
-WebComponentTemplate.Namespace='Aventus';
-Aventus.WebComponentTemplate=WebComponentTemplate;
-WebComponentTemplateContext.Namespace='Aventus';
-Aventus.WebComponentTemplateContext=WebComponentTemplateContext;
-WebComponentTemplateInstance.Namespace='Aventus';
-Aventus.WebComponentTemplateInstance=WebComponentTemplateInstance;
-ResourceLoader.Namespace='Aventus';
-Aventus.ResourceLoader=ResourceLoader;
+ResourceLoader.Namespace=`${moduleName}`;
+_.ResourceLoader=ResourceLoader;
+
+for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
 
 var Aventus;
 (Aventus||(Aventus = {}));
 (function (Aventus) {
 const moduleName = `Aventus`;
+const _ = {};
 
-class Img extends Aventus.WebComponent {
+
+let _n;
+const Img = class Img extends Aventus.WebComponent {
     static get observedAttributes() {return ["src", "mode"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
-    get 'no_save'() {
-                return this.hasAttribute('no_save');
-            }
-            set 'no_save'(val) {
-                val = this.getBoolean(val);
-                if (val) {
-                    this.setAttribute('no_save', 'true');
-                } else{
-                    this.removeAttribute('no_save');
-                }
-            }    get 'src'() {
-                    return this.getAttribute('src');
-                }
-                set 'src'(val) {
-                    if(val === undefined || val === null){this.removeAttribute('src')}
-                    else{this.setAttribute('src',val)}
-                }get 'mode'() {
-                    return this.getAttribute('mode');
-                }
-                set 'mode'(val) {
-                    if(val === undefined || val === null){this.removeAttribute('mode')}
-                    else{this.setAttribute('mode',val)}
-                }    isCalculing;
+    get 'cache'() { return this.getBoolAttr('cache') }
+    set 'cache'(val) { this.setBoolAttr('cache', val) }    get 'src'() { return this.getStringProp('src') }
+    set 'src'(val) { this.setStringAttr('src', val) }get 'mode'() { return this.getStringProp('mode') }
+    set 'mode'(val) { this.setStringAttr('mode', val) }    isCalculing;
     maxCalculateSize = 10;
     ratio = 1;
+    resizeObserver;
     __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("src", ((target) => {
     target.onSrcChanged();
 }));this.__addPropertyActions("mode", ((target) => {
@@ -2958,11 +3971,11 @@ class Img extends Aventus.WebComponent {
     getClassName() {
         return "Img";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('no_save')) { this.attributeChangedCallback('no_save', false, false); }if(!this.hasAttribute('src')){ this['src'] = undefined; }if(!this.hasAttribute('mode')){ this['mode'] = "contains"; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('src');this.__upgradeProperty('mode'); }
-    __listBoolProps() { return ["no_save"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('cache')) { this.attributeChangedCallback('cache', false, false); }if(!this.hasAttribute('src')){ this['src'] = undefined; }if(!this.hasAttribute('mode')){ this['mode'] = "contains"; } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('cache');this.__upgradeProperty('src');this.__upgradeProperty('mode'); }
+    __listBoolProps() { return ["cache"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
     calculateSize(attempt = 0) {
-        if (this.isCalculing) {
+        if (this.isCalculing || !this.imgEl || !this.svgEl) {
             return;
         }
         if (this.src == "") {
@@ -2977,7 +3990,7 @@ class Img extends Aventus.WebComponent {
             return;
         }
         let element = this.imgEl;
-        if (this.src.endsWith(".svg")) {
+        if (this.src?.endsWith(".svg")) {
             element = this.svgEl;
         }
         this.style.width = '';
@@ -3049,13 +4062,19 @@ class Img extends Aventus.WebComponent {
         this.isCalculing = false;
     }
     async onSrcChanged() {
+        if (!this.src || !this.svgEl || !this.imgEl) {
+            return;
+        }
         if (this.src.endsWith(".svg")) {
             let svgContent = await Aventus.ResourceLoader.load(this.src);
             this.svgEl.innerHTML = svgContent;
             this.calculateSize();
         }
-        else if (this.src != "" && !this.no_save) {
-            let base64 = await Aventus.ResourceLoader.load(this.src);
+        else if (this.cache) {
+            let base64 = await Aventus.ResourceLoader.load({
+                url: this.src,
+                type: 'img'
+            });
             this.imgEl.setAttribute("src", base64);
             this.calculateSize();
         }
@@ -3064,45 +4083,44 @@ class Img extends Aventus.WebComponent {
             this.calculateSize();
         }
     }
+    postDestruction() {
+        this.resizeObserver?.disconnect();
+        this.resizeObserver = undefined;
+    }
+    postCreation() {
+        this.resizeObserver = new Aventus.ResizeObserver({
+            fps: 10,
+            callback: () => {
+                this.calculateSize();
+            }
+        });
+        this.resizeObserver.observe(this);
+    }
 }
-window.customElements.define('av-img', Img);Aventus.WebComponentInstance.registerDefinition(Img);
-Img.Namespace='Aventus';
-Aventus.Img=Img;
+Img.Namespace=`${moduleName}`;
+Img.Tag=`av-img`;
+_.Img=Img;
+if(!window.customElements.get('av-img')){window.customElements.define('av-img', Img);Aventus.WebComponentInstance.registerDefinition(Img);}
+
+
+for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
 
 var AventusWebsite;
 (AventusWebsite||(AventusWebsite = {}));
 (function (AventusWebsite) {
 const moduleName = `AventusWebsite`;
+const _ = {};
 
 
-class Countdown extends Aventus.WebComponent {
+let _n;
+const Countdown = class Countdown extends Aventus.WebComponent {
     static get observedAttributes() {return ["nb_days", "nb_hours", "nb_minutes", "nb_seconds"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
-    get 'nb_days'() {
-                    return Number(this.getAttribute('nb_days'));
-                }
-                set 'nb_days'(val) {
-                    if(val === undefined || val === null){this.removeAttribute('nb_days')}
-                    else{this.setAttribute('nb_days',val)}
-                }get 'nb_hours'() {
-                    return Number(this.getAttribute('nb_hours'));
-                }
-                set 'nb_hours'(val) {
-                    if(val === undefined || val === null){this.removeAttribute('nb_hours')}
-                    else{this.setAttribute('nb_hours',val)}
-                }get 'nb_minutes'() {
-                    return Number(this.getAttribute('nb_minutes'));
-                }
-                set 'nb_minutes'(val) {
-                    if(val === undefined || val === null){this.removeAttribute('nb_minutes')}
-                    else{this.setAttribute('nb_minutes',val)}
-                }get 'nb_seconds'() {
-                    return Number(this.getAttribute('nb_seconds'));
-                }
-                set 'nb_seconds'(val) {
-                    if(val === undefined || val === null){this.removeAttribute('nb_seconds')}
-                    else{this.setAttribute('nb_seconds',val)}
-                }    rDate = new Date('2023-06-16T10:00:00.000Z');
+    get 'nb_days'() { return this.getNumberProp('nb_days') }
+    set 'nb_days'(val) { this.setNumberAttr('nb_days', val) }get 'nb_hours'() { return this.getNumberProp('nb_hours') }
+    set 'nb_hours'(val) { this.setNumberAttr('nb_hours', val) }get 'nb_minutes'() { return this.getNumberProp('nb_minutes') }
+    set 'nb_minutes'(val) { this.setNumberAttr('nb_minutes', val) }get 'nb_seconds'() { return this.getNumberProp('nb_seconds') }
+    set 'nb_seconds'(val) { this.setNumberAttr('nb_seconds', val) }    rDate = new Date('2023-06-16T10:00:00.000Z');
     static __style = `:host{height:100%;overflow:hidden;position:relative;width:100%}:host .info{align-items:center;background-color:var(--primary-color);display:flex;flex-direction:column;font-size:25px;height:100%;justify-content:center;padding:16px;width:100%;z-index:9999}:host h1{color:var(--aventus-color);z-index:9999;text-align:center}:host .row{align-items:center;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;z-index:9999}:host .row .row-split{display:flex;gap:10px}:host .row .row-split .square{align-items:center;background-color:var(--light-primary-color);color:var(--aventus-color);display:flex;font-size:25px;font-weight:bold;height:100px;justify-content:center;width:100px}:host av-img{--img-color: rgb(200, 200, 200);height:150%;left:-200px;opacity:.1;pointer-events:none;position:absolute;top:-25px;z-index:1}:host av-img:last-child{left:auto;right:-200px;top:30px;transform:rotate(180deg)}@media screen and (max-width: 1100px){:host av-img{left:-50%;top:25%}:host av-img:last-child{right:-50%;top:-75%}}`;
     __getStatic() {
         return Countdown;
@@ -3119,36 +4137,24 @@ class Countdown extends Aventus.WebComponent {
 }
     __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
   "content": {
-    "nb_days": [
-      {
-        "id": "countdown_0",
-        "attrName": "@HTML",
-        "render": (c) => `${c.nb_days}d`
-      }
-    ],
-    "nb_hours": [
-      {
-        "id": "countdown_1",
-        "attrName": "@HTML",
-        "render": (c) => `${c.nb_hours}h`
-      }
-    ],
-    "nb_minutes": [
-      {
-        "id": "countdown_2",
-        "attrName": "@HTML",
-        "render": (c) => `${c.nb_minutes}m`
-      }
-    ],
-    "nb_seconds": [
-      {
-        "id": "countdown_3",
-        "attrName": "@HTML",
-        "render": (c) => `${c.nb_seconds}s`
-      }
-    ]
+    "countdown_0°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__e519e6757436770b6e63f3b55b73a93bmethod0())}d`,
+      "once": true
+    },
+    "countdown_1°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__e519e6757436770b6e63f3b55b73a93bmethod1())}h`,
+      "once": true
+    },
+    "countdown_2°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__e519e6757436770b6e63f3b55b73a93bmethod2())}m`,
+      "once": true
+    },
+    "countdown_3°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__e519e6757436770b6e63f3b55b73a93bmethod3())}s`,
+      "once": true
+    }
   }
-});this.__getStatic().__template.setSchema({globals:["nb_days","nb_hours","nb_minutes","nb_seconds"]}); }
+}); }
     getClassName() {
         return "Countdown";
     }
@@ -3179,8 +4185,24 @@ class Countdown extends Aventus.WebComponent {
             this.change();
         }, 1000);
     }
+    __e519e6757436770b6e63f3b55b73a93bmethod0() {
+        return this.nb_days;
+    }
+    __e519e6757436770b6e63f3b55b73a93bmethod1() {
+        return this.nb_hours;
+    }
+    __e519e6757436770b6e63f3b55b73a93bmethod2() {
+        return this.nb_minutes;
+    }
+    __e519e6757436770b6e63f3b55b73a93bmethod3() {
+        return this.nb_seconds;
+    }
 }
-window.customElements.define('av-countdown', Countdown);Aventus.WebComponentInstance.registerDefinition(Countdown);
-Countdown.Namespace='AventusWebsite';
-AventusWebsite.Countdown=Countdown;
+Countdown.Namespace=`${moduleName}`;
+Countdown.Tag=`av-countdown`;
+_.Countdown=Countdown;
+if(!window.customElements.get('av-countdown')){window.customElements.define('av-countdown', Countdown);Aventus.WebComponentInstance.registerDefinition(Countdown);}
+
+
+for(let key in _) { AventusWebsite[key] = _[key] }
 })(AventusWebsite);

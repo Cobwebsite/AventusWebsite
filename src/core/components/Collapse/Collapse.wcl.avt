@@ -7,7 +7,7 @@ export class Collapse extends Aventus.WebComponent implements Aventus.DefaultCom
 
     //#region props
     @Attribute()
-    public open: boolean;
+    public open!: boolean;
     //#endregion
 
 

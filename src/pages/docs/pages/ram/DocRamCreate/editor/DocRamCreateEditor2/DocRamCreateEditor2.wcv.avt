@@ -1,0 +1,32 @@
+<av-code language="typescript" filename="ExampleRAM/src/Person.ram.avt">
+    <pre>
+        import { Person } from "./Person.data.avt";
+        &nbsp;
+        // now the key to identify a person must be a string
+        export class PersonRAM extends Aventus.GenericRam&lt;string, Person> implements Aventus.IRam {
+            &nbsp;
+            /**
+            * Create a singleton to store data
+            */
+            public static getInstance() {
+                return Aventus.Instance.get(PersonRAM);
+            }
+            &nbsp;
+            /**
+            * @inheritdoc
+            */
+            public override defineIndexKey(): keyof Person {
+                return 'id';
+            }
+            &nbsp;
+            /**
+            * @inheritdoc
+            */
+            protected override getTypeForData(objJson: Aventus.KeysObject&lt;Person> | Person): new () => Person {
+                return Person;
+            }
+            &nbsp;
+        }
+    </pre>
+</av-code>
+<slot></slot>

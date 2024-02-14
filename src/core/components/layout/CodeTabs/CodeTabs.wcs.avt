@@ -1,0 +1,35 @@
+:host {
+	width: 100%;
+
+	.tab-container {
+		display: flex;
+		flex-wrap: nowrap;
+		gap: 3px;
+	}
+
+	.tab {
+		border: 1px solid #1e1e1e;
+		border-bottom: 0;
+		border-top-left-radius: 5px;
+		border-top-right-radius: 5px;
+		padding: 5px 15px;
+		cursor: pointer;
+	}
+
+	.tab.active {
+		background-color: #1e1e1e;
+		color: var(--aventus-color);
+	}
+
+	.hidden {
+		display: none;
+	}
+
+	.container {
+		av-code {
+			border-radius: 0px;
+			margin: 0;
+
+		}
+	}
+}

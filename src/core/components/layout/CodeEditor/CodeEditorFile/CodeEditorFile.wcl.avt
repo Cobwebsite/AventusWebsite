@@ -1,0 +1,66 @@
+import type { CodeEditor } from "../CodeEditor.wcl.avt";
+import type { AvCode } from "../../Code/Code.wcl.avt";
+
+export class CodeEditorFile extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+    @Property((target: CodeEditorFile) => {
+        target.prepareIcon();
+    })
+    public name: string = "";
+
+    @Property()
+    public icon?: string;
+
+    @Attribute()
+    public type?: "style" | "logic" | "view";
+    @Attribute()
+    public active!: boolean;
+    //#endregion
+
+
+    //#region variables
+    public code!: AvCode;
+    public editor!: CodeEditor;
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    private prepareIcon() {
+        if(this.name.endsWith(".wcs.avt")) {
+            this.icon = "/img/logo.svg";
+            this.type = "style";
+        }
+        else if(this.name.endsWith(".wcv.avt")) {
+            this.icon = "/img/logo.svg";
+            this.type = "view";
+        }
+        else if(this.name.endsWith(".avt")) {
+            this.icon = "/img/logo.svg";
+            this.type = "logic";
+        }
+    }
+
+    
+
+    protected override postCreation(): void {
+        new Aventus.PressManager({
+            element: this,
+            onPress: () => {
+                this.editor.openFile(this);
+            }
+        });
+    }
+    //#endregion
+
+}

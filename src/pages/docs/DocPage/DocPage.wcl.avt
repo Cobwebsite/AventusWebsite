@@ -10,13 +10,13 @@ export class DocPage extends Page implements Aventus.DefaultComponent {
 
     //#region props
     @Attribute()
-    public open: boolean;
+    public open!: boolean;
     //#endregion
 
 
     //#region variables
     @ViewElement()
-    protected sidenavEl: DocSidenav;
+    protected sidenavEl!: DocSidenav;
     //#endregion
 
 
@@ -34,7 +34,7 @@ export class DocPage extends Page implements Aventus.DefaultComponent {
     public getNextAndPrevious(state: string) {
         return this.sidenavEl.getNextAndPrevious(state);
     }
-    public pageTitle(): string {
+    public override pageTitle(): string {
         return "Aventus - Documentation";
     }
 

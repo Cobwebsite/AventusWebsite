@@ -3,20 +3,20 @@
     front-end application in several well knowned files. It builds on top of standard HTML, CSS, JavaScript
     and provide a way to keep your development under control.</p>
 <p>Here is a minimal example:</p>
-<av-code language="html" tab="1">
-    <script>
-        export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {
+<av-code-editor name="Button example">
+    <av-code language="typescript" tab="1" filename="Button/Button.wcl.avt">
+        export class DocIntroductionButton extends Aventus.WebComponent implements Aventus.DefaultComponent {
             @Property()
-            private count:number = 0;
+            private count: number = 0;
             private onClick(): void {
                 this.count++;
             }
         }
-    </script>
-    <template>
-        <button @click="onClick">Count is {{count}}</button>
-    </template>
-    <style>
+    </av-code>
+    <av-code language="html" tab="1" filename="Button/Button.wcv.avt">
+        <button @click="onClick">Count is {{ this.count }}</button>
+    </av-code>
+    <av-code language="scss" tab="1" filename="Button/Button.wcs.avt">
         :host {
             button {
                 background-color: #e5540e;
@@ -25,14 +25,12 @@
                 color: white;
                 cursor: pointer;
                 padding: 5px 15px;
-                box-shadow: 0 0 5px #555;
             }
         }
-    </style>
-</av-code>
-<av-result>
-    <av-doc-introduction-button></av-doc-introduction-button>
-</av-result>
+    </av-code>
+
+    <av-doc-introduction-button slot="result"></av-doc-introduction-button>
+</av-code-editor>
 <p>To understand the capabilities of Aventus, you need to learn about the following:</p>
 <ul>
     <li><span class="cn">Webcomponent</span></li>

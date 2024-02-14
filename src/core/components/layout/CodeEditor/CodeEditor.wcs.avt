@@ -1,0 +1,114 @@
+:host {
+	--_code-editor-menu-width: var(--code-editor-menu-width, 250px);
+}
+
+:host {
+	--code-padding: 0;
+	background-color: #1e1e1e;
+	color: white;
+	display: flex;
+	flex-direction: column;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	margin-bottom: 15px;
+	max-height: 600px;
+	min-height: 300px;
+	width: 100%;
+	overflow: hidden;
+	border-radius: 5px;
+
+
+	.header {
+		align-items: center;
+		border-bottom: 1px solid #414141;
+		display: flex;
+		height: 50px;
+		justify-content: center;
+		padding: 10px;
+		position: relative;
+		width: 100%;
+		flex-shrink: 0;
+
+		mi-icon.download {
+			right: 10px;
+			position: absolute;
+			cursor: pointer;
+			transition: background-color 0.5s var(--bezier-curve);
+		}
+		mi-icon.download:hover {
+			background-color:  rgba(255, 255, 255, 0.1);
+		}
+
+		span {
+			display: block;
+			padding: 0 50px;
+			text-align: center;
+			width: 100%;
+		}
+	}
+
+	.content {
+		display: flex;
+		flex-grow: 1;
+		height: calc(100% - 50px);
+		padding: 0 10px;
+
+		.menu {
+			flex-shrink: 0;
+			/* border-right: 1px solid #414141;*/
+			height: 100%;
+			min-width: 20px;
+			min-width: 20px;
+			padding-bottom: 10px;
+			width: var(--_code-editor-menu-width);
+		}
+
+		.separator {
+			cursor: col-resize;
+			flex-grow: 0;
+			flex-shrink: 0;
+			inset: 0;
+			position: relative;
+			width: 5px;
+
+			&::after {
+				background-color: #414141;
+				bottom: 0;
+				content: "";
+				left: 2px;
+				position: absolute;
+				top: 0;
+				width: 1px;
+			}
+		}
+
+		.display {
+			--scrollbar-content-padding: 5px 15px;
+			height: 100%;
+			/* border-left: 1px solid #414141;*/
+			padding-bottom: 10px;
+			width: 100%;
+		}
+	}
+
+	.result {
+		display: none;
+		// background-color: var(--secondary-color);
+		.title {
+			// text-align: center;
+			margin-bottom: 15px;
+		}
+		border: 1px solid #1e1e1e;
+		border-top: 1px solid #414141;
+		padding: 15px;
+	}
+
+	.hidden {
+		display: none;
+	}
+}
+
+:host([has_result]) {
+	.result {
+		display: block;
+	}
+}

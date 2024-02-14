@@ -1,0 +1,37 @@
+export class CodeEditorFolder extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+    @Property()
+    public name: string = "";
+
+    @Property()
+    public open!: boolean;
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+
+    /**
+     * 
+     */
+    protected toggleOpen() {
+        this.open = !this.open;
+    }
+    //#endregion
+
+}

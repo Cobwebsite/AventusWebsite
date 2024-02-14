@@ -1,11 +1,14 @@
 {
     "module": "AventusWebsite",
     "componentPrefix": "av",
-    "avoidParsingInsideTags": ["av-code"],
+    "avoidParsingInsideTags": [
+        "av-code"
+    ],
     "build": [
         {
             "name": "Main",
-            "inputPath": [
+            "hideWarnings": true,
+            "src": [
                 "./src/core/*",
                 "./src/pages/*"
             ],
@@ -13,29 +16,23 @@
                 {
                     "uri": "@AventusUI",
                     "include": "need"
-                }
-            ],
-            "outputFile": "./dist/AventusWebsite.js"
-        },
-        {
-            "name": "Countdown",
-            "inputPath": [
-                "./src/countdown/*"
-            ],
-            "dependances": [
+                },
                 {
-                    "uri": "@AventusUI",
-                    "include": "need"
+                    "uri": "@local:MaterialIcon@Main"
                 }
             ],
-            "outputFile": "./dist/release.js"
+            "compile": [
+                {
+                    "output": "./dist/AventusWebsite.js"
+                }
+            ]
         }
     ],
     "static": [
         {
             "name": "Main_Static",
-            "inputPath": "./src/static/",
-            "outputPath": "./dist/"
+            "input": "./src/static/",
+            "output": "./dist/"
         }
     ]
 }

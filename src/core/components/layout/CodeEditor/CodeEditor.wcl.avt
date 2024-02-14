@@ -1,0 +1,209 @@
+import { CodeEditorFile } from "./CodeEditorFile/CodeEditorFile.wcl.avt";
+import { AvCode } from "../Code/Code.wcl.avt";
+import { CodeEditorFolder } from "./CodeEditorFolder/CodeEditorFolder.wcl.avt";
+// import * as JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+
+type Explorer = {
+    [name: string]: {
+        file?: AvCode;
+        children: Explorer;
+    };
+};
+
+export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+    @Property()
+    public name?: string;
+    @Attribute()
+    public has_result: boolean = false;
+    @Attribute()
+    public all_open: boolean = true;
+    @Property()
+    public show?: string;
+    //#endregion
+
+
+    //#region variables
+    private info: Explorer = {};
+    private files: { [path: string]: CodeEditorFile; } = {};
+
+    @ViewElement()
+    protected menuEl!: Aventus.Layout.Scrollable;
+
+    @ViewElement()
+    protected displayEl!: Aventus.Layout.Scrollable;
+
+    @ViewElement()
+    protected separatorEl!: HTMLDivElement;
+
+    @ViewElement()
+    protected contentEl!: HTMLDivElement;
+
+    private openedFile?: CodeEditorFile;
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    private async loadJSZip() {
+        await Aventus.ResourceLoader.loadInHead({
+            type: 'js',
+            url: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
+        });
+    }
+    protected async download() {
+        await this.loadJSZip();
+        let zip = new (window as any).JSZip();
+        for(let path in this.files) {
+            let p = path;
+            if(path.startsWith("/")) {
+                p = p.substring(1);
+            }
+            zip.file(path, this.files[path].code.codeEl.innerText);
+        }
+        let content = await zip.generateAsync({ type: 'blob' });
+        saveAs(content, this.name + ".zip");
+    }
+    public openFile(file: CodeEditorFile) {
+        if(this.openedFile) {
+            this.openedFile.active = false;
+            this.openedFile.code.parentNode?.removeChild(this.openedFile.code);
+        }
+        this.openedFile = file;
+        this.openedFile.active = true;
+        this.displayEl.appendChild(this.openedFile.code);
+    }
+    private store(path: string, code: AvCode) {
+        let splitted = path.split("/");
+        let lastName = splitted.pop() ?? '';
+        let current = this.info;
+
+        for(let split of splitted) {
+            if(!current[split]) {
+                current[split] = {
+                    children: {}
+                };
+            }
+            current = current[split].children;
+        }
+
+        current[lastName] = {
+            children: {},
+            file: code
+        };
+    }
+    private loadContent() {
+        let elements = this.getElementsInSlot();
+        for(let element of elements) {
+            if(element instanceof AvCode && element.filename) {
+                this.store(element.filename, element);
+                element.filename = undefined;
+            }
+        }
+        this.menuEl.innerHTML = "";
+        this.renderMenu(this.info, this.menuEl);
+
+        this.has_result = this.getElementsInSlot("result").length > 0;
+    }
+
+    private renderMenu(info: Explorer, el: HTMLElement, path: string = "") {
+        let names = Object.keys(info).sort();
+        for(let name of names) {
+            let current = info[name];
+            if(!current.file) {
+                let folder = new CodeEditorFolder();
+                folder.name = name;
+                if(this.all_open) {
+                    folder.open = true;
+                }
+                let newPath = path + "/" + name;
+                this.renderMenu(current.children, folder, newPath);
+                el.appendChild(folder);
+            }
+        }
+        for(let name of names) {
+            let current = info[name];
+            if(current.file) {
+                let newPath = path + "/" + name;
+                let file = new CodeEditorFile();
+                file.code = current.file;
+                file.editor = this;
+                file.name = name;
+                this.files[newPath] = file;
+                el.appendChild(file);
+                if(this.show) {
+                    if(this.comparePath(this.show, newPath)) {
+                        this.openFile(file);
+                    }
+                }
+                else {
+                    if(!this.openedFile) {
+                        this.openFile(file);
+                    }
+                }
+            }
+        }
+    }
+
+    private comparePath(p1: string, p2: string) {
+        if(p2.startsWith("/")) {
+            p2 = p2.slice(1);
+        }
+        if(p1.startsWith("/")) {
+            p2 = p2.slice(1);
+        }
+        return p1 == p2;
+    }
+
+    private addResizeMenu() {
+        let startX = 0;
+        let startMenuWidth = 0;
+        new Aventus.DragAndDrop({
+            element: this.separatorEl,
+            applyDrag: false,
+            offsetDrag: 0,
+            onStart: (e) => {
+                startMenuWidth = this.menuEl.offsetWidth;
+                startX = e.pageX;
+            },
+            onMove: (e, position) => {
+                let diff = e.pageX - startX;
+                let newWidth = startMenuWidth + diff;
+                this.style.setProperty("--code-editor-menu-width", newWidth + 'px');
+            }
+        });
+    }
+
+    private addResizeObserver() {
+        // TODO correct
+        let observer = new Aventus.ResizeObserver(() => {
+            if(this.displayEl['contentWrapper'].offsetHeight >= 550 || this.menuEl['contentWrapper'].offsetHeight >= 550) {
+                this.style.height = 600 + 'px';
+            }
+            else {
+                this.style.height = '';
+            }
+        });
+        observer.observe(this.displayEl['contentWrapper']);
+        observer.observe(this.menuEl['contentWrapper']);
+    }
+
+    protected override postCreation(): void {
+        this.loadContent();
+        this.addResizeMenu();
+        this.addResizeObserver();
+    }
+    //#endregion
+
+}

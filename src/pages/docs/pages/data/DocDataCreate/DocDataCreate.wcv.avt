@@ -6,72 +6,77 @@
     backbone of your application and most of the times, all data structures will be a copy from your backend object.</p>
 
 <h2>Inside Aventus</h2>
-<p>Inside Aventus you can create a new Data class by right clicking on the explorer part inside vscode, choose <i>Aventus
+<p>Inside Aventus you can create a new Data class by right clicking on the explorer part inside vscode, choose
+    <i>Aventus
         : Create...</i> and choose <i>Data</i>. Inside the input you can enter the name for the class. This will create
-    a basic data class:</p>
-<av-code language="typescript" filename="Person.data.avt">
-    export class Person extends Aventus.Data implements Aventus.IData {
-    \tpublic id: number = 0;
-    }
-</av-code>
-<p>All classes inside a <span class="cn">*.data.avt</span> must implements <span class="cn">Aventus.IData</span>. This will ensure that each data class instance can be identified by the <span class="cn">$type</span> field that must be unique. Furthermore, a static field named <span class="cn">Fullname</span> must be implemented.</p>
-
-<av-code language="typescript" filename="Test.lib.avt">
-    export class Test {
-        public demo() {
-            console.log(Person.Fullname);
-            let p = new Person();
-            console.log(p.$type);
-            // $type and Fullname must be identical
-        }
-    }
-</av-code>
+    a basic data class:
+</p>
+<av-doc-date-create-editor-1></av-doc-date-create-editor-1>
+<p>All classes inside a <span class="cn">*.data.avt</span> must implements <span class="cn">Aventus.IData</span>. This
+    will ensure that each data class instance can be identified by the <span class="cn">$type</span> field that must be
+    unique. Furthermore, a static field named <span class="cn">Fullname</span> must be implemented.</p>
+<av-doc-date-create-editor-2></av-doc-date-create-editor-2>
 <p>
-    By default your data class extends <span class="cn">Aventus.Data</span> with the following impletemented properites :
+    By default your data class extends <span class="cn">Aventus.Data</span> with the following impletemented properites
+    :
 </p>
 <av-code language="typescript" filename="Data.data.avt">
+    <pre>
     export abstract class Data implements IData {
         /**
-         * The class schema / This field is defined during compilation
-         */
+        * The class schema / This field is defined during compilation
+        */
         public static get $schema(): { [prop: string]: string; };
         /**
-         * The current namespace / This field is defined during compilation
-         */
+        * The current namespace / This field is defined during compilation
+        */
         public static get Namespace(): string { return ""; }
         /**
-         * Get the unique type for the data. Define it as the namespace + class name
-         */
+        * Get the unique type for the data. Define it as the namespace + class name
+        */
         public static get Fullname(): string { return this.Namespace + "." + this.name; }
-    
+
         /**
-         * The current namespace
-         */
+        * The current namespace
+        */
         public get namespace(): string {
             return this.constructor['Namespace'];
         }
         /**
-         * Get the unique type for the data. Define it as the namespace + class name
-         */
+        * Get the unique type for the data. Define it as the namespace + class name
+        */
         public get $type(): string {
             return this.constructor['Fullname'];
         }
         /**
-         * Get the name of the class
-         */
+        * Get the name of the class
+        */
         public get className(): string {
             return this.constructor.name;
         }
+        /**
+        * Get a JSON for the current object
+        */
+       public toJSON() {...}
     }
+    </pre>
 </av-code>
 <p>
-    During the compilation of a data class, the static field <span class="cn">Namespace</span> is defined. With this field you can create an unique type name that allows to clearly identify each data inside your application. Because Javascript is not typed, a <span class="cn">$schema</span> is created for each class to keep information about what the class must contain. In future version of Aventus, this will help the manager to synchronize data between each instances.
+    During the compilation of a data class, the static field <span class="cn">Namespace</span> is defined. With this
+    field you can create an unique type name that allows to clearly identify each data inside your application. Because
+    Javascript is not typed, a <span class="cn">$schema</span> is created for each class to keep information about what
+    the class must contain. In future version of Aventus, this will help the manager to synchronize data between each
+    instances.
 </p>
 <p>The last thing to know is that every properties must have an initializer.</p>
 <av-code language="typescript" filename="Person.data.avt">
-    export class Person extends Aventus.Data implements Aventus.IData {
-    \tpublic id: number = 0; // This is ok
-    \tpublic firstname: string; // This will trigger an error
-    \tpublic lastname: string = null; // This is ok
-    }
+    <pre>
+        export class Person extends Aventus.Data implements Aventus.IData {
+            public id: number = 0; // This is ok
+            public firstname?: string; // This will trigger an error
+            public lastname: string = ''; // This is ok
+            public fullname?: string = undefined; // This is ok
+            public birthday!: string; // This is ok
+        }
+    </pre>
 </av-code>

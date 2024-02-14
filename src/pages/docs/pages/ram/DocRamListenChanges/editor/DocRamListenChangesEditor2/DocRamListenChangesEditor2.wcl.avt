@@ -1,0 +1,31 @@
+import { DocRamListenChangesEditor1 } from "../DocRamListenChangesEditor1/DocRamListenChangesEditor1.wcl.avt";
+
+export class DocRamListenChangesEditor2 extends DocRamListenChangesEditor1 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+		return 'ExampleRAM/src/DisplayPerson/DisplayPerson.wcl.avt';
+	}
+	//#endregion
+	
+}

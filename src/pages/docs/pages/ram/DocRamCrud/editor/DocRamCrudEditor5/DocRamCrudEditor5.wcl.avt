@@ -1,0 +1,29 @@
+import { DocRamCrudEditor4 } from "../DocRamCrudEditor4/DocRamCrudEditor4.wcl.avt";
+
+export class DocRamCrudEditor5 extends DocRamCrudEditor4 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	
+	//#endregion
+	
+}

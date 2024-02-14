@@ -1,0 +1,12 @@
+<av-code language="typescript" filename="ExampleRAM/src/Test.lib.avt">
+    import { PersonRAM } from "./Person.ram.avt";
+    &nbsp;
+    export async function sayHello(id: number) {
+        const person = await PersonRAM.getInstance().get(id)
+        &nbsp;
+        if(!person) return
+        &nbsp;
+        person.helloWorld();
+    }
+</av-code>
+<slot></slot>

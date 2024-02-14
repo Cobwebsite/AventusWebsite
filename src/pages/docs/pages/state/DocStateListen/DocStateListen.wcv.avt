@@ -1,5 +1,5 @@
 <h1>State - Listen changes</h1>
-<p>Changing state is great, but for sure you will need to listen when a state change. Three methods composed the <span
+<p>Changing state is great, but for sure you will need to listen when a state change. Three methods compose the <span
         class="cn">State</span> lifecylce. This tuple is named <span class="cn">StateAction</span> inside Aventus.</p>
 <ul>
     <li><span class="cn">active</span>: when a state become active.</li>
@@ -9,32 +9,7 @@
 
 <h2>Callback on the StateManager</h2>
 <p>For the example, we are going to listen a state to display a user.</p>
-<av-code language="typescript" filename="Test.lib.avt">
-    export class Test {
-    \tpublic static subscribe() {
-    \t\tMainStateManager.getInstance().subscribe("/user/{id:number}", {
-    \t\t\tactive: (state: Aventus.State, slugs: Aventus.StateSlug) =&gt; {
-    \t\t\t\tconsole.log("user active is " + slugs.id);
-    \t\t\t},
-    \t\t\tinactive: (state: Aventus.State, nextState: Aventus.State, oldSlugs: Aventus.StateSlug) =&gt; {
-    \t\t\t\tconsole.log("new state is " + nextState.name);
-    \t\t\t},
-    \t\t\taskChange: async (state: Aventus.State, nextState: Aventus.State, slugs: Aventus.StateSlug) =&gt; {
-    \t\t\t\tif(slugs.id == 3) {
-    \t\t\t\t\treturn false;
-    \t\t\t\t}
-    \t\t\t\treturn true;
-    \t\t\t}
-    \t\t});
-    \t}
-    \tpublic static setUser(id: number) {
-    \t\tMainStateManager.getInstance().setState("/user/" + id);
-    \t}
-    \tpublic static removeUser() {
-    \t\tMainStateManager.getInstance().setState("/other");
-    \t}
-    }
-</av-code>
+<av-doc-state-listen-editor-1></av-doc-state-listen-editor-1>
 <p>We subscribe to the state <span class="cn">/user/{id:number}</span> what means that the manager will trigger active
     when the current state is matching <span class="cn">/^\\/user\\/([0-9]+)$/g</span>. The type available are <span
         class="cn">number</span> and <span class="cn">string</span>. If you don't set type, string will be use by
@@ -44,15 +19,7 @@
     be displayed. If you set the current state to <span class="cn">/other</span>, the inactive state will be called.
     It's important to know that if your state stay active between two state changes, the function <span
         class="cn">inactive</span> won't be fired.</p>
-
-<av-code language="typescript" filename="Test.lib.avt">
-    export class Test {
-    \tpublic async inactiveNotFired() {
-    \t\tawait MainStateManager.getInstance().setState("/user/1");
-    \t\tawait MainStateManager.getInstance().setState("/user/2");
-    \t}
-    }
-</av-code>
+<av-doc-state-listen-editor-2></av-doc-state-listen-editor-2>
 <p>If we come back to the previous example, if we set the user to <span class="cn">id = 3</span> the function <span
         class="cn">askChange</span> will return a false what involves that no more state changes are allowed. A use case
     for this feature is when the user is editing data and he decides to change state without saving item. You can
@@ -61,54 +28,7 @@
 <p>If you need to know the current state of the manager, you can at any time call the function <span
         class="cn">getState</span> to obtain the current state object instance. Furthermore, you can use operator <span
         class="cn">instanceof</span> to obtain more informations and share some data between subscribers.</p>
-
-<av-code language="typescript" filename="Test.lib.avt">
-    export class Test {
-    \t...
-    \t\t\tactive: (state: Aventus.State, slugs: Aventus.StateSlug) =&gt; {
-    \t\t\t\tif(state instanceof CreateUser){
-    \t\t\t\t\tconsole.log(state.editingUser.id);
-    \t\t\t\t}
-    \t\t\t},
-    \t...
-    }
-</av-code>
-
+<av-doc-state-listen-editor-3></av-doc-state-listen-editor-3>
 <h2>Callback on the State</h2>
 <p>You can also override the three methods directly inside a <span class="cn">State</span> class.</p>
-
-<av-code language="typescript" filename="CreateUser.state.avt">
-    export class CreateUser extends Aventus.State {
-    &nbsp;
-    \tpublic editingUser: User;
-    &nbsp;
-    \t/**
-    \t* @inheritdoc
-    \t*/
-    \tpublic override get name(): string {
-    \t\treturn "/user/create";
-    \t}
-    &nbsp;
-    \t/**
-    \t* @inheritdoc
-    \t*/
-    \tpublic override onActivate(): void {
-    \t\tconsole.log("active");
-    \t}
-    &nbsp;
-    \t/**
-    \t* @inheritdoc
-    \t*/
-    \tpublic override onInactivate(nextState: Aventus.State): void {
-    \t\tconsole.log("inactive");
-    \t}
-    &nbsp;
-    \t/**
-    \t* @inheritdoc
-    \t*/
-    \tpublic override async askChange(state: Aventus.State, nextState: Aventus.State): Promise&lt;boolean&gt; {
-    \t\treturn true;
-    \t}
-    &nbsp;
-    }
-</av-code>
+<av-doc-state-listen-editor-4></av-doc-state-listen-editor-4>

@@ -31,7 +31,7 @@
         <div class="title" slot="header">ram</div>
         <ul>
             <li><av-router-link state="/docs/ram/create">Create</av-router-link></li>
-            <li><av-router-link state="/docs/ram/CRUD">CRUD operation</av-router-link></li>
+            <li><av-router-link state="/docs/ram/crud">CRUD operation</av-router-link></li>
             <li><av-router-link state="/docs/ram/listen_changes">Listen changes</av-router-link></li>
             <li><av-router-link state="/docs/ram/mixin">Extend data</av-router-link></li>
         </ul>
@@ -43,15 +43,6 @@
             <li><av-router-link state="/docs/state/create">Create</av-router-link></li>
             <li><av-router-link state="/docs/state/change">Change state</av-router-link></li>
             <li><av-router-link state="/docs/state/listen_changes">Listen state change</av-router-link></li>
-        </ul>
-    </av-collapse>
-
-    <av-collapse>
-        <div class="title" slot="header">socket</div>
-        <ul>
-            <li><av-router-link state="/docs/socket/create">Create</av-router-link></li>
-            <li><av-router-link state="/docs/socket/receive">Receive message</av-router-link></li>
-            <li><av-router-link state="/docs/socket/send">Send message</av-router-link></li>
         </ul>
     </av-collapse>
 

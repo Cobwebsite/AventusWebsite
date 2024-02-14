@@ -11,7 +11,7 @@ import { TutorialStyle } from "../pages/TutorialStyle/TutorialStyle.wcl.avt";
 import { Page404 } from "../../Page404/Page404.wcl.avt";
 
 	export class TutorialApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
-	    private tutorialPage: TutorialPage;
+	    private tutorialPage?: TutorialPage;
 	    protected defineRoutes(): void {
 
 	        this.addRoute("/tutorial/introduction", TutorialIntroduction);
@@ -22,35 +22,29 @@ import { Page404 } from "../../Page404/Page404.wcl.avt";
 	        this.addRoute("/tutorial/form", TutorialForm);
 	        this.addRoute("/tutorial/list", TutorialList);
 	        this.addRoute("/tutorial/style", TutorialStyle);
-	        
+	
 	    }
 
-		protected override error404(state: Aventus.State): new () => Aventus.Navigation.Page {
-			if(state.name.startsWith("/tutorial/")){
-				return Page404;
-			}
-			return null;
-		}
+	    protected override error404(state: Aventus.State): (new () => Aventus.Navigation.Page) | null {
+	        if(state.name.startsWith("/tutorial/")) {
+	            return Page404;
+	        }
+	        return null;
+	    }
 	}
 	
-	
-	
-	
 </script>
-	
-	<template>	
-	
+<template>	
 </template>
 	
-	<style>	
-		:host {
+<style>	
+	:host {
+		height: 100%;
+
+
+		.content {
 			height: 100%;
-	
-	
-			.content {
-				height: 100%;
-			}
 		}
-	
+	}
 </style>
 	

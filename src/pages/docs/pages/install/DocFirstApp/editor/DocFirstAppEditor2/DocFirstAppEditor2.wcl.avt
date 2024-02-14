@@ -1,0 +1,29 @@
+import { DocFirstAppEditor1 } from "../DocFirstAppEditor1/DocFirstAppEditor1.wcl.avt";
+
+export class DocFirstAppEditor2 extends DocFirstAppEditor1 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	
+	//#endregion
+	
+}

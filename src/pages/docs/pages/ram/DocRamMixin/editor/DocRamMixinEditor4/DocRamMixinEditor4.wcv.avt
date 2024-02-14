@@ -1,0 +1,33 @@
+<av-code language="typescript" filename="ExampleRAM/src/Person.ram.avt">
+    import type { Person } from "./Person.data.avt";
+    &nbsp;
+    interface PersonAction {
+        // define your function here
+        helloWorld(): void;
+    }
+    &nbsp;
+    type PersonExtended = Person & PersonAction;
+    &nbsp;
+    export class PersonRAM extends Aventus.Ram&lt;PersonExtended&gt; implements Aventus.IRam {
+        /**
+         * Create a singleton to store data
+         */
+        public static getInstance() {
+            return Aventus.Instance.get(PersonRAM);
+        }
+        /**
+         * @inheritdoc
+         */
+        public override defineIndexKey(): keyof Person | "helloWorld" {
+            return 'id';
+        }
+        /**
+         * @inheritdoc
+         */
+        protected override getTypeForData(objJson: PersonExtended | Aventus.KeysObject&lt;PersonExtended&gt;): new () => PersonExtended {
+            // this will be implemented later
+            throw new Error("Method not implemented.");
+        }
+    }
+</av-code>
+<slot></slot>

@@ -1,0 +1,30 @@
+<av-code-editor name="Example RAM" @element="editorEl">
+    <av-code language="json" filename="ExampleRAM/aventus.conf.avt">
+        <pre>
+            {
+                "module": "ExampleRAM",
+                "build": [
+                    {
+                        "name": "Main",
+                        "src": [
+                            "./src/*"
+                        ]
+                    }
+                ]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="ExampleRAM/src/Person.data.avt">
+        <pre>
+            export class Person extends Aventus.Data implements Aventus.IData {
+                public id: number = 0;
+                public firstname!: string;
+                public lastname!: string;
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="ExampleRAM/src/Person.ram.avt">
+        // TODO : Add helloWorld function to a Person
+    </av-code>
+    <slot></slot>
+</av-code-editor>

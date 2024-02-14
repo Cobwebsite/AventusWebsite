@@ -1,0 +1,40 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    font-size: 16px;
+    user-select: none;
+    margin-top: 5px;
+    .name {
+        display: flex;
+        align-items: center;
+        cursor:  pointer;
+        mi-icon.icon {
+            font-size: 16px;
+            margin-right: 5px;
+            flex-shrink: 0;
+        }
+        mi-icon.arrow {
+            transform: rotate(180deg);
+            font-size: 12px;
+            width: 15px;
+            margin-right: 5px;
+            transition: transform var(--bezier-curve) 0.5s;
+            flex-shrink: 0;
+        }
+        span {
+            flex-grow: 1;
+        }
+    }
+	.content {
+        margin-left: 10px;
+    }
+}
+
+
+:host([open]) {
+    .name {
+        mi-icon.arrow {
+            transform: rotate(270deg);
+        }
+    }
+}

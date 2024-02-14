@@ -9,7 +9,7 @@
 </script>
 
 <template>	
-	<button @click="onClick">Count is {{count}}</button>
+	<button @click="onClick">Count is {{this.count}}</button>
 </template>
 
 <style>	
@@ -21,7 +21,6 @@
 			color: white;
 			cursor: pointer;
 			padding: 5px 15px;
-			box-shadow: 0 0 5px #555;
 		}
 	}
 </style>

@@ -5,7 +5,7 @@
 <h3>The create option</h3>
 <p>When you right click on the vscode file explorer, you can notice that you have a new option named: <b>Aventus :
         Create...</b>.</p>
-<av-img src="/img/doc/install/experience/aventus_create.png"></av-img>
+<av-docu-img src="/img/doc/install/experience/aventus_create.png"></av-docu-img>
 <p>If you click on it, a dropdown appears and you can select what you want to create.</p>
 <ul class="list-commands">
     <li><b>Init</b><av-icon icon="arrow-right"></av-icon> Create a new project</li>

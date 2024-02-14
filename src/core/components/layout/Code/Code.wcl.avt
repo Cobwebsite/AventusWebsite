@@ -16,22 +16,24 @@ export class AvCode extends Aventus.WebComponent implements Aventus.DefaultCompo
     public language: string = "plain";
 
     @Property()
-    public filename: string;
+    public filename?: string;
 
     /**
      * Number of tab to remove
      */
     @Attribute()
-    public tab: number;
+    public tab!: number;
     //#endregion
 
 
     //#region variables
     @ViewElement()
-    public codeEl: HTMLElement;
+    public codeEl!: HTMLElement;
 
     @ViewElement()
-    protected filenameEl: HTMLSpanElement;
+    protected filenameEl!: HTMLSpanElement;
+
+    public code: string = "";
     //#endregion
 
 
@@ -47,9 +49,10 @@ export class AvCode extends Aventus.WebComponent implements Aventus.DefaultCompo
 
     //#region methods
 
-    protected override styleBefore(): string[] {
-        return super.styleBefore().concat(["Prism"]);
+    protected override styleBefore(addStyle: (name: string) => void): void {
+        addStyle("Prism");
     }
+
     private async loadFiles() {
         await Aventus.ResourceLoader.loadInHead('/libs/prism.js');
         await Aventus.Style.load("Prism", '/libs/prism_vscode_theme.css');
@@ -60,9 +63,12 @@ export class AvCode extends Aventus.WebComponent implements Aventus.DefaultCompo
         if(!window['Prism'].languages.hasOwnProperty(this.language)) {
             this.language = 'plain';
         }
-        let code = this.innerHTML.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        code = code.split("\n").map(p => p.replace("    ", "")).join("\n");
+
+        if(this.innerHTML.includes("<ha-my-component></ha-my-component>")) debugger;
+        let code = this.innerHTML.replace(/<pre>/g, "").replace(/<\/pre>/g, "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        // code = code.split("\n").map(p => p.replace("    ", "")).join("\n");
         this.codeEl.innerHTML = code;
+        this.code = code;
         this.innerHTML = "";
         window['Prism'].highlightElement(this.codeEl);
 

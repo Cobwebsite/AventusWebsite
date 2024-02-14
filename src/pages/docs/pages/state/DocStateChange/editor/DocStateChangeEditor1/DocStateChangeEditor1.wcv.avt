@@ -1,0 +1,100 @@
+<av-code-editor name="State Example" @element="editorEl">
+    <av-code language="json" filename="StateExample/aventus.conf.avt">
+        <pre>
+            {
+                "module": "StateExample",
+                "build": [
+                    {
+                        "name": "Main",
+                        "src": [
+                            './src/*'
+                        ]
+                    }
+                ]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="StateExample/src/CreatePerson.state.avt">
+        <pre>
+            import type { Person } from "./Person.data.avt";
+            &nbsp;
+            export class CreatePerson extends Aventus.State implements Aventus.IState {
+                &nbsp;
+                public editingPerson?: Person;
+                &nbsp;
+                /**
+                * @inheritdoc
+                */
+                public override get name(): string {
+                    return "/person/create";;
+                }
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="StateExample/src/Main.state.avt">
+        <pre>
+            export class MainStateManager extends Aventus.StateManager implements Aventus.IStateManager {
+                /**
+                 * Get the instance of the StateManager
+                 */
+                public static getInstance() {
+                    return Aventus.Instance.get(MainStateManager);
+                }
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="StateExample/src/Person.data.avt">
+        <pre>
+            export class Person extends Aventus.Data implements Aventus.IData {
+                public id: number = 0;
+                public firstname!: string;
+                public lastname!: string;
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="StateExample/src/Person.ram.avt">
+        <pre>
+            import { Person } from "./Person.data.avt";
+            &nbsp;
+            export class PersonRAM extends Aventus.Ram&lt;Person&gt; implements Aventus.IRam {
+                &nbsp;
+                /**
+                * Create a singleton to store data
+                */
+                public static getInstance() {
+                    return Aventus.Instance.get(PersonRAM);
+                }
+                &nbsp;
+                /**
+                * @inheritdoc
+                */
+                public override defineIndexKey(): keyof Person {
+                    return 'id';
+                }
+                /**
+                * @inheritdoc
+                */
+                protected override getTypeForData(objJson: Aventus.KeysObject&lt;Person&gt; | Person): new () => Person {
+                    return Person;
+                }
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="StateExample/src/Test.lib.avt">
+        <pre>
+            import { PersonRAM } from "./Person.ram.avt";
+            import { CreatePerson } from "./CreatePerson.state.avt";
+            import { MainStateManager } from "./Main.state.avt";
+            &nbsp;
+            export async function changeStateTxt() {
+                const isApplied = await MainStateManager.getInstance().setState("/user/");
+            }
+            export async function changeState() {
+                let state = new CreatePerson();
+                state.editingPerson = await PersonRAM.getInstance().get(1);
+                const isApplied = await MainStateManager.getInstance().setState(state);
+            }
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

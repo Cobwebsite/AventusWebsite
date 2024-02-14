@@ -1,0 +1,75 @@
+<av-code language="typescript" filename="ExampleRAM/src/DisplayPerson/DisplayPerson.wcl.avt">
+    <pre>
+        import { PersonRAM } from "../Person.ram.avt";
+        import type { Person } from "../Person.data.avt";
+        &nbsp;
+        export class DisplayPerson extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+            //#region static
+            &nbsp;
+            //#endregion
+            &nbsp;
+            &nbsp;
+            //#region props
+            @Attribute()
+            public person_id!: number;
+            //#endregion
+            &nbsp;
+            &nbsp;
+            //#region variables
+            private person?: Aventus.RamItem&lt;Person&gt;;
+            //#endregion
+            &nbsp;
+            &nbsp;
+            //#region constructor
+            &nbsp;
+            //#endregion
+            &nbsp;
+            &nbsp;
+            //#region methods
+            public printUpdate() {
+                console.log(this.person);
+            }
+            public async getItem() {
+                const person = await PersonRAM.getInstance().get(this.person_id);
+                if(!person) return
+                &nbsp;
+                this.person = person;
+                person.onUpdate(this.onUpdateFail)
+                person.onUpdate(this.onUpdateCorrect)
+            }
+            &nbsp;
+            private onUpdateFail(newData: Aventus.RamItem&lt;Person&gt;) {
+                // will fail because this isn't scoped to the DisplayPerson component
+                this.printUpdate();
+            }
+            &nbsp;
+            @BindThis()
+            private onUpdateCorrect(newData: Aventus.RamItem&lt;Person&gt;) {
+                // will be ok because this is scoped to the DisplayPerson component
+                this.printUpdate();
+            }
+            &nbsp;
+            protected override postCreation(): void {
+                this.getItem();
+            }
+            &nbsp;
+            //#endregion
+            &nbsp;
+        }
+    </pre>
+</av-code>
+<av-code language="typescript" filename="ExampleRAM/src/DisplayPerson/DisplayPerson.wcs.avt">
+    <pre>
+        :host {
+	
+        }
+    </pre>
+</av-code>
+<av-code language="typescript" filename="ExampleRAM/src/DisplayPerson/DisplayPerson.wcv.avt">
+    <pre>
+        &lt;slot&gt;&lt;/slot&gt;
+    </pre>
+</av-code>
+
+<slot></slot>
