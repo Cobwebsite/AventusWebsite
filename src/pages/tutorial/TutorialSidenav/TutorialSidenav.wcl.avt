@@ -34,10 +34,16 @@ export class TutorialSidenav extends Aventus.WebComponent implements Aventus.Def
             let all = Array.from(this.shadowRoot.querySelectorAll<Aventus.Navigation.RouterLink>("av-router-link"));
             let index = all.indexOf(active);
             if(index > 0) {
-                result.previous = all[index - 1].state;
+                let state = all[index - 1].state;
+                if(state) {
+                    result.previous = state
+                }
             }
             if(index < all.length - 1) {
-                result.next = all[index + 1].state;
+                let state = all[index + 1].state;
+                if(state) {
+                    result.next = state
+                }
             }
         }
         return result;

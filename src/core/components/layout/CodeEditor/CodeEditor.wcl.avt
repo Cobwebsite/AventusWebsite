@@ -27,12 +27,15 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
     public all_open: boolean = true;
     @Property()
     public show?: string;
+    @Attribute()
+    public open_folder?: string;
     //#endregion
 
 
     //#region variables
     private info: Explorer = {};
     private files: { [path: string]: CodeEditorFile; } = {};
+    private folders: { [path: string]: CodeEditorFolder; } = {};
 
     @ViewElement()
     protected menuEl!: Aventus.Layout.Scrollable;
@@ -47,6 +50,7 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
     protected contentEl!: HTMLDivElement;
 
     private openedFile?: CodeEditorFile;
+
     //#endregion
 
 
@@ -113,8 +117,32 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
         }
         this.menuEl.innerHTML = "";
         this.renderMenu(this.info, this.menuEl);
-
+        this.openFolderAfterRender();
         this.has_result = this.getElementsInSlot("result").length > 0;
+    }
+
+    public openFolder(path: string) {
+        let splitted = path.split("/");
+        let currentPath = "";
+        for(let i = 0; i < splitted.length; i++) {
+            currentPath += splitted[i];
+
+            if(this.folders[currentPath]) {
+                this.folders[currentPath].open = true;
+            }
+            else if(this.folders["/" + currentPath]) {
+                this.folders["/" + currentPath].open = true;
+            }
+
+            currentPath += "/";
+        }
+
+    }
+
+    public closeFolder(path: string) {
+        if(this.folders[path]) {
+            this.folders[path].open = false;
+        }
     }
 
     private renderMenu(info: Explorer, el: HTMLElement, path: string = "") {
@@ -124,10 +152,11 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
             if(!current.file) {
                 let folder = new CodeEditorFolder();
                 folder.name = name;
+                let newPath = path + "/" + name;
                 if(this.all_open) {
                     folder.open = true;
                 }
-                let newPath = path + "/" + name;
+                this.folders[newPath] = folder;
                 this.renderMenu(current.children, folder, newPath);
                 el.appendChild(folder);
             }
@@ -154,6 +183,13 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
                 }
             }
         }
+
+    }
+
+    private openFolderAfterRender() {
+        if(this.open_folder) {
+            this.openFolder(this.open_folder);
+        }
     }
 
     private comparePath(p1: string, p2: string) {
@@ -161,7 +197,7 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
             p2 = p2.slice(1);
         }
         if(p1.startsWith("/")) {
-            p2 = p2.slice(1);
+            p1 = p1.slice(1);
         }
         return p1 == p2;
     }
@@ -189,10 +225,10 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
         // TODO correct
         let observer = new Aventus.ResizeObserver(() => {
             if(this.displayEl['contentWrapper'].offsetHeight >= 550 || this.menuEl['contentWrapper'].offsetHeight >= 550) {
-                this.style.height = 600 + 'px';
+                this.contentEl.style.height = 550 + 'px';
             }
             else {
-                this.style.height = '';
+                this.contentEl.style.height = '';
             }
         });
         observer.observe(this.displayEl['contentWrapper']);

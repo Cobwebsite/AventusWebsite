@@ -18,6 +18,9 @@
                     "include": "need"
                 },
                 {
+                    "uri": "@local:TodoDemo@Main"
+                },
+                {
                     "uri": "@local:MaterialIcon@Main"
                 }
             ],
