@@ -1,4 +1,4 @@
-<av-code-editor name="Component Example" @element="editorEl">
+<av-code-editor name="Component Example">
     <av-code language="json" filename="ComponentExample/aventus.conf.avt">
         <pre>
             {

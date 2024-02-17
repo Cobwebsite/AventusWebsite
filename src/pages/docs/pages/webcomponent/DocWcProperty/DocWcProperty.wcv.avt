@@ -13,40 +13,42 @@
 </p>.
 
 <p>In Aventus, you can declare a property by adding a <span class="cn">decorator</span> on a field.</p>
-<av-code language="typescript" filename="Input.wcl.avt">
-    export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {
+<av-code language="typescript" filename="Example.wcl.avt">
+    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
     &nbsp;
     \t//#region props
     \t@Property()
-    \tprivate label:string = "";
+    \tpublic label?: string;
     \t//#endregion
     &nbsp;
     }
 </av-code>
 <av-code language="html">
-    &lt;av-input label="Hello"&gt;&lt;/av-input&gt;
+    &lt;av-example label="Hello"&gt;&lt;/av-example&gt;
 </av-code>
 <p>A property can be used like an <span class="cn">attribute</span> but the main advantage of property is <span
         class="cn"><av-router-link state="/docs/wc/interpolation">interpolation</av-router-link></span> and <span class="cn">callback</span>.</p>
-<av-code language="typescript" filename="Input.wcl.avt">
-    export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {
+<av-code language="typescript" filename="Example.wcl.avt">
+    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
     &nbsp;
     \t//#region props
-    \t@Property((target: Input) =&gt; {
+    \t@Property((target: Example) =&gt; {
     \t\tconsole.log("my label changed")
     \t})
-    \tprivate label:string = "";
+    \tprivate label?: string;
     \t//#endregion
     &nbsp;
     }
 </av-code>
-<av-code language="html" filename="Input.wcv.avt">
-    &lt;label&gt;{{label}}&lt;/label&gt;
-    &lt;input /&gt;
+<av-code language="html" filename="Example.wcv.avt">
+    &lt;div&gt;{{ this.label }}&lt;/div&gt;
 </av-code>
 
 <p>With this code, the label inside the view will always be the same as the label property. Furthermore, when the label value changed, the callback will be called and the msg my label changed will be printed.</p>
 
+<av-doc-wc-property-editor-1></av-doc-wc-property-editor-1>
+
 <h2>Quick use</h2>
 <p>When you are editing a <span class="cn">*.wcl.avt</span>, you can right click where you want to create an attribute
     and select the option <i>Aventus: create attribute</i>. You must follow the instruction to get an attribute working.</p>
+<p>You can also use the shortcut <span class="cn">Ctrl + k Ctrl + numpad2</span>.</p>

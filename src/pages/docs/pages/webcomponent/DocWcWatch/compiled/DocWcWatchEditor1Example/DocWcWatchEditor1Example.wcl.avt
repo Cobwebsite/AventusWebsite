@@ -1,0 +1,35 @@
+import { DocWcWatchEditor1Person } from "../DocWcWatchEditor1Person.data.avt";
+
+export class DocWcWatchEditor1Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+    @Watch((target: DocWcWatchEditor1Example, action: Aventus.WatchAction, path: string, value: any) => {
+        console.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);
+    })
+    public person?: DocWcWatchEditor1Person;
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    protected override postCreation(): void {
+        this.person = new DocWcWatchEditor1Person()
+    }
+    //#endregion
+	
+}

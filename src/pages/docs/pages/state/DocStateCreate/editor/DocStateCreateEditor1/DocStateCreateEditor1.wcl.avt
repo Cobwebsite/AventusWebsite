@@ -1,6 +1,6 @@
-import type { CodeEditor } from "../../../../../../../core/components/layout/CodeEditor/CodeEditor.wcl.avt";
+import { BaseEditor } from "../../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
 
-export class DocStateCreateEditor1 extends Aventus.WebComponent implements Aventus.DefaultComponent {
+export class DocStateCreateEditor1 extends BaseEditor implements Aventus.DefaultComponent {
 
     //#region static
 
@@ -13,8 +13,7 @@ export class DocStateCreateEditor1 extends Aventus.WebComponent implements Avent
 
 
     //#region variables
-    @ViewElement()
-    protected editorEl!: CodeEditor;
+    
     //#endregion
 
 
@@ -24,12 +23,10 @@ export class DocStateCreateEditor1 extends Aventus.WebComponent implements Avent
 
 
     //#region methods
-    public startupFile(): string {
+    public override startupFile(): string {
         return "StateExample/src/CreatePerson.state.avt";
     }
-    protected override postCreation(): void {
-        this.editorEl.show = this.startupFile();
-    }
+    
     //#endregion
 
 }

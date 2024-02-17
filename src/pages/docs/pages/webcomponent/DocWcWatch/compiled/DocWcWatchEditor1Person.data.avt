@@ -1,0 +1,5 @@
+export class DocWcWatchEditor1Person extends Aventus.Data implements Aventus.IData {
+    public id: number = 0;
+    public name: string = "John Doe";
+    public children: { name: string; }[] = [{ name: "Mini John Doe" }];
+}

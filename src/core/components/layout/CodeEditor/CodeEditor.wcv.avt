@@ -1,4 +1,5 @@
 <div class="header">
+    <mi-icon class="menu-icon" icon="menu" @press="toggleMenu"></mi-icon>
     <span>{{ this.name }}</span>
     <mi-icon class="download" icon="download" @press="download"></mi-icon>
 </div>

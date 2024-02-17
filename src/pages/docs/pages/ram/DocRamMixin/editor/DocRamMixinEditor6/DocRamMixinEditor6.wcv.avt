@@ -1,5 +1,5 @@
 <av-code language="typescript" filename="ExampleRAM/src/Person.ram.avt">
-    import type { Person } from "./Person.data.avt";
+    import { Person } from "./Person.data.avt";
     &nbsp;
     interface PersonAction {
         // define your function here
@@ -8,7 +8,7 @@
     &nbsp;
     type PersonExtended = Person & PersonAction;
     &nbsp;
-    export class PersonRAM extends Aventus.Ram&lt;PersonExtended&gt; implements Aventus.IRam {
+    export class PersonRAM extends Aventus.Ram&lt;Person, PersonExtended&gt; implements Aventus.IRam {
         /**
          * Create a singleton to store data
          */
@@ -18,13 +18,13 @@
         /**
          * @inheritdoc
          */
-        public override defineIndexKey(): keyof Person | "helloWorld" {
+        public override defineIndexKey(): keyof Person {
             return 'id';
         }
         /**
          * @inheritdoc
          */
-        protected override getTypeForData(objJson: PersonExtended | Aventus.KeysObject&lt;PersonExtended&gt;): new () => PersonExtended {
+        protected override getTypeForData(objJson: Person | Aventus.KeysObject&lt;Person&gt;): new () => PersonExtended {
             return this.addPersonMethod(Person);
         }
 

@@ -1,5 +1,5 @@
 <av-code language="typescript" filename="ExampleRAM/src/Person.ram.avt">
-    import type { Person } from "./Person.data.avt";
+    import { Person } from "./Person.data.avt";
     &nbsp;
     interface PersonAction {
         // define your function here

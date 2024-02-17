@@ -1,0 +1,43 @@
+import { DocWcInheritanceEditor2Fillable } from "../DocWcInheritanceEditor2Fillable/DocWcInheritanceEditor2Fillable.wcl.avt";
+
+export class DocWcInheritanceEditor2Input extends DocWcInheritanceEditor2Fillable<string> implements Aventus.DefaultComponent {
+
+	//#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+    @ViewElement()
+    protected inputEl!: HTMLInputElement;
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * When the user use the input, this function will update the value and emit an event
+     */
+    protected triggerChange() {
+        this.value = this.inputEl.value;
+        this.onChange.trigger([this.value]);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override onValueChange(): void {
+        this.inputEl.value = this.value ?? '&nbsp;';
+    }
+    //#endregion
+	
+}

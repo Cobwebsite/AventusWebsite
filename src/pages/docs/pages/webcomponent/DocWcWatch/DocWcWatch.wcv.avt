@@ -9,70 +9,74 @@
 <h2>Create a watch</h2>
 <p>To declare a watch variable, you must add the decorator <span class="cn">@Watch</span>.</p>
 <av-code language="typescript" filename="Example.wcl.avt">
-    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
-    &nbsp;
-    \t//#region variables
-    \t@Watch((target: Person, action: Aventus.WatchAction, path: string, value: any) =&gt; {
-    \t\tconsole.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);
-    \t})
-    \tpublic person: Person = null;
-    \t//#endregion
-    &nbsp;
-    }
+    <pre>
+        import { Person } from "../Person.data.avt";
+        &nbsp;
+        export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region variables
+            @Watch((target: Example, action: Aventus.WatchAction, path: string, value: any) =&gt; {
+                console.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);
+            })
+            public person?: Person;
+            //#endregion
+        &nbsp;
+        }
+    </pre>
 </av-code>
 <p>You can notice that the callback function contains more parameters than the <span class="cn">Property</span>
     decorator. This is due to the object complexity you can set. If <span class="cn">Person</span> is defined by the
     following class</p>
 <av-code language="typescript" filename="Person.data.avt">
-    export class Person extends Aventus.Data implements Aventus.IData {
-    \tpublic id: number = 0;
-    \tpublic name: string = "";
-    \tpublic children: { name: string }[] = [ { name:"John" } ];
-    }
+    <pre>
+        export class Person extends Aventus.Data implements Aventus.IData {
+            public id: number = 0;
+            public name: string = "John Doe";
+            public children: { name: string; }[] = [{ name: "Mini John Doe" }];
+        }
+    </pre>
 </av-code>
 <p>A lot of actions can be done on this object like changing the name, adding/removing a child, etc. With the parameters
     defined inside the callback you can know exactly what is happening with your data. </p>
 <p>The <span class="cn">action</span> is a enum that define if the object is <span class="cn">CREATED</span>, <span
         class="cn">UPDATED</span> or <span class="cn">DELETED</span>.</p>
-<p>The <span class="cn">path</span> parameter is the path where the action occured (ex: <span class="cn">person.children[0].name</span> if we
+<p>The <span class="cn">path</span> parameter is the path where the action occured (ex: <span
+        class="cn">person.children[0].name</span> if we
     change the name of the first child).</p>
 <p>The <span class="cn">value</span> is the value set / remove on the path.</p>
 <p>Like the property, the main advantage of Watch variables is that they can be used inside <span
         class="cn"><av-router-link state="/docs/wc/interpolation">interpolation</av-router-link></span> and others view
     transformations.</p>
-<av-code language="typescript" filename="Input.wcl.avt">
-    export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {
-    &nbsp;
-    \t//#region variables
-    \t@Watch()
-    \tprivate label:string = "";
-    \t//#endregion
-    &nbsp;
-    }
+<av-code language="html" filename="Example.wcv.avt">
+    <pre>
+        &lt;div&gt;Person : &#123;&#123; this.person?.name &#125;&#125;&lt;/div&gt;
+    </pre>
 </av-code>
-<av-code language="html" filename="Input.wcv.avt">
-    &lt;label&gt;{{label}}&lt;/label&gt;
-    &lt;input /&gt;
-</av-code>
+
+<av-doc-wc-watch-editor-1></av-doc-wc-watch-editor-1>
 
 <h2>Debug a watch</h2>
 <p>Because when you are building big application a lot of actions can modify your watch variable, we add a debug feature
     to easly understand what change my value. Over the webcomponent class you must add the decorator <span
         class="cn">@Debugger</span> with the option <span class="cn">enableWatchHistory</span> to true.</p>
 <av-code language="typescript" filename="Example.wcl.avt">
-    @Debugger({
-    \tenableWatchHistory: true
-    })
-    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
-    &nbsp;
-    \t//#region variables
-    \t@Watch((target: Person, action: Aventus.WatchAction, path: string, value: any) =&gt; {
-    \t\tconsole.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);
-    \t})
-    \tpublic person: Person = null;
-    \t//#endregion
-    &nbsp;
-    }
+    <pre>
+        import { Person } from "../Person.data.avt";
+        &nbsp;
+        @Debugger({
+            enableWatchHistory: true
+        })
+        export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region variables
+            @Watch((target: Example, action: Aventus.WatchAction, path: string, value: any) =&gt; {
+                console.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);
+            })
+            public person?: Person;
+            //#endregion
+        &nbsp;
+        }
+    </pre>
 </av-code>
 <p>This will add 2 functions on this component named <span class="cn">getWatchHistory</span> to get all changes on the
     waches variables and <span class="cn">clearWatchHistory</span> to clear the current history. Both functions are only
@@ -81,7 +85,9 @@
 
 <h2>Using watch outisde component</h2>
 <p>You can watch what occur on an object everywhere on your code. To achieve that, you must use the <span
-        class="cn">Aventus.Watcher.get</span> and work only with the result of the function.</p>
+        class="cn">Aventus.Watcher.get</span> and work only with the result of the function. <av-router-link
+        class="font-sm" state="/docs/lib/watcher">More
+        info</av-router-link></p>
 <av-code language="typescript" filename="Test.lib.avt">
     export function createWatcher() {
     \tlet watchableObj = Aventus.Watcher.get({}, (action: WatchAction, path: string, element: any) =&gt; {

@@ -1,6 +1,7 @@
+import { BaseEditor } from "../../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
 import type { CodeEditor } from "../../../../../../../core/components/layout/CodeEditor/CodeEditor.wcl.avt";
 
-export class DocRamCrudEditor1 extends Aventus.WebComponent implements Aventus.DefaultComponent {
+export class DocRamCrudEditor1 extends BaseEditor implements Aventus.DefaultComponent {
 
 	//#region static
 	
@@ -13,8 +14,7 @@ export class DocRamCrudEditor1 extends Aventus.WebComponent implements Aventus.D
 	
 	
 	//#region variables
-	@ViewElement()
-    protected editorEl!: CodeEditor;
+	
 	//#endregion
 	
 	
@@ -24,12 +24,10 @@ export class DocRamCrudEditor1 extends Aventus.WebComponent implements Aventus.D
 	
 	
 	//#region methods
-	public startupFile(): string {
+	public override startupFile(): string {
         return "ExampleRAM/src/Test.lib.avt";
     }
-    protected override postCreation(): void {
-        this.editorEl.show = this.startupFile();
-    }
+    
 	//#endregion
 	
 }

@@ -1,0 +1,1 @@
+<div>Person : {{ this.person?.name }}</div>

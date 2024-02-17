@@ -1,6 +1,6 @@
 :host {
 	padding: 10px 20px;
-    color: var(--primary-color);
+    color: var(--aventus-font-color);
     background-color: var(--aventus-color);
     border-radius: 10px;
     transition:  all var(--bezier-curve) 0.5s;

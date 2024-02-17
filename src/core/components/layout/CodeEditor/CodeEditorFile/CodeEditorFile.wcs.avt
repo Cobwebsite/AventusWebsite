@@ -10,6 +10,7 @@
 	.name {
 		align-items: center;
 		display: flex;
+		position: relative;
 
 		mi-icon.icon {
 			flex-shrink: 0;
@@ -55,5 +56,18 @@
 		av-img {
 			--img-color: #E5540E;
 		}
+	}
+}
+
+:host([highlight]) {
+	.name::after {
+		content: "";
+		position: absolute;
+		right: -10px;
+		top: 2px;
+		width: 6px;
+		height: 6px;
+		border-radius: 3px;
+		background-color: var(--aventus-color);
 	}
 }

@@ -4,136 +4,42 @@
     you want to create a simple design for a component and then add some complexity.</p>
 
 <h2>Delegate Function</h2>
-<p>We start the inheritance with a simple example. We need a component <span class="cn">fillable</span> to implement <span class="cn">input[type="text"]</span>,
-    <span class="cn">input[type="number"]</span> and <span class="cn">input[type="checkbox"]</span>. First of all we create an abstract generic component with a label
-    and a default value.</p>
-<av-code language="typescript" filename="Fillable.wcl.avt">
-    export abstract class Fillable&lt;T&gt; extends Aventus.WebComponent implements Aventus.DefaultComponent {
-    &nbsp;
-    \t//#region static
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \t//#region props
-    \t@Property()
-    \tpublic label: string;
-    \t//#endregion
-    &nbsp;
-    \t//#region variables
-    \t@Watch((target: Fillable) =&gt; {
-    \t\ttarget.valueChanged();
-    \t})
-    \tpublic value: T = defaultValue();
-    \t//#endregion
-    &nbsp;
-    \t//#region constructor
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \tprotected abstract defaultValue(): T;
-
-    \tprotected valueChanged(): void {};
-    &nbsp;
-    }
-</av-code>
-<av-code language="html" filename="Fillable.wcv.avt">
-    &lt;label&gt;{{ label }}&lt;/label&gt;
-    &lt;slot&gt;&lt;/slot&gt;
-</av-code>
+<p>We start the inheritance with a simple example. We need a component <span class="cn">fillable</span> to implement
+    <span class="cn">input[type="text"]</span> and <span class="cn">input[type="checkbox"]</span>. First of all we
+    create an abstract generic component with a label
+    and a default value.
+</p>
+<av-doc-wc-inheritance-editor-1></av-doc-wc-inheritance-editor-1>
 <p>Now we can implement the <span class="cn">input[type="text"]</span>.</p>
-<av-code language="typescript" filename="TextInput.wcl.avt">
-    export class TextInput extends Fillable&lt;string&gt; implements Aventus.DefaultComponent {
-    &nbsp;
-    \t//#region static
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \t//#region props
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \t//#region variables
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \t//#region constructor
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \tprotected override defaultValue(): string {
-    \t\t return "";
-    \t}
-    &nbsp;
-    }
-</av-code>
+<av-doc-wc-inheritance-editor-2></av-doc-wc-inheritance-editor-2>
 <p>As you can see, we can easly implement logic for child when main logic part of the component is coded inside the
     parent.</p>
 
 <h2>Replace slot</h2>
 <p>We override the function but we don't have any input inside the view. Inside the view, we can use the pattern called
-    <span class="cn">View composition</span>. If you write some HTML code inside child view file, Aventus will replace the parent
+    <span class="cn">View composition</span>. If you write some HTML code inside child view file, Aventus will replace
+    the parent
     <span class="cn">slot</span> tag with the content of the child.
 </p>
 <av-code language="html" filename="TextInput.wcv.avt">
-    &lt;input type="text" value="{{ value }}" /&gt;
+    &lt;input @input="triggerChange" @element="inputEl"/&gt;
 </av-code>
-<p>The HTML code from <span class="cn">TextInput.wcv.avt</span> will replace the <span class="cn">slot</span> tag inside from <span class="cn">Fillable.wcv.avt</span>. The
+<p>The HTML code from <span class="cn">TextInput.wcv.avt</span> will replace the <span class="cn">slot</span> tag inside
+    from <span class="cn">Fillable.wcv.avt</span>. The
     merged result will be :</p>
 <av-code language="html" filename="Merged">
-    &lt;label&gt;{{ label }}&lt;/label&gt;
-    &lt;input type="text" value="{{ value }}" /&gt;
+    &lt;label&gt;{{ this.label }}&lt;/label&gt;
+    &lt;input @input="triggerChange" @element="inputEl"/&gt;
 </av-code>
 <p>This is the basic behaviour, but sometimes you need more slots. You can name your slot then wrap the child code
-    inside tag <span class="cn">block</span>. If you don't wrap child code inside block tag, Aventus will consider that this code must replace
+    inside tag <span class="cn">block</span>. If you don't wrap child code inside block tag, Aventus will consider that
+    this code must replace
     the default slot.</p>
-<av-code language="html" filename="Fillable.wcv.avt">
-    &lt;slot name="error"&gt;&lt;/slot&gt;
-    &lt;label&gt;{{ label }}&lt;/label&gt;
-    &lt;slot&gt;&lt;/slot&gt;
-</av-code>
-<av-code language="html" filename="TextInput.wcv.avt">
-    &lt;block name="error"&gt;
-    &lt;span&gt;I'm an error&lt;/span&gt;
-    &lt;/block&gt;
-    &lt;input type="text" value="{{ value }}" /&gt;
-</av-code>
-<av-code language="html" filename="Merged">
-    &lt;span&gt;I'm an error&lt;/span&gt;
-    &lt;label&gt;{{ label }}&lt;/label&gt;
-    &lt;input type="text" value="{{ value }}" /&gt;
-</av-code>
+<av-doc-wc-inheritance-editor-3></av-doc-wc-inheritance-editor-3>
 <p>Right now, no error is displayed inside the editor if you missspelled your block name. It ll be added soon.</p>
 
 <h2>Replace the parent view</h2>
-<p>If you want to keep the parent logic but change the child view, you can use the decorator <span class="cn">@OverrideView</span>. For
+<p>If you want to keep the parent logic but change the child view, you can use the decorator <span
+        class="cn">@OverrideView</span>. For
     example, the input[type="checkbox"] don't need a label so we can remove it from parent.</p>
-
-<av-code language="typescript" filename="CheckboxInput.wcl.avt">
-    @OverrideView()
-    export class CheckboxInput extends Fillable&lt;boolean&gt; implements Aventus.DefaultComponent {
-    &nbsp;
-    \t//#region static
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \t//#region props
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \t//#region variables
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \t//#region constructor
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \tprotected override defaultValue(): boolean {
-    \t\t return false;
-    \t}
-    &nbsp;
-    }
-</av-code>
-<av-code language="html" filename="CheckboxInput.wcv.avt">
-    &lt;input type="checkbox" /&gt;
-</av-code>
+<av-doc-wc-inheritance-editor-4></av-doc-wc-inheritance-editor-4>

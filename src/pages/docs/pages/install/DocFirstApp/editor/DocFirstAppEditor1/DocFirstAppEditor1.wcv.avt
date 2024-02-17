@@ -1,4 +1,4 @@
-<av-code-editor name="First Project" @element="editorEl">
+<av-code-editor name="First Project">
     <av-code language="json" filename="HelloAventus/aventus.conf.avt">
         <pre>
             {

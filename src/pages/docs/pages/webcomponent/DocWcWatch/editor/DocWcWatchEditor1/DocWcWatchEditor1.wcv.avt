@@ -1,0 +1,104 @@
+<av-code-editor name="Watch">
+    <av-code language="json" filename="Watch/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "Watch",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [
+            				{
+            					"output": "./dist/demo.js"
+            				}
+            			]
+            		}
+            	],
+            	"static": [{
+            		"name": "Static",
+            		"input": "./static/*",
+            		"output": "./dist/"
+            	}]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Watch/src/Example/Example.wcl.avt">
+        <pre>
+            import { Person } from "../Person.data.avt";
+            &nbsp;
+            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+                @Watch((target: Example, action: Aventus.WatchAction, path: string, value: any) =&gt; {
+                    console.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);
+                })
+                public person?: Person;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+                protected override postCreation(): void {
+                    this.person = new Person()
+                }
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="Watch/src/Example/Example.wcs.avt">
+        <pre>
+            :host {
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Watch/src/Example/Example.wcv.avt">
+        <pre>
+            &lt;div&gt;Person : \{{ this.person?.name }}&lt;/div&gt;
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Watch/src/Person.data.avt">
+        <pre>
+            export class Person extends Aventus.Data implements Aventus.IData {
+                public id: number = 0;
+                public name: string = "John Doe";
+                public children: { name: string; }[] = [{ name: "Mini John Doe" }];
+            }
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Watch/static/index.html">
+        <pre>
+            &lt;!DOCTYPE html&gt;
+            &lt;html lang="en"&gt;
+            &lt;head&gt;
+                &lt;meta charset="UTF-8"&gt;
+                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+                &lt;title&gt;Watch&lt;/title&gt;
+                &lt;script src="/demo.js"&gt;&lt;/script&gt;
+            &lt;/head&gt;
+            &lt;body&gt;
+                &lt;av-example&gt;&lt;/av-example&gt;
+            &lt;/body&gt;
+            &lt;/html&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

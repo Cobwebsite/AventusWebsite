@@ -37,5 +37,8 @@
             "input": "./src/static/",
             "output": "./dist/"
         }
-    ]
+    ],
+    "aliases": {
+        "@root": "./src/"
+    }
 }

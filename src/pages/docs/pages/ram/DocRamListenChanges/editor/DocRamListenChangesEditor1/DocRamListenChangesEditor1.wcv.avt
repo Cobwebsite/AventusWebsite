@@ -1,4 +1,4 @@
-<av-code-editor name="Example RAM" @element="editorEl">
+<av-code-editor name="Example RAM">
     <av-code language="json" filename="ExampleRAM/aventus.conf.avt">
         <pre>
             {

@@ -1,0 +1,5 @@
+<block name="error">
+    <div>I'm an error</div>
+</block>
+
+<input @input="triggerChange" @element="inputEl"/>

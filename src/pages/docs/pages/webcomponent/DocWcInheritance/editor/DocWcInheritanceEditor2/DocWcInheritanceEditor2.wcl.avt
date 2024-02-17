@@ -1,0 +1,43 @@
+import { DocWcInheritanceEditor2Input } from "../../compiled/DocWcInheritanceEditor2Input/DocWcInheritanceEditor2Input.wcl.avt";
+import { DocWcInheritanceEditor1 } from "../DocWcInheritanceEditor1/DocWcInheritanceEditor1.wcl.avt";
+
+export class DocWcInheritanceEditor2 extends DocWcInheritanceEditor1 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+		return "Inheritance/src/TextInput/TextInput.wcv.avt";
+	}
+	public override hightlightFiles(): string[] {
+		return [
+			"Inheritance/src/TextInput/TextInput.wcl.avt",
+			"Inheritance/src/TextInput/TextInput.wcv.avt",
+		];
+	}
+	public override defineResult(): HTMLElement | null {
+		let el = new DocWcInheritanceEditor2Input();
+		el.label = "salut";
+		return el;
+	}
+	//#endregion
+	
+}

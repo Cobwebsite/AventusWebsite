@@ -29,6 +29,11 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
     public show?: string;
     @Attribute()
     public open_folder?: string;
+    @Attribute()
+    public show_menu!: boolean;
+
+    @Attribute()
+    public highlights?: string;
     //#endregion
 
 
@@ -79,6 +84,14 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
         let content = await zip.generateAsync({ type: 'blob' });
         saveAs(content, this.name + ".zip");
     }
+    /**
+     * 
+     */
+    protected toggleMenu() {
+        this.show_menu = !this.show_menu;
+    }
+
+
     public openFile(file: CodeEditorFile) {
         if(this.openedFile) {
             this.openedFile.active = false;
@@ -146,6 +159,19 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
     }
 
     private renderMenu(info: Explorer, el: HTMLElement, path: string = "") {
+        let highlights: string[] = [];
+        if(this.highlights) {
+            try {
+                highlights = JSON.parse(this.highlights);
+                for(let i = 0; i < highlights.length; i++) {
+                    if(!highlights[i].startsWith("/")) {
+                        highlights[i] = '/' + highlights[i];
+                    }
+                }
+            } catch(e) {
+                console.log(e);
+            }
+        }
         let names = Object.keys(info).sort();
         for(let name of names) {
             let current = info[name];
@@ -167,6 +193,9 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
                 let newPath = path + "/" + name;
                 let file = new CodeEditorFile();
                 file.code = current.file;
+                if(highlights.includes(newPath)) {
+                    file.highlight = true;
+                }
                 file.editor = this;
                 file.name = name;
                 this.files[newPath] = file;
@@ -234,6 +263,8 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
         observer.observe(this.displayEl['contentWrapper']);
         observer.observe(this.menuEl['contentWrapper']);
     }
+
+
 
     protected override postCreation(): void {
         this.loadContent();

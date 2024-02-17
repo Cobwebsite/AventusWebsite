@@ -21,6 +21,8 @@ export class CodeEditorFile extends Aventus.WebComponent implements Aventus.Defa
     public type?: "style" | "logic" | "view";
     @Attribute()
     public active!: boolean;
+    @Attribute()
+    public highlight: boolean = false;
     //#endregion
 
 
@@ -49,9 +51,12 @@ export class CodeEditorFile extends Aventus.WebComponent implements Aventus.Defa
             this.icon = "/img/logo.svg";
             this.type = "logic";
         }
+        else if(this.name.endsWith(".html")) {
+            this.icon = "/img/html-5.svg";
+        }
     }
 
-    
+
 
     protected override postCreation(): void {
         new Aventus.PressManager({

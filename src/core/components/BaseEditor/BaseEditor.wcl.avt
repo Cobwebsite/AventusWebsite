@@ -1,0 +1,49 @@
+import type { CodeEditor } from "../layout/CodeEditor/CodeEditor.wcl.avt";
+
+export class BaseEditor extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public startupFile(): string {
+        return "";
+    }
+    public hightlightFiles(): string[] {
+        return [];
+    }
+
+    public defineResult(): HTMLElement | null {
+        return null;
+    }
+    protected override postCreation(): void {
+		let editorEl = this.shadowRoot.querySelector<CodeEditor>('av-code-editor');
+		if(!editorEl) return;
+        editorEl.highlights = JSON.stringify(this.hightlightFiles()).replace(/"/g, '\"');
+        editorEl.show = this.startupFile();
+        let result = this.defineResult();
+        if(result) {
+            result.setAttribute("slot", "result");
+            editorEl.appendChild(result);
+        }
+    }
+	//#endregion
+	
+}

@@ -1,0 +1,44 @@
+import { DocWcInheritanceEditor4Checkbox } from "../../compiled/DocWcInheritanceEditor4Checkbox/DocWcInheritanceEditor4Checkbox.wcl.avt";
+import { DocWcInheritanceEditor3 } from "../DocWcInheritanceEditor3/DocWcInheritanceEditor3.wcl.avt";
+
+export class DocWcInheritanceEditor4 extends DocWcInheritanceEditor3 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+		return "Inheritance/src/CheckboxInput/CheckboxInput.wcl.avt";
+	}
+	public override hightlightFiles(): string[] {
+		return [
+			"Inheritance/src/CheckboxInput/CheckboxInput.wcl.avt",
+			"Inheritance/src/CheckboxInput/CheckboxInput.wcv.avt",
+			"Inheritance/static/index.html"
+		]
+	}
+	public override defineResult(): HTMLElement | null {
+		let el = new DocWcInheritanceEditor4Checkbox();
+		el.label = "salut";
+		return el;
+	}
+	//#endregion
+	
+}

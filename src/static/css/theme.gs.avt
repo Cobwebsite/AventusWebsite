@@ -22,6 +22,7 @@
 	--light-primary-color: #282c34;
 	--secondary-color: white;
 	--aventus-color: #e5540e;
+	--aventus-font-color: white;
 	--primary-font-color: white;
 	--link-color: #5680ed;
 
