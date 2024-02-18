@@ -1,0 +1,1 @@
+<button @click="triggerCustomClick">Custom click</button>

@@ -1,0 +1,99 @@
+<av-code-editor name="Style">
+    <av-code language="json" filename="Style/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "Style",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [
+            				{
+            					"output": "./dist/demo.js"
+            				}
+            			]
+            		}
+            	],
+            	"static": [{
+            		"name": "Static",
+            		"input": "./static/*",
+            		"output": "./dist/"
+            	}]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Style/src/Example/Example.wcl.avt">
+        <pre>
+            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+               &nbsp;
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="Style/src/Example/Example.wcs.avt">
+        <pre>
+            :host {
+            	color: var(--primary-color);
+            	width: 100%;
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Style/src/Example/Example.wcv.avt">
+        <pre>
+            &lt;p&gt;I am an example&lt;/p&gt;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Style/static/index.html">
+        <pre>
+            &lt;!DOCTYPE html&gt;
+            &lt;html lang="en"&gt;
+            &lt;head&gt;
+                &lt;meta charset="UTF-8"&gt;
+                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+                &lt;title&gt;Style&lt;/title&gt;
+                &lt;script src="/demo.js"&gt;&lt;/script&gt;
+                &lt;link rel="stylesheet" href="/style.css"&gt;
+            &lt;/head&gt;
+            &lt;body&gt;
+                &lt;av-example&gt;&lt;/av-example&gt;
+            &lt;/body&gt;
+            &lt;/html&gt;
+        </pre>
+    </av-code>
+    <av-code language="css" filename="Style/static/style.gs.avt">
+        <pre>
+            :root {
+            	--primary-color: red;
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

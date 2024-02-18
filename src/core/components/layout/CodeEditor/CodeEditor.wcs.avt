@@ -8,6 +8,7 @@
 	--code-padding: 0;
 	background-color: #1e1e1e;
 	border-radius: 5px;
+	box-shadow: var(--elevation-3);
 	color: white;
 	display: flex;
 	flex-direction: column;
@@ -99,6 +100,9 @@
 			/* border-left: 1px solid #414141;*/
 			padding-bottom: 10px;
 			width: 100%;
+			av-code {
+				box-shadow: none;
+			}
 		}
 	}
 
@@ -143,8 +147,8 @@
 				top: 0;
 				transform: translate(-100%);
 				transition: transform 0.4s var(--bezier-curve);
+				width: 250px !important;
 				z-index: 20;
-				width: 250px!important;
 			}
 
 			.separator {

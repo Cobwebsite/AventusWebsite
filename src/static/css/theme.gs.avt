@@ -61,7 +61,7 @@
 	--elevation-24: 0px 11px 15px -7px var(--elevation-umbra), 0px 24px 38px 3px var(--elevation-penumbra), 0px 9px 46px 8px var(--elevation-penumbra-2);
 }
 
-:root {
+:root.dark {
 	--secondary-color: #323232;
 	--title-color: #eaeaea;
 	--text-color: #d9d9d9;

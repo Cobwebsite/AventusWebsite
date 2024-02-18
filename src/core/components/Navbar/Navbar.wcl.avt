@@ -10,6 +10,8 @@ export class Navbar extends Aventus.WebComponent implements Aventus.DefaultCompo
     @Attribute()
     public open!: boolean;
 
+    @Attribute()
+    public is_dark!: boolean;
     //#endregion
 
 
@@ -24,7 +26,14 @@ export class Navbar extends Aventus.WebComponent implements Aventus.DefaultCompo
 
 
     //#region constructor
-
+    constructor() {
+        super();
+        let mode = localStorage.getItem("mode");
+        if(mode == 'dark') {
+            document.querySelector("html")?.classList.add("dark");
+            this.is_dark = true;
+        }
+    }
     //#endregion
 
 
@@ -35,6 +44,23 @@ export class Navbar extends Aventus.WebComponent implements Aventus.DefaultCompo
     public closeMenu() {
         this.open = false;
     }
+
+
+    /**
+     * 
+     */
+    protected toggleMode() {
+        document.querySelector("html")?.classList.toggle("dark");
+        if(document.querySelector("html")?.classList.contains("dark")) {
+            this.is_dark = true;
+            localStorage.setItem("mode", "dark");
+        }
+        else {
+            this.is_dark = false;
+            localStorage.removeItem("mode");
+        }
+    }
+
     //#endregion
 
 }

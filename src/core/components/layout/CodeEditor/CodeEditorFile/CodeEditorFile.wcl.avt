@@ -39,7 +39,7 @@ export class CodeEditorFile extends Aventus.WebComponent implements Aventus.Defa
 
     //#region methods
     private prepareIcon() {
-        if(this.name.endsWith(".wcs.avt")) {
+        if(this.name.endsWith(".wcs.avt") || this.name.endsWith(".gs.avt")) {
             this.icon = "/img/logo.svg";
             this.type = "style";
         }

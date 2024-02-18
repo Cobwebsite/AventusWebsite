@@ -50,18 +50,18 @@
         <div class="title" slot="header">webcomponent</div>
         <ul>
             <li><av-router-link state="/docs/wc/create">Create</av-router-link></li>
+            <li><av-router-link state="/docs/wc/style">Style</av-router-link></li>
             <li><av-router-link state="/docs/wc/inheritance">Inhertiance</av-router-link></li>
             <li><av-router-link state="/docs/wc/attribute">Attribute</av-router-link></li>
             <li><av-router-link state="/docs/wc/property">Property</av-router-link></li>
             <li><av-router-link state="/docs/wc/watch">Watch</av-router-link></li>
-            <li><av-router-link state="/docs/wc/style">Style</av-router-link></li>
             <li><av-router-link state="/docs/wc/interpolation">Interpolation</av-router-link></li>
             <li><av-router-link state="/docs/wc/element">Select element</av-router-link></li>
             <li><av-router-link state="/docs/wc/injection">Injection</av-router-link></li>
-            <li><av-router-link state="/docs/wc/loop">Loop</av-router-link></li>
             <li><av-router-link state="/docs/wc/event">Event</av-router-link></li>
             <li><av-router-link state="/docs/wc/binding">Binding</av-router-link></li>
             <li><av-router-link state="/docs/wc/state">State</av-router-link></li>
+            <li><av-router-link state="/docs/wc/loop">Loop</av-router-link></li>
         </ul>
     </av-collapse>
 

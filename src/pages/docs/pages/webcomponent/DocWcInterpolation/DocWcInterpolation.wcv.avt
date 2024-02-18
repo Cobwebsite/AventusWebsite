@@ -2,24 +2,10 @@
 <p>In the section you are going to learn how to use interpolation inside webcomponent.</p>
 
 <p>Interpolation refers to embedding expressions into marked up text. You can notify an interpolation by using <span
-        class="cn">\{{ myVar }}</span>. Interpolation can be written anywhere inside a <span
-        class="cn">*.wcv.avt</span>. The only constraint is that the variable to interpolate must be a <span
+        class="cn">\{{ myCode }}</span>. Interpolation can be written anywhere inside a <span
+        class="cn">*.wcv.avt</span>. If the variable is a <span
         class="cn"><av-router-link state="/docs/wc/property">Property</av-router-link></span> or a <span
-        class="cn"><av-router-link state="/docs/wc/watch">Watch</av-router-link></span>.</p>
+        class="cn"><av-router-link state="/docs/wc/watch">Watch</av-router-link></span> the view will be auto refreshed when the value changed.</p>
 
-<av-code language="typescript" filename="Example.wcl.avt">
-    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
-    \t@Property()
-    \tpublic label: string = "My name is";
-
-    \t@Watch()
-    \tpublic person: { name: string } = { name: "John" }
-    }
-</av-code>
-
-<av-code language="html" filename="Example.wcv.avt">
-    &lt;label&gt;{{label}}&lt;/label&gt;
-    &lt;input value="{{person.name}}" /&gt;
-</av-code>
-
-<p>Currently only property or watch can be used but maybe in the future version of Aventus, you will be able to write normal javascript code.</p>
+<av-doc-wc-interpolation-editor-1></av-doc-wc-interpolation-editor-1>
+<p>Because Aventus is using a <span class="cn">Signal</span> like system, any function that is using watchable variable will be auto refreshed when a value changed</p>

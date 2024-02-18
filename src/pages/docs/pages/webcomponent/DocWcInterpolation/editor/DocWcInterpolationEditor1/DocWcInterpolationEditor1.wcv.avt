@@ -1,0 +1,97 @@
+<av-code-editor name="Style">
+    <av-code language="json" filename="Style/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "Style",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [
+            				{
+            					"output": "./dist/demo.js"
+            				}
+            			]
+            		}
+            	],
+            	"static": [{
+            		"name": "Static",
+            		"input": "./static/*",
+            		"output": "./dist/"
+            	}]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Style/src/Example/Example.wcl.avt">
+        <pre>
+            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+                @Property()
+                public label: string = "My name is";
+                @Watch()
+                public person: { name: string; } = { name: "John" };
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+                public noRefresh: string = "I'm not auto refreshed";
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+                public myRenderFct() {
+                    return "I'm the result of a function";
+                }
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="Style/src/Example/Example.wcs.avt">
+        <pre>
+            :host {
+            	width: 100%;
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Style/src/Example/Example.wcv.avt">
+        <pre>
+            &lt;label&gt;\{{ this.label }}&lt;/label&gt;
+            &lt;input value="\{{ this.person.name }}" /&gt;
+            &lt;div&gt;\{{ this.noRefresh }}&lt;/div&gt;
+            &lt;div&gt;\{{ this.myRenderFct() }}&lt;/div&gt;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Style/static/index.html">
+        <pre>
+            &lt;!DOCTYPE html&gt;
+            &lt;html lang="en"&gt;
+            &lt;head&gt;
+                &lt;meta charset="UTF-8"&gt;
+                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+                &lt;title&gt;Style&lt;/title&gt;
+                &lt;script src="/demo.js"&gt;&lt;/script&gt;
+            &lt;/head&gt;
+            &lt;body&gt;
+                &lt;av-example&gt;&lt;/av-example&gt;
+            &lt;/body&gt;
+            &lt;/html&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

@@ -1,0 +1,29 @@
+import { DocWcStyleEditor2Parent } from "../DocWcStyleEditor2Parent/DocWcStyleEditor2Parent.wcl.avt";
+
+export class DocWcStyleEditor2Child extends DocWcStyleEditor2Parent implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	
+	//#endregion
+	
+}

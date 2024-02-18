@@ -1,0 +1,16 @@
+:host {
+	background-color: gray;
+	display: block;
+
+	.title {
+		color: orange;
+	}
+}
+
+:host([active]) {
+
+	/* if the webcomponent has an attribute / property active*/
+	.title {
+		color: red;
+	}
+}

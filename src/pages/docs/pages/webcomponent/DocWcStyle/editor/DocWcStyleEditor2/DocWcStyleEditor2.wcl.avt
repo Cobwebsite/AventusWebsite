@@ -1,0 +1,52 @@
+import { DocWcStyleEditor2Child } from "../../compiled/DocWcStyleEditor2Child/DocWcStyleEditor2Child.wcl.avt";
+import { BaseEditor } from "../../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
+import { DocWcStyleEditor2Parent } from "../../compiled/DocWcStyleEditor2Parent/DocWcStyleEditor2Parent.wcl.avt";
+
+export class DocWcStyleEditor2 extends BaseEditor implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    public override startupFile(): string {
+        return 'Style/src/Child/Child.wcs.avt';
+    }
+
+    public override hightlightFiles(): string[] {
+        return [
+            'Style/src/Child/Child.wcs.avt',
+            'Style/src/Parent/Parent.wcs.avt'
+        ];
+    }
+
+    public override defineResult(): HTMLElement | null {
+		const el = document.createElement("DIV");
+
+		const ex1 = new DocWcStyleEditor2Child();
+		el.appendChild(ex1);
+
+		const ex2 = new DocWcStyleEditor2Parent();
+		el.appendChild(ex2);
+
+		return el;
+	}
+    //#endregion
+
+}

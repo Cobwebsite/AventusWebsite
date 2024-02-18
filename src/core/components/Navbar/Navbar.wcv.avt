@@ -9,6 +9,13 @@
         <av-router-link state="/docs/introduction" active_state="^/docs/.*$" class="menu">Docs</av-router-link>
         <av-router-link state="/tutorial/introduction" active_state="^/tutorial/.*$" class="menu">Tutorial</av-router-link>
         <av-router-link state="/about" class="menu">About</av-router-link>
+        <div class="mode" @press="toggleMode">
+            <mi-icon icon="light_mode"></mi-icon>
+            <div class="slider">
+                <div class="button"></div>
+            </div>
+            <mi-icon icon="dark_mode"></mi-icon>
+        </div>
     </div>
     <av-icon icon="navicon" class="icon" @press="openMenu"></av-icon>
     <div class="hider" @press="closeMenu"></div>
