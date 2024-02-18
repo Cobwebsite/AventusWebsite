@@ -1,0 +1,37 @@
+export class DocWcBindingEditor4Input extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	@Property()
+    public val: string = "";
+	//#endregion
+	
+	
+	//#region variables
+	@ViewElement()
+    protected inputEl!: HTMLInputElement;
+
+    public onNewVal: Aventus.Callback<() => void> = new Aventus.Callback();
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	/**
+     * 
+     */
+    protected triggerChange() {
+        this.val = this.inputEl.value;
+        this.onNewVal.trigger([]);
+    }
+	//#endregion
+	
+}

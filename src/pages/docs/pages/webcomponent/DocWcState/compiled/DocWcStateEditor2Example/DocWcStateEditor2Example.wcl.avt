@@ -1,0 +1,69 @@
+import { DocWcStateEditor2StateManager } from "../DocWcStateEditor2.state.avt";
+
+export class DocWcStateEditor2Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	@ViewElement()
+    protected debugEl!: HTMLDivElement;
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	@StateActive("/state1", DocWcStateEditor2StateManager)
+    protected onStateActive(state: Aventus.State, slugs: Aventus.StateSlug) {
+        this.writeLog("/state1 on");
+    }
+
+    @StateInactive("/state1", DocWcStateEditor2StateManager.getInstance())
+    protected onStateInactive(state: Aventus.State, nextState: Aventus.State, slugs: Aventus.StateSlug) {
+        this.writeLog("/state1 off");
+    }
+
+    @StateChange("/state1", DocWcStateEditor2StateManager)
+    protected async onAskChange(state: Aventus.State, nextState: Aventus.State, slugs: Aventus.StateSlug) {
+        return confirm("set state1 off?");
+    }
+
+	@DefaultStateActive(DocWcStateEditor2StateManager)
+    public onDefaultStateActive() {
+        this.writeLog("No state define inside the component is matching");
+    }
+    @DefaultStateInactive(DocWcStateEditor2StateManager)
+    public onDefaultStateInactive() {
+        this.writeLog("The default state is now inactive because one component state is matching the active state");
+    }
+
+    protected writeLog(txt: string) {
+        const div = document.createElement("DIV");
+        div.innerHTML = txt;
+        this.debugEl.appendChild(div);
+    }
+
+
+    protected toggleState() {
+        let mainState = DocWcStateEditor2StateManager.getInstance();
+        if(mainState.getState()?.name == "/state1") {
+            mainState.setState("/");
+        }
+        else {
+            mainState.setState("/state1");
+        }
+    }
+	//#endregion
+	
+}

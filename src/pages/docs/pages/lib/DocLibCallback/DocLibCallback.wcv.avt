@@ -1,7 +1,7 @@
 <h1>Library - Callback</h1>
 
 <p>Aventus script files are based on Typescript. The main advantage is that everything is typed but when you will use
-    <span class="cn">custom event</span> it will be a nightmare to keep your type. This is why inside Avantue you can
+    <span class="cn">custom event</span> it will be a nightmare to keep your type. This is why inside Aventus you can
     find two classes that are doing the same jobs as Event but are type friendly : <span class="cn">Callback</span> and
     <span class="cn">CallbackGroup</span>.
 </p>

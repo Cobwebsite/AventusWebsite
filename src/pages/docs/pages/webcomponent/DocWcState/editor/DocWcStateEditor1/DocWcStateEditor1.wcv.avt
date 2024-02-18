@@ -1,0 +1,136 @@
+<av-code-editor name="State">
+    <av-code language="json" filename="State/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "State",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [
+            				{
+            					"output": "./dist/demo.js"
+            				}
+            			]
+            		}
+            	],
+            	"static": [{
+            		"name": "Static",
+            		"input": "./static/*",
+            		"output": "./dist/"
+            	}]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="State/src/Example/Example.wcl.avt">
+        <pre>
+            import { MainStateManager } from "../MainStateManager.state.avt";
+            &nbsp;
+            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+                @ViewElement()
+                protected debugEl!: HTMLDivElement;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+                @StateActive("/state1", MainStateManager)
+                protected onStateActive(state: Aventus.State, slugs: Aventus.StateSlug) {
+                    this.writeLog("/state1 on");
+                }
+            &nbsp;
+                @StateInactive("/state1", MainStateManager.getInstance())
+                protected onStateInactive(state: Aventus.State, nextState: Aventus.State, slugs: Aventus.StateSlug) {
+                    this.writeLog("/state1 off");
+                }
+            &nbsp;
+                @StateChange("/state1", MainStateManager)
+                protected async onAskChange(state: Aventus.State, nextState: Aventus.State, slugs: Aventus.StateSlug) {
+                    return confirm("set state1 off?");
+                }
+            &nbsp;
+                protected writeLog(txt: string) {
+                    const div = document.createElement("DIV");
+                    div.innerHTML = txt;
+                    this.debugEl.appendChild(div);
+                }
+            &nbsp;
+            &nbsp;
+                protected toggleState() {
+                    let mainState = MainStateManager.getInstance();
+                    \if(mainState.getState()?.name == "/state1") {
+                        mainState.setState("/");
+                    }
+                    else {
+                        mainState.setState("/state1");
+                    }
+                }
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="State/src/Example/Example.wcs.avt">
+        <pre>
+            :host {
+            	
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="State/src/Example/Example.wcv.avt">
+        <pre>
+            &lt;div class="debug" @element="debugEl"&gt;&lt;/div&gt;
+            &lt;button @click="toggleState"&gt;Change state&lt;/button&gt;
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="State/src/MainStateManager.state.avt">
+        <pre>
+            export class MainStateManager extends Aventus.StateManager implements Aventus.IStateManager {
+            	/**
+            	 * Get the instance of the StateManager
+            	 */
+            	public static getInstance() {
+            		return Aventus.Instance.get(MainStateManager);
+            	}
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="html" filename="State/static/index.html">
+        <pre>
+            &lt;!DOCTYPE html&gt;
+            &lt;html lang="en"&gt;
+            &lt;head&gt;
+                &lt;meta charset="UTF-8"&gt;
+                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+                &lt;title&gt;State&lt;/title&gt;
+                &lt;script src="/demo.js"&gt;&lt;/script&gt;
+            &lt;/head&gt;
+            &lt;body&gt;
+                &lt;av-example&gt;&lt;/av-example&gt;
+            &lt;/body&gt;
+            &lt;/html&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

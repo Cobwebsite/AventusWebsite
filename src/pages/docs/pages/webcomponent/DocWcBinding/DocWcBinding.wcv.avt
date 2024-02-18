@@ -24,24 +24,19 @@
 
 <h2>Select the event to listen to</h2>
 <p>If you need to define which event or CallbackManger the code must listen, you can write your binding like below.</p>
-<av-code language="html" filename="Input.wcv.avt">
-    &lt;input @bind_keyup="myValue" /&gt;
-</av-code>
-<p>In this example, the field <span class="cn">myValue</span> will be updated when the <span class="cn">keyup</span>
-    event is triggered on the input. Notice that if you have a CallbackManger named keyup, the code will listen to the
-    keyup CallbackManger instead of the keyup event.</p>
+<av-doc-wc-binding-editor-2></av-doc-wc-binding-editor-2>
+<p>In this example, the field <span class="cn">value</span> will be updated when the <span class="cn">keyup</span>
+    event is triggered on the input. Notice that if you have a Callback named keyup, the code will listen to the
+    keyup Callback instead of the keyup event.</p>
 
 <h2>Select the child field to bind with</h2>
 <p>If you need to define which field the code must synchronize instead of <span class="cn">value</span>, you can write your binding like below.
 </p>
-<av-code language="html" filename="MyTest.wcl.avt">
-    &lt;av-input @bind:customValue="myValue"&gt;&lt;/av-input&gt;
-</av-code>
-<p>In this example, the parent field <span class="cn">myValue</span> will be synchronized with the child field <span
-        class="cn">customValue</span></p>
+<av-doc-wc-binding-editor-3></av-doc-wc-binding-editor-3>
+
+<p>In this example, the parent field <span class="cn">value</span> will be synchronized with the child field <span
+        class="cn">val</span></p>
 
 <h2>Full custom binding</h2>
 <p>You can mix the two previous cases to fully customize your binding.</p>
-<av-code language="html" filename="MyTest.wcl.avt">
-    &lt;av-input @bind_keyup:customValue="myValue"&gt;&lt;/av-input&gt;
-</av-code>
+<av-doc-wc-binding-editor-4></av-doc-wc-binding-editor-4>

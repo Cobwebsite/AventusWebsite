@@ -1,0 +1,8 @@
+<av-code language="html" filename="Binding/src/Example/Example.wcv.avt">
+    <pre>
+        &lt;input @bind_keyup="this.value"&gt;
+        &nbsp;
+        &lt;p&gt;\{{ this.value }}&lt;/p&gt;
+    </pre>
+</av-code>
+<slot></slot>

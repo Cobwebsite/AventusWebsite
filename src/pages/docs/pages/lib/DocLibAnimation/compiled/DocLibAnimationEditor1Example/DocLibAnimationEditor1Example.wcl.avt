@@ -1,0 +1,65 @@
+export class DocLibAnimationEditor1Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	@ViewElement()
+    protected squareEl!: HTMLDivElement;
+
+    protected animation?: Aventus.Animation;
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	protected startAnimation(fps: number) {
+        const max = 200;
+        const step = 10;
+        let value = 0;
+		if(this.animation) {
+			this.animation.immediateStop();
+		}
+		let animation = new Aventus.Animation({
+            animate: () => {
+                value += step;
+                this.squareEl.style.left = value + 'px';
+                if(value >= max) {
+                    animation.stop();
+                }
+            },
+            fps: fps,
+            stopped: () => {
+
+            }
+        });
+		this.animation = animation;
+        animation.start();
+    }
+
+    protected startAnimation1fps() {
+        this.startAnimation(1);
+    }
+    protected startAnimation10fps() {
+        this.startAnimation(10);
+    }
+    protected startAnimation30fps() {
+        this.startAnimation(30);
+    }
+    protected startAnimation60fps() {
+        this.startAnimation(60);
+    }
+	//#endregion
+	
+}

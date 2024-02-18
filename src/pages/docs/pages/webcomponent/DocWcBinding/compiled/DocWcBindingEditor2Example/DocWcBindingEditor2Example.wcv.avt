@@ -1,0 +1,3 @@
+<input @bind_keyup="this.value">
+
+<p>{{ this.value }}</p>
