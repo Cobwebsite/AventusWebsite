@@ -1,5 +1,5 @@
 <h1>Webcomponent - Event</h1>
-<p>In the section you are going to learn how you can listen to event trigger.</p>
+<p>In this section you are going to learn how you can listen to event trigger.</p>
 
 <h2>Add event</h2>
 <p>To bind an event on a child inside the shadowroot, you can use the following syntax : <span

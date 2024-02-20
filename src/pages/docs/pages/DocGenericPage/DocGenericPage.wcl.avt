@@ -24,7 +24,7 @@ export class DocGenericPage extends Page implements Aventus.DefaultComponent {
         super.hide();
     }
     public override pageTitle(): string {
-        return "Avenuts - Documentation";
+        return "Aventus - Documentation";
     }
 }
 

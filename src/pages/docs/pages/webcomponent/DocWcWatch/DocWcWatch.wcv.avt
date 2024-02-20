@@ -1,5 +1,5 @@
 <h1>Webcomponent - Watch</h1>
-<p>In the section you are going to learn how you can define variables for your component that will fire a callback when
+<p>In this section you are going to learn how you can define variables for your component that will fire a callback when
     something occur. In contrast to <span class="cn">Attribute</span> and <span class="cn">Property</span>, the <span
         class="cn">Watch</span> variable won't be reflected on the tag. This allow you to set complex type for the
     variable. The watch variable is based on a <span class="cn"><a

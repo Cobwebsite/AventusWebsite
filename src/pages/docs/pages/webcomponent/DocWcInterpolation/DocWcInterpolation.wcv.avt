@@ -1,5 +1,5 @@
 <h1>Webcomponent - Interpolation</h1>
-<p>In the section you are going to learn how to use interpolation inside webcomponent.</p>
+<p>In this section you are going to learn how to use interpolation inside webcomponent.</p>
 
 <p>Interpolation refers to embedding expressions into marked up text. You can notify an interpolation by using <span
         class="cn">\{{ myCode }}</span>. Interpolation can be written anywhere inside a <span

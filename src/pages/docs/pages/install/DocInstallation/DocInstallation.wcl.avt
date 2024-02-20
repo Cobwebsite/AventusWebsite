@@ -29,7 +29,7 @@ export class DocInstallation extends DocGenericPage implements Aventus.DefaultCo
 	
 	//#region methods
 	public override pageTitle(): string {
-		return "Avenuts - Installation";
+		return "Aventus - Installation";
 	}
 	//#endregion
 	

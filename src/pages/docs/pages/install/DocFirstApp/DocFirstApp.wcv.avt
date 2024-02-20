@@ -42,7 +42,7 @@
 <ul>
     <li><span class="cn">MyComponent.wcl.avt</span> - the file for the logic written in Typescript</li>
     <li><span class="cn">MyComponent.wcs.avt</span> - the file for the style written in SCSS</li>
-    <li><span class="cn">MyComponent.wcv.avt</span> - the file for the view written in Html</li>
+    <li><span class="cn">MyComponent.wcv.avt</span> - the file for the view written in HTML</li>
 </ul>
 <p>We will add some code inside the component to write an hello Aventus text in orange</p>
 <av-doc-first-app-editor-3></av-doc-first-app-editor-3>

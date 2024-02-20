@@ -1,5 +1,5 @@
 <h1>Webcomponent - State</h1>
-<p>In the section you are going to learn how you can listen to <span class="cn">state</span> inside Webcomponent.</p>
+<p>In this section you are going to learn how you can listen to <span class="cn">state</span> inside Webcomponent.</p>
 
 <p>You can use state and stateManager to manage the lifecycle of your application. You can subscribe manually to a state
     manager (the explanation is <av-router-link state="/docs/state/listen_changes">here</av-router-link>). To developer

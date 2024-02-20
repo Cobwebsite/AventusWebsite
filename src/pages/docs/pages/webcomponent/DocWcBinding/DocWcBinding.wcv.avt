@@ -1,5 +1,5 @@
 <h1>Webcomponent - Binding</h1>
-<p>In the section you are going to learn how to bind data between parent and child component.</p>
+<p>In this section you are going to learn how to bind data between parent and child component.</p>
 
 <p>The data binding is a mix between <av-router-link state="/docs/wc/injection">Injection</av-router-link> and
     <av-router-link state="/docs/wc/event">Event</av-router-link>. It will inject the data from parent to the child and

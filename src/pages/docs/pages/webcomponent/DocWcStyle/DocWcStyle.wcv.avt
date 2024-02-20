@@ -1,5 +1,5 @@
 <h1>Webcomponent - Style</h1>
-<p>In the section you are going to learn how to apply a style to your component.</p>
+<p>In this section you are going to learn how to apply a style to your component.</p>
 
 <h2>Definition</h2>
 <p>Because Aventus is build on the top of webcomponent, the style is scoped. It means that the style from Component 1

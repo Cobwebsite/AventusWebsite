@@ -1,5 +1,5 @@
 <h1>Webcomponent - Loop</h1>
-<p>In the section you are going to learn how you can create a loop inside your view to display array.</p>
+<p>In this section you are going to learn how you can create a loop inside your view to display array.</p>
 
 <p>Inside Aventus, you can declare loop inside your <span class="cn">*.wcv.avt</span> with the following pattern :
     <br /><span class="cn">@for="$item, $index in $data"</span>. As en example we will display a list of todos.

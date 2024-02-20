@@ -1,5 +1,5 @@
 <h1>Webcomponent - Property</h1>
-<p>In the section you are going to learn how you can define property for your component and add a callback when the
+<p>In this section you are going to learn how you can define property for your component and add a callback when the
     attribute change.</p>
 
 <h2>Simple property</h2>

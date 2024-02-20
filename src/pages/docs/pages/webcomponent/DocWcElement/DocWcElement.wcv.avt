@@ -1,5 +1,5 @@
 <h1>Webcomponent - Select element</h1>
-<p>In the section you are going to learn how to select a element from your shadowroot to use it inside your logical
+<p>In this section you are going to learn how to select a element from your shadowroot to use it inside your logical
     part.</p>
 <h2>Normal case</h2>
 <p>Inside the <span class="cn">*.wcv.avt</span> file you can add an attribute <span class="cn">@element</span> to tag
