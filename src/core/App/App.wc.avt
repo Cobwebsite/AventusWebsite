@@ -6,6 +6,10 @@
 	import { Page404 } from "../../pages/Page404/Page404.wcl.avt";
 
 	export class App extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
+		public constructor() {
+			super();
+			MaterialIcon.Icon.defaultType = "outlined"
+		}
 	    protected defineRoutes(): void {
 	        this.addRoute("/", Home);
 	        this.addRoute("/about", About);

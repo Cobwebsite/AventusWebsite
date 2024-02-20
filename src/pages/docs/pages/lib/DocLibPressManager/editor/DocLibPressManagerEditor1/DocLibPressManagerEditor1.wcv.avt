@@ -1,0 +1,105 @@
+<av-code-editor name="PressManager">
+    <av-code language="json" filename="PressManager/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "PressManager",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [
+            				{
+            					"output": "./dist/demo.js"
+            				}
+            			]
+            		}
+            	],
+            	"static": [{
+            		"name": "Static",
+            		"input": "./static/*",
+            		"output": "./dist/"
+            	}]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="PressManager/src/Example/Example.wcl.avt">
+        <pre>
+            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+                @ViewElement()
+                protected buttonEl!: HTMLButtonElement;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+                /**
+                 * 
+                 */
+                protected onPress() {
+                    alert("Press with @press");
+                }
+            &nbsp;
+                protected override postCreation(): void {
+                    new Aventus.PressManager({
+                        element: this.buttonEl,
+                        onPress: () =&gt; {
+            				alert("Press with Aventus.PressManager");
+                        }
+                    });
+                }
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="PressManager/src/Example/Example.wcs.avt">
+        <pre>
+            :host {
+            	
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="PressManager/src/Example/Example.wcv.avt">
+        <pre>
+            &lt;button @element="buttonEl"&gt;Click 1&lt;/button&gt;
+            &lt;button @press="onPress"&gt;Click 2&lt;/button&gt;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="PressManager/static/index.html">
+        <pre>
+            &lt;!DOCTYPE html&gt;
+            &lt;html lang="en"&gt;
+            &lt;head&gt;
+                &lt;meta charset="UTF-8"&gt;
+                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+                &lt;title&gt;PressManager&lt;/title&gt;
+                &lt;script src="/demo.js"&gt;&lt;/script&gt;
+            &lt;/head&gt;
+            &lt;body&gt;
+                &lt;av-example&gt;&lt;/av-example&gt;
+            &lt;/body&gt;
+            &lt;/html&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

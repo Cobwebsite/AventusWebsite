@@ -4670,12 +4670,18 @@ const _ = {};
 
 let _n;
 const Icon = class Icon extends Aventus.WebComponent {
-    static get observedAttributes() {return ["icon"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    static get observedAttributes() {return ["icon", "type"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
     get 'icon'() { return this.getStringProp('icon') }
-    set 'icon'(val) { this.setStringAttr('icon', val) }    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("icon", ((target) => {
-    target.shadowRoot.innerHTML = target.icon;
+    set 'icon'(val) { this.setStringAttr('icon', val) }get 'type'() { return this.getStringProp('type') }
+    set 'type'(val) { this.setStringAttr('type', val) }    static defaultType = 'outlined';
+    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("icon", ((target) => {
+    if (target.isReady)
+        target.shadowRoot.innerHTML = target.icon;
+}));this.__addPropertyActions("type", ((target) => {
+    if (target.isReady)
+        target.loadFont();
 })); }
-    static __style = `:host{--_material-icon-animation-duration: var(--material-icon-animation-duration, 1.75s)}:host{direction:ltr;display:inline-block;font-family:"Material Icons";-moz-font-feature-settings:"liga";font-size:24px;-moz-osx-font-smoothing:grayscale;font-style:normal;font-weight:normal;letter-spacing:normal;line-height:1;text-transform:none;white-space:nowrap;word-wrap:normal}:host([spin]){animation:spin var(--_material-icon-animation-duration) linear infinite}:host([reverse_spin]){animation:reverse-spin var(--_material-icon-animation-duration) linear infinite}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes reverse-spin{0%{transform:rotate(360deg)}100%{transform:rotate(0deg)}}`;
+    static __style = `:host{--_material-icon-animation-duration: var(--material-icon-animation-duration, 1.75s)}:host{direction:ltr;display:inline-block;font-family:"Material Symbols Outlined";-moz-font-feature-settings:"liga";font-size:24px;-moz-osx-font-smoothing:grayscale;font-style:normal;font-weight:normal;letter-spacing:normal;line-height:1;text-transform:none;white-space:nowrap;word-wrap:normal}:host([type=sharp]){font-family:"Material Symbols Sharp"}:host([type=rounded]){font-family:"Material Symbols Rounded"}:host([type=outlined]){font-family:"Material Symbols Outlined"}:host([spin]){animation:spin var(--_material-icon-animation-duration) linear infinite}:host([reverse_spin]){animation:reverse-spin var(--_material-icon-animation-duration) linear infinite}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes reverse-spin{0%{transform:rotate(360deg)}100%{transform:rotate(0deg)}}`;
     __getStatic() {
         return Icon;
     }
@@ -4692,10 +4698,24 @@ const Icon = class Icon extends Aventus.WebComponent {
     getClassName() {
         return "Icon";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('icon')){ this['icon'] = "check_box_outline_blank"; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('icon'); }
-    postCreation() {
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('icon')){ this['icon'] = "check_box_outline_blank"; }if(!this.hasAttribute('type')){ this['type'] = Icon.defaultType; } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('icon');this.__upgradeProperty('type'); }
+    async loadFont() {
+        if (!this.type)
+            return;
+        let url = 'https://fonts.googleapis.com/icon?family=Material+Symbols+';
+        url += this.type.charAt(0).toUpperCase() + this.type.slice(1);
+        await Aventus.ResourceLoader.loadInHead({
+            type: "css",
+            url: url
+        });
+    }
+    async init() {
+        await this.loadFont();
         this.shadowRoot.innerHTML = this.icon;
+    }
+    postCreation() {
+        this.init();
     }
 }
 Icon.Namespace=`${moduleName}`;
@@ -5934,6 +5954,31 @@ Tabs.Tag=`av-tabs`;
 _.Tabs=Tabs;
 if(!window.customElements.get('av-tabs')){window.customElements.define('av-tabs', Tabs);Aventus.WebComponentInstance.registerDefinition(Tabs);}
 
+const Result = class Result extends Aventus.WebComponent {
+    static __style = `:host{align-items:center;border-radius:6px;box-shadow:0 0 3px var(--light-primary-color);display:flex;margin:10px 0px;padding:15px 20px;width:100%}`;
+    __getStatic() {
+        return Result;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Result.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "Result";
+    }
+}
+Result.Namespace=`${moduleName}`;
+Result.Tag=`av-result`;
+_.Result=Result;
+if(!window.customElements.get('av-result')){window.customElements.define('av-result', Result);Aventus.WebComponentInstance.registerDefinition(Result);}
+
 const TutorialFooter = class TutorialFooter extends Aventus.WebComponent {
     get 'hide_previous'() { return this.getBoolAttr('hide_previous') }
     set 'hide_previous'(val) { this.setBoolAttr('hide_previous', val) }get 'hide_next'() { return this.getBoolAttr('hide_next') }
@@ -6006,43 +6051,14 @@ TutorialFooter.Tag=`av-tutorial-footer`;
 _.TutorialFooter=TutorialFooter;
 if(!window.customElements.get('av-tutorial-footer')){window.customElements.define('av-tutorial-footer', TutorialFooter);Aventus.WebComponentInstance.registerDefinition(TutorialFooter);}
 
-const DocLibDragAndDropExample = class DocLibDragAndDropExample extends Aventus.WebComponent {
-    static __style = `:host{background-color:red;height:20px;position:absolute;width:20px}`;
+const DocLibResizeObserverEditor1Example = class DocLibResizeObserverEditor1Example extends Aventus.WebComponent {
+    static __style = `:host{animation-name:resize;animation-duration:5s;animation-direction:alternate;animation-iteration-count:infinite;animation-timing-function:linear;height:30px}@keyframes resize{0%{width:30px}100%{width:70px}}`;
     __getStatic() {
-        return DocLibDragAndDropExample;
+        return DocLibResizeObserverEditor1Example;
     }
     __getStyle() {
         let arrStyle = super.__getStyle();
-        arrStyle.push(DocLibDragAndDropExample.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`` }
-    });
-}
-    getClassName() {
-        return "DocLibDragAndDropExample";
-    }
-    postCreation() {
-        new Aventus.DragAndDrop({
-            element: this
-        });
-    }
-}
-DocLibDragAndDropExample.Namespace=`${moduleName}`;
-DocLibDragAndDropExample.Tag=`av-doc-lib-drag-and-drop-example`;
-_.DocLibDragAndDropExample=DocLibDragAndDropExample;
-if(!window.customElements.get('av-doc-lib-drag-and-drop-example')){window.customElements.define('av-doc-lib-drag-and-drop-example', DocLibDragAndDropExample);Aventus.WebComponentInstance.registerDefinition(DocLibDragAndDropExample);}
-
-const Result = class Result extends Aventus.WebComponent {
-    static __style = `:host{align-items:center;border-radius:6px;box-shadow:0 0 3px var(--light-primary-color);display:flex;margin:10px 0px;padding:15px 20px;width:100%}`;
-    __getStatic() {
-        return Result;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(Result.__style);
+        arrStyle.push(DocLibResizeObserverEditor1Example.__style);
         return arrStyle;
     }
     __getHtml() {
@@ -6052,13 +6068,242 @@ const Result = class Result extends Aventus.WebComponent {
     });
 }
     getClassName() {
-        return "Result";
+        return "DocLibResizeObserverEditor1Example";
+    }
+    postCreation() {
+        const observer = new Aventus.ResizeObserver(() => {
+            if (this.offsetWidth < 50) {
+                this.style.backgroundColor = 'red';
+            }
+            else {
+                this.style.backgroundColor = 'blue';
+            }
+        });
+        observer.observe(this);
     }
 }
-Result.Namespace=`${moduleName}`;
-Result.Tag=`av-result`;
-_.Result=Result;
-if(!window.customElements.get('av-result')){window.customElements.define('av-result', Result);Aventus.WebComponentInstance.registerDefinition(Result);}
+DocLibResizeObserverEditor1Example.Namespace=`${moduleName}`;
+DocLibResizeObserverEditor1Example.Tag=`av-doc-lib-resize-observer-editor-1-example`;
+_.DocLibResizeObserverEditor1Example=DocLibResizeObserverEditor1Example;
+if(!window.customElements.get('av-doc-lib-resize-observer-editor-1-example')){window.customElements.define('av-doc-lib-resize-observer-editor-1-example', DocLibResizeObserverEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocLibResizeObserverEditor1Example);}
+
+const DocLibPressManagerEditor1Example = class DocLibPressManagerEditor1Example extends Aventus.WebComponent {
+    static __style = ``;
+    __getStatic() {
+        return DocLibPressManagerEditor1Example;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibPressManagerEditor1Example.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<button _id="doclibpressmanagereditor1example_0">Click 1</button><button _id="doclibpressmanagereditor1example_1">Click 2</button>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "buttonEl",
+      "ids": [
+        "doclibpressmanagereditor1example_0"
+      ]
+    }
+  ],
+  "pressEvents": [
+    {
+      "id": "doclibpressmanagereditor1example_1",
+      "onPress": (e, pressInstance, c) => { c.comp.onPress(e, pressInstance); }
+    }
+  ]
+}); }
+    getClassName() {
+        return "DocLibPressManagerEditor1Example";
+    }
+    onPress() {
+        alert("Press with @press");
+    }
+    postCreation() {
+        new Aventus.PressManager({
+            element: this.buttonEl,
+            onPress: () => {
+                alert("Press with Aventus.PressManager");
+            }
+        });
+    }
+}
+DocLibPressManagerEditor1Example.Namespace=`${moduleName}`;
+DocLibPressManagerEditor1Example.Tag=`av-doc-lib-press-manager-editor-1-example`;
+_.DocLibPressManagerEditor1Example=DocLibPressManagerEditor1Example;
+if(!window.customElements.get('av-doc-lib-press-manager-editor-1-example')){window.customElements.define('av-doc-lib-press-manager-editor-1-example', DocLibPressManagerEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocLibPressManagerEditor1Example);}
+
+const DocLibDragAndDropEditor1Example = class DocLibDragAndDropEditor1Example extends Aventus.WebComponent {
+    static __style = `:host{width:20px;height:20px;background-color:red;position:absolute;z-index:9999}`;
+    __getStatic() {
+        return DocLibDragAndDropEditor1Example;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibDragAndDropEditor1Example.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocLibDragAndDropEditor1Example";
+    }
+    postCreation() {
+        new Aventus.DragAndDrop({
+            element: this
+        });
+    }
+}
+DocLibDragAndDropEditor1Example.Namespace=`${moduleName}`;
+DocLibDragAndDropEditor1Example.Tag=`av-doc-lib-drag-and-drop-editor-1-example`;
+_.DocLibDragAndDropEditor1Example=DocLibDragAndDropEditor1Example;
+if(!window.customElements.get('av-doc-lib-drag-and-drop-editor-1-example')){window.customElements.define('av-doc-lib-drag-and-drop-editor-1-example', DocLibDragAndDropEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocLibDragAndDropEditor1Example);}
+
+const DocLibCallbackEditor2Emitter = class DocLibCallbackEditor2Emitter extends Aventus.WebComponent {
+    myEvent = new Aventus.Callback();
+    static __style = ``;
+    __getStatic() {
+        return DocLibCallbackEditor2Emitter;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibCallbackEditor2Emitter.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocLibCallbackEditor2Emitter";
+    }
+    emitMyEvent() {
+        setInterval(() => {
+            this.myEvent.trigger([Date.now()]);
+        }, 1000);
+    }
+    postCreation() {
+        this.emitMyEvent();
+    }
+}
+DocLibCallbackEditor2Emitter.Namespace=`${moduleName}`;
+DocLibCallbackEditor2Emitter.Tag=`av-doc-lib-callback-editor-2-emitter`;
+_.DocLibCallbackEditor2Emitter=DocLibCallbackEditor2Emitter;
+if(!window.customElements.get('av-doc-lib-callback-editor-2-emitter')){window.customElements.define('av-doc-lib-callback-editor-2-emitter', DocLibCallbackEditor2Emitter);Aventus.WebComponentInstance.registerDefinition(DocLibCallbackEditor2Emitter);}
+
+const DocLibCallbackEditor2Receiver = class DocLibCallbackEditor2Receiver extends Aventus.WebComponent {
+    static __style = ``;
+    __getStatic() {
+        return DocLibCallbackEditor2Receiver;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibCallbackEditor2Receiver.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocLibCallbackEditor2Receiver";
+    }
+    postCreation() {
+        let emitter = this.parentNode?.querySelector("av-doc-lib-callback-editor-2-emitter");
+        if (emitter) {
+            emitter.myEvent.add((time) => {
+                this.shadowRoot.innerHTML = 'Time is ' + time;
+            });
+        }
+    }
+}
+DocLibCallbackEditor2Receiver.Namespace=`${moduleName}`;
+DocLibCallbackEditor2Receiver.Tag=`av-doc-lib-callback-editor-2-receiver`;
+_.DocLibCallbackEditor2Receiver=DocLibCallbackEditor2Receiver;
+if(!window.customElements.get('av-doc-lib-callback-editor-2-receiver')){window.customElements.define('av-doc-lib-callback-editor-2-receiver', DocLibCallbackEditor2Receiver);Aventus.WebComponentInstance.registerDefinition(DocLibCallbackEditor2Receiver);}
+
+const DocLibCallbackEditor1Emitter = class DocLibCallbackEditor1Emitter extends Aventus.WebComponent {
+    static __style = ``;
+    __getStatic() {
+        return DocLibCallbackEditor1Emitter;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibCallbackEditor1Emitter.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocLibCallbackEditor1Emitter";
+    }
+    emitMyEvent() {
+        setInterval(() => {
+            this.dispatchEvent(new CustomEvent("myEvent", {
+                detail: {
+                    time: Date.now()
+                }
+            }));
+        }, 1000);
+    }
+    postCreation() {
+        this.emitMyEvent();
+    }
+}
+DocLibCallbackEditor1Emitter.Namespace=`${moduleName}`;
+DocLibCallbackEditor1Emitter.Tag=`av-doc-lib-callback-editor-1-emitter`;
+_.DocLibCallbackEditor1Emitter=DocLibCallbackEditor1Emitter;
+if(!window.customElements.get('av-doc-lib-callback-editor-1-emitter')){window.customElements.define('av-doc-lib-callback-editor-1-emitter', DocLibCallbackEditor1Emitter);Aventus.WebComponentInstance.registerDefinition(DocLibCallbackEditor1Emitter);}
+
+const DocLibCallbackEditor1Receiver = class DocLibCallbackEditor1Receiver extends Aventus.WebComponent {
+    static __style = ``;
+    __getStatic() {
+        return DocLibCallbackEditor1Receiver;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibCallbackEditor1Receiver.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocLibCallbackEditor1Receiver";
+    }
+    postCreation() {
+        let emitter = this.parentNode?.querySelector("av-doc-lib-callback-editor-1-emitter");
+        if (emitter) {
+            emitter.addEventListener("myEvent", (e) => {
+                this.shadowRoot.innerHTML = 'Time is ' + e.detail.time;
+            });
+        }
+    }
+}
+DocLibCallbackEditor1Receiver.Namespace=`${moduleName}`;
+DocLibCallbackEditor1Receiver.Tag=`av-doc-lib-callback-editor-1-receiver`;
+_.DocLibCallbackEditor1Receiver=DocLibCallbackEditor1Receiver;
+if(!window.customElements.get('av-doc-lib-callback-editor-1-receiver')){window.customElements.define('av-doc-lib-callback-editor-1-receiver', DocLibCallbackEditor1Receiver);Aventus.WebComponentInstance.registerDefinition(DocLibCallbackEditor1Receiver);}
 
 const DocLibAnimationEditor1Example = class DocLibAnimationEditor1Example extends Aventus.WebComponent {
     animation;
@@ -7714,11 +7959,22 @@ const Footer = class Footer extends Aventus.WebComponent {
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<div class="container">    <div class="release">Released under the MIT License.</div>    <div class="copy">Copyright © 2023 Cobwebsite</div></div>` }
+        blocks: { 'default':`<div class="container">    <div class="release">Released under the MIT License.</div>    <div class="copy" _id="footer_0"></div></div>` }
     });
 }
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "content": {
+    "footer_0°@HTML": {
+      "fct": (c) => `Copyright © ${c.print(c.comp.__31eeb70e5471155d8536083fb321ab96method0())} Cobwebsite`,
+      "once": true
+    }
+  }
+}); }
     getClassName() {
         return "Footer";
+    }
+    __31eeb70e5471155d8536083fb321ab96method0() {
+        return new Date().getFullYear();
     }
 }
 Footer.Namespace=`${moduleName}`;
@@ -7803,7 +8059,7 @@ _.Page404=Page404;
 if(!window.customElements.get('av-page-404')){window.customElements.define('av-page-404', Page404);Aventus.WebComponentInstance.registerDefinition(Page404);}
 
 const Home = class Home extends Page {
-    static __style = `:host{height:100%;width:100%}:host .container{max-width:none}:host .main{background-color:var(--light-primary-color);display:flex;flex-direction:column;height:400px;overflow:hidden;padding:50px 0;position:relative;width:100%}:host .main .icon-text{align-items:center;flex-grow:1;margin:auto;max-width:1000px;width:100%;z-index:2}:host .main .icon-text av-img{--img-color: var(--aventus-color);flex-shrink:0;height:120px;margin-right:15%;transition:all linear .5s;width:85px}:host .main .icon-text .ventus{overflow:hidden;width:calc(100% - 85px)}:host .main .icon-text .ventus span{color:var(--aventus-color);display:inline-block;font-size:165px;font-variant:small-caps;font-weight:bold;margin-top:-83px;overflow:hidden;transition:all linear .5s;width:440px}:host .main .icon-text av-dynamic-col:first-child{flex-direction:row;justify-content:right}:host .main .icon-text av-dynamic-col:nth-child(2){font-size:16px}:host .main .icon-text .title{color:var(--primary-font-color);font-size:30px}:host .main .btn-container{margin:auto;z-index:2}:host .main .btn-container av-dynamic-col{flex-direction:row;justify-content:center}:host .main .btn-container av-dynamic-col av-button{margin:0 10px}:host .main av-img.design-logo{--img-color: rgb(200, 200, 200);height:150%;left:-200px;opacity:.3;position:absolute;top:30px;z-index:1}:host .main av-img.design-logo2{--img-color: rgb(200, 200, 200);height:150%;opacity:.3;position:absolute;right:-200px;top:30px;transform:rotate(180deg);z-index:1}:host .blocks{margin:50px auto;max-width:1200px}:host .blocks av-dynamic-col{padding:10px 20px}:host .blocks av-dynamic-col .block{background-color:var(--light-primary-color);border-radius:5px;box-shadow:0 2px 4px -1px rgba(0,0,0,.2),0 4px 5px 0 rgba(0,0,0,.14),0 1px 10px 0 rgba(0,0,0,.12);color:var(--primary-font-color);display:flex;flex-direction:column;height:100%;padding:30px;width:100%}:host .blocks av-dynamic-col .block .title{font-size:28px;font-weight:bold;letter-spacing:1px}:host .blocks av-dynamic-col .block p{align-items:center;display:flex;flex-grow:1;text-align:justify}:host .blocks av-dynamic-col:nth-child(2) .block{background-color:var(--aventus-color)}:host .separator{background:linear-gradient(90deg, transparent 0%, var(--text-color) 50%, transparent 100%);height:1px;margin:auto;width:75%}:host .why{margin:50px auto;max-width:1200px;padding:0 50px}:host .why h2{color:var(--title-color)}:host .why p{color:var(--text-color);font-size:18px;text-align:justify}:host .why .important{font-size:20px;font-weight:600}@media screen and (max-width: 505px){:host .main .icon-text{flex-direction:column}:host .main .icon-text av-dynamic-col{justify-content:center !important;text-align:center;width:100%}:host .main .icon-text av-img{margin-right:0}}`;
+    static __style = `:host{height:100%;width:100%}:host .container{max-width:none}:host .main{background-color:var(--light-primary-color);display:flex;flex-direction:column;height:400px;overflow:hidden;padding:50px 0;position:relative;width:100%}:host .main .icon-text{align-items:center;flex-grow:1;margin:auto;max-width:1000px;width:100%;z-index:2}:host .main .icon-text av-img{--img-color: var(--aventus-color);flex-shrink:0;height:120px;margin-right:15%;transition:all linear .5s;width:85px}:host .main .icon-text .ventus{overflow:hidden;width:calc(100% - 85px)}:host .main .icon-text .ventus span{color:var(--aventus-color);display:inline-block;font-size:165px;font-variant:small-caps;font-weight:bold;margin-top:-83px;overflow:hidden;transition:all linear .5s;width:440px}:host .main .icon-text av-dynamic-col:first-child{flex-direction:row;justify-content:right}:host .main .icon-text av-dynamic-col:nth-child(2){font-size:16px}:host .main .icon-text .title{color:var(--primary-font-color);font-size:30px}:host .main .btn-container{margin:auto;z-index:2}:host .main .btn-container av-dynamic-col{flex-direction:row;justify-content:center}:host .main .btn-container av-dynamic-col av-button{margin:0 10px}:host .main av-img.design-logo{--img-color: rgb(200, 200, 200);height:150%;left:-200px;opacity:.3;position:absolute;top:30px;z-index:1}:host .main av-img.design-logo2{--img-color: rgb(200, 200, 200);height:150%;opacity:.3;position:absolute;right:-200px;top:30px;transform:rotate(180deg);z-index:1}:host .blocks{margin:50px auto;max-width:1200px}:host .blocks av-dynamic-col{padding:10px 20px}:host .blocks av-dynamic-col .block{background-color:var(--light-primary-color);border-radius:5px;box-shadow:var(--elevation-5);color:var(--primary-font-color);display:flex;flex-direction:column;height:100%;padding:30px;width:100%}:host .blocks av-dynamic-col .block .title{font-size:28px;font-weight:bold;letter-spacing:1px}:host .blocks av-dynamic-col .block p{align-items:center;display:flex;flex-grow:1;text-align:justify}:host .blocks av-dynamic-col:nth-child(2) .block{background-color:var(--aventus-color)}:host .separator{background:linear-gradient(90deg, transparent 0%, var(--text-color) 50%, transparent 100%);height:1px;margin:auto;width:75%}:host .why{margin:50px auto;max-width:1200px;padding:0 50px}:host .why h2{color:var(--title-color)}:host .why p{color:var(--text-color);font-size:18px;text-align:justify}:host .why .important{font-size:20px;font-weight:600}@media screen and (max-width: 505px){:host .main .icon-text{flex-direction:column}:host .main .icon-text av-dynamic-col{justify-content:center !important;text-align:center;width:100%}:host .main .icon-text av-img{margin-right:0}}`;
     __getStatic() {
         return Home;
     }
@@ -10688,6 +10944,30 @@ DocGenericPage.Tag=`av-doc-generic-page`;
 _.DocGenericPage=DocGenericPage;
 if(!window.customElements.get('av-doc-generic-page')){window.customElements.define('av-doc-generic-page', DocGenericPage);Aventus.WebComponentInstance.registerDefinition(DocGenericPage);}
 
+const DocWcCondition = class DocWcCondition extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocWcCondition;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcCondition.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Webcomponent - Conditional rendering</h1><p>In the section you are going to learn how you can use conditional rendering inside your view.</p>` }
+    });
+}
+    getClassName() {
+        return "DocWcCondition";
+    }
+}
+DocWcCondition.Namespace=`${moduleName}`;
+DocWcCondition.Tag=`av-doc-wc-condition`;
+_.DocWcCondition=DocWcCondition;
+if(!window.customElements.get('av-doc-wc-condition')){window.customElements.define('av-doc-wc-condition', DocWcCondition);Aventus.WebComponentInstance.registerDefinition(DocWcCondition);}
+
 const DocAdvancedTemplate = class DocAdvancedTemplate extends DocGenericPage {
     static __style = ``;
     __getStatic() {
@@ -10712,30 +10992,6 @@ DocAdvancedTemplate.Tag=`av-doc-advanced-template`;
 _.DocAdvancedTemplate=DocAdvancedTemplate;
 if(!window.customElements.get('av-doc-advanced-template')){window.customElements.define('av-doc-advanced-template', DocAdvancedTemplate);Aventus.WebComponentInstance.registerDefinition(DocAdvancedTemplate);}
 
-const DocLibTools = class DocLibTools extends DocGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return DocLibTools;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocLibTools.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Library - Tools</h1><p>Finally you can use the tools provided to help you.</p><h2>compareObject</h2><p>If you want compare if two objects contains the same informations you can use the function <span class="cn">Aventus.compareObject</span></p><av-code language="typescript" filename="Example.lib.avt">    export function test() {    &nbsp;    \tconst obj1 = {    \t\tname:"John",    \t\ttodos: ["todo1", "todo2"]    \t}    &nbsp;    \tconst obj2 = {    \t\tname:"John",    \t\ttodos: ["todo2", "todo1"]    \t}    &nbsp;    \tconst obj3 = {    \t\tname:"John",    \t\ttodos: ["todo1", "todo3"]    \t}    &nbsp;    \tconsole.log(Aventus.compareObject(obj1, obj2)); // true    \tconsole.log(Aventus.compareObject(obj1, obj3)); // false    &nbsp;    }</av-code></av-code><h2>Mutex</h2><p>Because JavaScript is an event-driven language, a function can be exectued by two different stacks. If the code    inside the function is a critical section and must be exectued only one by one you can use the class <span class="cn">Aventus.Mutex</span>. To understand what the mutex is doing you can read this <a href="https://en.wikipedia.org/wiki/Mutual_exclusion" target="_blank">article</a>. </p><av-code language="typescript" filename="Example.lib.avt">    export class Example {    &nbsp;    \tprivate mutex :Aventus.Mutex = new Aventus.Mutex();    &nbsp;    \tpublic async runCriticalCode(){    \t\tawait this.mutex.waitOne();    \t\t... critical code    \t\tthis.mutex.release();    \t}    &nbsp;    }</av-code></av-code><h2>sleep</h2><p>If you need to wait a specific time of ms you can use the <span class="cn">Aventus.sleep</span> function.</p><av-code language="typescript" filename="Example.lib.avt">    export class Example {    &nbsp;    \tpublic async test() {    \t\tconsole.log(Date.now());    \t\tawait Aventus.sleep(5000);    \t\tconsole.log(Date.now());    \t}    &nbsp;    }</av-code></av-code><h2>UUID</h2><p>If you need a unique id you can use the <span class="cn">Aventus.uuidv4</span> function. More information about uuid    <a href="https://en.wikipedia.org/wiki/Universally_unique_identifier" target="_blank">here</a>.</p><av-code language="typescript" filename="Example.lib.avt">    export class Example {    &nbsp;    \tpublic test() {    \t\tlet id = Aventus.uuidv4();    \t}    &nbsp;    }</av-code></av-code><h2>Error</h2><p>When you create function that can fail you can use the error strategy developed by Aventus. Instead of returning the    function result, the result is wrapped inside a container like this.</p><av-code language="typescript">    var result = {    success: boolean,    errors: [],    result: any    }</av-code></av-code><p>Below you can find an implementation example for a function that must transform a string in lowercase.</p><av-code language="typescript" filename="StringExtension.lib.avt">    // List of available codes    export enum MyStringCode {    \tEmptyString    }    &nbsp;    // Error    export class StringError extends Aventus.GenericError&lt;MyStringCode&gt; {}    &nbsp;    // Result of the function ( = container)    export class StringResult extends Aventus.ResultWithError&lt;{ lower: string; }, StringError&gt; { }    &nbsp;    export class StringExtension {    &nbsp;    \tpublic static toLower(txt: string): StringResult {    \t\tlet result = new StringResult();    \t\tif(!txt) {    \t\t\tlet error = new StringError(MyStringCode.EmptyString, "Please provide a string");    \t\t\tresult.errors.push(error);    \t\t}    \t\telse {    \t\t\tresult.result = { lower: txt.toLowerCase() };    \t\t}    &nbsp;    \t\treturn result;    \t}    &nbsp;    }    &nbsp;    export class Test {    \tpublic static run() {    \t\tconst result = StringExtension.toLower("");    \t\t/*    \t\t\tresult.success = false    \t\t\tresult.errors = [ { code: 0, message: "Please provide a string" } ]    \t\t\tresult.result = null    \t\t*/    &nbsp;    \t\tconst result2 = StringExtension.toLower("HELLO");    \t\t/*    \t\t\tresult.success = true    \t\t\tresult.errors = []    \t\t\tresult.result = { lower: 'hello' }    \t\t*/    \t}    }</av-code></av-code>` }
-    });
-}
-    getClassName() {
-        return "DocLibTools";
-    }
-}
-DocLibTools.Namespace=`${moduleName}`;
-DocLibTools.Tag=`av-doc-lib-tools`;
-_.DocLibTools=DocLibTools;
-if(!window.customElements.get('av-doc-lib-tools')){window.customElements.define('av-doc-lib-tools', DocLibTools);Aventus.WebComponentInstance.registerDefinition(DocLibTools);}
-
 const DocLibWatcher = class DocLibWatcher extends DocGenericPage {
     static __style = ``;
     __getStatic() {
@@ -10748,7 +11004,7 @@ const DocLibWatcher = class DocLibWatcher extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Library - Watcher</h1><p>A watcher is an object that will notify any changes it undergoes. This is based on the <span class="cn"><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy" target="_blank" rel="noopener noreferrer">Proxy</a></span> pattern.</p><av-code language="typescript" filename="Example.lib.avt">    export function createWatcher() {    \tlet watchableObj = Aventus.Watcher.get({}, (action: WatchAction, path: string, element: any) =&gt; {    \t\tconsole.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);    \t});    \treturn watchableObj;    }</av-code></av-code><p>The callback is fired when one of the following action occured : <span class="cn">CREATED</span>, <span class="cn">UPDATED</span>, <span class="cn">DELETED</span>.</p><av-code language="typescript" filename="Example.lib.avt">    export function runWatcher() {    \tlet watchableObj = Aventus.Watcher.get({}, (action: WatchAction, path: string, element: any) =&gt; {    \t\tconsole.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);    \t});    &nbsp;    \twatchableObj.name = "John"; // Fire a CREATED    \t// the log : CREATED on name with value "John"    &nbsp;    \twatchableObj.name = "John Doe"; // Fire a UPDATED    \t// the log : UPDATED on name with value "John Doe"    &nbsp;    \tdelete watchableObj.name; // Fire a DELETED    \t// the log : DELETED on name with value "John Doe"    }</av-code></av-code>` }
+        blocks: { 'default':`<h1>Library - Watcher</h1><p>In the Aventus framework, watchable objects serve as dynamic data structures that enable developers to monitor    changes to their properties. These objects are created using the <span class="cn">Aventus.Watcher.get()</span> function, which initializes a    watchable object with optional initial properties and a callback function to handle property changes.</p><p>Consider the following example:</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        export function runWatcher() {            const watchableObj = Aventus.Watcher.get({}, (action: Aventus.WatchAction, path: string, value: any) => {                console.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);            });            watchableObj.name = "John"; // Triggers a CREATED action            // Log: CREATED on name with value "John"            watchableObj.name = "John Doe"; // Triggers an UPDATED action            // Log: UPDATED on name with value "John Doe"            delete watchableObj.name; // Triggers a DELETED action            // Log: DELETED on name with value "John Doe"        }    </pre></av-code></av-code><p>In this code snippet, <span class="cn">watchableObj</span> is a watchable object initialized without any initial    properties. The <span class="cn">Aventus.Watcher.get()</span> function also accepts a callback function, which is    invoked whenever a    property of the watchable object is created, updated, or deleted. This callback function receives parameters    indicating the action type (<span class="cn">CREATED</span>, <span class="cn">UPDATED</span>, or <span class="cn">DELETED</span>), the path of the property being modified, and its new    value.</p><p>Watchable objects enable developers to reactively respond to changes in data, facilitating real-time updates and    synchronization across different parts of their applications. By monitoring changes to watchable object properties,    developers can implement dynamic behaviors and ensure that their applications remain responsive and up-to-date.</p><p>The watcher lib is similar to <span class="cn">Signals</span> that you can find in others frameworks. You can also    find a <span class="cn">computed</span> and an <span class="cn">effect</span> that are functions.</p><h2>Effect</h2><p>In Aventus, effects are functions that are executed in response to changes in state or data within your application.    Effects are created using the <span class="cn">Aventus.Watcher.effect(fn: () =>        void)</span> function. Effects are used to perform side-effects such as logging, updating the user    interface, or interacting with external services.</p><p>Effects encapsulate logic to perform specific actions or behaviors whenever their dependencies change. For instance,    you can define an effect to log a message whenever there is a change in the first name or last name properties of a    person object.</p><p>By separating side-effects from the core logic of your application, effects help to keep your code organized,    maintainable, and predictable. They promote a declarative programming style, allowing you to focus on what your    application should do rather than how it should do it.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>            export function createEffect() {                const watchableObj = Aventus.Watcher.get({                    firstname: "John",                    lastname: "Doe"                });                &nbsp;                Aventus.Watcher.effect(() => {                    console.log(&#96;My name is &#36;{watchableObj.firstname} &#36;{watchableObj.lastname}&#96;);                })                &nbsp;                watchableObj.firstname = "Jane"; // this will print My name is Jane Doe             }        </pre></av-code></av-code><h2>Computed</h2><p>In the Aventus framework, computed values are a fundamental concept that allows developers to derive new data based    on existing data within their applications. Computed values are created using the <span class="cn">Aventus.Watcher.computed(fn: () => any)</span> function,    which enables you to define a function that computes a value based on other data or state variables.</p><p>Unlike traditional effects, computed values are expected to return a value. They encapsulate logic to calculate a new    value based on changes to their dependencies, ensuring that the computed value remains up-to-date whenever its    dependencies change.</p><p>For example, in Aventus, you can define a computed value to calculate the full name of a person based on their first    name and last name properties. Whenever either the first name or last name changes, the computed value automatically    updates to reflect the new full name, ensuring consistency and accuracy throughout your application.</p><p>Computed values provide a powerful tool for managing derived data and ensuring that your application remains    responsive to changes in state or data dependencies. By leveraging computed values, developers can streamline their    code, improve performance, and maintain a clear and consistent data model within their applications.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        export function createComputed() {            const watchableObj = Aventus.Watcher.get({                firstname: "John",                lastname: "Doe"            });            &nbsp;            const fullName = Aventus.Watcher.computed(() => {                return &#96;&#36;{watchableObj.firstname} &#36;{watchableObj.lastname}&#96;;            });            &nbsp;            console.log(fullName.value); // write "John Doe"            &nbsp;            watchableObj.firstname = "Jane"; // this will recompute the fullName            &nbsp;            console.log(fullName.value); // write "Jane Doe"        }    </pre></av-code></av-code>` }
     });
 }
     getClassName() {
@@ -10784,54 +11040,6 @@ DocLibResourceLoader.Tag=`av-doc-lib-resource-loader`;
 _.DocLibResourceLoader=DocLibResourceLoader;
 if(!window.customElements.get('av-doc-lib-resource-loader')){window.customElements.define('av-doc-lib-resource-loader', DocLibResourceLoader);Aventus.WebComponentInstance.registerDefinition(DocLibResourceLoader);}
 
-const DocLibResizeObserver = class DocLibResizeObserver extends DocGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return DocLibResizeObserver;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocLibResizeObserver.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Library - ResizeObserver</h1><p>To know when an element is changing you can use the native function <span class="cn"><a href="https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver" target="_blank">ResizeObserver</a></span>. Inside Aventus, you can find an optimized version of    ResizeObserver under <span class="cn">Aventus.ResizeObserver</span>. The behavior is the same as the native one but    behind, a <span class="cn">single instance</span> of native ResizeObserver is used and the callback function is    limited to one trigger each <span class="cn">1000 / 60 ms</span>.</p><av-code language="html" filename="Example.wc.avt">    &lt;script&gt;    \texport class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    \t\tprotected override postCreation(): void {    &nbsp;    \t\t\tconst observer = new Aventus.ResizeObserver(() =&gt; {    \t\t\t\tconsole.log("element size changed")    \t\t\t})    \t\t\tobserver.observe(this);    &nbsp;    \t\t\t// change max framerate    \t\t\tconst observer2 = new Aventus.ResizeObserver({    \t\t\t\tcallback: () =&gt; {    \t\t\t\t\tconsole.log("element size changed")    \t\t\t\t},    \t\t\t\tfps: 30    \t\t\t})    \t\t\tobserver2.observe(this);    \t\t}    \t}    &lt;/script&gt;</av-code></av-code>` }
-    });
-}
-    getClassName() {
-        return "DocLibResizeObserver";
-    }
-}
-DocLibResizeObserver.Namespace=`${moduleName}`;
-DocLibResizeObserver.Tag=`av-doc-lib-resize-observer`;
-_.DocLibResizeObserver=DocLibResizeObserver;
-if(!window.customElements.get('av-doc-lib-resize-observer')){window.customElements.define('av-doc-lib-resize-observer', DocLibResizeObserver);Aventus.WebComponentInstance.registerDefinition(DocLibResizeObserver);}
-
-const DocLibPressManager = class DocLibPressManager extends DocGenericPage {
-    static __style = `:host .options{list-style:none;padding:0;margin:0}:host .options li{margin:10px 0}:host .options li .size{display:inline-block;width:130px}`;
-    __getStatic() {
-        return DocLibPressManager;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocLibPressManager.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Library - PressManager</h1><p>The <span class="cn">PressManager</span> class is a home class to deal with <span class="cn">pointer</span>, <span class="cn">touch</span> and <span class="cn">mouse</span> event. The main job of this class is to prevent the    parent to have a trigger on an event catch by the child. The options for the PressManager are the following:</p><ul class="options">    <li>        <div class="size"><span class="cn">element</span></div>: The element to which the events must be added.    </li>    <li>        <div class="size"><span class="cn">delayDblPress</span></div>: The delay allowed between two click/touch to        trigger a double press event.    </li>    <li>        <div class="size"><span class="cn">delayLongPress</span></div>: The delay allowed before triggering a long press        event.    </li>    <li>        <div class="size"><span class="cn">forceDblPress</span></div>: Force trigger double press event to parent (use        it only if you know that the parent has a double press event because it will create latency).    </li>    <li>        <div class="size"><span class="cn">offsetDrag</span></div>: The distance in pixel that the user must move before        triggering a drag event.    </li>    <li>        <div class="size"><span class="cn">onDblPress</span></div>: Fired when double press event is detected.    </li>    <li>        <div class="size"><span class="cn">onDrag</span></div>: Fired when a drag event is detected.    </li>    <li>        <div class="size"><span class="cn">onDragEnd</span></div>: Fired when a drag event stopped.    </li>    <li>        <div class="size"><span class="cn">onDragStart</span></div>: Fired when a drag event started.    </li>    <li>        <div class="size"><span class="cn">onLongPress</span></div>: Fired when a long press event is detected.    </li>    <li>        <div class="size"><span class="cn">onPress</span></div>: Fired when a press event is detected.    </li>    <li>        <div class="size"><span class="cn">onPressEnd</span></div>: Fired when a press event stopped.    </li>    <li>        <div class="size"><span class="cn">onPressStart</span></div>: Fired when a press event started.    </li></ul><p>You must use only the property you need because your options will change the behavior of the PressManager. For    example, if you set a callback on <span class="cn">onDblPress</span>, the code must wait until the end of the <span class="cn">delayDblPress</span> to trigger the <span class="cn">onPress</span>. This is not the case if you    don't set the options.</p><p>Inside the <span class="cn">*.wcv.avt</span> you can use the attribute <span class="cn">@press</span> to create a    PressManager on this element.</p><av-code language="html" filename="Example.wc.avt">    &lt;script&gt;    \texport class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t\t@ViewElement()    \t\tprotected buttonEl: HTMLButtonElement;    &nbsp;    \t\tpublic onPress() { }    &nbsp;    \t\tprotected override postCreation(): void {    \t\t\t// This is the same as @press="onPress"    \t\t\tnew Aventus.PressManager({    \t\t\t\telement: this.buttonEl,    \t\t\t\tonPress: () =&gt; {    \t\t\t\t\tthis.onPress();    \t\t\t\t}    \t\t\t});    \t\t}    \t}    &lt;/script&gt;    &nbsp;    &lt;template&gt;    \t&lt;button @element="buttonEl" @press="onPress"&gt;Click&lt;/button&gt;    &lt;/template&gt;</av-code></av-code>` }
-    });
-}
-    getClassName() {
-        return "DocLibPressManager";
-    }
-}
-DocLibPressManager.Namespace=`${moduleName}`;
-DocLibPressManager.Tag=`av-doc-lib-press-manager`;
-_.DocLibPressManager=DocLibPressManager;
-if(!window.customElements.get('av-doc-lib-press-manager')){window.customElements.define('av-doc-lib-press-manager', DocLibPressManager);Aventus.WebComponentInstance.registerDefinition(DocLibPressManager);}
-
 const DocLibInstance = class DocLibInstance extends DocGenericPage {
     static __style = ``;
     __getStatic() {
@@ -10855,30 +11063,6 @@ DocLibInstance.Namespace=`${moduleName}`;
 DocLibInstance.Tag=`av-doc-lib-instance`;
 _.DocLibInstance=DocLibInstance;
 if(!window.customElements.get('av-doc-lib-instance')){window.customElements.define('av-doc-lib-instance', DocLibInstance);Aventus.WebComponentInstance.registerDefinition(DocLibInstance);}
-
-const DocLibCallback = class DocLibCallback extends DocGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return DocLibCallback;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocLibCallback.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Library - Callback</h1><p>Aventus script files are based on Typescript. The main advantage is that everything is typed but when you will use    <span class="cn">custom event</span> it will be a nightmare to keep your type. This is why inside Aventus you can    find two classes that are doing the same jobs as Event but are type friendly : <span class="cn">Callback</span> and    <span class="cn">CallbackGroup</span>.</p><av-code language="typescript" filename="EmitterNoCallback.wcl.avt">    export class EmitterNoCallback extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \tpublic constructor() {    \t\tsuper();    \t\tsetInterval(() =&gt; {    \t\t\tthis.dispatchEvent(new CustomEvent("myEvent", {    \t\t\t\tdetail: {    \t\t\t\t\ttime: Date.now()    \t\t\t\t}    \t\t\t}));    \t\t}, 5000);    \t}    &nbsp;    }</av-code></av-code><av-code language="typescript" filename="ReceiverNoCallback.wcl.avt">    export class ReceiverNoCallback extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \tprotected override postCreation(): void {    \t\tlet emitter = document.querySelector&lt;EmitterNoCallback&gt;("#emitter");    \t\temitter.addEventListener("myEvent", (e: CustomEvent) =&gt; {    \t\t\tconsole.log("Time is : " + e.detail.time);    \t\t});    \t}    &nbsp;    }</av-code></av-code><p>There are many problems inside the code :</p><ul>    <li>You don't know that an event <span class="cn">myEvent</span> can be emitted.</li>    <li>You don't know what the event will have as details ( <span class="ca">time</span> ).</li>    <li>If the event name change, you won't be able to detect errors inside your code.</li>    <li>If more details will be added, nothing told you that you can use it.</li></ul><p>As you can see, you really dependend on the documentation. What a nightmare when you create bigger project. Now, have    a look at the code below with <span class="cn">Callback</span>.</p><av-code language="typescript" filename="EmitterCallback.wcl.avt">    export class EmitterCallback extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \tprivate _myEvent: Aventus.Callback&lt;(time: number) =&gt; void&gt; = new Aventus.Callback();    &nbsp;    \t// Use getter to prevent external set    \tpublic get myEvent(): Aventus.Callback&lt;(time: number) =&gt; void&gt; {    \t\treturn this._myEvent;    \t}    &nbsp;    \tpublic constructor() {    \t\tsuper();    \t\tsetInterval(() =&gt; {    \t\t\tthis.myEvent.trigger([Date.now()]);    \t\t}, 5000);    \t}    &nbsp;    }</av-code></av-code><av-code language="typescript" filename="ReceiverCallback.wcl.avt">    export class ReceiverCallback extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \tprotected override postCreation(): void {    \t\tlet emitter = document.querySelector&lt;EmitterCallback&gt;("#emitter");    \t\temitter.myEvent.add((time: number) =&gt; {    \t\t\tconsole.log("Time is : " + time);    \t\t});    \t}    &nbsp;    }</av-code></av-code><p>As you can see, the behavior is almost the same but typing is preserved.</p><p>The <span class="cn">CallbackGroup</span> class is doing the same thing as the <span class="cn">Callback</span> but    when you <span class="cn">add</span>, <span class="cn">remove</span> or <span class="cn">trigger</span>, you must    provide a key (string or number) to trigger or store only a group of callbacks.</p><av-code language="typescript" filename="Log.wcl.avt">    export enum LogLvl {    \tInfo,    \tWarning,    \tError    }    &nbsp;    export class LogEmitter extends Aventus.WebComponent implements Aventus.DefaultComponent {    \tprivate _onNewLog: Aventus.CallbackGroup&lt;(msg: string) =&gt; void&gt; = new Aventus.CallbackGroup();    \t// Use getter to prevent external set    \tpublic get onNewLog(): Aventus.CallbackGroup&lt;(msg: string) =&gt; void&gt; {    \t\t return this._onNewLog;    \t}    &nbsp;    \t/**    \t* Trigger the log callback only for the lvl concerned    \t*/    \tpublic addLog(msg: string, lvl: LogLvl) {    \t\tthis.onNewLog.trigger(lvl, [msg]);    \t}    }</av-code></av-code>` }
-    });
-}
-    getClassName() {
-        return "DocLibCallback";
-    }
-}
-DocLibCallback.Namespace=`${moduleName}`;
-DocLibCallback.Tag=`av-doc-lib-callback`;
-_.DocLibCallback=DocLibCallback;
-if(!window.customElements.get('av-doc-lib-callback')){window.customElements.define('av-doc-lib-callback', DocLibCallback);Aventus.WebComponentInstance.registerDefinition(DocLibCallback);}
 
 const DocLibCreate = class DocLibCreate extends DocGenericPage {
     static __style = ``;
@@ -11439,6 +11623,243 @@ BaseEditor.Namespace=`${moduleName}`;
 BaseEditor.Tag=`av-base-editor`;
 _.BaseEditor=BaseEditor;
 if(!window.customElements.get('av-base-editor')){window.customElements.define('av-base-editor', BaseEditor);Aventus.WebComponentInstance.registerDefinition(BaseEditor);}
+
+const DocWcLoopEditor = class DocWcLoopEditor extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocWcLoopEditor;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcLoopEditor.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocWcLoopEditor";
+    }
+}
+DocWcLoopEditor.Namespace=`${moduleName}`;
+DocWcLoopEditor.Tag=`av-doc-wc-loop-editor`;
+_.DocWcLoopEditor=DocWcLoopEditor;
+if(!window.customElements.get('av-doc-wc-loop-editor')){window.customElements.define('av-doc-wc-loop-editor', DocWcLoopEditor);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor);}
+
+const DocWcConditionEditor1 = class DocWcConditionEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocWcConditionEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcConditionEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocWcConditionEditor1";
+    }
+}
+DocWcConditionEditor1.Namespace=`${moduleName}`;
+DocWcConditionEditor1.Tag=`av-doc-wc-condition-editor-1`;
+_.DocWcConditionEditor1=DocWcConditionEditor1;
+if(!window.customElements.get('av-doc-wc-condition-editor-1')){window.customElements.define('av-doc-wc-condition-editor-1', DocWcConditionEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcConditionEditor1);}
+
+const DocLibWatcherEditor1 = class DocLibWatcherEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocLibWatcherEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibWatcherEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocLibWatcherEditor1";
+    }
+}
+DocLibWatcherEditor1.Namespace=`${moduleName}`;
+DocLibWatcherEditor1.Tag=`av-doc-lib-watcher-editor-1`;
+_.DocLibWatcherEditor1=DocLibWatcherEditor1;
+if(!window.customElements.get('av-doc-lib-watcher-editor-1')){window.customElements.define('av-doc-lib-watcher-editor-1', DocLibWatcherEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibWatcherEditor1);}
+
+const DocLibResourceLoaderEditor1 = class DocLibResourceLoaderEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocLibResourceLoaderEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibResourceLoaderEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocLibResourceLoaderEditor1";
+    }
+}
+DocLibResourceLoaderEditor1.Namespace=`${moduleName}`;
+DocLibResourceLoaderEditor1.Tag=`av-doc-lib-resource-loader-editor-1`;
+_.DocLibResourceLoaderEditor1=DocLibResourceLoaderEditor1;
+if(!window.customElements.get('av-doc-lib-resource-loader-editor-1')){window.customElements.define('av-doc-lib-resource-loader-editor-1', DocLibResourceLoaderEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibResourceLoaderEditor1);}
+
+const DocLibInstanceEditor1 = class DocLibInstanceEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocLibInstanceEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibInstanceEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocLibInstanceEditor1";
+    }
+}
+DocLibInstanceEditor1.Namespace=`${moduleName}`;
+DocLibInstanceEditor1.Tag=`av-doc-lib-instance-editor-1`;
+_.DocLibInstanceEditor1=DocLibInstanceEditor1;
+if(!window.customElements.get('av-doc-lib-instance-editor-1')){window.customElements.define('av-doc-lib-instance-editor-1', DocLibInstanceEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibInstanceEditor1);}
+
+const DocLibToolsEditor2 = class DocLibToolsEditor2 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocLibToolsEditor2;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibToolsEditor2.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Tools">    <av-code language="json" filename="Tools/aventus.conf.avt">        <pre>            {            	"module": "Tools",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/StringExtension.lib.avt">        <pre>            // List of available codes            export enum StringErrorCode {                EmptyString = 400            }            &nbsp;            // Error            export class StringError extends Aventus.GenericError&lt;StringErrorCode&gt; { }            &nbsp;            // Result of the function ( = container)            export class StringResult extends Aventus.ResultWithError&lt;{ lower: string; }, StringError&gt; { }            &nbsp;            export class StringExtension {            &nbsp;                public static toLower(txt: string): StringResult {                    let result = new StringResult();                    &#105;f(!txt) {                        let error = new StringError(StringErrorCode.EmptyString, "Please provide a string");                        result.errors.push(error);                    }                    else {                        result.result = { lower: txt.toLowerCase() };                    }            &nbsp;                    return result;                }            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Test.lib.avt">        <pre>            import { StringExtension } from "./StringExtension.lib.avt";            &nbsp;            export class Test {                public static run() {            		const result = StringExtension.toLower("");            		/*            			result.success = false            			result.errors = [ { code: 400, message: "Please provide a string" } ]            			result.result = undefined            		*/            &nbsp;            		const result2 = StringExtension.toLower("HELLO");            		/*            			result.success = true            			result.errors = []            			result.result = { lower: 'hello' }            		*/            	}            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocLibToolsEditor2";
+    }
+    hightlightFiles() {
+        return [
+            'Tools/src/StringExtension.lib.avt',
+            'Tools/src/Test.lib.avt'
+        ];
+    }
+    startupFile() {
+        return 'Tools/src/StringExtension.lib.avt';
+    }
+}
+DocLibToolsEditor2.Namespace=`${moduleName}`;
+DocLibToolsEditor2.Tag=`av-doc-lib-tools-editor-2`;
+_.DocLibToolsEditor2=DocLibToolsEditor2;
+if(!window.customElements.get('av-doc-lib-tools-editor-2')){window.customElements.define('av-doc-lib-tools-editor-2', DocLibToolsEditor2);Aventus.WebComponentInstance.registerDefinition(DocLibToolsEditor2);}
+
+const DocLibToolsEditor3 = class DocLibToolsEditor3 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocLibToolsEditor3;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibToolsEditor3.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Tools">    <av-code language="json" filename="Tools/aventus.conf.avt">        <pre>            {            	"module": "Tools",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Test.lib.avt">        <pre>            export class Test {                // Create a mutex instance                private static mutex: Aventus.Mutex = new Aventus.Mutex();            &nbsp;                private static counter: number = 0;                private static numThreads: number = 100;            &nbsp;                // Function to update the shared counter variable                private static async updateCounter() {                    // Wait &#102;or the mutex to become available                    await this.mutex.waitOne();                    try {                        // Increment the counter                        this.counter++;                        console.log(this.counter);                        await Aventus.sleep(100);                    } finally {                        // Release the mutex                        this.mutex.release();                    }                }            &nbsp;                private static async updateCounter2() {                    // Wait &#102;or the mutex to become available                    await this.mutex.safeRunAsync(async () =&gt; {                        this.counter++;                        console.log(this.counter);                        await Aventus.sleep(100);                    })                }            &nbsp;            &nbsp;                public static run() {                    // Multiple threads call the updateCounter function concurrently                    &#102;or(let i = 0; i &lt; this.numThreads; i++) {                        this.updateCounter();                    }                    console.log("loop done");                }            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocLibToolsEditor3";
+    }
+}
+DocLibToolsEditor3.Namespace=`${moduleName}`;
+DocLibToolsEditor3.Tag=`av-doc-lib-tools-editor-3`;
+_.DocLibToolsEditor3=DocLibToolsEditor3;
+if(!window.customElements.get('av-doc-lib-tools-editor-3')){window.customElements.define('av-doc-lib-tools-editor-3', DocLibToolsEditor3);Aventus.WebComponentInstance.registerDefinition(DocLibToolsEditor3);}
+
+const DocLibToolsEditor1 = class DocLibToolsEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocLibToolsEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibToolsEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Tools">    <av-code language="json" filename="Tools/aventus.conf.avt">        <pre>            {            	"module": "Tools",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Parser.lib.avt">        <pre>            import { Person } from "./Person.data.avt";            &nbsp;            export class Parser {                public static parse() {                    // JSON data received from an API with $type indicating the class name                    const jsonDataWithType = JSON.parse('{"$type": "Tools.Person", "id": 1, "name": "John", "age": 30}');            &nbsp;                    // Convert JSON data to JavaScript object using Converter.transform                    const personWithType = Aventus.Converter.transform&lt;Person&gt;(jsonDataWithType);            &nbsp;                    console.log(personWithType); // Output: Person { id: 1, name: 'John', age: 30 }                    console.log(personWithType instanceof Person); // Output: true                }            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Person.data.avt">        <pre>            export class Person extends Aventus.Data implements Aventus.IData {                // The static field Fullname = 'Tools.Person'            	public id: number = 0;            	public name: string = "";            	public age: number = 0;            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocLibToolsEditor1";
+    }
+    startupFile() {
+        return 'Tools/src/Parser.lib.avt';
+    }
+}
+DocLibToolsEditor1.Namespace=`${moduleName}`;
+DocLibToolsEditor1.Tag=`av-doc-lib-tools-editor-1`;
+_.DocLibToolsEditor1=DocLibToolsEditor1;
+if(!window.customElements.get('av-doc-lib-tools-editor-1')){window.customElements.define('av-doc-lib-tools-editor-1', DocLibToolsEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibToolsEditor1);}
+
+const DocLibCallbackEditor3 = class DocLibCallbackEditor3 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocLibCallbackEditor3;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibCallbackEditor3.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Callback">    <av-code language="json" filename="Callback/aventus.conf.avt">        <pre>            {            	"module": "Callback",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Callback/src/LogEmitter/LogEmitter.wcl.avt">        <pre>            export enum LogLvl {                Info,                Warning,                Error            }            &nbsp;            export class LogEmitter extends Aventus.WebComponent implements Aventus.DefaultComponent {                public readonly onNewLog: Aventus.CallbackGroup&lt;(msg: string) =&gt; void&gt; = new Aventus.CallbackGroup();            &nbsp;                /**                * Trigger the log callback only &#102;or the lvl concerned                */                public addLog(msg: string, lvl: LogLvl) {                    this.onNewLog.trigger(lvl, [msg]);                }            &nbsp;                public readError() {                    this.onNewLog.add(LogLvl.Error, (msg) =&gt; {            			console.error(msg);                    });                }            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Callback/src/LogEmitter/LogEmitter.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/src/LogEmitter/LogEmitter.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Callback&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-emitter&gt;&lt;/av-emitter&gt;                &lt;av-receiver&gt;&lt;/av-receiver&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocLibCallbackEditor3";
+    }
+}
+DocLibCallbackEditor3.Namespace=`${moduleName}`;
+DocLibCallbackEditor3.Tag=`av-doc-lib-callback-editor-3`;
+_.DocLibCallbackEditor3=DocLibCallbackEditor3;
+if(!window.customElements.get('av-doc-lib-callback-editor-3')){window.customElements.define('av-doc-lib-callback-editor-3', DocLibCallbackEditor3);Aventus.WebComponentInstance.registerDefinition(DocLibCallbackEditor3);}
 
 const DocWcInterpolationEditor1 = class DocWcInterpolationEditor1 extends BaseEditor {
     static __style = ``;
@@ -14240,6 +14661,132 @@ DocLibAnimation.Tag=`av-doc-lib-animation`;
 _.DocLibAnimation=DocLibAnimation;
 if(!window.customElements.get('av-doc-lib-animation')){window.customElements.define('av-doc-lib-animation', DocLibAnimation);Aventus.WebComponentInstance.registerDefinition(DocLibAnimation);}
 
+const DocLibCallbackEditor1 = class DocLibCallbackEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocLibCallbackEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibCallbackEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Callback">    <av-code language="json" filename="Callback/aventus.conf.avt">        <pre>            {            	"module": "Callback",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Callback/src/Emitter/Emitter.wcl.avt">        <pre>            export class Emitter extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                private emitMyEvent() {                    setInterval(() =&gt; {                        this.dispatchEvent(new CustomEvent("myEvent", {                            detail: {                                time: Date.now()                            }                        }));                    }, 1000);                }                protected override postCreation(): void {                    this.emitMyEvent();                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Callback/src/Emitter/Emitter.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/src/Emitter/Emitter.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Callback/src/Receiver/Receiver.wcl.avt">        <pre>            import { Emitter } from "../Emitter/Emitter.wcl.avt";            &nbsp;            export class Receiver extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                protected override postCreation(): void {                    let emitter = document.querySelector&lt;Emitter&gt;("av-emitter");                    &#105;f(emitter) {                        emitter.addEventListener("myEvent", (e: CustomEvent) =&gt; {                            this.shadowRoot.innerHTML = 'Time is ' + e.detail.time;                        });                    }                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Callback/src/Receiver/Receiver.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/src/Receiver/Receiver.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Callback&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-emitter&gt;&lt;/av-emitter&gt;                &lt;av-receiver&gt;&lt;/av-receiver&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocLibCallbackEditor1";
+    }
+    hightlightFiles() {
+        return [
+            'Callback/src/Receiver/Receiver.wcl.avt',
+            'Callback/src/Emitter/Emitter.wcl.avt',
+        ];
+    }
+    defineResult() {
+        const div = document.createElement("DIV");
+        div.appendChild(new DocLibCallbackEditor1Emitter());
+        div.appendChild(new DocLibCallbackEditor1Receiver());
+        return div;
+    }
+}
+DocLibCallbackEditor1.Namespace=`${moduleName}`;
+DocLibCallbackEditor1.Tag=`av-doc-lib-callback-editor-1`;
+_.DocLibCallbackEditor1=DocLibCallbackEditor1;
+if(!window.customElements.get('av-doc-lib-callback-editor-1')){window.customElements.define('av-doc-lib-callback-editor-1', DocLibCallbackEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibCallbackEditor1);}
+
+const DocLibCallbackEditor2 = class DocLibCallbackEditor2 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocLibCallbackEditor2;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibCallbackEditor2.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Callback">    <av-code language="json" filename="Callback/aventus.conf.avt">        <pre>            {            	"module": "Callback",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Callback/src/Emitter/Emitter.wcl.avt">        <pre>            export class Emitter extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                public readonly myEvent: Aventus.Callback&lt;(time: number) =&gt; void&gt; = new Aventus.Callback();                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                private emitMyEvent() {                    setInterval(() =&gt; {                        this.myEvent.trigger([Date.now()]);                    }, 1000);                }                protected override postCreation(): void {                    this.emitMyEvent();                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Callback/src/Emitter/Emitter.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/src/Emitter/Emitter.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Callback/src/Receiver/Receiver.wcl.avt">        <pre>            import { Emitter } from "../Emitter/Emitter.wcl.avt";            &nbsp;            export class Receiver extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                protected override postCreation(): void {                    let emitter = document.querySelector&lt;Emitter&gt;("av-emitter");                    &#105;f(emitter) {                        emitter.myEvent.add((time: number) =&gt; {                            this.shadowRoot.innerHTML = 'Time is ' + time;                        });                    }                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Callback/src/Receiver/Receiver.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/src/Receiver/Receiver.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Callback&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-emitter&gt;&lt;/av-emitter&gt;                &lt;av-receiver&gt;&lt;/av-receiver&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocLibCallbackEditor2";
+    }
+    hightlightFiles() {
+        return [
+            'Callback/src/Receiver/Receiver.wcl.avt',
+            'Callback/src/Emitter/Emitter.wcl.avt',
+        ];
+    }
+    defineResult() {
+        const div = document.createElement("DIV");
+        div.appendChild(new DocLibCallbackEditor2Emitter());
+        div.appendChild(new DocLibCallbackEditor2Receiver());
+        return div;
+    }
+}
+DocLibCallbackEditor2.Namespace=`${moduleName}`;
+DocLibCallbackEditor2.Tag=`av-doc-lib-callback-editor-2`;
+_.DocLibCallbackEditor2=DocLibCallbackEditor2;
+if(!window.customElements.get('av-doc-lib-callback-editor-2')){window.customElements.define('av-doc-lib-callback-editor-2', DocLibCallbackEditor2);Aventus.WebComponentInstance.registerDefinition(DocLibCallbackEditor2);}
+
+const DocLibCallback = class DocLibCallback extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocLibCallback;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibCallback.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Library - Callback</h1><p>Aventus script files are based on Typescript. The main advantage is that everything is typed but when you will use    <span class="cn">custom event</span> it will be a nightmare to keep your type. This is why inside Aventus you can    find two classes that are doing the same jobs as Event but are type friendly : <span class="cn">Callback</span> and    <span class="cn">CallbackGroup</span>.</p><av-doc-lib-callback-editor-1></av-doc-lib-callback-editor-1><p>There are many problems inside the code :</p><ul>    <li>You don't know that an event <span class="cn">myEvent</span> can be emitted.</li>    <li>You don't know what the event will have as details ( <span class="ca">time</span> ).</li>    <li>If the event name change, you won't be able to detect errors inside your code.</li>    <li>If more details will be added, nothing told you that you can use it.</li></ul><p>As you can see, you really dependend on the documentation. What a nightmare when you create bigger project. Now, have    a look at the code below with <span class="cn">Callback</span>.</p><av-doc-lib-callback-editor-2></av-doc-lib-callback-editor-2><p>As you can see, the behavior is almost the same but typing is preserved.</p><p>The <span class="cn">CallbackGroup</span> class is doing the same thing as the <span class="cn">Callback</span> but    when you <span class="cn">add</span>, <span class="cn">remove</span> or <span class="cn">trigger</span>, you must    provide a key (string or number) to trigger or store only a group of callbacks.</p><av-doc-lib-callback-editor-3></av-doc-lib-callback-editor-3>` }
+    });
+}
+    getClassName() {
+        return "DocLibCallback";
+    }
+}
+DocLibCallback.Namespace=`${moduleName}`;
+DocLibCallback.Tag=`av-doc-lib-callback`;
+_.DocLibCallback=DocLibCallback;
+if(!window.customElements.get('av-doc-lib-callback')){window.customElements.define('av-doc-lib-callback', DocLibCallback);Aventus.WebComponentInstance.registerDefinition(DocLibCallback);}
+
+const DocLibDragAndDropEditor1 = class DocLibDragAndDropEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocLibDragAndDropEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibDragAndDropEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="DragDrop">    <av-code language="json" filename="DragDrop/aventus.conf.avt">        <pre>            {            	"module": "DragDrop",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="DragDrop/src/Example/Example.wcl.avt">        <pre>            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                protected override postCreation(): void {                    new Aventus.DragAndDrop({            			element: this            		});                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="DragDrop/src/Example/Example.wcs.avt">        <pre>            :host {            	width: 20px;            	height: 20px;            	background-color: red;            	position: absolute;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="DragDrop/src/Example/Example.wcv.avt">        <pre>            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="DragDrop/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Drag&Drop&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-example&gt;&lt;/av-example&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocLibDragAndDropEditor1";
+    }
+    defineResult() {
+        return new DocLibDragAndDropEditor1Example();
+    }
+}
+DocLibDragAndDropEditor1.Namespace=`${moduleName}`;
+DocLibDragAndDropEditor1.Tag=`av-doc-lib-drag-and-drop-editor-1`;
+_.DocLibDragAndDropEditor1=DocLibDragAndDropEditor1;
+if(!window.customElements.get('av-doc-lib-drag-and-drop-editor-1')){window.customElements.define('av-doc-lib-drag-and-drop-editor-1', DocLibDragAndDropEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibDragAndDropEditor1);}
+
 const DocLibDragAndDrop = class DocLibDragAndDrop extends DocGenericPage {
     static __style = `:host .options{list-style:none;margin:0}:host .options li{margin:15px 0;text-align:justify}:host .options li .size{display:inline-block;width:170px}`;
     __getStatic() {
@@ -14252,7 +14799,7 @@ const DocLibDragAndDrop = class DocLibDragAndDrop extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Library - Drag&Drop</h1><p>If you need to drag&drop a visual element you can use <span class="cn">Aventus.DragAndDrop</span>. This code will    move a target by setting a <span class="cn">left</span> and a <span class="cn">top</span>. The drag&drop can be    instanciate with the following parameters: </p><ul class="options">    <li>        <div class="size"><span class="cn">applyDrag</span></div>: Determine if the left and top value must be set or        not    </li>    <li>        <div class="size"><span class="cn">element</span></div>: The element that will move    </li>    <li>        <div class="size"><span class="cn">elementTrigger</span></div>: The element that listen the drag event; default        is element    </li>    <li>        <div class="size"><span class="cn">offsetDrag</span></div>: Set the default offset for the drag trigger; default        is DragAndDrop.defaultOffsetDrag    </li>    <li>        <div class="size"><span class="cn">shadow.enable</span></div>: If set to true, the drag and drop will create a        shadow element while dragging and removing it on drop. It will not move the original element anymore    </li>    <li>        <div class="size"><span class="cn">shadow.container</span></div>: The container where the shadow element will be        added, default is body    </li>    <li>        <div class="size"><span class="cn">shadow.removeOnStop</span></div>: Remove shadow from DOM tree at the end    </li>    <li>        <div class="size"><span class="cn">shadow.transform()</span></div>: Add custom transformation for the shadow        element like adding class    </li>    <li>        <div class="size"><span class="cn">strict</span></div>: If set to false, the element will be considered as in        the target if it touches it    </li>    <li>        <div class="size"><span class="cn">targets</span></div>: The targets for the drop action    </li>    <li>        <div class="size"><span class="cn">usePercent</span></div>: Use percent instead of pixel    </li>    <li>        <div class="size"><span class="cn">isDragEnable()</span></div>: Set a function to determine if drag is active or        not    </li>    <li>        <div class="size"><span class="cn">getZoom()</span></div>: Set a function to determine the current zoom; default        is 1    </li>    <li>        <div class="size"><span class="cn">getOffsetX()</span></div>: Set a function to get offset X in px related to        element.offsetTarget    </li>    <li>        <div class="size"><span class="cn">getOffsetY()</span></div>: Set a function to get offset Y in px related to        element.offsetTarget    </li>    <li>        <div class="size"><span class="cn">onPointerDown()</span></div>: Set a function that will be fired when pointer        down on the elementTrigger    </li>    <li>        <div class="size"><span class="cn">onPointerUp()</span></div>: Set a function that will be fired when pointer up    </li>    <li>        <div class="size"><span class="cn">onStart()</span></div>: Set a function that will be fired when drag start    </li>    <li>        <div class="size"><span class="cn">onMove()</span></div>: Set a function that will be fired when the element        move; trigger even if applyDrag = false    </li>    <li>        <div class="size"><span class="cn">onStop()</span></div>: Set a function that will be fired when drag stop    </li>    <li>        <div class="size"><span class="cn">onDrop()</span></div>: Set a function that will be fired after drop if at        least one target found    </li></ul><p>The simplest example is the following :</p><av-code language="css" filename="Example.wcs.avt">    :host {    \twidth: 20px;    \theight: 20px;    \tbackground-color: red;    \tposition: absolute;    }</av-code></av-code><av-code language="typescript" filename="Example.wcl.avt">    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \tprotected override postCreation(): void {    \t\tnew Aventus.DragAndDrop({    \t\t\telement: this    \t\t});    \t}    }</av-code></av-code><av-result>    <av-doc-lib-drag-and-drop-example></av-doc-lib-drag-and-drop-example></av-result>` }
+        blocks: { 'default':`<h1>Library - Drag&Drop</h1><p>If you need to drag&drop a visual element you can use <span class="cn">Aventus.DragAndDrop</span>. This code will    move a target by setting a <span class="cn">left</span> and a <span class="cn">top</span>. The drag&drop can be    instanciate with the following parameters: </p><ul class="options">    <li>        <div class="size"><span class="cn">applyDrag</span></div>: Determine if the left and top value must be set or        not    </li>    <li>        <div class="size"><span class="cn">element</span></div>: The element that will move    </li>    <li>        <div class="size"><span class="cn">elementTrigger</span></div>: The element that listen the drag event; default        is element    </li>    <li>        <div class="size"><span class="cn">offsetDrag</span></div>: Set the default offset for the drag trigger; default        is DragAndDrop.defaultOffsetDrag    </li>    <li>        <div class="size"><span class="cn">shadow.enable</span></div>: If set to true, the drag and drop will create a        shadow element while dragging and removing it on drop. It will not move the original element anymore    </li>    <li>        <div class="size"><span class="cn">shadow.container</span></div>: The container where the shadow element will be        added, default is body    </li>    <li>        <div class="size"><span class="cn">shadow.removeOnStop</span></div>: Remove shadow from DOM tree at the end    </li>    <li>        <div class="size"><span class="cn">shadow.transform()</span></div>: Add custom transformation for the shadow        element like adding class    </li>    <li>        <div class="size"><span class="cn">strict</span></div>: If set to false, the element will be considered as in        the target if it touches it    </li>    <li>        <div class="size"><span class="cn">targets</span></div>: The targets for the drop action    </li>    <li>        <div class="size"><span class="cn">usePercent</span></div>: Use percent instead of pixel    </li>    <li>        <div class="size"><span class="cn">isDragEnable()</span></div>: Set a function to determine if drag is active or        not    </li>    <li>        <div class="size"><span class="cn">getZoom()</span></div>: Set a function to determine the current zoom; default        is 1    </li>    <li>        <div class="size"><span class="cn">getOffsetX()</span></div>: Set a function to get offset X in px related to        element.offsetTarget    </li>    <li>        <div class="size"><span class="cn">getOffsetY()</span></div>: Set a function to get offset Y in px related to        element.offsetTarget    </li>    <li>        <div class="size"><span class="cn">onPointerDown()</span></div>: Set a function that will be fired when pointer        down on the elementTrigger    </li>    <li>        <div class="size"><span class="cn">onPointerUp()</span></div>: Set a function that will be fired when pointer up    </li>    <li>        <div class="size"><span class="cn">onStart()</span></div>: Set a function that will be fired when drag start    </li>    <li>        <div class="size"><span class="cn">onMove()</span></div>: Set a function that will be fired when the element        move; trigger even if applyDrag = false    </li>    <li>        <div class="size"><span class="cn">onStop()</span></div>: Set a function that will be fired when drag stop    </li>    <li>        <div class="size"><span class="cn">onDrop()</span></div>: Set a function that will be fired after drop if at        least one target found    </li></ul><p>The simplest example is the following :</p><av-doc-lib-drag-and-drop-editor-1></av-doc-lib-drag-and-drop-editor-1>` }
     });
 }
     getClassName() {
@@ -14263,6 +14810,134 @@ DocLibDragAndDrop.Namespace=`${moduleName}`;
 DocLibDragAndDrop.Tag=`av-doc-lib-drag-and-drop`;
 _.DocLibDragAndDrop=DocLibDragAndDrop;
 if(!window.customElements.get('av-doc-lib-drag-and-drop')){window.customElements.define('av-doc-lib-drag-and-drop', DocLibDragAndDrop);Aventus.WebComponentInstance.registerDefinition(DocLibDragAndDrop);}
+
+const DocLibPressManagerEditor1 = class DocLibPressManagerEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocLibPressManagerEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibPressManagerEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="PressManager">    <av-code language="json" filename="PressManager/aventus.conf.avt">        <pre>            {            	"module": "PressManager",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="PressManager/src/Example/Example.wcl.avt">        <pre>            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                @ViewElement()                protected buttonEl!: HTMLButtonElement;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 *                  */                protected onPress() {                    alert("Press with @press");                }            &nbsp;                protected override postCreation(): void {                    new Aventus.PressManager({                        element: this.buttonEl,                        onPress: () =&gt; {            				alert("Press with Aventus.PressManager");                        }                    });                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="PressManager/src/Example/Example.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="PressManager/src/Example/Example.wcv.avt">        <pre>            &lt;button @element="buttonEl"&gt;Click 1&lt;/button&gt;            &lt;button @press="onPress"&gt;Click 2&lt;/button&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="PressManager/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;PressManager&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-example&gt;&lt;/av-example&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocLibPressManagerEditor1";
+    }
+    defineResult() {
+        return new DocLibPressManagerEditor1Example();
+    }
+}
+DocLibPressManagerEditor1.Namespace=`${moduleName}`;
+DocLibPressManagerEditor1.Tag=`av-doc-lib-press-manager-editor-1`;
+_.DocLibPressManagerEditor1=DocLibPressManagerEditor1;
+if(!window.customElements.get('av-doc-lib-press-manager-editor-1')){window.customElements.define('av-doc-lib-press-manager-editor-1', DocLibPressManagerEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibPressManagerEditor1);}
+
+const DocLibPressManager = class DocLibPressManager extends DocGenericPage {
+    static __style = `:host .options{list-style:none;padding:0;margin:0}:host .options li{margin:10px 0}:host .options li .size{display:inline-block;width:130px}`;
+    __getStatic() {
+        return DocLibPressManager;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibPressManager.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Library - PressManager</h1><p>The <span class="cn">PressManager</span> class is a home class to deal with <span class="cn">pointer</span>, <span class="cn">touch</span> and <span class="cn">mouse</span> event. The main job of this class is to prevent the    parent to have a trigger on an event catch by the child. The options for the PressManager are the following:</p><ul class="options">    <li>        <div class="size"><span class="cn">element</span></div>: The element to which the events must be added.    </li>    <li>        <div class="size"><span class="cn">delayDblPress</span></div>: The delay allowed between two click/touch to        trigger a double press event.    </li>    <li>        <div class="size"><span class="cn">delayLongPress</span></div>: The delay allowed before triggering a long press        event.    </li>    <li>        <div class="size"><span class="cn">forceDblPress</span></div>: Force trigger double press event to parent (use        it only if you know that the parent has a double press event because it will create latency).    </li>    <li>        <div class="size"><span class="cn">offsetDrag</span></div>: The distance in pixel that the user must move before        triggering a drag event.    </li>    <li>        <div class="size"><span class="cn">stopPropagation</span></div>: If the lib must stop propagation of the event    </li>    <li>        <div class="size"><span class="cn">buttonAllowed</span></div>: List of mouse buttons allowed    </li>    <li>        <div class="size"><span class="cn">onDblPress</span></div>: Fired when double press event is detected.    </li>    <li>        <div class="size"><span class="cn">onDrag</span></div>: Fired when a drag event is detected.    </li>    <li>        <div class="size"><span class="cn">onDragEnd</span></div>: Fired when a drag event stopped.    </li>    <li>        <div class="size"><span class="cn">onDragStart</span></div>: Fired when a drag event started.    </li>    <li>        <div class="size"><span class="cn">onLongPress</span></div>: Fired when a long press event is detected.    </li>    <li>        <div class="size"><span class="cn">onPress</span></div>: Fired when a press event is detected.    </li>    <li>        <div class="size"><span class="cn">onPressEnd</span></div>: Fired when a press event stopped.    </li>    <li>        <div class="size"><span class="cn">onPressStart</span></div>: Fired when a press event started.    </li></ul><p>You must use only the property you need because your options will change the behavior of the PressManager. For    example, if you set a callback on <span class="cn">onDblPress</span>, the code must wait until the end of the <span class="cn">delayDblPress</span> to trigger the <span class="cn">onPress</span>. This is not the case if you    don't set the options.</p><p>Inside the <span class="cn">*.wcv.avt</span> you can use the attribute <span class="cn">@press</span> to create a    PressManager on this element.</p><av-doc-lib-press-manager-editor-1></av-doc-lib-press-manager-editor-1>` }
+    });
+}
+    getClassName() {
+        return "DocLibPressManager";
+    }
+}
+DocLibPressManager.Namespace=`${moduleName}`;
+DocLibPressManager.Tag=`av-doc-lib-press-manager`;
+_.DocLibPressManager=DocLibPressManager;
+if(!window.customElements.get('av-doc-lib-press-manager')){window.customElements.define('av-doc-lib-press-manager', DocLibPressManager);Aventus.WebComponentInstance.registerDefinition(DocLibPressManager);}
+
+const DocLibResizeObserverEditor1 = class DocLibResizeObserverEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocLibResizeObserverEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibResizeObserverEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="ResizeObserver">    <av-code language="json" filename="ResizeObserver/aventus.conf.avt">        <pre>            {            	"module": "ResizeObserver",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="ResizeObserver/src/Example/Example.wcl.avt">        <pre>            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                protected override postCreation(): void {            		const observer = new Aventus.ResizeObserver(() =&gt; {            			if(this.offsetWidth &lt; 50) {            				this.style.backgroundColor = 'red'            			}            			else {            				this.style.backgroundColor = 'blue'            			}            		})            &nbsp;            		observer.observe(this);                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="ResizeObserver/src/Example/Example.wcs.avt">        <pre>            :host {            	animation-name: resize;                animation-duration: 5s;                animation-direction: alternate;                animation-iteration-count: infinite;                animation-timing-function: linear;            	height: 30px;            }            &nbsp;            @keyframes resize {            	0% {            		width: 30px;            	}            &nbsp;            	100% {            		width: 70px;            	}            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="ResizeObserver/src/Example/Example.wcv.avt">        <pre>            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="ResizeObserver/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;ResizeObserver&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-example&gt;&lt;/av-example&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocLibResizeObserverEditor1";
+    }
+    defineResult() {
+        return new DocLibResizeObserverEditor1Example();
+    }
+}
+DocLibResizeObserverEditor1.Namespace=`${moduleName}`;
+DocLibResizeObserverEditor1.Tag=`av-doc-lib-resize-observer-editor-1`;
+_.DocLibResizeObserverEditor1=DocLibResizeObserverEditor1;
+if(!window.customElements.get('av-doc-lib-resize-observer-editor-1')){window.customElements.define('av-doc-lib-resize-observer-editor-1', DocLibResizeObserverEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibResizeObserverEditor1);}
+
+const DocLibResizeObserver = class DocLibResizeObserver extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocLibResizeObserver;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibResizeObserver.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Library - ResizeObserver</h1><p>To know when an element is changing you can use the native function <span class="cn"><a href="https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver" target="_blank">ResizeObserver</a></span>. Inside Aventus, you can find an optimized version of    ResizeObserver under <span class="cn">Aventus.ResizeObserver</span>. The behavior is the same as the native one but    behind, a <span class="cn">single instance</span> of native ResizeObserver is used and the callback function is    limited to one trigger each <span class="cn">1000 / 60 ms</span>.</p><av-doc-lib-resize-observer-editor-1></av-doc-lib-resize-observer-editor-1>` }
+    });
+}
+    getClassName() {
+        return "DocLibResizeObserver";
+    }
+}
+DocLibResizeObserver.Namespace=`${moduleName}`;
+DocLibResizeObserver.Tag=`av-doc-lib-resize-observer`;
+_.DocLibResizeObserver=DocLibResizeObserver;
+if(!window.customElements.get('av-doc-lib-resize-observer')){window.customElements.define('av-doc-lib-resize-observer', DocLibResizeObserver);Aventus.WebComponentInstance.registerDefinition(DocLibResizeObserver);}
+
+const DocLibTools = class DocLibTools extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocLibTools;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibTools.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Library - Tools</h1><p>Finally you can use the tools provided to help you.</p><h2>compareObject</h2><p>If you want compare if two objects contains the same informations you can use the function <span class="cn">Aventus.compareObject</span></p><av-code language="typescript" filename="Example.lib.avt">    <pre>        export function test() {        &nbsp;            const obj1 = {                name:"John",                todos: ["todo1", "todo2"]            }        &nbsp;            const obj2 = {                name:"John",                todos: ["todo2", "todo1"]            }        &nbsp;            const obj3 = {                name:"John",                todos: ["todo1", "todo3"]            }        &nbsp;            console.log(Aventus.compareObject(obj1, obj2)); // true            console.log(Aventus.compareObject(obj1, obj3)); // false        &nbsp;        }    </pre></av-code></av-code><h2>getValueFromObject</h2><p>The <span class="cn">Aventus.getValueFromObject</span> function is particularly useful when you need to retrieve a    value from a nested object    structure in JavaScript. This function helps you access specific values within complex objects without needing to    write extensive code for traversal and error handling.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        export function test() {            &nbsp;            const userProfile = {                user: {                    profile: {                        address: {                            city: 'New York'                        }                    }                }            };            &nbsp;            // Using getValueFromObject to retrieve the city value            const city = Aventus.getValueFromObject('user.profile.address.city', userProfile);            &nbsp;            console.log(city); // Output: New York            &nbsp;        }    </pre></av-code></av-code><h2>setValueToObject</h2><p>The <span class="cn">Aventus.setValueToObject</span> function is invaluable when you need to set a value within a    nested object structure in    JavaScript. This function streamlines the process of updating specific properties within complex objects without the    need for extensive manual traversal and error handling.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        export function test() {            &nbsp;            let userProfile = {                user: {                    profile: {                        address: {                            city: 'New York'                        }                    }                }            };            &nbsp;            // Using setValueToObject to update the city value            setValueToObject('user.profile.address.city', userProfile, 'Los Angeles');            &nbsp;        }    </pre></av-code></av-code><h2>Json</h2><p>The Json utility class is useful when you need to serialize JavaScript class instances into JSON objects and    deserialize JSON data into JavaScript class instances. This is particularly helpful when working with data transfer    between client and server, storing data in databases, or communicating with external APIs.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        // Define the User class        class User {            private name?: string;            private age?: number;            &nbsp;            public constructor(name?: string, age?: number) {                this.name = name;                this.age = age;            }        }        &nbsp;        // Create an instance of the User class        const user = new User("John", 30);        &nbsp;        // Serialize the class instance to JSON        const jsonUser = Aventus.Json.classToJson(user);        &nbsp;        // Deserialize JSON data into a new instance of the User class        const newUser = new User();        Aventus.Json.classFromJson(newUser, jsonUser);        &nbsp;        // Output the deserialized user        console.log(newUser); // User { name: 'John', age: 30 }    </pre></av-code></av-code><h2>Converter</h2><p>The <span class="cn">Aventus.Converter.transform</span> method is essential for converting data from one format to    another, particularly useful when    dealing with complex object structures. It's a versatile tool that simplifies the process of transforming data by    providing a consistent interface for conversion operations.</p><p>Suppose you have an application that receives JSON data from an API and needs to convert it into JavaScript objects    for further processing. In this case, you can utilize the Converter.transform method to perform the conversion    seamlessly.</p><p>By default, the Converter will populate the class instances through the method <span class="cn">fromJSON</span> on    your object or through the method <span class="cn">Json.classFromJson</span>.</p><av-doc-lib-tools-editor-1></av-doc-lib-tools-editor-1><h2>Mutex</h2><p>A Mutex (short for Mutual Exclusion) is a synchronization mechanism used in concurrent programming to control access    to a shared resource, ensuring that only one thread or process can access the resource at a time. This prevents race    conditions and ensures data consistency in multi-threaded or multi-process environments.</p><ol>    <li>        <u>Waiting for the Mutex (waitOne):</u>        <ul>            <li>The waitOne function allows a thread or process to wait for the mutex to become available.</li>            <li>When a thread calls waitOne, it enters a blocked state until the mutex is released by another thread or                process.</li>            <li>If the mutex is currently locked, the waiting thread is queued, and subsequent threads will wait in line                until it's their turn.</li>        </ul>    </li>    <li>        <u>Acquiring the Mutex (release):</u>        <ul>            <li>The release function allows a thread or process to acquire (lock) the mutex, granting exclusive access                to the shared resource.</li>            <li>Once the mutex is acquired, the thread can safely perform operations on the shared resource.</li>            <li>After completing its task, the thread releases the mutex using the release function, allowing other                waiting threads or processes to acquire it.</li>        </ul>    </li>    <li>        <u>Releasing the Mutex (releaseOnlyLast):</u>        <ul>            <li>The releaseOnlyLast function is a variation of release that releases the mutex but allows only the last                function in the waiting list to acquire it.</li>            <li>This function is useful in scenarios where you want to prioritize the most recent request for the mutex                over older ones.</li>        </ul>    </li>    <li>        <u>Safe Execution within Mutex (safeRun, safeRunAsync, safeRunLast, safeRunLastAsync):</u>        <ul>            <li>These functions provide a convenient way to execute code safely within the mutex lock and release the                lock afterward.</li>            <li>safeRun and safeRunLast are used for synchronous code execution, while safeRunAsync and safeRunLastAsync                are used for asynchronous code execution.</li>            <li>They ensure that only one thread executes the provided callback function at a time, preventing                concurrent access to the shared resource.</li>            <li>After executing the callback function, the mutex is released to allow other waiting threads or processes                to acquire it.</li>        </ul>    </li></ol><av-doc-lib-tools-editor-3></av-doc-lib-tools-editor-3><p>In this example:</p><ul>    <li>Each thread waits for the mutex before updating the counter.</li>    <li>Only one thread can acquire the mutex at a time, ensuring that counter updates are performed sequentially.</li>    <li>Once a thread completes its task, it releases the mutex, allowing other threads to acquire it.</li></ul><h2>sleep</h2><p>If you need to wait a specific time of ms you can use the <span class="cn">Aventus.sleep</span> function.</p><av-code language="typescript" filename="Example.lib.avt">    export class Example {    &nbsp;    \tpublic async test() {    \t\tconsole.log(Date.now());    \t\tawait Aventus.sleep(5000);    \t\tconsole.log(Date.now());    \t}    &nbsp;    }</av-code></av-code><h2>UUID</h2><p>If you need a unique id you can use the <span class="cn">Aventus.uuidv4</span> function. More information about uuid    <a href="https://en.wikipedia.org/wiki/Universally_unique_identifier" target="_blank">here</a>.</p><av-code language="typescript" filename="Example.lib.avt">    export class Example {    &nbsp;    \tpublic test() {    \t\tlet id = Aventus.uuidv4();    \t}    &nbsp;    }</av-code></av-code><h2>Error</h2><p>When you create function that can fail you can use the error strategy developed by Aventus. Instead of returning the    function result, the result is wrapped inside an container named <span class="cn">GenericError</span>, <span class="cn">VoidWithError</span>, and <span class="cn">ResultWithError</span>. They are all    useful tools for managing errors and results in your application. They provide a structured way to represent error    conditions and action outcomes, helping you write more robust and maintainable code.</p><h3>GenericError</h3><p><span class="cn">Aventus.GenericError</span> is a generic error class that provides a structured way to represent    errors in your application. It    allows you to define an error code along with a message to describe the error. The error code can be of any type    that extends either number or an enumeration (Enum). By extending GenericError, you can create specific error types    tailored to different error scenarios in your application.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        // Define an enumeration for error codes        export enum MyErrorCode {            NotFound = 404,            InvalidInput = 400,            InternalServerError = 500        }        // Create a specific error class extending GenericError        export class MyError extends GenericError&lt;MyErrorCode&gt; { }    </pre></av-code></av-code><h3>VoidWithError</h3><p><span class="cn">Aventus.VoidWithError</span> represents the result of an action that may produce errors but does not    return    a specific result value. It encapsulates the outcome of the action along with any errors that occur during its    execution. This class is useful when you want to handle the success or failure of an action without necessarily    needing a result value.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        const validation = SomeValidation.validate(data);        &#105;f (validation.success) {            // Proceed with further operations        } &#101;lse {            // Handle validation errors            console.error("Validation errors:", validation.errors);        }    </pre></av-code></av-code><h3>ResultWithError</h3><p><span class="cn">Aventus.ResultWithError</span> is similar to Aventus.VoidWithError, but it also includes a result    value along with    potential errors. It represents the outcome of an action that produces a specific result, such as the result of a    function call or an operation. This class allows you to handle both the result of the action and any errors that may    occur during its execution.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>       const result = SomeOperation.execute();        &#105;f (result.success) {            // Handle successful result            console.log("Result:", result.result);        } &#101;lse {            // Handle errors            console.error("Error:", result.errors[0].message);        }    </pre></av-code></av-code><p>Below you can find an implementation example for a function that must transform a string in lowercase.</p><av-doc-lib-tools-editor-2></av-doc-lib-tools-editor-2>` }
+    });
+}
+    getClassName() {
+        return "DocLibTools";
+    }
+}
+DocLibTools.Namespace=`${moduleName}`;
+DocLibTools.Tag=`av-doc-lib-tools`;
+_.DocLibTools=DocLibTools;
+if(!window.customElements.get('av-doc-lib-tools')){window.customElements.define('av-doc-lib-tools', DocLibTools);Aventus.WebComponentInstance.registerDefinition(DocLibTools);}
 
 const DocApp = class DocApp extends Aventus.Navigation.Router {
     docPage;
@@ -14754,6 +15429,7 @@ if(!window.customElements.get('av-tutorial-page')){window.customElements.define(
 
 const App = class App extends Aventus.Navigation.Router {
     static __style = `:host{display:flex;flex-direction:column;font-size:1.6rem;height:100%;width:100%}:host .content{height:calc(100% - 50px);width:100%}`;
+    constructor() {			super();			MaterialIcon.Icon.defaultType = "outlined"		}
     __getStatic() {
         return App;
     }

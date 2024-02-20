@@ -1,0 +1,115 @@
+<av-code-editor name="ResizeObserver">
+    <av-code language="json" filename="ResizeObserver/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "ResizeObserver",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [
+            				{
+            					"output": "./dist/demo.js"
+            				}
+            			]
+            		}
+            	],
+            	"static": [{
+            		"name": "Static",
+            		"input": "./static/*",
+            		"output": "./dist/"
+            	}]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="ResizeObserver/src/Example/Example.wcl.avt">
+        <pre>
+            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+                &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+                protected override postCreation(): void {
+            		const observer = new Aventus.ResizeObserver(() =&gt; {
+            			if(this.offsetWidth &lt; 50) {
+            				this.style.backgroundColor = 'red'
+            			}
+            			else {
+            				this.style.backgroundColor = 'blue'
+            			}
+            		})
+            &nbsp;
+            		observer.observe(this);
+                }
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="ResizeObserver/src/Example/Example.wcs.avt">
+        <pre>
+            :host {
+            	animation-name: resize;
+                animation-duration: 5s;
+                animation-direction: alternate;
+                animation-iteration-count: infinite;
+                animation-timing-function: linear;
+            	height: 30px;
+            }
+            &nbsp;
+            @keyframes resize {
+            	0% {
+            		width: 30px;
+            	}
+            &nbsp;
+            	100% {
+            		width: 70px;
+            	}
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="ResizeObserver/src/Example/Example.wcv.avt">
+        <pre>
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="ResizeObserver/static/index.html">
+        <pre>
+            &lt;!DOCTYPE html&gt;
+            &lt;html lang="en"&gt;
+            &lt;head&gt;
+                &lt;meta charset="UTF-8"&gt;
+                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+                &lt;title&gt;ResizeObserver&lt;/title&gt;
+                &lt;script src="/demo.js"&gt;&lt;/script&gt;
+            &lt;/head&gt;
+            &lt;body&gt;
+                &lt;av-example&gt;&lt;/av-example&gt;
+            &lt;/body&gt;
+            &lt;/html&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

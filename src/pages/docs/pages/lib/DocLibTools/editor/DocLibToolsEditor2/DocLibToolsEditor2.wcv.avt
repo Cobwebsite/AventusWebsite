@@ -1,0 +1,83 @@
+<av-code-editor name="Tools">
+    <av-code language="json" filename="Tools/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "Tools",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [
+            				{
+            					"output": "./dist/demo.js"
+            				}
+            			]
+            		}
+            	],
+            	"static": [{
+            		"name": "Static",
+            		"input": "./static/*",
+            		"output": "./dist/"
+            	}]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Tools/src/StringExtension.lib.avt">
+        <pre>
+            // List of available codes
+            export enum StringErrorCode {
+                EmptyString = 400
+            }
+            &nbsp;
+            // Error
+            export class StringError extends Aventus.GenericError&lt;StringErrorCode&gt; { }
+            &nbsp;
+            // Result of the function ( = container)
+            export class StringResult extends Aventus.ResultWithError&lt;{ lower: string; }, StringError&gt; { }
+            &nbsp;
+            export class StringExtension {
+            &nbsp;
+                public static toLower(txt: string): StringResult {
+                    let result = new StringResult();
+                    \if(!txt) {
+                        let error = new StringError(StringErrorCode.EmptyString, "Please provide a string");
+                        result.errors.push(error);
+                    }
+                    else {
+                        result.result = { lower: txt.toLowerCase() };
+                    }
+            &nbsp;
+                    return result;
+                }
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Tools/src/Test.lib.avt">
+        <pre>
+            import { StringExtension } from "./StringExtension.lib.avt";
+            &nbsp;
+            export class Test {
+                public static run() {
+            		const result = StringExtension.toLower("");
+            		/*
+            			result.success = false
+            			result.errors = [ { code: 400, message: "Please provide a string" } ]
+            			result.result = undefined
+            		*/
+            &nbsp;
+            		const result2 = StringExtension.toLower("HELLO");
+            		/*
+            			result.success = true
+            			result.errors = []
+            			result.result = { lower: 'hello' }
+            		*/
+            	}
+            }
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

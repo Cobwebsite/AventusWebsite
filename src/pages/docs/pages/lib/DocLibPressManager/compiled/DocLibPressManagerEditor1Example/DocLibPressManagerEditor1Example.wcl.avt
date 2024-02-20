@@ -1,0 +1,42 @@
+export class DocLibPressManagerEditor1Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	//#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+    @ViewElement()
+    protected buttonEl!: HTMLButtonElement;
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * 
+     */
+    protected onPress() {
+        alert("Press with @press");
+    }
+
+    protected override postCreation(): void {
+        new Aventus.PressManager({
+            element: this.buttonEl,
+            onPress: () => {
+				alert("Press with Aventus.PressManager");
+            }
+        });
+    }
+    //#endregion
+	
+}

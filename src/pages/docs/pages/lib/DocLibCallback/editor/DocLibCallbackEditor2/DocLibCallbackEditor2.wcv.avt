@@ -1,0 +1,150 @@
+<av-code-editor name="Callback">
+    <av-code language="json" filename="Callback/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "Callback",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [
+            				{
+            					"output": "./dist/demo.js"
+            				}
+            			]
+            		}
+            	],
+            	"static": [{
+            		"name": "Static",
+            		"input": "./static/*",
+            		"output": "./dist/"
+            	}]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Callback/src/Emitter/Emitter.wcl.avt">
+        <pre>
+            export class Emitter extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+                public readonly myEvent: Aventus.Callback&lt;(time: number) =&gt; void&gt; = new Aventus.Callback();
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+                private emitMyEvent() {
+                    setInterval(() =&gt; {
+                        this.myEvent.trigger([Date.now()]);
+                    }, 1000);
+                }
+                protected override postCreation(): void {
+                    this.emitMyEvent();
+                }
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="Callback/src/Emitter/Emitter.wcs.avt">
+        <pre>
+            :host {
+            	
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Callback/src/Emitter/Emitter.wcv.avt">
+        <pre>
+            &lt;slot&gt;&lt;/slot&gt;
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Callback/src/Receiver/Receiver.wcl.avt">
+        <pre>
+            import { Emitter } from "../Emitter/Emitter.wcl.avt";
+            &nbsp;
+            export class Receiver extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+                protected override postCreation(): void {
+                    let emitter = document.querySelector&lt;Emitter&gt;("av-emitter");
+                    \if(emitter) {
+                        emitter.myEvent.add((time: number) =&gt; {
+                            this.shadowRoot.innerHTML = 'Time is ' + time;
+                        });
+                    }
+                }
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="Callback/src/Receiver/Receiver.wcs.avt">
+        <pre>
+            :host {
+            	
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Callback/src/Receiver/Receiver.wcv.avt">
+        <pre>
+            &lt;slot&gt;&lt;/slot&gt;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Callback/static/index.html">
+        <pre>
+            &lt;!DOCTYPE html&gt;
+            &lt;html lang="en"&gt;
+            &lt;head&gt;
+                &lt;meta charset="UTF-8"&gt;
+                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+                &lt;title&gt;Callback&lt;/title&gt;
+                &lt;script src="/demo.js"&gt;&lt;/script&gt;
+            &lt;/head&gt;
+            &lt;body&gt;
+                &lt;av-emitter&gt;&lt;/av-emitter&gt;
+                &lt;av-receiver&gt;&lt;/av-receiver&gt;
+            &lt;/body&gt;
+            &lt;/html&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

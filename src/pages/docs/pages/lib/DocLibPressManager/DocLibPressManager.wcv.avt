@@ -24,6 +24,12 @@
         triggering a drag event.
     </li>
     <li>
+        <div class="size"><span class="cn">stopPropagation</span></div>: If the lib must stop propagation of the event
+    </li>
+    <li>
+        <div class="size"><span class="cn">buttonAllowed</span></div>: List of mouse buttons allowed
+    </li>
+    <li>
         <div class="size"><span class="cn">onDblPress</span></div>: Fired when double press event is detected.
     </li>
     <li>
@@ -57,28 +63,4 @@
 <p>Inside the <span class="cn">*.wcv.avt</span> you can use the attribute <span class="cn">@press</span> to create a
     PressManager on this element.</p>
 
-<av-code language="html" filename="Example.wc.avt">
-    &lt;script&gt;
-    \texport class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
-    &nbsp;
-    \t\t@ViewElement()
-    \t\tprotected buttonEl: HTMLButtonElement;
-    &nbsp;
-    \t\tpublic onPress() { }
-    &nbsp;
-    \t\tprotected override postCreation(): void {
-    \t\t\t// This is the same as @press="onPress"
-    \t\t\tnew Aventus.PressManager({
-    \t\t\t\telement: this.buttonEl,
-    \t\t\t\tonPress: () =&gt; {
-    \t\t\t\t\tthis.onPress();
-    \t\t\t\t}
-    \t\t\t});
-    \t\t}
-    \t}
-    &lt;/script&gt;
-    &nbsp;
-    &lt;template&gt;
-    \t&lt;button @element="buttonEl" @press="onPress"&gt;Click&lt;/button&gt;
-    &lt;/template&gt;
-</av-code>
+<av-doc-lib-press-manager-editor-1></av-doc-lib-press-manager-editor-1>

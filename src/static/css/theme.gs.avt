@@ -11,16 +11,18 @@
 }
 
 @font-face {
-	font-family: 'Material Icons';
+	font-family: 'Material Icons2';
 	font-style: normal;
 	font-weight: 400;
 	src: url('/font/material-icon.woff2') format('woff2');
 }
 
+
+
 :root {
 	--primary-color: #20232a;
 	--light-primary-color: #282c34;
-	--secondary-color: white;
+	--secondary-color: #e1e1e1;
 	--aventus-color: #e5540e;
 	--aventus-font-color: white;
 	--primary-font-color: white;

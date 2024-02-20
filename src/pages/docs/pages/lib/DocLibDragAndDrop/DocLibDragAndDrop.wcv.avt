@@ -84,25 +84,4 @@
 
 
 <p>The simplest example is the following :</p>
-<av-code language="css" filename="Example.wcs.avt">
-    :host {
-    \twidth: 20px;
-    \theight: 20px;
-    \tbackground-color: red;
-    \tposition: absolute;
-    }
-</av-code>
-<av-code language="typescript" filename="Example.wcl.avt">
-    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
-    &nbsp;
-    \tprotected override postCreation(): void {
-    \t\tnew Aventus.DragAndDrop({
-    \t\t\telement: this
-    \t\t});
-    \t}
-    }
-</av-code>
-
-<av-result>
-    <av-doc-lib-drag-and-drop-example></av-doc-lib-drag-and-drop-example>
-</av-result>
+<av-doc-lib-drag-and-drop-editor-1></av-doc-lib-drag-and-drop-editor-1>

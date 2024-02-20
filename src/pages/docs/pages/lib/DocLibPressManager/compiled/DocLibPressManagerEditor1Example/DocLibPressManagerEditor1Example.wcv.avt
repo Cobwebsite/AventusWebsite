@@ -1,0 +1,2 @@
+<button @element="buttonEl">Click 1</button>
+<button @press="onPress">Click 2</button>

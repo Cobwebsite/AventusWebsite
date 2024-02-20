@@ -1,0 +1,73 @@
+<av-code-editor name="Tools">
+    <av-code language="json" filename="Tools/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "Tools",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [
+            				{
+            					"output": "./dist/demo.js"
+            				}
+            			]
+            		}
+            	],
+            	"static": [{
+            		"name": "Static",
+            		"input": "./static/*",
+            		"output": "./dist/"
+            	}]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Tools/src/Test.lib.avt">
+        <pre>
+            export class Test {
+                // Create a mutex instance
+                private static mutex: Aventus.Mutex = new Aventus.Mutex();
+            &nbsp;
+                private static counter: number = 0;
+                private static numThreads: number = 100;
+            &nbsp;
+                // Function to update the shared counter variable
+                private static async updateCounter() {
+                    // Wait \for the mutex to become available
+                    await this.mutex.waitOne();
+                    try {
+                        // Increment the counter
+                        this.counter++;
+                        console.log(this.counter);
+                        await Aventus.sleep(100);
+                    } finally {
+                        // Release the mutex
+                        this.mutex.release();
+                    }
+                }
+            &nbsp;
+                private static async updateCounter2() {
+                    // Wait \for the mutex to become available
+                    await this.mutex.safeRunAsync(async () =&gt; {
+                        this.counter++;
+                        console.log(this.counter);
+                        await Aventus.sleep(100);
+                    })
+                }
+            &nbsp;
+            &nbsp;
+                public static run() {
+                    // Multiple threads call the updateCounter function concurrently
+                    \for(let i = 0; i &lt; this.numThreads; i++) {
+                        this.updateCounter();
+                    }
+                    console.log("loop done");
+                }
+            }
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

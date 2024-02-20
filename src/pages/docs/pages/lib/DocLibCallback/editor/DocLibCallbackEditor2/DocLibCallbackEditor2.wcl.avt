@@ -1,0 +1,42 @@
+import { DocLibCallbackEditor2Emitter } from "../../compiled/DocLibCallbackEditor2Emitter.wc.avt";
+import { BaseEditor } from "../../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
+import { DocLibCallbackEditor2Receiver } from "../../compiled/DocLibCallbackEditor2Receiver.wc.avt";
+
+export class DocLibCallbackEditor2 extends BaseEditor implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override hightlightFiles(): string[] {
+		return [
+			'Callback/src/Receiver/Receiver.wcl.avt',
+			'Callback/src/Emitter/Emitter.wcl.avt',
+		]
+	}
+    public override defineResult(): HTMLElement | null {
+        const div = document.createElement("DIV");
+        div.appendChild(new DocLibCallbackEditor2Emitter());
+        div.appendChild(new DocLibCallbackEditor2Receiver());
+        return div;
+    }
+	//#endregion
+	
+}

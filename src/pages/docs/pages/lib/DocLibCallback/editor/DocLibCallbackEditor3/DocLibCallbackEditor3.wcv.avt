@@ -1,0 +1,85 @@
+<av-code-editor name="Callback">
+    <av-code language="json" filename="Callback/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "Callback",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [
+            				{
+            					"output": "./dist/demo.js"
+            				}
+            			]
+            		}
+            	],
+            	"static": [{
+            		"name": "Static",
+            		"input": "./static/*",
+            		"output": "./dist/"
+            	}]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Callback/src/LogEmitter/LogEmitter.wcl.avt">
+        <pre>
+            export enum LogLvl {
+                Info,
+                Warning,
+                Error
+            }
+            &nbsp;
+            export class LogEmitter extends Aventus.WebComponent implements Aventus.DefaultComponent {
+                public readonly onNewLog: Aventus.CallbackGroup&lt;(msg: string) =&gt; void&gt; = new Aventus.CallbackGroup();
+            &nbsp;
+                /**
+                * Trigger the log callback only \for the lvl concerned
+                */
+                public addLog(msg: string, lvl: LogLvl) {
+                    this.onNewLog.trigger(lvl, [msg]);
+                }
+            &nbsp;
+                public readError() {
+                    this.onNewLog.add(LogLvl.Error, (msg) =&gt; {
+            			console.error(msg);
+                    });
+                }
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="Callback/src/LogEmitter/LogEmitter.wcs.avt">
+        <pre>
+            :host {
+            	
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Callback/src/LogEmitter/LogEmitter.wcv.avt">
+        <pre>
+            &lt;slot&gt;&lt;/slot&gt;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Callback/static/index.html">
+        <pre>
+            &lt;!DOCTYPE html&gt;
+            &lt;html lang="en"&gt;
+            &lt;head&gt;
+                &lt;meta charset="UTF-8"&gt;
+                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+                &lt;title&gt;Callback&lt;/title&gt;
+                &lt;script src="/demo.js"&gt;&lt;/script&gt;
+            &lt;/head&gt;
+            &lt;body&gt;
+                &lt;av-emitter&gt;&lt;/av-emitter&gt;
+                &lt;av-receiver&gt;&lt;/av-receiver&gt;
+            &lt;/body&gt;
+            &lt;/html&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

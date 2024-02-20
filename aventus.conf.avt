@@ -21,7 +21,8 @@
                     "uri": "@local:TodoDemo@Main"
                 },
                 {
-                    "uri": "@local:MaterialIcon@Main"
+                    "uri": "https://store.aventusjs.com/libs/MaterialIcon/1_0_0/MaterialIcon@Main.package.avt",
+                    "version": "1.0.0"
                 }
             ],
             "compile": [

@@ -1,0 +1,57 @@
+<av-code-editor name="Tools">
+    <av-code language="json" filename="Tools/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "Tools",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [
+            				{
+            					"output": "./dist/demo.js"
+            				}
+            			]
+            		}
+            	],
+            	"static": [{
+            		"name": "Static",
+            		"input": "./static/*",
+            		"output": "./dist/"
+            	}]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Tools/src/Parser.lib.avt">
+        <pre>
+            import { Person } from "./Person.data.avt";
+            &nbsp;
+            export class Parser {
+                public static parse() {
+                    // JSON data received from an API with $type indicating the class name
+                    const jsonDataWithType = JSON.parse('{"$type": "Tools.Person", "id": 1, "name": "John", "age": 30}');
+            &nbsp;
+                    // Convert JSON data to JavaScript object using Converter.transform
+                    const personWithType = Aventus.Converter.transform&lt;Person&gt;(jsonDataWithType);
+            &nbsp;
+                    console.log(personWithType); // Output: Person { id: 1, name: 'John', age: 30 }
+                    console.log(personWithType instanceof Person); // Output: true
+                }
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Tools/src/Person.data.avt">
+        <pre>
+            export class Person extends Aventus.Data implements Aventus.IData {
+                // The static field Fullname = 'Tools.Person'
+            	public id: number = 0;
+            	public name: string = "";
+            	public age: number = 0;
+            }
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

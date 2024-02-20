@@ -1,0 +1,31 @@
+export class DocLibDragAndDropEditor1Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	protected override postCreation(): void {
+        new Aventus.DragAndDrop({
+			element: this
+		});
+    }
+	//#endregion
+	
+}
