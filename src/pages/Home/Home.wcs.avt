@@ -6,6 +6,16 @@
 		max-width: none;
 	}
 
+	.height-wrapper {
+		flex-grow: 1;
+	}
+
+	.main-scroll::part(content-wrapper) {
+		display: flex;
+		flex-direction: column;
+		min-height: 100%;
+	}
+
 	.main {
 		background-color: var(--light-primary-color);
 		display: flex;

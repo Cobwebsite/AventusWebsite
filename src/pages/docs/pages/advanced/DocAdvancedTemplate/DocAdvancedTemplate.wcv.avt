@@ -131,6 +131,10 @@
         <av-dynamic-col size="8" center>The namespace that the path will have based on the namespace
             strategy.</av-dynamic-col>
     </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>module</av-dynamic-col>
+        <av-dynamic-col size="8" center>The module name defined inside your aventus.conf.avt.</av-dynamic-col>
+    </av-dynamic-row>
 </div>
 
 <h2>Optimize user experience</h2>

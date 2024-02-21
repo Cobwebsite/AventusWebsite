@@ -1,60 +1,70 @@
-<av-scrollable floating_scroll>
-    <div class="main">
-        <av-dynamic-row class="icon-text">
-            <av-dynamic-col size="6">
-                <av-img src="/img/logo.svg"></av-img>
-                <!-- <div class="ventus">
+<av-scrollable floating_scroll class="main-scroll">
+    <div class="height-wrapper">
+        <div class="main">
+            <av-dynamic-row class="icon-text">
+                <av-dynamic-col size="6">
+                    <av-img src="/img/logo.svg"></av-img>
+                    <!-- <div class="ventus">
                     <span>ventus</span>
                 </div> -->
-            </av-dynamic-col>
-            <av-dynamic-col size="4">
-                <div class="title">
-                    The Webcomponent Javascript Framework
-                </div>
-            </av-dynamic-col>
-        </av-dynamic-row>
-        <av-dynamic-row class="btn-container">
-            <av-dynamic-col size="12">
-                <av-router-link state="/docs/introduction" class="menu"><av-button>Get
-                        started</av-button></av-router-link>
-                <av-router-link state="/tutorial/introduction" class="menu"><av-button>Tutorial</av-button></av-router-link>
-            </av-dynamic-col>
-        </av-dynamic-row>
-        <av-img class="design-logo" src="/img/logo.svg"></av-img>
-        <av-img class="design-logo2" src="/img/logo.svg"></av-img>
-    </div>
-    <div class="blocks">
-        <av-dynamic-row>
-            <av-dynamic-col size_sm="12" size_md="4" size="12">
-                <div class="block">
-                    <div class="title">Encapsulation</div>
-                    <p>Avoiding conflicts through encapsulation to build scalable application. Each file has a role to play in keeping your code tidy.</p>
-                </div>
-            </av-dynamic-col>
+                </av-dynamic-col>
+                <av-dynamic-col size="4">
+                    <div class="title">
+                        The Webcomponent Javascript Framework
+                    </div>
+                </av-dynamic-col>
+            </av-dynamic-row>
+            <av-dynamic-row class="btn-container">
+                <av-dynamic-col size="12">
+                    <av-router-link state="/docs/introduction" class="menu"><av-button>Get
+                            started</av-button></av-router-link>
+                    <av-router-link state="/tutorial/introduction"
+                        class="menu"><av-button>Tutorial</av-button></av-router-link>
+                </av-dynamic-col>
+            </av-dynamic-row>
+            <av-img class="design-logo" src="/img/logo.svg"></av-img>
+            <av-img class="design-logo2" src="/img/logo.svg"></av-img>
+        </div>
+        <div class="blocks">
+            <av-dynamic-row>
+                <av-dynamic-col size_sm="12" size_md="4" size="12">
+                    <div class="block">
+                        <div class="title">Encapsulation</div>
+                        <p>Avoiding conflicts through encapsulation to build scalable application. Each file has a role
+                            to play in keeping your code tidy.</p>
+                    </div>
+                </av-dynamic-col>
 
-            <av-dynamic-col size_sm="12" size_md="4" size="12">
-                <div class="block">
-                    <div class="title">For OOP lovers</div>
-                    <p>Even your graphic components can be defined by class which allows inheritance and genericity. If you love OOP, you will love making views.</p>
-                </div>
-            </av-dynamic-col>
+                <av-dynamic-col size_sm="12" size_md="4" size="12">
+                    <div class="block">
+                        <div class="title">For OOP lovers</div>
+                        <p>Even your graphic components can be defined by class which allows inheritance and genericity.
+                            If you love OOP, you will love making views.</p>
+                    </div>
+                </av-dynamic-col>
 
-            <av-dynamic-col size_sm="12" size_md="4" size="12">
-                <div class="block">
-                    <div class="title">Type safe</div>
-                    <p>Prevent errors through typing and make your code more secure. Maintaining a growing application over the long term.</p>
-                </div>
-            </av-dynamic-col>
-        </av-dynamic-row>
-    </div>
+                <av-dynamic-col size_sm="12" size_md="4" size="12">
+                    <div class="block">
+                        <div class="title">Type safe</div>
+                        <p>Prevent errors through typing and make your code more secure. Maintaining a growing
+                            application over the long term.</p>
+                    </div>
+                </av-dynamic-col>
+            </av-dynamic-row>
+        </div>
 
-    <div class="separator"></div>
+        <div class="separator"></div>
 
-    <div class="why">
-        <h2>The Aventus mindset</h2>
-        <p>Aventus aims to simplify the web by leveraging new native technologies. Webcomponents are just one example. Nowadays, it's possible to build large applications without relying on millions of libraries downloaded via npm and then compiled via a module bundler.</p>
-        <p>The tool must not be complicated to install, and projects must be able to be created quickly. It's important for users to be able to access and create their own templates to save time.  That's why Aventus is only available as a VSCode extension, making it easy to use.</p>
-        <p>In short, Aventus is : <span class="important">One tech to rule them all</span>.</p>
+        <div class="why">
+            <h2>The Aventus mindset</h2>
+            <p>Aventus aims to simplify the web by leveraging new native technologies. Webcomponents are just one
+                example. Nowadays, it's possible to build large applications without relying on millions of libraries
+                downloaded via npm and then compiled via a module bundler.</p>
+            <p>The tool must not be complicated to install, and projects must be able to be created quickly. It's
+                important for users to be able to access and create their own templates to save time. That's why Aventus
+                is only available as a VSCode extension, making it easy to use.</p>
+            <p>In short, Aventus is : <span class="important">One tech to rule them all</span>.</p>
+        </div>
     </div>
 
     <av-footer></av-footer>
