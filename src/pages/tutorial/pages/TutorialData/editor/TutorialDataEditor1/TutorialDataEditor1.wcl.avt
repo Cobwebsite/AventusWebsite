@@ -1,0 +1,43 @@
+import { TutorialCreateAppEditor6 } from "../../../TutorialCreateApp/editor/TutorialCreateAppEditor6/TutorialCreateAppEditor6.wcl.avt";
+
+export class TutorialDataEditor1 extends TutorialCreateAppEditor6 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+		return 'Demo/src/data/Todo.data.avt'
+	}
+	public override hightlightFiles(): string[] {
+		return [
+			'Demo/src/data/Task.data.avt',
+			'Demo/src/data/Todo.data.avt',
+		]
+	}
+	public override open_folder(): string | string[] | undefined {
+		return undefined
+	}
+	public override defineResult(): HTMLElement | null {
+		return null
+	}
+	//#endregion
+	
+}

@@ -18,9 +18,7 @@
     <av-collapse>
         <div class="title" slot="header">component</div>
         <ul>
-            <li><av-router-link state="/tutorial/form">Form</av-router-link></li>
-            <li><av-router-link state="/tutorial/list">List</av-router-link></li>
-            <li><av-router-link state="/tutorial/style">Style</av-router-link></li>
+            <li><av-router-link state="/tutorial/display_todo">Display Todo</av-router-link></li>
         </ul>
     </av-collapse>
 </av-scrollable>

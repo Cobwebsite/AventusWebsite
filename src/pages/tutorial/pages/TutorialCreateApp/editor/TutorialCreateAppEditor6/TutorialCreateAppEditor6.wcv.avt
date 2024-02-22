@@ -174,7 +174,8 @@
 </av-code>
 <av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt">
     <pre>
-        &nbsp;
+        &lt;!-- Only to show the scrollbar --&gt;
+        &lt;div style="height:800px;width:40px;background:red"&gt;&lt;/div&gt;
     </pre>
 </av-code>
 <slot></slot>

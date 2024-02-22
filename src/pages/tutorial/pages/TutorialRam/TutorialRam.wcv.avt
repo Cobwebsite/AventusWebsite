@@ -1,29 +1,179 @@
 <h1>RAM</h1>
 
-<p>To store the todo we need a RAM. To achieve that you can right click on the folder <span class="cn">ram</span> and select <span class="cn">Aventus : Create...</span>.</p>
+<h2>Why ?</h2>
+<p>
+    A RAM (Resource Access Manager) is a class designed to manage resources or data within an application. In the
+    context of software development, a RAM typically represents a collection of records or entities (<span
+        class="cn">*.data.avt</span>) where CRUD (Create,
+    Read, Update, Delete) operations can be performed.
+</p>
 
-<av-img src="/img/tuto/ram/create.png"></av-img>
+<p>
+    Think of a RAM as a structured container for organizing and interacting with data. It provides methods and
+    functionality for adding new records, retrieving existing ones, updating records, and removing records from the
+    collection. This allows developers to efficiently manage data within their applications and perform common data
+    manipulation tasks.
+</p>
 
-<p>Then you can select <span class="cn">RAM</span> in the options.</p>
-<av-img src="/img/tuto/ram/ram_options.png"></av-img>
+<p>One of the key advantages of using a RAM is that it abstracts away the details of data storage and retrieval,
+    providing a simple and consistent interface for working with data. This abstraction makes it easier to work with
+    data across different parts of an application without worrying about the underlying data storage mechanism.</p>
 
-<p>You can fill the input with <span class="cn">Todo</span> that is the name of the data we want to store.</p>
-<av-img src="/img/tuto/ram/name.png"></av-img>
+<p>Additionally, RAMs can be connected to APIs or websockets to synchronize data changes between the frontend and
+    backend in real-time. This allows for seamless updates and ensures consistency across all connected clients.</p>
 
-<p>A new file is created named <span class="cn">Todo.ram.avt</span>. This file contains errors because <span class="cn">Todo</span> is not known.</p>
+<p>Overall, a RAM serves as a foundational component for managing data within an application, providing a structured and
+    efficient way to interact with and manipulate data records.</p>
 
-<av-img src="/img/tuto/ram/after_create.png"></av-img>
 
-<p>To correct this, you can set your cursor on first <span class="cn">Todo</span> that is underline and click on <span class="cn">ctrl + .</span>. This will open the actions available to correct the error.</p>
-
-<av-img src="/img/tuto/ram/correct.png"></av-img>
-
-<p>Select the first option to auto import the data Todo class. We didn't have anymore error so we can have a look to the functions.</p>
+<h2>Code it</h2>
+<p>For this example, you are going to write the RAM class for your todo class.</p>
 
 <ul>
-    <li>getInstance : will return the unique instance for this RAM</li>
-    <li>defineIndexKey : define the name of the key inside the todo that will be used as index key</li>
-    <li>getTypeForData : return the real object based on the type we received</li>
+    <li>You can right click on the folder <span class="cn">ram</span> and select <span class="cn">Aventus :
+            Create...</span>.</li>
+    <li>You can select <span class="cn">RAM</span> in the options.</li>
+    <li>You can fill the input with <span class="cn">Todo</span> that is the name of the data we want to store.</li>
 </ul>
 
-<p>Actually we have a data and a ram. This is the small logical part of our application.</p>
+<p>A new file is created named <span class="cn">Todo.ram.avt</span>. This file contains errors because <span
+        class="cn">Todo</span> is not known.</p>
+<av-code language="typescript" filename="Demo/src/ram/Todo.ram.avt">
+    <pre>
+        export class TodoRAM extends Aventus.Ram&lt;Todo&gt; implements Aventus.IRam {
+        &nbsp;
+            /**
+             * Create a singleton to store data
+             */
+            public static getInstance() {
+                return Aventus.Instance.get(TodoRAM);
+            }
+        &nbsp;
+            /**
+             * @inheritdoc
+             */
+            public override defineIndexKey(): keyof Todo {
+                return 'id';
+            }
+            /**
+             * @inheritdoc
+             */
+            protected override getTypeForData(objJson: Aventus.KeysObject&lt;Todo&gt; | Todo): new () =&gt; Todo {
+                return Todo;
+            }
+        }
+    </pre>
+</av-code>
+<p>To correct this, you can set your cursor over an error and press on <span class="cn">ctrl + .</span>. This will open
+    the actions available to correct the error. Select the first option to auto import the data Todo class.</p>
+
+<h2>Save data to local storage</h2>
+<p>Firstly, manual ID management is required because we lack a backend system generating unique identifiers for new
+    records. To ensure each <span class="cn">Todo</span> item has a distinct identifier, we've incorporated logic to
+    increment the <span class="cn">maxId</span>
+    property with each new item creation. This guarantees that each Todo instance receives a unique ID within the
+    frontend application.</p>
+
+<av-code language="typescript" filename="Demo/src/ram/Todo.ram.avt">
+    <pre>
+        export class TodoRAM extends Aventus.Ram&lt;Todo&gt; implements Aventus.IRam {
+        &nbsp;
+            private static maxId: number = 0;
+        &nbsp;
+        ...
+        &nbsp;
+            /**
+             * This function is called just before an item is stored inside the RAM
+             */
+            protected override async beforeCreateItem(item: Todo, fromList: boolean, result: Aventus.ResultRamWithError&lt;Aventus.RamItem&lt;Todo&gt;&gt;): Promise&lt;void&gt; {
+                TodoRAM.maxId++;
+                item.id = TodoRAM.maxId;
+            }
+        }
+    </pre>
+</av-code>
+
+<p>Secondly, in the absence of a backend database, we've leveraged <span class="cn">local storage</span> to persist Todo
+    records between sessions. The <span class="cn">saveToStorage()</span> method serializes the RAM's records and stores
+    them in the browser's
+    local storage.
+    Conversely, the <span class="cn">reloadFromStorage()</span> method retrieves previously stored records from local
+    storage when the
+    application initializes. By utilizing local storage in this manner, we emulate the behavior of a backend database,
+    enabling data persistence and retrieval within the frontend environment.</p>
+
+<av-code language="typescript" filename="Demo/src/ram/Todo.ram.avt">
+    <pre>
+        export class TodoRAM extends Aventus.Ram&lt;Todo&gt; implements Aventus.IRam {
+        &nbsp;
+            private isLoaded: boolean = false;
+        &nbsp;
+            ...
+        &nbsp;
+            /**
+             * Save the content of the RAM inside local storage
+             */
+            protected saveToStorage() {
+                let values = Array.from(this.records.values());
+                localStorage.setItem("todos", JSON.stringify(values));
+            }
+            /**
+             * Reload the content of the RAM from the local storage
+             */
+            protected reloadFromStorage(result: Aventus.ResultRamWithError&lt;Map&lt;number, Aventus.RamItem&lt;Todo&gt;&gt;&gt;) {
+                let maxId = 0;
+                let data = JSON.parse(localStorage.getItem("todos") ?? "[]");
+                let values = Aventus.Converter.transform&lt;Todo[]&gt;(data);
+                &#102;or(let value of values) {
+                    let resultTemp: Aventus.ResultWithError&lt;Aventus.RamItem&lt;Todo&gt;&gt; = new Aventus.ResultWithError();
+                    &#105;f(value.id &gt; maxId) {
+                        maxId = value.id;
+                    }
+                    // set back data inside the RAM
+                    this.addOrUpdateData(value, resultTemp);
+                    &#105;f(!resultTemp.success) {
+                        result.errors = [...result.errors, ...resultTemp.errors];
+                    }
+                }
+                TodoRAM.maxId = maxId;
+            }
+        }
+    </pre>
+</av-code>
+
+<p>Additionally, we've integrated hooks into the RAM's lifecycle methods to ensure that data is consistently saved to
+    local storage after CRUD operations. This guarantees that changes made to Todo records are promptly persisted,
+    ensuring data integrity across application sessions.</p>
+
+<av-code language="typescript" filename="Demo/src/ram/Todo.ram.avt">
+    <pre>
+        import { Todo } from "../data/Todo.data.avt";
+        &nbsp;
+        export class TodoRAM extends Aventus.Ram&lt;Todo&gt; implements Aventus.IRam {
+            ...
+            &nbsp;
+            protected override async afterCreateItem(result: Aventus.ResultRamWithError&lt;Aventus.RamItem&lt;Todo&gt;&gt;, fromList: boolean): Promise&lt;void&gt; {
+                await super.afterCreateItem(result, fromList);
+                this.saveToStorage();
+            }
+            protected override async afterUpdateItem(result: Aventus.ResultRamWithError&lt;Aventus.RamItem&lt;Todo&gt;&gt;, fromList: boolean): Promise&lt;void&gt; {
+                await super.afterUpdateItem(result, fromList);
+                this.saveToStorage();
+            }
+            protected override async afterDeleteItem(result: Aventus.ResultRamWithError&lt;Aventus.RamItem&lt;Todo&gt;&gt;, fromList: boolean): Promise&lt;void&gt; {
+                await super.afterDeleteItem(result, fromList);
+                this.saveToStorage();
+            }
+            protected override async beforeGetAll(result: Aventus.ResultRamWithError&lt;Map&lt;number, Aventus.RamItem&lt;Todo&gt;&gt;&gt;): Promise&lt;void&gt; {
+                await super.beforeGetAll(result);
+                \if(!this.isLoaded) {
+                    this.reloadFromStorage(result);
+                    this.isLoaded = true;
+                }
+            }
+        }
+    </pre>
+</av-code>
+
+<p>The current project state is the following : </p>
+<av-tutorial-ram-editor-1></av-tutorial-ram-editor-1>

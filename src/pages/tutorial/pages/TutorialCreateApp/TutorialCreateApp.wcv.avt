@@ -18,11 +18,15 @@
         services, and configuring
         Aventus-specific features. This ensures your application starts reliably and consistently.</li>
 </ul>
-<p>To create this central file, over the folder <span class="cn">apps</span> you can right click and
-    select <span class="cn">Aventus : Create...</span>.</p>
-<p>Then you can select <span class="cn">Component</span>, fill the input with <span class="cn">MainApp</span> and select
-    <span class="cn">Multiple</span>.
-</p>
+<p>To create this central file :</p>
+<ul>
+    <li>
+        Over the folder <span class="cn">apps</span> you can right click and select <span class="cn">Aventus : Create...</span>.
+    </li>
+    <li>You can select <span class="cn">Component</span></li>
+    <li>You can fill the input with <span class="cn">MainApp</span></li>
+    <li>You can select <span class="cn">Multiple</span></li>
+</ul>
 
 <p>Well done! You created your first component. Because the component name is <span class="cn">MainApp</span> and we set
     the <span class="cn">"componentPrefix": "td"</span> inside the configuration, the component tag is <span

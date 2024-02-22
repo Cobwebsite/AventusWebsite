@@ -1,6 +1,6 @@
 import { TutorialGenericPage } from "../TutorialGenericPage/TutorialGenericPage.wcl.avt";
 
-export class TutorialStyle extends TutorialGenericPage implements Aventus.DefaultComponent {
+export class TutorialDisplayTodo extends TutorialGenericPage implements Aventus.DefaultComponent {
 
 	//#region static
 	
@@ -13,11 +13,6 @@ export class TutorialStyle extends TutorialGenericPage implements Aventus.Defaul
 	
 	
 	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
 	
 	//#endregion
 	
