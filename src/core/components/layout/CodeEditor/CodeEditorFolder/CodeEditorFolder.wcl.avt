@@ -11,6 +11,8 @@ export class CodeEditorFolder extends Aventus.WebComponent implements Aventus.De
 
     @Property()
     public open!: boolean;
+    @Attribute()
+    public highlight: boolean = false;
     //#endregion
 
 

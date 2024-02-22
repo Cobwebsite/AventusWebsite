@@ -1,0 +1,39 @@
+import { TutorialInitEditor1 } from "../TutorialInitEditor1/TutorialInitEditor1.wcl.avt";
+
+export class TutorialInitEditor2 extends TutorialInitEditor1 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+		return 'Demo/src/static/index.html';
+	}
+
+	public override hightlightFiles(): string[] {
+		return [
+			'Demo/src/static/css/default.gs.avt',
+			'Demo/src/static/css/_theme.gs.avt',
+			'Demo/src/static/index.html',
+		]
+	}
+	//#endregion
+	
+}

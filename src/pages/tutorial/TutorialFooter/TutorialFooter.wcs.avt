@@ -8,8 +8,8 @@
 	div {
 		background-color: var(--aventus-color);
 		border-radius: 5px;
-		box-shadow: 0 0 5px #555;
-		color: var(--secondary-color);
+		box-shadow: var(--elevation-3);
+		color: var(--aventus-font-color);
 		cursor: pointer;
 		font-size: 16px;
 		font-weight: 400;

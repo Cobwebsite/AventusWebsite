@@ -1,0 +1,26 @@
+<av-code language="html" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">
+    <pre>
+        &lt;h1&gt;Hello world&lt;/h1&gt;
+    </pre>
+</av-code>
+<av-code language="html" filename="Demo/src/static/index.html">
+    <pre>
+        &lt;!DOCTYPE html&gt;
+        &lt;html lang="en"&gt;
+        &nbsp;
+        &lt;head&gt;
+            &lt;meta charset="UTF-8"&gt;
+            &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+            &lt;title&gt;Todo&lt;/title&gt;
+            &lt;script src="/todo.js"&gt;&lt;/script&gt;
+            &lt;link rel="stylesheet" href="/css/default.css"&gt;
+        &lt;/head&gt;
+        &nbsp;
+        &lt;body&gt;
+            &lt;td-main-app&gt;&lt;/td-main-app&gt;
+        &lt;/body&gt;
+        &nbsp;
+        &lt;/html&gt;
+    </pre>
+</av-code>
+<slot></slot>

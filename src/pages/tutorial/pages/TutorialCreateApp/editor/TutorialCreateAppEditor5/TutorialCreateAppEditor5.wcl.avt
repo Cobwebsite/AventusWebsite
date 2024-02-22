@@ -1,0 +1,45 @@
+import { TutorialCreateAppEditor4 } from "../TutorialCreateAppEditor4/TutorialCreateAppEditor4.wcl.avt";
+
+export class TutorialCreateAppEditor5 extends TutorialCreateAppEditor4 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+		return 'Demo/src/apps/MainApp/MainApp.wcv.avt'
+	}
+	public override hightlightFiles(): string[] {
+		return [
+			'Demo/src/apps/MainApp/MainApp.wcv.avt',
+			'Demo/src/apps/MainApp/MainApp.wcs.avt'
+		]
+	}
+	public override open_folder(): string | string[] | undefined {
+		return undefined
+	}
+	public override defineResult(): HTMLElement | null {
+		let iframe = document.createElement("iframe");
+		iframe.src = "/tutorial/createapp/step4/index.html"
+		return iframe
+	}
+	//#endregion
+	
+}

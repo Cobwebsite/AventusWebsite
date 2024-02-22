@@ -41,6 +41,20 @@ const sleep=function sleep(ms) {
 }
 
 _.sleep=sleep;
+const setValueToObject=function setValueToObject(path, obj, value) {
+    path = path.replace(/\[(.*?)\]/g, '.$1');
+    let splitted = path.split(".");
+    for (let i = 0; i < splitted.length - 1; i++) {
+        let split = splitted[i];
+        if (!obj[split]) {
+            obj[split] = {};
+        }
+        obj = obj[split];
+    }
+    obj[splitted[splitted.length - 1]] = value;
+}
+
+_.setValueToObject=setValueToObject;
 var WatchAction;
 (function (WatchAction) {
     WatchAction[WatchAction["CREATED"] = 0] = "CREATED";
@@ -99,20 +113,6 @@ const compareObject=function compareObject(obj1, obj2) {
 }
 
 _.compareObject=compareObject;
-const setValueToObject=function setValueToObject(path, obj, value) {
-    path = path.replace(/\[(.*?)\]/g, '.$1');
-    let splitted = path.split(".");
-    for (let i = 0; i < splitted.length - 1; i++) {
-        let split = splitted[i];
-        if (!obj[split]) {
-            obj[split] = {};
-        }
-        obj = obj[split];
-    }
-    obj[splitted[splitted.length - 1]] = value;
-}
-
-_.setValueToObject=setValueToObject;
 const getValueFromObject=function getValueFromObject(path, obj) {
     path = path.replace(/\[(.*?)\]/g, '.$1');
     if (path == "") {
@@ -635,396 +635,6 @@ const Mutex=class Mutex {
 }
 Mutex.Namespace=`${moduleName}`;
 _.Mutex=Mutex;
-const PressManager=class PressManager {
-    static create(options) {
-        if (Array.isArray(options.element)) {
-            let result = [];
-            for (let el of options.element) {
-                let cloneOpt = { ...options };
-                cloneOpt.element = el;
-                result.push(new PressManager(cloneOpt));
-            }
-            return result;
-        }
-        else {
-            return new PressManager(options);
-        }
-    }
-    options;
-    element;
-    delayDblPress = 150;
-    delayLongPress = 700;
-    nbPress = 0;
-    offsetDrag = 20;
-    state = {
-        oneActionTriggered: false,
-        isMoving: false,
-    };
-    startPosition = { x: 0, y: 0 };
-    customFcts = {};
-    timeoutDblPress = 0;
-    timeoutLongPress = 0;
-    downEventSaved;
-    actionsName = {
-        press: "press",
-        longPress: "longPress",
-        dblPress: "dblPress",
-        drag: "drag"
-    };
-    useDblPress = false;
-    stopPropagation = () => true;
-    functionsBinded = {
-        downAction: (e) => { },
-        upAction: (e) => { },
-        moveAction: (e) => { },
-        childPressStart: (e) => { },
-        childPressEnd: (e) => { },
-        childPress: (e) => { },
-        childDblPress: (e) => { },
-        childLongPress: (e) => { },
-        childDragStart: (e) => { },
-    };
-    /**
-     * @param {*} options - The options
-     * @param {HTMLElement | HTMLElement[]} options.element - The element to manage
-     */
-    constructor(options) {
-        if (options.element === void 0) {
-            throw 'You must provide an element';
-        }
-        this.element = options.element;
-        this.checkDragConstraint(options);
-        this.assignValueOption(options);
-        this.options = options;
-        this.init();
-    }
-    /**
-     * Get the current element focused by the PressManager
-     */
-    getElement() {
-        return this.element;
-    }
-    checkDragConstraint(options) {
-        if (options.onDrag !== void 0) {
-            if (options.onDragStart === void 0) {
-                options.onDragStart = (e) => { };
-            }
-            if (options.onDragEnd === void 0) {
-                options.onDragEnd = (e) => { };
-            }
-        }
-        if (options.onDragStart !== void 0) {
-            if (options.onDrag === void 0) {
-                options.onDrag = (e) => { };
-            }
-            if (options.onDragEnd === void 0) {
-                options.onDragEnd = (e) => { };
-            }
-        }
-        if (options.onDragEnd !== void 0) {
-            if (options.onDragStart === void 0) {
-                options.onDragStart = (e) => { };
-            }
-            if (options.onDrag === void 0) {
-                options.onDrag = (e) => { };
-            }
-        }
-    }
-    assignValueOption(options) {
-        if (options.delayDblPress !== undefined) {
-            this.delayDblPress = options.delayDblPress;
-        }
-        if (options.delayLongPress !== undefined) {
-            this.delayLongPress = options.delayLongPress;
-        }
-        if (options.offsetDrag !== undefined) {
-            this.offsetDrag = options.offsetDrag;
-        }
-        if (options.onDblPress !== undefined) {
-            this.useDblPress = true;
-        }
-        if (options.forceDblPress) {
-            this.useDblPress = true;
-        }
-        if (typeof options.stopPropagation == 'function') {
-            this.stopPropagation = options.stopPropagation;
-        }
-        else if (options.stopPropagation === false) {
-            this.stopPropagation = () => false;
-        }
-        if (!options.buttonAllowed)
-            options.buttonAllowed = [0];
-    }
-    bindAllFunction() {
-        this.functionsBinded.downAction = this.downAction.bind(this);
-        this.functionsBinded.moveAction = this.moveAction.bind(this);
-        this.functionsBinded.upAction = this.upAction.bind(this);
-        this.functionsBinded.childDblPress = this.childDblPress.bind(this);
-        this.functionsBinded.childDragStart = this.childDragStart.bind(this);
-        this.functionsBinded.childLongPress = this.childLongPress.bind(this);
-        this.functionsBinded.childPress = this.childPress.bind(this);
-        this.functionsBinded.childPressStart = this.childPressStart.bind(this);
-        this.functionsBinded.childPressEnd = this.childPressEnd.bind(this);
-    }
-    init() {
-        this.bindAllFunction();
-        this.element.addEventListener("pointerdown", this.functionsBinded.downAction);
-        this.element.addEventListener("trigger_pointer_press", this.functionsBinded.childPress);
-        this.element.addEventListener("trigger_pointer_pressstart", this.functionsBinded.childPressStart);
-        this.element.addEventListener("trigger_pointer_pressend", this.functionsBinded.childPressEnd);
-        this.element.addEventListener("trigger_pointer_dblpress", this.functionsBinded.childDblPress);
-        this.element.addEventListener("trigger_pointer_longpress", this.functionsBinded.childLongPress);
-        this.element.addEventListener("trigger_pointer_dragstart", this.functionsBinded.childDragStart);
-    }
-    downAction(e) {
-        if (!this.options.buttonAllowed?.includes(e.button)) {
-            return;
-        }
-        this.downEventSaved = e;
-        if (this.stopPropagation()) {
-            e.stopImmediatePropagation();
-        }
-        this.customFcts = {};
-        if (this.nbPress == 0) {
-            this.state.oneActionTriggered = false;
-            clearTimeout(this.timeoutDblPress);
-        }
-        this.startPosition = { x: e.pageX, y: e.pageY };
-        document.addEventListener("pointerup", this.functionsBinded.upAction);
-        document.addEventListener("pointermove", this.functionsBinded.moveAction);
-        this.timeoutLongPress = setTimeout(() => {
-            if (!this.state.oneActionTriggered) {
-                if (this.options.onLongPress) {
-                    this.state.oneActionTriggered = true;
-                    this.options.onLongPress(e, this);
-                    this.triggerEventToParent(this.actionsName.longPress, e);
-                }
-                else {
-                    this.emitTriggerFunction(this.actionsName.longPress, e);
-                }
-            }
-        }, this.delayLongPress);
-        if (this.options.onPressStart) {
-            this.options.onPressStart(e, this);
-            this.emitTriggerFunctionParent("pressstart", e);
-        }
-        else {
-            this.emitTriggerFunction("pressstart", e);
-        }
-    }
-    upAction(e) {
-        if (this.stopPropagation()) {
-            e.stopImmediatePropagation();
-        }
-        document.removeEventListener("pointerup", this.functionsBinded.upAction);
-        document.removeEventListener("pointermove", this.functionsBinded.moveAction);
-        clearTimeout(this.timeoutLongPress);
-        if (this.state.isMoving) {
-            this.state.isMoving = false;
-            if (this.options.onDragEnd) {
-                this.options.onDragEnd(e, this);
-            }
-            else if (this.customFcts.src && this.customFcts.onDragEnd) {
-                this.customFcts.onDragEnd(e, this.customFcts.src);
-            }
-        }
-        else {
-            if (this.useDblPress) {
-                this.nbPress++;
-                if (this.nbPress == 2) {
-                    if (!this.state.oneActionTriggered) {
-                        this.state.oneActionTriggered = true;
-                        this.nbPress = 0;
-                        if (this.options.onDblPress) {
-                            this.options.onDblPress(e, this);
-                            this.triggerEventToParent(this.actionsName.dblPress, e);
-                        }
-                        else {
-                            this.emitTriggerFunction(this.actionsName.dblPress, e);
-                        }
-                    }
-                }
-                else if (this.nbPress == 1) {
-                    this.timeoutDblPress = setTimeout(() => {
-                        this.nbPress = 0;
-                        if (!this.state.oneActionTriggered) {
-                            if (this.options.onPress) {
-                                this.state.oneActionTriggered = true;
-                                this.options.onPress(e, this);
-                                this.triggerEventToParent(this.actionsName.press, e);
-                            }
-                            else {
-                                this.emitTriggerFunction(this.actionsName.press, e);
-                            }
-                        }
-                    }, this.delayDblPress);
-                }
-            }
-            else {
-                if (!this.state.oneActionTriggered) {
-                    if (this.options.onPress) {
-                        this.state.oneActionTriggered = true;
-                        this.options.onPress(e, this);
-                        this.triggerEventToParent(this.actionsName.press, e);
-                    }
-                    else {
-                        this.emitTriggerFunction("press", e);
-                    }
-                }
-            }
-        }
-        if (this.options.onPressEnd) {
-            this.options.onPressEnd(e, this);
-            this.emitTriggerFunctionParent("pressend", e);
-        }
-        else {
-            this.emitTriggerFunction("pressend", e);
-        }
-    }
-    moveAction(e) {
-        if (!this.state.isMoving && !this.state.oneActionTriggered) {
-            if (this.stopPropagation()) {
-                e.stopImmediatePropagation();
-            }
-            let xDist = e.pageX - this.startPosition.x;
-            let yDist = e.pageY - this.startPosition.y;
-            let distance = Math.sqrt(xDist * xDist + yDist * yDist);
-            if (distance > this.offsetDrag && this.downEventSaved) {
-                this.state.oneActionTriggered = true;
-                if (this.options.onDragStart) {
-                    this.state.isMoving = true;
-                    this.options.onDragStart(this.downEventSaved, this);
-                    this.triggerEventToParent(this.actionsName.drag, e);
-                }
-                else {
-                    this.emitTriggerFunction("dragstart", this.downEventSaved);
-                }
-            }
-        }
-        else if (this.state.isMoving) {
-            if (this.options.onDrag) {
-                this.options.onDrag(e, this);
-            }
-            else if (this.customFcts.src && this.customFcts.onDrag) {
-                this.customFcts.onDrag(e, this.customFcts.src);
-            }
-        }
-    }
-    triggerEventToParent(eventName, pointerEvent) {
-        if (this.element.parentNode) {
-            this.element.parentNode.dispatchEvent(new CustomEvent("pressaction_trigger", {
-                bubbles: true,
-                cancelable: false,
-                composed: true,
-                detail: {
-                    target: this.element,
-                    eventName: eventName,
-                    realEvent: pointerEvent
-                }
-            }));
-        }
-    }
-    childPressStart(e) {
-        if (this.options.onPressStart) {
-            this.options.onPressStart(e.detail.realEvent, this);
-        }
-    }
-    childPressEnd(e) {
-        if (this.options.onPressEnd) {
-            this.options.onPressEnd(e.detail.realEvent, this);
-        }
-    }
-    childPress(e) {
-        if (this.options.onPress) {
-            if (this.stopPropagation()) {
-                e.stopImmediatePropagation();
-            }
-            e.detail.state.oneActionTriggered = true;
-            this.options.onPress(e.detail.realEvent, this);
-            this.triggerEventToParent(this.actionsName.press, e.detail.realEvent);
-        }
-    }
-    childDblPress(e) {
-        if (this.options.onDblPress) {
-            if (this.stopPropagation()) {
-                e.stopImmediatePropagation();
-            }
-            if (e.detail.state) {
-                e.detail.state.oneActionTriggered = true;
-            }
-            this.options.onDblPress(e.detail.realEvent, this);
-            this.triggerEventToParent(this.actionsName.dblPress, e.detail.realEvent);
-        }
-    }
-    childLongPress(e) {
-        if (this.options.onLongPress) {
-            if (this.stopPropagation()) {
-                e.stopImmediatePropagation();
-            }
-            e.detail.state.oneActionTriggered = true;
-            this.options.onLongPress(e.detail.realEvent, this);
-            this.triggerEventToParent(this.actionsName.longPress, e.detail.realEvent);
-        }
-    }
-    childDragStart(e) {
-        if (this.options.onDragStart) {
-            if (this.stopPropagation()) {
-                e.stopImmediatePropagation();
-            }
-            e.detail.state.isMoving = true;
-            e.detail.customFcts.src = this;
-            e.detail.customFcts.onDrag = this.options.onDrag;
-            e.detail.customFcts.onDragEnd = this.options.onDragEnd;
-            e.detail.customFcts.offsetDrag = this.options.offsetDrag;
-            this.options.onDragStart(e.detail.realEvent, this);
-            this.triggerEventToParent(this.actionsName.drag, e.detail.realEvent);
-        }
-    }
-    emitTriggerFunctionParent(action, e) {
-        let el = this.element.parentElement;
-        if (el == null) {
-            let parentNode = this.element.parentNode;
-            if (parentNode instanceof ShadowRoot) {
-                this.emitTriggerFunction(action, e, parentNode.host);
-            }
-        }
-        else {
-            this.emitTriggerFunction(action, e, el);
-        }
-    }
-    emitTriggerFunction(action, e, el) {
-        let ev = new CustomEvent("trigger_pointer_" + action, {
-            bubbles: true,
-            cancelable: true,
-            composed: true,
-            detail: {
-                state: this.state,
-                customFcts: this.customFcts,
-                realEvent: e
-            }
-        });
-        if (!el) {
-            el = this.element;
-        }
-        el.dispatchEvent(ev);
-    }
-    /**
-     * Destroy the Press instance byremoving all events
-     */
-    destroy() {
-        if (this.element) {
-            this.element.removeEventListener("pointerdown", this.functionsBinded.downAction);
-            this.element.removeEventListener("trigger_pointer_press", this.functionsBinded.childPress);
-            this.element.removeEventListener("trigger_pointer_pressstart", this.functionsBinded.childPressStart);
-            this.element.removeEventListener("trigger_pointer_pressend", this.functionsBinded.childPressEnd);
-            this.element.removeEventListener("trigger_pointer_dblpress", this.functionsBinded.childDblPress);
-            this.element.removeEventListener("trigger_pointer_longpress", this.functionsBinded.childLongPress);
-            this.element.removeEventListener("trigger_pointer_dragstart", this.functionsBinded.childDragStart);
-        }
-    }
-}
-PressManager.Namespace=`${moduleName}`;
-_.PressManager=PressManager;
 const Effect=class Effect {
     callbacks = [];
     isInit = false;
@@ -1722,9 +1332,17 @@ const Watcher=class Watcher {
                 if (name !== "") {
                     let regex = new RegExp("^" + name.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + "(\\.|(\\[)|$)");
                     if (!regex.test(rootPath)) {
-                        continue;
+                        let regex2 = new RegExp("^" + rootPath.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + "(\\.|(\\[)|$)");
+                        if (!regex2.test(name)) {
+                            continue;
+                        }
+                        else {
+                            pathToSend = "";
+                        }
                     }
-                    pathToSend = rootPath.replace(regex, "$2");
+                    else {
+                        pathToSend = rootPath.replace(regex, "$2");
+                    }
                 }
                 if (name === "" && proxyData.useHistory) {
                     proxyData.history.push({
@@ -1789,6 +1407,396 @@ const Watcher=class Watcher {
 }
 Watcher.Namespace=`${moduleName}`;
 _.Watcher=Watcher;
+const PressManager=class PressManager {
+    static create(options) {
+        if (Array.isArray(options.element)) {
+            let result = [];
+            for (let el of options.element) {
+                let cloneOpt = { ...options };
+                cloneOpt.element = el;
+                result.push(new PressManager(cloneOpt));
+            }
+            return result;
+        }
+        else {
+            return new PressManager(options);
+        }
+    }
+    options;
+    element;
+    delayDblPress = 150;
+    delayLongPress = 700;
+    nbPress = 0;
+    offsetDrag = 20;
+    state = {
+        oneActionTriggered: false,
+        isMoving: false,
+    };
+    startPosition = { x: 0, y: 0 };
+    customFcts = {};
+    timeoutDblPress = 0;
+    timeoutLongPress = 0;
+    downEventSaved;
+    actionsName = {
+        press: "press",
+        longPress: "longPress",
+        dblPress: "dblPress",
+        drag: "drag"
+    };
+    useDblPress = false;
+    stopPropagation = () => true;
+    functionsBinded = {
+        downAction: (e) => { },
+        upAction: (e) => { },
+        moveAction: (e) => { },
+        childPressStart: (e) => { },
+        childPressEnd: (e) => { },
+        childPress: (e) => { },
+        childDblPress: (e) => { },
+        childLongPress: (e) => { },
+        childDragStart: (e) => { },
+    };
+    /**
+     * @param {*} options - The options
+     * @param {HTMLElement | HTMLElement[]} options.element - The element to manage
+     */
+    constructor(options) {
+        if (options.element === void 0) {
+            throw 'You must provide an element';
+        }
+        this.element = options.element;
+        this.checkDragConstraint(options);
+        this.assignValueOption(options);
+        this.options = options;
+        this.init();
+    }
+    /**
+     * Get the current element focused by the PressManager
+     */
+    getElement() {
+        return this.element;
+    }
+    checkDragConstraint(options) {
+        if (options.onDrag !== void 0) {
+            if (options.onDragStart === void 0) {
+                options.onDragStart = (e) => { };
+            }
+            if (options.onDragEnd === void 0) {
+                options.onDragEnd = (e) => { };
+            }
+        }
+        if (options.onDragStart !== void 0) {
+            if (options.onDrag === void 0) {
+                options.onDrag = (e) => { };
+            }
+            if (options.onDragEnd === void 0) {
+                options.onDragEnd = (e) => { };
+            }
+        }
+        if (options.onDragEnd !== void 0) {
+            if (options.onDragStart === void 0) {
+                options.onDragStart = (e) => { };
+            }
+            if (options.onDrag === void 0) {
+                options.onDrag = (e) => { };
+            }
+        }
+    }
+    assignValueOption(options) {
+        if (options.delayDblPress !== undefined) {
+            this.delayDblPress = options.delayDblPress;
+        }
+        if (options.delayLongPress !== undefined) {
+            this.delayLongPress = options.delayLongPress;
+        }
+        if (options.offsetDrag !== undefined) {
+            this.offsetDrag = options.offsetDrag;
+        }
+        if (options.onDblPress !== undefined) {
+            this.useDblPress = true;
+        }
+        if (options.forceDblPress) {
+            this.useDblPress = true;
+        }
+        if (typeof options.stopPropagation == 'function') {
+            this.stopPropagation = options.stopPropagation;
+        }
+        else if (options.stopPropagation === false) {
+            this.stopPropagation = () => false;
+        }
+        if (!options.buttonAllowed)
+            options.buttonAllowed = [0];
+    }
+    bindAllFunction() {
+        this.functionsBinded.downAction = this.downAction.bind(this);
+        this.functionsBinded.moveAction = this.moveAction.bind(this);
+        this.functionsBinded.upAction = this.upAction.bind(this);
+        this.functionsBinded.childDblPress = this.childDblPress.bind(this);
+        this.functionsBinded.childDragStart = this.childDragStart.bind(this);
+        this.functionsBinded.childLongPress = this.childLongPress.bind(this);
+        this.functionsBinded.childPress = this.childPress.bind(this);
+        this.functionsBinded.childPressStart = this.childPressStart.bind(this);
+        this.functionsBinded.childPressEnd = this.childPressEnd.bind(this);
+    }
+    init() {
+        this.bindAllFunction();
+        this.element.addEventListener("pointerdown", this.functionsBinded.downAction);
+        this.element.addEventListener("trigger_pointer_press", this.functionsBinded.childPress);
+        this.element.addEventListener("trigger_pointer_pressstart", this.functionsBinded.childPressStart);
+        this.element.addEventListener("trigger_pointer_pressend", this.functionsBinded.childPressEnd);
+        this.element.addEventListener("trigger_pointer_dblpress", this.functionsBinded.childDblPress);
+        this.element.addEventListener("trigger_pointer_longpress", this.functionsBinded.childLongPress);
+        this.element.addEventListener("trigger_pointer_dragstart", this.functionsBinded.childDragStart);
+    }
+    downAction(e) {
+        if (!this.options.buttonAllowed?.includes(e.button)) {
+            return;
+        }
+        this.downEventSaved = e;
+        if (this.stopPropagation()) {
+            e.stopImmediatePropagation();
+        }
+        this.customFcts = {};
+        if (this.nbPress == 0) {
+            this.state.oneActionTriggered = false;
+            clearTimeout(this.timeoutDblPress);
+        }
+        this.startPosition = { x: e.pageX, y: e.pageY };
+        document.addEventListener("pointerup", this.functionsBinded.upAction);
+        document.addEventListener("pointermove", this.functionsBinded.moveAction);
+        this.timeoutLongPress = setTimeout(() => {
+            if (!this.state.oneActionTriggered) {
+                if (this.options.onLongPress) {
+                    this.state.oneActionTriggered = true;
+                    this.options.onLongPress(e, this);
+                    this.triggerEventToParent(this.actionsName.longPress, e);
+                }
+                else {
+                    this.emitTriggerFunction(this.actionsName.longPress, e);
+                }
+            }
+        }, this.delayLongPress);
+        if (this.options.onPressStart) {
+            this.options.onPressStart(e, this);
+            this.emitTriggerFunctionParent("pressstart", e);
+        }
+        else {
+            this.emitTriggerFunction("pressstart", e);
+        }
+    }
+    upAction(e) {
+        if (this.stopPropagation()) {
+            e.stopImmediatePropagation();
+        }
+        document.removeEventListener("pointerup", this.functionsBinded.upAction);
+        document.removeEventListener("pointermove", this.functionsBinded.moveAction);
+        clearTimeout(this.timeoutLongPress);
+        if (this.state.isMoving) {
+            this.state.isMoving = false;
+            if (this.options.onDragEnd) {
+                this.options.onDragEnd(e, this);
+            }
+            else if (this.customFcts.src && this.customFcts.onDragEnd) {
+                this.customFcts.onDragEnd(e, this.customFcts.src);
+            }
+        }
+        else {
+            if (this.useDblPress) {
+                this.nbPress++;
+                if (this.nbPress == 2) {
+                    if (!this.state.oneActionTriggered) {
+                        this.state.oneActionTriggered = true;
+                        this.nbPress = 0;
+                        if (this.options.onDblPress) {
+                            this.options.onDblPress(e, this);
+                            this.triggerEventToParent(this.actionsName.dblPress, e);
+                        }
+                        else {
+                            this.emitTriggerFunction(this.actionsName.dblPress, e);
+                        }
+                    }
+                }
+                else if (this.nbPress == 1) {
+                    this.timeoutDblPress = setTimeout(() => {
+                        this.nbPress = 0;
+                        if (!this.state.oneActionTriggered) {
+                            if (this.options.onPress) {
+                                this.state.oneActionTriggered = true;
+                                this.options.onPress(e, this);
+                                this.triggerEventToParent(this.actionsName.press, e);
+                            }
+                            else {
+                                this.emitTriggerFunction(this.actionsName.press, e);
+                            }
+                        }
+                    }, this.delayDblPress);
+                }
+            }
+            else {
+                if (!this.state.oneActionTriggered) {
+                    if (this.options.onPress) {
+                        this.state.oneActionTriggered = true;
+                        this.options.onPress(e, this);
+                        this.triggerEventToParent(this.actionsName.press, e);
+                    }
+                    else {
+                        this.emitTriggerFunction("press", e);
+                    }
+                }
+            }
+        }
+        if (this.options.onPressEnd) {
+            this.options.onPressEnd(e, this);
+            this.emitTriggerFunctionParent("pressend", e);
+        }
+        else {
+            this.emitTriggerFunction("pressend", e);
+        }
+    }
+    moveAction(e) {
+        if (!this.state.isMoving && !this.state.oneActionTriggered) {
+            if (this.stopPropagation()) {
+                e.stopImmediatePropagation();
+            }
+            let xDist = e.pageX - this.startPosition.x;
+            let yDist = e.pageY - this.startPosition.y;
+            let distance = Math.sqrt(xDist * xDist + yDist * yDist);
+            if (distance > this.offsetDrag && this.downEventSaved) {
+                this.state.oneActionTriggered = true;
+                if (this.options.onDragStart) {
+                    this.state.isMoving = true;
+                    this.options.onDragStart(this.downEventSaved, this);
+                    this.triggerEventToParent(this.actionsName.drag, e);
+                }
+                else {
+                    this.emitTriggerFunction("dragstart", this.downEventSaved);
+                }
+            }
+        }
+        else if (this.state.isMoving) {
+            if (this.options.onDrag) {
+                this.options.onDrag(e, this);
+            }
+            else if (this.customFcts.src && this.customFcts.onDrag) {
+                this.customFcts.onDrag(e, this.customFcts.src);
+            }
+        }
+    }
+    triggerEventToParent(eventName, pointerEvent) {
+        if (this.element.parentNode) {
+            this.element.parentNode.dispatchEvent(new CustomEvent("pressaction_trigger", {
+                bubbles: true,
+                cancelable: false,
+                composed: true,
+                detail: {
+                    target: this.element,
+                    eventName: eventName,
+                    realEvent: pointerEvent
+                }
+            }));
+        }
+    }
+    childPressStart(e) {
+        if (this.options.onPressStart) {
+            this.options.onPressStart(e.detail.realEvent, this);
+        }
+    }
+    childPressEnd(e) {
+        if (this.options.onPressEnd) {
+            this.options.onPressEnd(e.detail.realEvent, this);
+        }
+    }
+    childPress(e) {
+        if (this.options.onPress) {
+            if (this.stopPropagation()) {
+                e.stopImmediatePropagation();
+            }
+            e.detail.state.oneActionTriggered = true;
+            this.options.onPress(e.detail.realEvent, this);
+            this.triggerEventToParent(this.actionsName.press, e.detail.realEvent);
+        }
+    }
+    childDblPress(e) {
+        if (this.options.onDblPress) {
+            if (this.stopPropagation()) {
+                e.stopImmediatePropagation();
+            }
+            if (e.detail.state) {
+                e.detail.state.oneActionTriggered = true;
+            }
+            this.options.onDblPress(e.detail.realEvent, this);
+            this.triggerEventToParent(this.actionsName.dblPress, e.detail.realEvent);
+        }
+    }
+    childLongPress(e) {
+        if (this.options.onLongPress) {
+            if (this.stopPropagation()) {
+                e.stopImmediatePropagation();
+            }
+            e.detail.state.oneActionTriggered = true;
+            this.options.onLongPress(e.detail.realEvent, this);
+            this.triggerEventToParent(this.actionsName.longPress, e.detail.realEvent);
+        }
+    }
+    childDragStart(e) {
+        if (this.options.onDragStart) {
+            if (this.stopPropagation()) {
+                e.stopImmediatePropagation();
+            }
+            e.detail.state.isMoving = true;
+            e.detail.customFcts.src = this;
+            e.detail.customFcts.onDrag = this.options.onDrag;
+            e.detail.customFcts.onDragEnd = this.options.onDragEnd;
+            e.detail.customFcts.offsetDrag = this.options.offsetDrag;
+            this.options.onDragStart(e.detail.realEvent, this);
+            this.triggerEventToParent(this.actionsName.drag, e.detail.realEvent);
+        }
+    }
+    emitTriggerFunctionParent(action, e) {
+        let el = this.element.parentElement;
+        if (el == null) {
+            let parentNode = this.element.parentNode;
+            if (parentNode instanceof ShadowRoot) {
+                this.emitTriggerFunction(action, e, parentNode.host);
+            }
+        }
+        else {
+            this.emitTriggerFunction(action, e, el);
+        }
+    }
+    emitTriggerFunction(action, e, el) {
+        let ev = new CustomEvent("trigger_pointer_" + action, {
+            bubbles: true,
+            cancelable: true,
+            composed: true,
+            detail: {
+                state: this.state,
+                customFcts: this.customFcts,
+                realEvent: e
+            }
+        });
+        if (!el) {
+            el = this.element;
+        }
+        el.dispatchEvent(ev);
+    }
+    /**
+     * Destroy the Press instance byremoving all events
+     */
+    destroy() {
+        if (this.element) {
+            this.element.removeEventListener("pointerdown", this.functionsBinded.downAction);
+            this.element.removeEventListener("trigger_pointer_press", this.functionsBinded.childPress);
+            this.element.removeEventListener("trigger_pointer_pressstart", this.functionsBinded.childPressStart);
+            this.element.removeEventListener("trigger_pointer_pressend", this.functionsBinded.childPressEnd);
+            this.element.removeEventListener("trigger_pointer_dblpress", this.functionsBinded.childDblPress);
+            this.element.removeEventListener("trigger_pointer_longpress", this.functionsBinded.childLongPress);
+            this.element.removeEventListener("trigger_pointer_dragstart", this.functionsBinded.childDragStart);
+        }
+    }
+}
+PressManager.Namespace=`${moduleName}`;
+_.PressManager=PressManager;
 const Uri=class Uri {
     static prepare(uri) {
         let params = [];
@@ -2246,6 +2254,7 @@ const TemplateContext=class TemplateContext {
     computeds = [];
     watch;
     registry;
+    isDestroyed = false;
     constructor(component, data = {}, parentContext, registry) {
         this.comp = component;
         this.registry = registry;
@@ -2389,6 +2398,7 @@ const TemplateContext=class TemplateContext {
         this.updateIndex(this.watch[_indexName] - 1, _indexName);
     }
     destructor() {
+        this.isDestroyed = true;
         for (let computed of this.computeds) {
             computed.destroy();
         }
@@ -2438,6 +2448,7 @@ const TemplateInstance=class TemplateInstance {
     loopRegisteries = {};
     loops = [];
     ifs = [];
+    isDestroyed = false;
     constructor(component, content, actions, loops, ifs, context) {
         this.component = component;
         this.content = content;
@@ -2462,6 +2473,7 @@ const TemplateInstance=class TemplateInstance {
         this.renderSubTemplate();
     }
     destructor() {
+        this.isDestroyed = true;
         for (let name in this.loopRegisteries) {
             for (let item of this.loopRegisteries[name].templates) {
                 item.destructor();
@@ -2675,6 +2687,8 @@ const TemplateInstance=class TemplateInstance {
             clearTimeout(timeout);
             // add timeout to group change that append on the same frame (for example index update)
             timeout = setTimeout(() => {
+                if (computed.isDestroy)
+                    return;
                 apply();
             });
         });
@@ -2902,6 +2916,7 @@ const TemplateInstance=class TemplateInstance {
                     }
                 }
             };
+            this.loopRegisteries[loop.anchorId].sub = sub;
             elements.subscribe(sub);
         }
         let anchor = this._components[loop.anchorId][0];
@@ -6008,9 +6023,63 @@ var AventusWebsite;
 (function (AventusWebsite) {
 const moduleName = `AventusWebsite`;
 const _ = {};
-
+Aventus.Style.store("@TutoVar", `:host{--font-color: white;--color-primary-100: #00b6e6;--color-primary-200: #48bee9;--color-primary-300: #69c6ec;--color-primary-400: #83ceef;--color-primary-500: #9ad6f1;--color-primary-600: #b0def4;--color-surface-100: #0d2734;--color-surface-200: #263b48;--color-surface-300: #3f515c;--color-surface-400: #586772;--color-surface-500: #727f88;--color-surface-600: #8c979e;--color-surface-mixed-100: #103444;--color-surface-mixed-200: #2b4857;--color-surface-mixed-300: #445c6a;--color-surface-mixed-400: #5d727e;--color-surface-mixed-500: #768892;--color-surface-mixed-600: #909ea7}`)
 
 let _n;
+const TutorialCompiledHtml = class TutorialCompiledHtml extends Aventus.WebComponent {
+    static __style = ``;
+    __getStatic() {
+        return TutorialCompiledHtml;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TutorialCompiledHtml.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "TutorialCompiledHtml";
+    }
+}
+TutorialCompiledHtml.Namespace=`${moduleName}`;
+TutorialCompiledHtml.Tag=`av-tutorial-compiled-html`;
+_.TutorialCompiledHtml=TutorialCompiledHtml;
+if(!window.customElements.get('av-tutorial-compiled-html')){window.customElements.define('av-tutorial-compiled-html', TutorialCompiledHtml);Aventus.WebComponentInstance.registerDefinition(TutorialCompiledHtml);}
+
+const TutorialCompiledBase = class TutorialCompiledBase extends Aventus.WebComponent {
+    static __style = ``;
+    __getStatic() {
+        return TutorialCompiledBase;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TutorialCompiledBase.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "TutorialCompiledBase";
+    }
+    styleAfter(addStyle) {
+        super.styleAfter(addStyle);
+        addStyle("TutoVar");
+    }
+}
+TutorialCompiledBase.Namespace=`${moduleName}`;
+TutorialCompiledBase.Tag=`av-tutorial-compiled-base`;
+_.TutorialCompiledBase=TutorialCompiledBase;
+if(!window.customElements.get('av-tutorial-compiled-base')){window.customElements.define('av-tutorial-compiled-base', TutorialCompiledBase);Aventus.WebComponentInstance.registerDefinition(TutorialCompiledBase);}
+
 const Tabs = class Tabs extends Aventus.WebComponent {
     static __style = ``;
     __getStatic() {
@@ -6066,7 +6135,7 @@ const TutorialFooter = class TutorialFooter extends Aventus.WebComponent {
     set 'hide_previous'(val) { this.setBoolAttr('hide_previous', val) }get 'hide_next'() { return this.getBoolAttr('hide_next') }
     set 'hide_next'(val) { this.setBoolAttr('hide_next', val) }    previousState;
     nextState;
-    static __style = `:host{align-items:center;display:flex;justify-content:center;margin:30px 0;width:100%}:host div{background-color:var(--aventus-color);border-radius:5px;box-shadow:0 0 5px #555;color:var(--secondary-color);cursor:pointer;font-size:16px;font-weight:400;margin:0 30px;padding:5px 15px;-webkit-tap-highlight-color:rgba(0,0,0,0);user-select:none}:host div:hover{box-shadow:0 0 3px #444}:host([hide_next]) .next{opacity:0;visibility:hidden}:host([hide_previous]) .previous{opacity:0;visibility:hidden}`;
+    static __style = `:host{align-items:center;display:flex;justify-content:center;margin:30px 0;width:100%}:host div{background-color:var(--aventus-color);border-radius:5px;box-shadow:var(--elevation-3);color:var(--aventus-font-color);cursor:pointer;font-size:16px;font-weight:400;margin:0 30px;padding:5px 15px;-webkit-tap-highlight-color:rgba(0,0,0,0);user-select:none}:host div:hover{box-shadow:0 0 3px #444}:host([hide_next]) .next{opacity:0;visibility:hidden}:host([hide_previous]) .previous{opacity:0;visibility:hidden}`;
     __getStatic() {
         return TutorialFooter;
     }
@@ -7908,9 +7977,10 @@ if(!window.customElements.get('av-collapse')){window.customElements.define('av-c
 
 const CodeEditorFolder = class CodeEditorFolder extends Aventus.WebComponent {
     static get observedAttributes() {return ["name", "open"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
-    get 'name'() { return this.getStringProp('name') }
+    get 'highlight'() { return this.getBoolAttr('highlight') }
+    set 'highlight'(val) { this.setBoolAttr('highlight', val) }    get 'name'() { return this.getStringProp('name') }
     set 'name'(val) { this.setStringAttr('name', val) }get 'open'() { return this.getBoolProp('open') }
-    set 'open'(val) { this.setBoolAttr('open', val) }    static __style = `:host{display:flex;flex-direction:column;font-size:16px;user-select:none;margin-top:5px}:host .name{display:flex;align-items:center;cursor:pointer}:host .name mi-icon.icon{font-size:16px;margin-right:5px;flex-shrink:0}:host .name mi-icon.arrow{transform:rotate(180deg);font-size:12px;width:15px;margin-right:5px;transition:transform var(--bezier-curve) .5s;flex-shrink:0}:host .name span{flex-grow:1}:host .content{margin-left:10px}:host([open]) .name mi-icon.arrow{transform:rotate(270deg)}`;
+    set 'open'(val) { this.setBoolAttr('open', val) }    static __style = `:host{display:flex;flex-direction:column;font-size:16px;user-select:none;margin-top:5px}:host .name{display:flex;align-items:center;cursor:pointer;position:relative}:host .name mi-icon.icon{font-size:16px;margin-right:5px;flex-shrink:0}:host .name mi-icon.arrow{transform:rotate(180deg);font-size:12px;width:15px;margin-right:5px;transition:transform var(--bezier-curve) .5s;flex-shrink:0}:host .name span{position:relative}:host .content{margin-left:10px}:host([open]) .name mi-icon.arrow{transform:rotate(270deg)}:host([highlight]) .name span::after{content:"";position:absolute;right:-10px;top:2px;width:6px;height:6px;border-radius:3px;background-color:var(--aventus-color)}`;
     __getStatic() {
         return CodeEditorFolder;
     }
@@ -7946,9 +8016,9 @@ const CodeEditorFolder = class CodeEditorFolder extends Aventus.WebComponent {
     getClassName() {
         return "CodeEditorFolder";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('name')){ this['name'] = ""; }if(!this.hasAttribute('open')) { this.attributeChangedCallback('open', false, false); } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('name');this.__upgradeProperty('open'); }
-    __listBoolProps() { return ["open"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('highlight')) { this.attributeChangedCallback('highlight', false, false); }if(!this.hasAttribute('name')){ this['name'] = ""; }if(!this.hasAttribute('open')) { this.attributeChangedCallback('open', false, false); } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('highlight');this.__upgradeProperty('name');this.__upgradeProperty('open'); }
+    __listBoolProps() { return ["highlight","open"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
     toggleOpen() {
         this.open = !this.open;
     }
@@ -11050,30 +11120,6 @@ DocWcCondition.Tag=`av-doc-wc-condition`;
 _.DocWcCondition=DocWcCondition;
 if(!window.customElements.get('av-doc-wc-condition')){window.customElements.define('av-doc-wc-condition', DocWcCondition);Aventus.WebComponentInstance.registerDefinition(DocWcCondition);}
 
-const DocAdvancedTemplate = class DocAdvancedTemplate extends DocGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return DocAdvancedTemplate;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocAdvancedTemplate.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Advanced - Template</h1><p>Because you will create some amazing components or patterns with Aventus, the framework includes a way to generate    files based on templates. For example, when you create a project with Tailwind, all your webcomponents must inherit    from a base component that contains the Tailwind style. This will be the example for this section.</p><h2>Setup for the example</h2><p>First of all you need to create a new empty project.</p><av-code language="json" filename="aventus.conf.avt">    {    \t"module": "Tailwind",    \t"componentPrefix": "av",    \t"build": [    \t\t{    \t\t\t"name": "Main",    \t\t\t"inputPath": [    \t\t\t\t"./src/*"    \t\t\t],    \t\t\t"outputFile": "./dist/tailwind.js"    \t\t}    \t]    }</av-code></av-code><p>With the following structure:</p><ul>    <li>/dist/</li>    <li>/src/</li>    <li>aventus.conf.avt</li></ul><p>    Now inside the src folder, you can create a new component named <span class="cn">Tailwind</span>. For the example, we will leave the    files created empty.</p><h2>Creating a template</h2><p>You can create the following folder inside your workspace <span class="cn">/.aventus/templates/</span>. This is where all your    templates will be stored. This folder must be at your workspace root, otherwise it will not work.</p><p>You can create a new folder named <span class="cn">TailwindTemplate</span> inside ./aventus/templates/. and inside this new folder,    you    can add a file named <span class="cn">template.avt</span>. This file define which questions must be asked to the user. In the example    we need to know the component name.</p><av-code language="json" filename="template.avt">    {    \t"name": "Tailwind Template",    \t"description": "Create a tailwind component",    \t"version": "1.0.0",    \t"variables": {    \t\t"componentName":{    \t\t\t"question": "Provide a name for your component",    \t\t\t"type": "input"    \t\t}    \t}    }</av-code></av-code><p>The variable componentName will be now available inside the template creation flow. Every files at the same depth or    deeper than the template.avt will be copied when template is called. We can now create template files    : </p><ul>    <li>/.aventus/template/TailwindTemplate/&#36;&#123;&#123;componentName&#125;&#125;</li>    <li>/.aventus/template/TailwindTemplate/&#36;&#123;&#123;componentName&#125;&#125;/&#36;&#123;&#123;componentName&#125;&#125;.wcl.avt</li>    <li>/.aventus/template/TailwindTemplate/&#36;&#123;&#123;componentName&#125;&#125;/&#36;&#123;&#123;componentName&#125;&#125;.wcs.avt</li>    <li>/.aventus/template/TailwindTemplate/&#36;&#123;&#123;componentName&#125;&#125;/&#36;&#123;&#123;componentName&#125;&#125;.wcv.avt</li></ul><av-code language="typescript" filename="&#36;&#123;&#123;componentName&#125;&#125;.wcv.avt">    import { Tailwind } from "../Tailwind/Tailwind.wcl.avt";    &nbsp;    export class &#36;&#123;&#123;componentName&#125;&#125; extends Tailwind implements Aventus.DefaultComponent {    &nbsp;    \t//#region static    &nbsp;    \t//#endregion    &nbsp;    &nbsp;    \t//#region props    &nbsp;    \t//#endregion    &nbsp;    &nbsp;    \t//#region variables    &nbsp;    \t//#endregion    &nbsp;    &nbsp;    \t//#region constructor    &nbsp;    \t//#endregion    &nbsp;    &nbsp;    \t//#region methods    &nbsp;    \t//#endregion    &nbsp;    }</av-code></av-code><av-code language="css" filename="&#36;&#123;&#123;componentName&#125;&#125;.wcs.avt">    :host {}</av-code></av-code><av-code language="html" filename="&#36;&#123;&#123;componentName&#125;&#125;.wcv.avt">    &lt;slot&gt;&lt;/slot&gt;</av-code></av-code><p>Every &#36;&#123;&#123;componentName&#125;&#125; will be replaced by the user answer.</p><h2>Using the template</h2><p>Now if you right click on the src folder and click on <span class="cn">Aventus : Create...</span>. You can choose the option    <span class="cn">Custom</span>. Inside the next dropdown, the option <span class="cn">Tailwind Template</span> must be available.</p><av-img src="/img/doc/advanced/template/tailwind-template.png"></av-img><p>If you click on it, a prompt will ask you the new component name. If you fill it with <span class="cn">NewComp</span> and press enter,    3 new files will be created.</p><av-img src="/img/doc/advanced/template/tailwind-template-created.png"></av-img><h2>Predefined variables</h2><p>Aventus add predefined variables that you can use inside your template.</p><div class="table">    <av-dynamic-row class="header">        <av-dynamic-col size="4" center>Name</av-dynamic-col>        <av-dynamic-col size="8" center>Description</av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>path</av-dynamic-col>        <av-dynamic-col size="8" center>The full path of the folder where the user right click.</av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>folderName</av-dynamic-col>        <av-dynamic-col size="8" center>The folder name where the user right click.</av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>namespace</av-dynamic-col>        <av-dynamic-col size="8" center>The namespace that the path will have based on the namespace            strategy.</av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>module</av-dynamic-col>        <av-dynamic-col size="8" center>The module name defined inside your aventus.conf.avt.</av-dynamic-col>    </av-dynamic-row></div><h2>Optimize user experience</h2><p>    Until now, when you use the template, nothing is controlled and nothing notice the user that the creation is over.    We will add some check on the input and open the *.wcl.avt. To do that, open the <span class="cn">template.avt</span> and remplace    the content like that.</p><av-code language="json" filename="template.avt">    {    \t"name": "Tailwind Template",    \t"description": "Create a tailwind component",    \t"version": "1.0.0",    \t"variables": {    \t\t"componentName":{    \t\t\t"question": "Provide a name for your component",    \t\t\t"type": "input",    \t\t\t"validation": [    \t\t\t\t{    \t\t\t\t\t"pattern": "[A-Z][A-Za-z0-9]+",    \t\t\t\t\t"errorMsg": "Provide a valide component name"    \t\t\t\t}    \t\t\t]    \t\t}    \t},    \t"filesToOpen": [    \t\t"/&#36;&#123;&#123;componentName&#125;&#125;.wcl.avt$/"    \t]    }</av-code></av-code><p>The <span class="cn">validation</span> field allows you to validate the input with a regex (<span class="cn">pattern</span>) and display a message if the check failed (<span class="cn">errorMsg</span>). The <span class="cn">filesToOpen</span> field allows you to open a file after the creation of your template. The value of filesToOpen items must be the following.</p><ul>    <li>Starts and ends with a <span class="cn">/</span> : this is a regex</li>    <li>Otherwise: this is a path comparison</li></ul><h2>Expose the template globaly</h2><p>    To use a template across multiple project, you can expose your template globaly. To complete that, you must run the command <span class="cn">Aventus : Open storage</span> and go inside the folder <span class="cn">templates</span>. Then you can copy paste the previous template here. Notice: Aventus watch the global templates folder only during starting process, so when you create a new global template, you must reload your Vscode instance.</p><h2>Project</h2><p>    In the previous section, you open the Aventus storage folder, you may have noticed that a <span class="cn">projects</span> exists. Inside this folder, you can find templates that will be used when you <span class="cn">init a new project</span>. So can you create your own template to init new project or download some from the web. You must know that if a <span class="cn">aventus.conf.avt</span> file is at the same level of a <span class="cn">template.avt</span> file, the project will not be created. It means no autocompletion, no output files, etc.</p><p>    Because in most of the case, the project creation involves to run commands, you can add inside your template file a field named <span class="cn">cmdsAfter</span> and add which commands must be ran after the creation.</p><av-code language="json" filename="template.avt">    {    \t...    \t"cmdsAfter": ["npm run install"]    }</av-code></av-code>` }
-    });
-}
-    getClassName() {
-        return "DocAdvancedTemplate";
-    }
-}
-DocAdvancedTemplate.Namespace=`${moduleName}`;
-DocAdvancedTemplate.Tag=`av-doc-advanced-template`;
-_.DocAdvancedTemplate=DocAdvancedTemplate;
-if(!window.customElements.get('av-doc-advanced-template')){window.customElements.define('av-doc-advanced-template', DocAdvancedTemplate);Aventus.WebComponentInstance.registerDefinition(DocAdvancedTemplate);}
-
 const DocLibWatcher = class DocLibWatcher extends DocGenericPage {
     static __style = ``;
     __getStatic() {
@@ -11441,7 +11487,7 @@ const CodeEditor = class CodeEditor extends Aventus.WebComponent {
     toggleMenu() {
         this.show_menu = !this.show_menu;
     }
-    openFile(file) {
+    openFile(file, path) {
         if (this.openedFile) {
             this.openedFile.active = false;
             this.openedFile.code.parentNode?.removeChild(this.openedFile.code);
@@ -11449,6 +11495,9 @@ const CodeEditor = class CodeEditor extends Aventus.WebComponent {
         this.openedFile = file;
         this.openedFile.active = true;
         this.displayEl.appendChild(this.openedFile.code);
+        if (path) {
+            this.openFolder(path);
+        }
     }
     store(path, code) {
         let splitted = path.split("/");
@@ -11473,6 +11522,9 @@ const CodeEditor = class CodeEditor extends Aventus.WebComponent {
             if (element instanceof AvCode && element.filename) {
                 this.store(element.filename, element);
                 element.filename = undefined;
+            }
+            else if (element.getAttribute("folder")) {
+                this.store(element.getAttribute("folder") ?? '');
             }
         }
         this.menuEl.innerHTML = "";
@@ -11524,6 +11576,9 @@ const CodeEditor = class CodeEditor extends Aventus.WebComponent {
                 if (this.all_open) {
                     folder.open = true;
                 }
+                if (highlights.includes(newPath)) {
+                    folder.highlight = true;
+                }
                 this.folders[newPath] = folder;
                 this.renderMenu(current.children, folder, newPath);
                 el.appendChild(folder);
@@ -11544,12 +11599,12 @@ const CodeEditor = class CodeEditor extends Aventus.WebComponent {
                 el.appendChild(file);
                 if (this.show) {
                     if (this.comparePath(this.show, newPath)) {
-                        this.openFile(file);
+                        this.openFile(file, path);
                     }
                 }
                 else {
                     if (!this.openedFile) {
-                        this.openFile(file);
+                        this.openFile(file, path);
                     }
                 }
             }
@@ -11557,7 +11612,20 @@ const CodeEditor = class CodeEditor extends Aventus.WebComponent {
     }
     openFolderAfterRender() {
         if (this.open_folder) {
-            this.openFolder(this.open_folder);
+            if (this.open_folder.startsWith("[")) {
+                try {
+                    let folders = JSON.parse(this.open_folder);
+                    for (let folder of folders) {
+                        this.openFolder(folder);
+                    }
+                }
+                catch (e) {
+                    console.log(e);
+                }
+            }
+            else {
+                this.openFolder(this.open_folder);
+            }
         }
     }
     comparePath(p1, p2) {
@@ -11614,54 +11682,9 @@ CodeEditor.Tag=`av-code-editor`;
 _.CodeEditor=CodeEditor;
 if(!window.customElements.get('av-code-editor')){window.customElements.define('av-code-editor', CodeEditor);Aventus.WebComponentInstance.registerDefinition(CodeEditor);}
 
-const TutorialInitEditor = class TutorialInitEditor extends Aventus.WebComponent {
-    static __style = `:host{width:100%}:host iframe{display:flex;flex-grow:1;border:none;width:100%;height:600px;border-radius:5px}`;
-    __getStatic() {
-        return TutorialInitEditor;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(TutorialInitEditor.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Demo" all_open="false" _id="tutorialiniteditor_0">    <av-code language="typescript" filename="Demo/aventus.conf.avt">        <pre>            {            	"module": "AventusDemo",            	"componentPrefix": "av",            	"hideWarnings": true,            	"dependances": [            		{            			"uri": "@AventusUI"            		}            	],            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/apps/*",            				"./src/components/*",            				"./src/data/*",            				"./src/lib/*",            				"./src/ram/*",            				"./src/states/*"            			],            			"compile": [{            				"output": "./dist/demo.js"            			}]            		}            	],            	"static": [            		{            			"name": "Main",            			"input": "./src/static/*",            			"output": "./dist/"            		}            	]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">        <pre>            import { TodoCreateState } from "../../states/todo/TodoCreateState.state.avt";            import { TodoEditPage } from "./pages/TodoEditPage/TodoEditPage.wcl.avt";            import { TodoListPage } from "./pages/TodoListPage/TodoListPage.wcl.avt";            &nbsp;            export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {            &nbsp;                //#region static                public static instance: MainApp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                protected override defineRoutes(): void {                    this.addRoute(TodoListPage.pageUrl, TodoListPage);                    this.addRoute(TodoEditPage.pageUrl, TodoEditPage);                }            &nbsp;                /**                 *                  */                protected setCreateState() {                    this.stateManager.setState(new TodoCreateState());                }            &nbsp;                protected override postCreation(): void {                    super.postCreation();                    MainApp.instance = this;                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcs.avt">        <pre>            :host {            	background-color: var(--color-surface-mixed-100);            	display: flex;            	flex-direction: row;            	height: 100%;            	overflow: hidden;            	width: 100%;            &nbsp;            	.nav {            		background-color: var(--color-surface-mixed-300);            		height: 100%;            		padding-top: 30px;            		width: 200px;            &nbsp;            		.nav-item {            			align-items: center;            			cursor: pointer;            			display: flex;            			margin: 5px 0;            			padding: 5px 15px;            			width: 100%;            			transition: background-color 0.2s linear;            &nbsp;            			av-icon {            				margin-right: 15px;            			}            		}            &nbsp;            		.nav-item.active {            			background-color: var(--color-surface-mixed-600);            		}            		.nav-item:not(.active):hover {            			background-color: var(--color-surface-mixed-500);            		}            	}            &nbsp;            	.content {            		width: calc(100% - 200px);            		height: 100%;            	}            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">        <pre>            &lt;block name="before"&gt;                &lt;div class="nav"&gt;                    &lt;av-router-link class="nav-item" state="/"&gt;                        &lt;av-icon icon="list"&gt;&lt;/av-icon&gt;                        &lt;span class="name"&gt;Todo list&lt;/span&gt;                    &lt;/av-router-link&gt;                    &lt;av-router-link class="nav-item" @press="setCreateState" active_state="/todo/create"&gt;                        &lt;av-icon icon="add"&gt;&lt;/av-icon&gt;                        &lt;span class="name"&gt;Create todo&lt;/span&gt;                    &lt;/av-router-link&gt;                &lt;/div&gt;            &lt;/block&gt;            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcl.avt">        <pre>            export abstract class GenericPage extends Aventus.Navigation.Page implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                public abstract definePageTitle(): string;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcs.avt">        <pre>            :host {            	height: 100%;            	overflow: hidden;            	width: 100%;            &nbsp;            	av-scrollable {            		height: 100%;            		width: 100%;                    --scrollbar-content-padding: 15px;            &nbsp;                    .page-title {                        height: 50px;                        width: 100%;                        display: flex;                        align-items: center;                        justify-content: center;                        font-size: 30px;                        margin: 30px 0;                    }            	}            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcv.avt">        <pre>            &lt;av-scrollable&gt;                &lt;div class="page-title"&gt;&#123;&#123; this.definePageTitle() &#125;&#125;&lt;/div&gt;                &lt;slot&gt;&lt;/slot&gt;            &lt;/av-scrollable&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoEditPage/TodoEditPage.wcl.avt">        <pre>            import { TodoCreateState } from "../../../../states/todo/TodoCreateState.state.avt";            import { Todo } from "../../../../data/Todo.data.avt";            import { GenericPage } from "../GenericPage/GenericPage.wcl.avt";            import type { Input } from "../../../../components/Input/Input.wcl.avt";            import { Task } from "../../../../data/Task.data.avt";            import { MainApp } from "../../MainApp.wcl.avt";            import { TodoRAM } from "../../../../ram/Todo.ram.avt";            &nbsp;            export class TodoEditPage extends GenericPage implements Aventus.DefaultComponent {            &nbsp;                //#region static                public static pageUrl: string = "/todo/create";                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                @Watch()                public todo: Todo = new Todo();            &nbsp;                @ViewElement()                protected taskNameEl!: Input;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                public override onShow(): void {                    &#105;f(this.currentState instanceof TodoCreateState && this.currentState.editing) {                        this.todo = this.currentState.editing;                    }                    else {                        MainApp.instance.navigate("/");                    }                }                /**                 * @inheritdoc                 */                public override definePageTitle(): string {                    return "Create todo";                }            &nbsp;            &nbsp;                /**                 *                  */                protected addTask() {                    &#105;f(this.taskNameEl.value && this.todo) {                        let newTask = new Task();                        newTask.name = this.taskNameEl.value;                        this.todo.tasks.push(newTask);                        this.taskNameEl.value = "";                    }                }            &nbsp;                /**                 *                  */                protected save() {                    TodoRAM.getInstance().create(this.todo)                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoEditPage/TodoEditPage.wcs.avt">        <pre>            :host {            	.card {            		display: flex;            		flex-direction: column;            		gap: 10px;            		margin: auto;            		max-width: 500px;            &nbsp;            		.tasks {            			display: flex;            			flex-direction: column;            			gap: 10px;            			padding: 0 15px;            			width: 100%;            &nbsp;            			.sub-title {            				font-size: 20px;            			}            &nbsp;            			.new-task {            				align-items: center;            				display: flex;            				gap: 10px;            &nbsp;            				av-input {            					flex-grow: 1;            				}            &nbsp;            				av-icon {            					flex-shrink: 0;            				}            			}            		}            &nbsp;                    .create-container {                        display: flex;                        width: 100%;                        flex-direction: row;                        justify-content: flex-end;                        margin-top: 15px;                    }            	}            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoEditPage/TodoEditPage.wcv.avt">        <pre>            &lt;div class="card"&gt;                &lt;av-input label="Todo name" @bind="this.todo?.name"&gt;&lt;/av-input&gt;                &lt;div class="tasks"&gt;                    &lt;div class="sub-title"&gt;Tasks&lt;/div&gt;                    &lt;ul class="list"&gt;                        &#102;or(let task of this.todo.tasks) {                            &lt;li&gt;&#123;&#123; task.name &#125;&#125;&lt;/li&gt;                        }                    &lt;/ul&gt;                    &lt;div class="new-task"&gt;                        &lt;av-input label="Task name" @element="taskNameEl"&gt;&lt;/av-input&gt;                        &lt;av-icon icon="add_circle" @press="addTask"&gt;&lt;/av-icon&gt;                    &lt;/div&gt;                &lt;/div&gt;                &lt;div class="create-container"&gt;                    &lt;av-button class="create-btn" @press="save"&gt;Create&lt;/av-button&gt;                &lt;/div&gt;            &lt;/div&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt">        <pre>            import { TodoRAM } from "../../../../ram/Todo.ram.avt";            import type { Todo } from "../../../../data/Todo.data.avt";            import { GenericPage } from "../GenericPage/GenericPage.wcl.avt";            import { Task } from "../../../../data/Task.data.avt";            &nbsp;            export class TodoListPage extends GenericPage implements Aventus.DefaultComponent {            &nbsp;                //#region static                public static pageUrl: string = "/";                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                @Watch()                public todos: Todo[] = [];                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                * @inheritdoc                */                public override definePageTitle(): string {                    return "List todo";                }            &nbsp;            &nbsp;                protected async loadRAMData() {                    this.todos = await TodoRAM.getInstance().getList();                    TodoRAM.getInstance().onCreated((todo) =&gt; {                        this.todos.push(todo);                    });                    TodoRAM.getInstance().onUpdated((todo) =&gt; {                        let index = this.todos.findIndex(t =&gt; t.id == todo.id);                        &#105;f(index == -1) {                            this.todos.push(todo);                        }                        else {                            this.todos.splice(index, 1, todo);                        }                    });            &nbsp;                    TodoRAM.getInstance().onDeleted((todo) =&gt; {                        let index = this.todos.findIndex(t =&gt; t.id == todo.id);                        this.todos.splice(index, 1);                    })                }                protected override postCreation(): void {                    this.loadRAMData();                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcs.avt">        <pre>            :host {            	height: 100%;                width: 100%;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt">        <pre>            &lt;div class="card"&gt;                &lt;ul&gt;                    &#102;or(let todo of this.todos) {                         &lt;li&gt;                            &lt;span&gt;&#123;&#123; todo.name &#125;&#125;&lt;/span&gt;                            &lt;ul&gt;                                &#102;or(let task of todo.tasks) {                                    &lt;li&gt;&#123;&#123; task.name &#125;&#125;&lt;/li&gt;                                }                            &lt;/ul&gt;                        &lt;/li&gt;                    }                &lt;/ul&gt;            &lt;/div&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/components/@default.wcs.avt">        <pre>            :host {            	box-sizing: border-box;            	display: inline-block;            }            &nbsp;            :host * {            	box-sizing: border-box;            }            &nbsp;            .card {            	background-color: var(--color-surface-mixed-200);            	border-radius: 10px;            	padding: 15px;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/components/Button/Button.wcl.avt">        <pre>            export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;            	//#region static            	//#endregion            	//#region props            	//#endregion            	//#region variables            	//#endregion            	//#region constructor            	//#endregion            	//#region methods            	//#endregion            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/components/Button/Button.wcs.avt">        <pre>            :host {            	align-items: center;            	background-color: var(--color-primary-300);            	border-radius: 500px;            	cursor: pointer;            	display: flex;            	justify-content: center;            	min-width: 100px;            	padding: 10px;            	transition: background-color 0.2s linear;            	width: fit-content;            }            &nbsp;            :host(:hover) {            	background-color: var(--color-primary-400);            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/components/Button/Button.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/components/Icon/Icon.wcl.avt">        <pre>            import type { IconType } from "./IconType.lib.avt";            &nbsp;            export class Icon extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props                /**                 * Icon from https://fonts.google.com/icons                 */                @Property((target: Icon) =&gt; {                    target.loadFont();                })                public icon: IconType = "check_box_outline_blank";                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                private async loadFont() {                    await Aventus.ResourceLoader.loadInHead({                        type: "css",                        url: "https://fonts.googleapis.com/icon?family=Material+Icons"                    });                    this.shadowRoot.innerHTML = this.icon;                }                protected override postCreation(): void {                    this.loadFont();                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/components/Icon/Icon.wcs.avt">        <pre>            :host {            	--_material-icon-animation-duration: var(--material-icon-animation-duration, 1.75s);            }            &nbsp;            :host {            	direction: ltr;            	display: inline-block;            	font-family: 'Material Icons';            	-moz-font-feature-settings: 'liga';            	font-size: 24px;            	-moz-osx-font-smoothing: grayscale;            	font-style: normal;            	font-weight: normal;            	letter-spacing: normal;            	line-height: 1;            	text-transform: none;            	white-space: nowrap;            	word-wrap: normal;            }            &nbsp;            &nbsp;            :host([spin]) {            	animation: spin var(--_material-icon-animation-duration) linear infinite;            }            &nbsp;            :host([reverse_spin]) {            	animation: reverse-spin var(--_material-icon-animation-duration) linear infinite;            }            &nbsp;            @keyframes spin {            	0% {            		transform: rotate(0deg);            	}            &nbsp;            	100% {            		transform: rotate(360deg);            	}            }            &nbsp;            @keyframes reverse-spin {            	0% {            		transform: rotate(360deg);            	}            &nbsp;            	100% {            		transform: rotate(0deg);            	}            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/components/Icon/Icon.wcv.avt">        <pre>            &nbsp;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/components/Icon/IconType.lib.avt">        <pre>            export type IconType =                '10k' |                 '10mp' |                 '11mp' |                 '123' |                 '12mp' |                 '13mp' |                 '14mp' |                 '15mp' |                 '16mp' |                 '17mp' |                 '18_up_rating' |                 '18mp' |                 '19mp' |                 '1k' |                 '1k_plus' |                 '1x_mobiledata' |                 '20mp' |                 '21mp' |                 '22mp' |                 '23mp' |                 '24mp' |                 '2k' |                 '2k_plus' |                 '2mp' |                 '30fps' |                 '30fps_select' |                 '360' |                 '3d_rotation' |                 '3g_mobiledata' |                 '3k' |                 '3k_plus' |                 '3mp' |                 '3p' |                 '4g_mobiledata' |                 '4g_plus_mobiledata' |                 '4k' |                 '4k_plus' |                 '4mp' |                 '5g' |                 '5k' |                 '5k_plus' |                 '5mp' |                 '60fps' |                 '60fps_select' |                 '6_ft_apart' |                 '6k' |                 '6k_plus' |                 '6mp' |                 '7k' |                 '7k_plus' |                 '7mp' |                 '8k' |                 '8k_plus' |                 '8mp' |                 '9k' |                 '9k_plus' |                 '9mp' |                 'abc' |                 'ac_unit' |                 'access_alarm' |                 'access_alarms' |                 'access_time' |                 'access_time_filled' |                 'accessibility' |                 'accessibility_new' |                 'accessible' |                 'accessible_forward' |                 'account_balance' |                 'account_balance_wallet' |                 'account_box' |                 'account_circle' |                 'account_tree' |                 'ad_units' |                 'adb' |                 'add' |                 'add_a_photo' |                 'add_alarm' |                 'add_alert' |                 'add_box' |                 'add_business' |                 'add_card' |                 'add_chart' |                 'add_circle' |                 'add_circle_outline' |                 'add_comment' |                 'add_home' |                 'add_home_work' |                 'add_ic_call' |                 'add_link' |                 'add_location' |                 'add_location_alt' |                 'add_moderator' |                 'add_photo_alternate' |                 'add_reaction' |                 'add_road' |                 'add_shopping_cart' |                 'add_task' |                 'add_to_drive' |                 'add_to_home_screen' |                 'add_to_photos' |                 'add_to_queue' |                 'addchart' |                 'adf_scanner' |                 'adjust' |                 'admin_panel_settings' |                 'ads_click' |                 'agriculture' |                 'air' |                 'airline_seat_flat' |                 'airline_seat_flat_angled' |                 'airline_seat_individual_suite' |                 'airline_seat_legroom_extra' |                 'airline_seat_legroom_normal' |                 'airline_seat_legroom_reduced' |                 'airline_seat_recline_extra' |                 'airline_seat_recline_normal' |                 'airline_stops' |                 'airlines' |                 'airplane_ticket' |                 'airplanemode_active' |                 'airplanemode_inactive' |                 'airplay' |                 'airport_shuttle' |                 'alarm' |                 'alarm_add' |                 'alarm_off' |                 'alarm_on' |                 'album' |                 'align_horizontal_center' |                 'align_horizontal_left' |                 'align_horizontal_right' |                 'align_vertical_bottom' |                 'align_vertical_center' |                 'align_vertical_top' |                 'all_inbox' |                 'all_inclusive' |                 'all_out' |                 'alt_route' |                 'alternate_email' |                 'analytics' |                 'anchor' |                 'android' |                 'animation' |                 'announcement' |                 'aod' |                 'apartment' |                 'api' |                 'app_blocking' |                 'app_registration' |                 'app_settings_alt' |                 'app_shortcut' |                 'approval' |                 'apps' |                 'apps_outage' |                 'architecture' |                 'archive' |                 'area_chart' |                 'arrow_back' |                 'arrow_back_ios' |                 'arrow_back_ios_new' |                 'arrow_circle_down' |                 'arrow_circle_left' |                 'arrow_circle_right' |                 'arrow_circle_up' |                 'arrow_downward' |                 'arrow_drop_down' |                 'arrow_drop_down_circle' |                 'arrow_drop_up' |                 'arrow_forward' |                 'arrow_forward_ios' |                 'arrow_left' |                 'arrow_outward' |                 'arrow_right' |                 'arrow_right_alt' |                 'arrow_upward' |                 'art_track' |                 'article' |                 'aspect_ratio' |                 'assessment' |                 'assignment' |                 'assignment_ind' |                 'assignment_late' |                 'assignment_return' |                 'assignment_returned' |                 'assignment_turned_in' |                 'assist_walker' |                 'assistant' |                 'assistant_direction' |                 'assistant_photo' |                 'assured_workload' |                 'atm' |                 'attach_email' |                 'attach_file' |                 'attach_money' |                 'attachment' |                 'attractions' |                 'attribution' |                 'audio_file' |                 'audiotrack' |                 'auto_awesome' |                 'auto_awesome_mosaic' |                 'auto_awesome_motion' |                 'auto_delete' |                 'auto_fix_high' |                 'auto_fix_normal' |                 'auto_fix_off' |                 'auto_graph' |                 'auto_mode' |                 'auto_stories' |                 'autofps_select' |                 'autorenew' |                 'av_timer' |                 'baby_changing_station' |                 'back_hand' |                 'backpack' |                 'backspace' |                 'backup' |                 'backup_table' |                 'badge' |                 'bakery_dining' |                 'balance' |                 'balcony' |                 'ballot' |                 'bar_chart' |                 'batch_prediction' |                 'bathroom' |                 'bathtub' |                 'battery_0_bar' |                 'battery_1_bar' |                 'battery_2_bar' |                 'battery_3_bar' |                 'battery_4_bar' |                 'battery_5_bar' |                 'battery_6_bar' |                 'battery_alert' |                 'battery_charging_full' |                 'battery_full' |                 'battery_saver' |                 'battery_std' |                 'battery_unknown' |                 'beach_access' |                 'bed' |                 'bedroom_baby' |                 'bedroom_child' |                 'bedroom_parent' |                 'bedtime' |                 'bedtime_off' |                 'beenhere' |                 'bento' |                 'bike_scooter' |                 'biotech' |                 'blender' |                 'blind' |                 'blinds' |                 'blinds_closed' |                 'block' |                 'bloodtype' |                 'bluetooth' |                 'bluetooth_audio' |                 'bluetooth_connected' |                 'bluetooth_disabled' |                 'bluetooth_drive' |                 'bluetooth_searching' |                 'blur_circular' |                 'blur_linear' |                 'blur_off' |                 'blur_on' |                 'bolt' |                 'book' |                 'book_online' |                 'bookmark' |                 'bookmark_add' |                 'bookmark_added' |                 'bookmark_border' |                 'bookmark_remove' |                 'bookmarks' |                 'border_all' |                 'border_bottom' |                 'border_clear' |                 'border_color' |                 'border_horizontal' |                 'border_inner' |                 'border_left' |                 'border_outer' |                 'border_right' |                 'border_style' |                 'border_top' |                 'border_vertical' |                 'boy' |                 'branding_watermark' |                 'breakfast_dining' |                 'brightness_1' |                 'brightness_2' |                 'brightness_3' |                 'brightness_4' |                 'brightness_5' |                 'brightness_6' |                 'brightness_7' |                 'brightness_auto' |                 'brightness_high' |                 'brightness_low' |                 'brightness_medium' |                 'broadcast_on_home' |                 'broadcast_on_personal' |                 'broken_image' |                 'browse_gallery' |                 'browser_not_supported' |                 'browser_updated' |                 'brunch_dining' |                 'brush' |                 'bubble_chart' |                 'bug_report' |                 'build' |                 'build_circle' |                 'bungalow' |                 'burst_mode' |                 'bus_alert' |                 'business' |                 'business_center' |                 'cabin' |                 'cable' |                 'cached' |                 'cake' |                 'calculate' |                 'calendar_month' |                 'calendar_today' |                 'calendar_view_day' |                 'calendar_view_month' |                 'calendar_view_week' |                 'call' |                 'call_end' |                 'call_made' |                 'call_merge' |                 'call_missed' |                 'call_missed_outgoing' |                 'call_received' |                 'call_split' |                 'call_to_action' |                 'camera' |                 'camera_alt' |                 'camera_enhance' |                 'camera_front' |                 'camera_indoor' |                 'camera_outdoor' |                 'camera_rear' |                 'camera_roll' |                 'cameraswitch' |                 'campaign' |                 'cancel' |                 'cancel_presentation' |                 'cancel_schedule_send' |                 'candlestick_chart' |                 'car_crash' |                 'car_rental' |                 'car_repair' |                 'card_giftcard' |                 'card_membership' |                 'card_travel' |                 'carpenter' |                 'cases' |                 'casino' |                 'cast' |                 'cast_connected' |                 'cast_for_education' |                 'castle' |                 'catching_pokemon' |                 'category' |                 'celebration' |                 'cell_tower' |                 'cell_wifi' |                 'center_focus_strong' |                 'center_focus_weak' |                 'chair' |                 'chair_alt' |                 'chalet' |                 'change_circle' |                 'change_history' |                 'charging_station' |                 'chat' |                 'chat_bubble' |                 'chat_bubble_outline' |                 'check' |                 'check_box' |                 'check_box_outline_blank' |                 'check_circle' |                 'check_circle_outline' |                 'checklist' |                 'checklist_rtl' |                 'checkroom' |                 'chevron_left' |                 'chevron_right' |                 'child_care' |                 'child_friendly' |                 'chrome_reader_mode' |                 'church' |                 'circle' |                 'circle_notifications' |                 'class' |                 'clean_hands' |                 'cleaning_services' |                 'clear' |                 'clear_all' |                 'close' |                 'close_fullscreen' |                 'closed_caption' |                 'closed_caption_disabled' |                 'closed_caption_off' |                 'cloud' |                 'cloud_circle' |                 'cloud_done' |                 'cloud_download' |                 'cloud_off' |                 'cloud_queue' |                 'cloud_sync' |                 'cloud_upload' |                 'co2' |                 'co_present' |                 'code' |                 'code_off' |                 'coffee' |                 'coffee_maker' |                 'collections' |                 'collections_bookmark' |                 'color_lens' |                 'colorize' |                 'comment' |                 'comment_bank' |                 'comments_disabled' |                 'commit' |                 'commute' |                 'compare' |                 'compare_arrows' |                 'compass_calibration' |                 'compost' |                 'compress' |                 'computer' |                 'confirmation_number' |                 'connect_without_contact' |                 'connected_tv' |                 'connecting_airports' |                 'construction' |                 'contact_emergency' |                 'contact_mail' |                 'contact_page' |                 'contact_phone' |                 'contact_support' |                 'contactless' |                 'contacts' |                 'content_copy' |                 'content_cut' |                 'content_paste' |                 'content_paste_go' |                 'content_paste_off' |                 'content_paste_search' |                 'contrast' |                 'control_camera' |                 'control_point' |                 'control_point_duplicate' |                 'cookie' |                 'copy_all' |                 'copyright' |                 'coronavirus' |                 'corporate_fare' |                 'cottage' |                 'countertops' |                 'create' |                 'create_new_folder' |                 'credit_card' |                 'credit_card_off' |                 'credit_score' |                 'crib' |                 'crisis_alert' |                 'crop' |                 'crop_16_9' |                 'crop_3_2' |                 'crop_5_4' |                 'crop_7_5' |                 'crop_din' |                 'crop_free' |                 'crop_landscape' |                 'crop_original' |                 'crop_portrait' |                 'crop_rotate' |                 'crop_square' |                 'cruelty_free' |                 'css' |                 'currency_bitcoin' |                 'currency_exchange' |                 'currency_franc' |                 'currency_lira' |                 'currency_pound' |                 'currency_ruble' |                 'currency_rupee' |                 'currency_yen' |                 'currency_yuan' |                 'curtains' |                 'curtains_closed' |                 'cyclone' |                 'dangerous' |                 'dark_mode' |                 'dashboard' |                 'dashboard_customize' |                 'data_array' |                 'data_exploration' |                 'data_object' |                 'data_saver_off' |                 'data_saver_on' |                 'data_thresholding' |                 'data_usage' |                 'dataset' |                 'dataset_linked' |                 'date_range' |                 'deblur' |                 'deck' |                 'dehaze' |                 'delete' |                 'delete_forever' |                 'delete_outline' |                 'delete_sweep' |                 'delivery_dining' |                 'density_large' |                 'density_medium' |                 'density_small' |                 'departure_board' |                 'description' |                 'deselect' |                 'design_services' |                 'desk' |                 'desktop_access_disabled' |                 'desktop_mac' |                 'desktop_windows' |                 'details' |                 'developer_board' |                 'developer_board_off' |                 'developer_mode' |                 'device_hub' |                 'device_thermostat' |                 'device_unknown' |                 'devices' |                 'devices_fold' |                 'devices_other' |                 'dialer_sip' |                 'dialpad' |                 'diamond' |                 'difference' |                 'dining' |                 'dinner_dining' |                 'directions' |                 'directions_bike' |                 'directions_boat' |                 'directions_boat_filled' |                 'directions_bus' |                 'directions_bus_filled' |                 'directions_car' |                 'directions_car_filled' |                 'directions_off' |                 'directions_railway' |                 'directions_railway_filled' |                 'directions_run' |                 'directions_subway' |                 'directions_subway_filled' |                 'directions_transit' |                 'directions_transit_filled' |                 'directions_walk' |                 'dirty_lens' |                 'disabled_by_default' |                 'disabled_visible' |                 'disc_full' |                 'discount' |                 'display_settings' |                 'diversity_1' |                 'diversity_2' |                 'diversity_3' |                 'dns' |                 'do_disturb' |                 'do_disturb_alt' |                 'do_disturb_off' |                 'do_disturb_on' |                 'do_not_disturb' |                 'do_not_disturb_alt' |                 'do_not_disturb_off' |                 'do_not_disturb_on' |                 'do_not_disturb_on_total_silence' |                 'do_not_step' |                 'do_not_touch' |                 'dock' |                 'document_scanner' |                 'domain' |                 'domain_add' |                 'domain_disabled' |                 'domain_verification' |                 'done' |                 'done_all' |                 'done_outline' |                 'donut_large' |                 'donut_small' |                 'door_back' |                 'door_front' |                 'door_sliding' |                 'doorbell' |                 'double_arrow' |                 'downhill_skiing' |                 'download' |                 'download_done' |                 'download_for_offline' |                 'downloading' |                 'drafts' |                 'drag_handle' |                 'drag_indicator' |                 'draw' |                 'drive_eta' |                 'drive_file_move' |                 'drive_file_move_rtl' |                 'drive_file_rename_outline' |                 'drive_folder_upload' |                 'dry' |                 'dry_cleaning' |                 'duo' |                 'dvr' |                 'dynamic_feed' |                 'dynamic_form' |                 'e_mobiledata' |                 'earbuds' |                 'earbuds_battery' |                 'east' |                 'edgesensor_high' |                 'edgesensor_low' |                 'edit' |                 'edit_attributes' |                 'edit_calendar' |                 'edit_location' |                 'edit_location_alt' |                 'edit_note' |                 'edit_notifications' |                 'edit_off' |                 'edit_road' |                 'egg' |                 'egg_alt' |                 'eject' |                 'elderly' |                 'elderly_woman' |                 'electric_bike' |                 'electric_bolt' |                 'electric_car' |                 'electric_meter' |                 'electric_moped' |                 'electric_rickshaw' |                 'electric_scooter' |                 'electrical_services' |                 'elevator' |                 'email' |                 'emergency' |                 'emergency_recording' |                 'emergency_share' |                 'emoji_emotions' |                 'emoji_events' |                 'emoji_food_beverage' |                 'emoji_nature' |                 'emoji_objects' |                 'emoji_people' |                 'emoji_symbols' |                 'emoji_transportation' |                 'energy_savings_leaf' |                 'engineering' |                 'enhanced_encryption' |                 'equalizer' |                 'error' |                 'error_outline' |                 'escalator' |                 'escalator_warning' |                 'euro' |                 'euro_symbol' |                 'ev_station' |                 'event' |                 'event_available' |                 'event_busy' |                 'event_note' |                 'event_repeat' |                 'event_seat' |                 'exit_to_app' |                 'expand' |                 'expand_circle_down' |                 'expand_less' |                 'expand_more' |                 'explicit' |                 'explore' |                 'explore_off' |                 'exposure' |                 'exposure_neg_1' |                 'exposure_neg_2' |                 'exposure_plus_1' |                 'exposure_plus_2' |                 'exposure_zero' |                 'extension' |                 'extension_off' |                 'face' |                 'face_2' |                 'face_3' |                 'face_4' |                 'face_5' |                 'face_6' |                 'face_retouching_natural' |                 'face_retouching_off' |                 'fact_check' |                 'factory' |                 'family_restroom' |                 'fast_forward' |                 'fast_rewind' |                 'fastfood' |                 'favorite' |                 'favorite_border' |                 'fax' |                 'featured_play_list' |                 'featured_video' |                 'feed' |                 'feedback' |                 'female' |                 'fence' |                 'festival' |                 'fiber_dvr' |                 'fiber_manual_record' |                 'fiber_new' |                 'fiber_pin' |                 'fiber_smart_record' |                 'file_copy' |                 'file_download' |                 'file_download_done' |                 'file_download_off' |                 'file_open' |                 'file_present' |                 'file_upload' |                 'filter' |                 'filter_1' |                 'filter_2' |                 'filter_3' |                 'filter_4' |                 'filter_5' |                 'filter_6' |                 'filter_7' |                 'filter_8' |                 'filter_9' |                 'filter_9_plus' |                 'filter_alt' |                 'filter_alt_off' |                 'filter_b_and_w' |                 'filter_center_focus' |                 'filter_drama' |                 'filter_frames' |                 'filter_hdr' |                 'filter_list' |                 'filter_list_off' |                 'filter_none' |                 'filter_tilt_shift' |                 'filter_vintage' |                 'find_in_page' |                 'find_replace' |                 'fingerprint' |                 'fire_extinguisher' |                 'fire_hydrant_alt' |                 'fire_truck' |                 'fireplace' |                 'first_page' |                 'fit_screen' |                 'fitbit' |                 'fitness_center' |                 'flag' |                 'flag_circle' |                 'flaky' |                 'flare' |                 'flash_auto' |                 'flash_off' |                 'flash_on' |                 'flashlight_off' |                 'flashlight_on' |                 'flatware' |                 'flight' |                 'flight_class' |                 'flight_land' |                 'flight_takeoff' |                 'flip' |                 'flip_camera_android' |                 'flip_camera_ios' |                 'flip_to_back' |                 'flip_to_front' |                 'flood' |                 'fluorescent' |                 'flutter_dash' |                 'fmd_bad' |                 'fmd_good' |                 'folder' |                 'folder_copy' |                 'folder_delete' |                 'folder_off' |                 'folder_open' |                 'folder_shared' |                 'folder_special' |                 'folder_zip' |                 'follow_the_signs' |                 'font_download' |                 'font_download_off' |                 'food_bank' |                 'forest' |                 'fork_left' |                 'fork_right' |                 'format_align_center' |                 'format_align_justify' |                 'format_align_left' |                 'format_align_right' |                 'format_bold' |                 'format_clear' |                 'format_color_fill' |                 'format_color_reset' |                 'format_color_text' |                 'format_indent_decrease' |                 'format_indent_increase' |                 'format_italic' |                 'format_line_spacing' |                 'format_list_bulleted' |                 'format_list_numbered' |                 'format_list_numbered_rtl' |                 'format_overline' |                 'format_paint' |                 'format_quote' |                 'format_shapes' |                 'format_size' |                 'format_strikethrough' |                 'format_textdirection_l_to_r' |                 'format_textdirection_r_to_l' |                 'format_underlined' |                 'fort' |                 'forum' |                 'forward' |                 'forward_10' |                 'forward_30' |                 'forward_5' |                 'forward_to_inbox' |                 'foundation' |                 'free_breakfast' |                 'free_cancellation' |                 'front_hand' |                 'fullscreen' |                 'fullscreen_exit' |                 'functions' |                 'g_mobiledata' |                 'g_translate' |                 'gamepad' |                 'games' |                 'garage' |                 'gas_meter' |                 'gavel' |                 'generating_tokens' |                 'gesture' |                 'get_app' |                 'gif' |                 'gif_box' |                 'girl' |                 'gite' |                 'golf_course' |                 'gpp_bad' |                 'gpp_good' |                 'gpp_maybe' |                 'gps_fixed' |                 'gps_not_fixed' |                 'gps_off' |                 'grade' |                 'gradient' |                 'grading' |                 'grain' |                 'graphic_eq' |                 'grass' |                 'grid_3x3' |                 'grid_4x4' |                 'grid_goldenratio' |                 'grid_off' |                 'grid_on' |                 'grid_view' |                 'group' |                 'group_add' |                 'group_off' |                 'group_remove' |                 'group_work' |                 'groups' |                 'groups_2' |                 'groups_3' |                 'h_mobiledata' |                 'h_plus_mobiledata' |                 'hail' |                 'handshake' |                 'handyman' |                 'hardware' |                 'hd' |                 'hdr_auto' |                 'hdr_auto_select' |                 'hdr_enhanced_select' |                 'hdr_off' |                 'hdr_off_select' |                 'hdr_on' |                 'hdr_on_select' |                 'hdr_plus' |                 'hdr_strong' |                 'hdr_weak' |                 'headphones' |                 'headphones_battery' |                 'headset' |                 'headset_mic' |                 'headset_off' |                 'healing' |                 'health_and_safety' |                 'hearing' |                 'hearing_disabled' |                 'heart_broken' |                 'heat_pump' |                 'height' |                 'help' |                 'help_center' |                 'help_outline' |                 'hevc' |                 'hexagon' |                 'hide_image' |                 'hide_source' |                 'high_quality' |                 'highlight' |                 'highlight_alt' |                 'highlight_off' |                 'hiking' |                 'history' |                 'history_edu' |                 'history_toggle_off' |                 'hive' |                 'hls' |                 'hls_off' |                 'holiday_village' |                 'home' |                 'home_max' |                 'home_mini' |                 'home_repair_service' |                 'home_work' |                 'horizontal_distribute' |                 'horizontal_rule' |                 'horizontal_split' |                 'hot_tub' |                 'hotel' |                 'hotel_class' |                 'hourglass_bottom' |                 'hourglass_disabled' |                 'hourglass_empty' |                 'hourglass_full' |                 'hourglass_top' |                 'house' |                 'house_siding' |                 'houseboat' |                 'how_to_reg' |                 'how_to_vote' |                 'html' |                 'http' |                 'https' |                 'hub' |                 'hvac' |                 'ice_skating' |                 'icecream' |                 'image' |                 'image_aspect_ratio' |                 'image_not_supported' |                 'image_search' |                 'imagesearch_roller' |                 'import_contacts' |                 'import_export' |                 'important_devices' |                 'inbox' |                 'incomplete_circle' |                 'indeterminate_check_box' |                 'info' |                 'input' |                 'insert_chart' |                 'insert_chart_outlined' |                 'insert_comment' |                 'insert_drive_file' |                 'insert_emoticon' |                 'insert_invitation' |                 'insert_link' |                 'insert_page_break' |                 'insert_photo' |                 'insights' |                 'install_desktop' |                 'install_mobile' |                 'integration_instructions' |                 'interests' |                 'interpreter_mode' |                 'inventory' |                 'inventory_2' |                 'invert_colors' |                 'invert_colors_off' |                 'ios_share' |                 'iron' |                 'iso' |                 'javascript' |                 'join_full' |                 'join_inner' |                 'join_left' |                 'join_right' |                 'kayaking' |                 'kebab_dining' |                 'key' |                 'key_off' |                 'keyboard' |                 'keyboard_alt' |                 'keyboard_arrow_down' |                 'keyboard_arrow_left' |                 'keyboard_arrow_right' |                 'keyboard_arrow_up' |                 'keyboard_backspace' |                 'keyboard_capslock' |                 'keyboard_command_key' |                 'keyboard_control_key' |                 'keyboard_double_arrow_down' |                 'keyboard_double_arrow_left' |                 'keyboard_double_arrow_right' |                 'keyboard_double_arrow_up' |                 'keyboard_hide' |                 'keyboard_option_key' |                 'keyboard_return' |                 'keyboard_tab' |                 'keyboard_voice' |                 'king_bed' |                 'kitchen' |                 'kitesurfing' |                 'label' |                 'label_important' |                 'label_off' |                 'lan' |                 'landscape' |                 'landslide' |                 'language' |                 'laptop' |                 'laptop_chromebook' |                 'laptop_mac' |                 'laptop_windows' |                 'last_page' |                 'launch' |                 'layers' |                 'layers_clear' |                 'leaderboard' |                 'leak_add' |                 'leak_remove' |                 'legend_toggle' |                 'lens' |                 'lens_blur' |                 'library_add' |                 'library_add_check' |                 'library_books' |                 'library_music' |                 'light' |                 'light_mode' |                 'lightbulb' |                 'lightbulb_circle' |                 'line_axis' |                 'line_style' |                 'line_weight' |                 'linear_scale' |                 'link' |                 'link_off' |                 'linked_camera' |                 'liquor' |                 'list' |                 'list_alt' |                 'live_help' |                 'live_tv' |                 'living' |                 'local_activity' |                 'local_airport' |                 'local_atm' |                 'local_bar' |                 'local_cafe' |                 'local_car_wash' |                 'local_convenience_store' |                 'local_dining' |                 'local_drink' |                 'local_fire_department' |                 'local_florist' |                 'local_gas_station' |                 'local_grocery_store' |                 'local_hospital' |                 'local_hotel' |                 'local_laundry_service' |                 'local_library' |                 'local_mall' |                 'local_movies' |                 'local_offer' |                 'local_parking' |                 'local_pharmacy' |                 'local_phone' |                 'local_pizza' |                 'local_play' |                 'local_police' |                 'local_post_office' |                 'local_printshop' |                 'local_see' |                 'local_shipping' |                 'local_taxi' |                 'location_city' |                 'location_disabled' |                 'location_off' |                 'location_on' |                 'location_searching' |                 'lock' |                 'lock_clock' |                 'lock_open' |                 'lock_person' |                 'lock_reset' |                 'login' |                 'logo_dev' |                 'logout' |                 'looks' |                 'looks_3' |                 'looks_4' |                 'looks_5' |                 'looks_6' |                 'looks_one' |                 'looks_two' |                 'loop' |                 'loupe' |                 'low_priority' |                 'loyalty' |                 'lte_mobiledata' |                 'lte_plus_mobiledata' |                 'luggage' |                 'lunch_dining' |                 'lyrics' |                 'macro_off' |                 'mail' |                 'mail_lock' |                 'mail_outline' |                 'male' |                 'man' |                 'man_2' |                 'man_3' |                 'man_4' |                 'manage_accounts' |                 'manage_history' |                 'manage_search' |                 'map' |                 'maps_home_work' |                 'maps_ugc' |                 'margin' |                 'mark_as_unread' |                 'mark_chat_read' |                 'mark_chat_unread' |                 'mark_email_read' |                 'mark_email_unread' |                 'mark_unread_chat_alt' |                 'markunread' |                 'markunread_mailbox' |                 'masks' |                 'maximize' |                 'media_bluetooth_off' |                 'media_bluetooth_on' |                 'mediation' |                 'medical_information' |                 'medical_services' |                 'medication' |                 'medication_liquid' |                 'meeting_room' |                 'memory' |                 'menu' |                 'menu_book' |                 'menu_open' |                 'merge' |                 'merge_type' |                 'message' |                 'mic' |                 'mic_external_off' |                 'mic_external_on' |                 'mic_none' |                 'mic_off' |                 'microwave' |                 'military_tech' |                 'minimize' |                 'minor_crash' |                 'miscellaneous_services' |                 'missed_video_call' |                 'mms' |                 'mobile_friendly' |                 'mobile_off' |                 'mobile_screen_share' |                 'mobiledata_off' |                 'mode' |                 'mode_comment' |                 'mode_edit' |                 'mode_edit_outline' |                 'mode_fan_off' |                 'mode_night' |                 'mode_of_travel' |                 'mode_standby' |                 'model_training' |                 'monetization_on' |                 'money' |                 'money_off' |                 'money_off_csred' |                 'monitor' |                 'monitor_heart' |                 'monitor_weight' |                 'monochrome_photos' |                 'mood' |                 'mood_bad' |                 'moped' |                 'more' |                 'more_horiz' |                 'more_time' |                 'more_vert' |                 'mosque' |                 'motion_photos_auto' |                 'motion_photos_off' |                 'motion_photos_on' |                 'motion_photos_pause' |                 'motion_photos_paused' |                 'mouse' |                 'move_down' |                 'move_to_inbox' |                 'move_up' |                 'movie' |                 'movie_creation' |                 'movie_filter' |                 'moving' |                 'mp' |                 'multiline_chart' |                 'multiple_stop' |                 'museum' |                 'music_note' |                 'music_off' |                 'music_video' |                 'my_location' |                 'nat' |                 'nature' |                 'nature_people' |                 'navigate_before' |                 'navigate_next' |                 'navigation' |                 'near_me' |                 'near_me_disabled' |                 'nearby_error' |                 'nearby_off' |                 'nest_cam_wired_stand' |                 'network_cell' |                 'network_check' |                 'network_locked' |                 'network_ping' |                 'network_wifi' |                 'network_wifi_1_bar' |                 'network_wifi_2_bar' |                 'network_wifi_3_bar' |                 'new_label' |                 'new_releases' |                 'newspaper' |                 'next_plan' |                 'next_week' |                 'nfc' |                 'night_shelter' |                 'nightlife' |                 'nightlight' |                 'nightlight_round' |                 'nights_stay' |                 'no_accounts' |                 'no_adult_content' |                 'no_backpack' |                 'no_cell' |                 'no_crash' |                 'no_drinks' |                 'no_encryption' |                 'no_encryption_gmailerrorred' |                 'no_flash' |                 'no_food' |                 'no_luggage' |                 'no_meals' |                 'no_meeting_room' |                 'no_photography' |                 'no_sim' |                 'no_stroller' |                 'no_transfer' |                 'noise_aware' |                 'noise_control_off' |                 'nordic_walking' |                 'north' |                 'north_east' |                 'north_west' |                 'not_accessible' |                 'not_interested' |                 'not_listed_location' |                 'not_started' |                 'note' |                 'note_add' |                 'note_alt' |                 'notes' |                 'notification_add' |                 'notification_important' |                 'notifications' |                 'notifications_active' |                 'notifications_none' |                 'notifications_off' |                 'notifications_paused' |                 'numbers' |                 'offline_bolt' |                 'offline_pin' |                 'offline_share' |                 'oil_barrel' |                 'on_device_training' |                 'ondemand_video' |                 'online_prediction' |                 'opacity' |                 'open_in_browser' |                 'open_in_full' |                 'open_in_new' |                 'open_in_new_off' |                 'open_with' |                 'other_houses' |                 'outbound' |                 'outbox' |                 'outdoor_grill' |                 'outlet' |                 'outlined_flag' |                 'output' |                 'padding' |                 'pages' |                 'pageview' |                 'paid' |                 'palette' |                 'pan_tool' |                 'pan_tool_alt' |                 'panorama' |                 'panorama_fish_eye' |                 'panorama_horizontal' |                 'panorama_horizontal_select' |                 'panorama_photosphere' |                 'panorama_photosphere_select' |                 'panorama_vertical' |                 'panorama_vertical_select' |                 'panorama_wide_angle' |                 'panorama_wide_angle_select' |                 'paragliding' |                 'park' |                 'party_mode' |                 'password' |                 'pattern' |                 'pause' |                 'pause_circle' |                 'pause_circle_filled' |                 'pause_circle_outline' |                 'pause_presentation' |                 'payment' |                 'payments' |                 'pedal_bike' |                 'pending' |                 'pending_actions' |                 'pentagon' |                 'people' |                 'people_alt' |                 'people_outline' |                 'percent' |                 'perm_camera_mic' |                 'perm_contact_calendar' |                 'perm_data_setting' |                 'perm_device_information' |                 'perm_identity' |                 'perm_media' |                 'perm_phone_msg' |                 'perm_scan_wifi' |                 'person' |                 'person_2' |                 'person_3' |                 'person_4' |                 'person_add' |                 'person_add_alt' |                 'person_add_alt_1' |                 'person_add_disabled' |                 'person_off' |                 'person_outline' |                 'person_pin' |                 'person_pin_circle' |                 'person_remove' |                 'person_remove_alt_1' |                 'person_search' |                 'personal_injury' |                 'personal_video' |                 'pest_control' |                 'pest_control_rodent' |                 'pets' |                 'phishing' |                 'phone' |                 'phone_android' |                 'phone_bluetooth_speaker' |                 'phone_callback' |                 'phone_disabled' |                 'phone_enabled' |                 'phone_forwarded' |                 'phone_iphone' |                 'phone_locked' |                 'phone_missed' |                 'phone_paused' |                 'phonelink' |                 'phonelink_erase' |                 'phonelink_lock' |                 'phonelink_off' |                 'phonelink_ring' |                 'phonelink_setup' |                 'photo' |                 'photo_album' |                 'photo_camera' |                 'photo_camera_back' |                 'photo_camera_front' |                 'photo_filter' |                 'photo_library' |                 'photo_size_select_actual' |                 'photo_size_select_large' |                 'photo_size_select_small' |                 'php' |                 'piano' |                 'piano_off' |                 'picture_as_pdf' |                 'picture_in_picture' |                 'picture_in_picture_alt' |                 'pie_chart' |                 'pie_chart_outline' |                 'pin' |                 'pin_drop' |                 'pin_end' |                 'pin_invoke' |                 'pinch' |                 'pivot_table_chart' |                 'pix' |                 'place' |                 'plagiarism' |                 'play_arrow' |                 'play_circle' |                 'play_circle_filled' |                 'play_circle_outline' |                 'play_disabled' |                 'play_for_work' |                 'play_lesson' |                 'playlist_add' |                 'playlist_add_check' |                 'playlist_add_check_circle' |                 'playlist_add_circle' |                 'playlist_play' |                 'playlist_remove' |                 'plumbing' |                 'plus_one' |                 'podcasts' |                 'point_of_sale' |                 'policy' |                 'poll' |                 'polyline' |                 'polymer' |                 'pool' |                 'portable_wifi_off' |                 'portrait' |                 'post_add' |                 'power' |                 'power_input' |                 'power_off' |                 'power_settings_new' |                 'precision_manufacturing' |                 'pregnant_woman' |                 'present_to_all' |                 'preview' |                 'price_change' |                 'price_check' |                 'print' |                 'print_disabled' |                 'priority_high' |                 'privacy_tip' |                 'private_connectivity' |                 'production_quantity_limits' |                 'propane' |                 'propane_tank' |                 'psychology' |                 'psychology_alt' |                 'public' |                 'public_off' |                 'publish' |                 'published_with_changes' |                 'punch_clock' |                 'push_pin' |                 'qr_code' |                 'qr_code_2' |                 'qr_code_scanner' |                 'query_builder' |                 'query_stats' |                 'question_answer' |                 'question_mark' |                 'queue' |                 'queue_music' |                 'queue_play_next' |                 'quickreply' |                 'quiz' |                 'r_mobiledata' |                 'radar' |                 'radio' |                 'radio_button_checked' |                 'radio_button_unchecked' |                 'railway_alert' |                 'ramen_dining' |                 'ramp_left' |                 'ramp_right' |                 'rate_review' |                 'raw_off' |                 'raw_on' |                 'read_more' |                 'real_estate_agent' |                 'receipt' |                 'receipt_long' |                 'recent_actors' |                 'recommend' |                 'record_voice_over' |                 'rectangle' |                 'recycling' |                 'redeem' |                 'redo' |                 'reduce_capacity' |                 'refresh' |                 'remember_me' |                 'remove' |                 'remove_circle' |                 'remove_circle_outline' |                 'remove_done' |                 'remove_from_queue' |                 'remove_moderator' |                 'remove_red_eye' |                 'remove_road' |                 'remove_shopping_cart' |                 'reorder' |                 'repartition' |                 'repeat' |                 'repeat_on' |                 'repeat_one' |                 'repeat_one_on' |                 'replay' |                 'replay_10' |                 'replay_30' |                 'replay_5' |                 'replay_circle_filled' |                 'reply' |                 'reply_all' |                 'report' |                 'report_gmailerrorred' |                 'report_off' |                 'report_problem' |                 'request_page' |                 'request_quote' |                 'reset_tv' |                 'restart_alt' |                 'restaurant' |                 'restaurant_menu' |                 'restore' |                 'restore_from_trash' |                 'restore_page' |                 'reviews' |                 'rice_bowl' |                 'ring_volume' |                 'rocket' |                 'rocket_launch' |                 'roller_shades' |                 'roller_shades_closed' |                 'roller_skating' |                 'roofing' |                 'room' |                 'room_preferences' |                 'room_service' |                 'rotate_90_degrees_ccw' |                 'rotate_90_degrees_cw' |                 'rotate_left' |                 'rotate_right' |                 'roundabout_left' |                 'roundabout_right' |                 'rounded_corner' |                 'route' |                 'router' |                 'rowing' |                 'rss_feed' |                 'rsvp' |                 'rtt' |                 'rule' |                 'rule_folder' |                 'run_circle' |                 'running_with_errors' |                 'rv_hookup' |                 'safety_check' |                 'safety_divider' |                 'sailing' |                 'sanitizer' |                 'satellite' |                 'satellite_alt' |                 'save' |                 'save_alt' |                 'save_as' |                 'saved_search' |                 'savings' |                 'scale' |                 'scanner' |                 'scatter_plot' |                 'schedule' |                 'schedule_send' |                 'schema' |                 'school' |                 'science' |                 'score' |                 'scoreboard' |                 'screen_lock_landscape' |                 'screen_lock_portrait' |                 'screen_lock_rotation' |                 'screen_rotation' |                 'screen_rotation_alt' |                 'screen_search_desktop' |                 'screen_share' |                 'screenshot' |                 'screenshot_monitor' |                 'scuba_diving' |                 'sd' |                 'sd_card' |                 'sd_card_alert' |                 'sd_storage' |                 'search' |                 'search_off' |                 'security' |                 'security_update' |                 'security_update_good' |                 'security_update_warning' |                 'segment' |                 'select_all' |                 'self_improvement' |                 'sell' |                 'send' |                 'send_and_archive' |                 'send_time_extension' |                 'send_to_mobile' |                 'sensor_door' |                 'sensor_occupied' |                 'sensor_window' |                 'sensors' |                 'sensors_off' |                 'sentiment_dissatisfied' |                 'sentiment_neutral' |                 'sentiment_satisfied' |                 'sentiment_satisfied_alt' |                 'sentiment_very_dissatisfied' |                 'sentiment_very_satisfied' |                 'set_meal' |                 'settings' |                 'settings_accessibility' |                 'settings_applications' |                 'settings_backup_restore' |                 'settings_bluetooth' |                 'settings_brightness' |                 'settings_cell' |                 'settings_ethernet' |                 'settings_input_antenna' |                 'settings_input_component' |                 'settings_input_composite' |                 'settings_input_hdmi' |                 'settings_input_svideo' |                 'settings_overscan' |                 'settings_phone' |                 'settings_power' |                 'settings_remote' |                 'settings_suggest' |                 'settings_system_daydream' |                 'settings_voice' |                 'severe_cold' |                 'shape_line' |                 'share' |                 'share_location' |                 'shield' |                 'shield_moon' |                 'shop' |                 'shop_2' |                 'shop_two' |                 'shopping_bag' |                 'shopping_basket' |                 'shopping_cart' |                 'shopping_cart_checkout' |                 'short_text' |                 'shortcut' |                 'show_chart' |                 'shower' |                 'shuffle' |                 'shuffle_on' |                 'shutter_speed' |                 'sick' |                 'sign_language' |                 'signal_cellular_0_bar' |                 'signal_cellular_4_bar' |                 'signal_cellular_alt' |                 'signal_cellular_alt_1_bar' |                 'signal_cellular_alt_2_bar' |                 'signal_cellular_connected_no_internet_0_bar' |                 'signal_cellular_connected_no_internet_4_bar' |                 'signal_cellular_no_sim' |                 'signal_cellular_nodata' |                 'signal_cellular_null' |                 'signal_cellular_off' |                 'signal_wifi_0_bar' |                 'signal_wifi_4_bar' |                 'signal_wifi_4_bar_lock' |                 'signal_wifi_bad' |                 'signal_wifi_connected_no_internet_4' |                 'signal_wifi_off' |                 'signal_wifi_statusbar_4_bar' |                 'signal_wifi_statusbar_connected_no_internet_4' |                 'signal_wifi_statusbar_null' |                 'signpost' |                 'sim_card' |                 'sim_card_alert' |                 'sim_card_download' |                 'single_bed' |                 'sip' |                 'skateboarding' |                 'skip_next' |                 'skip_previous' |                 'sledding' |                 'slideshow' |                 'slow_motion_video' |                 'smart_button' |                 'smart_display' |                 'smart_screen' |                 'smart_toy' |                 'smartphone' |                 'smoke_free' |                 'smoking_rooms' |                 'sms' |                 'sms_failed' |                 'snippet_folder' |                 'snooze' |                 'snowboarding' |                 'snowmobile' |                 'snowshoeing' |                 'soap' |                 'social_distance' |                 'solar_power' |                 'sort' |                 'sort_by_alpha' |                 'sos' |                 'soup_kitchen' |                 'source' |                 'south' |                 'south_america' |                 'south_east' |                 'south_west' |                 'spa' |                 'space_bar' |                 'space_dashboard' |                 'spatial_audio' |                 'spatial_audio_off' |                 'spatial_tracking' |                 'speaker' |                 'speaker_group' |                 'speaker_notes' |                 'speaker_notes_off' |                 'speaker_phone' |                 'speed' |                 'spellcheck' |                 'splitscreen' |                 'spoke' |                 'sports' |                 'sports_bar' |                 'sports_baseball' |                 'sports_basketball' |                 'sports_cricket' |                 'sports_esports' |                 'sports_football' |                 'sports_golf' |                 'sports_gymnastics' |                 'sports_handball' |                 'sports_hockey' |                 'sports_kabaddi' |                 'sports_martial_arts' |                 'sports_mma' |                 'sports_motorsports' |                 'sports_rugby' |                 'sports_score' |                 'sports_soccer' |                 'sports_tennis' |                 'sports_volleyball' |                 'square' |                 'square_foot' |                 'ssid_chart' |                 'stacked_bar_chart' |                 'stacked_line_chart' |                 'stadium' |                 'stairs' |                 'star' |                 'star_border' |                 'star_border_purple500' |                 'star_half' |                 'star_outline' |                 'star_purple500' |                 'star_rate' |                 'stars' |                 'start' |                 'stay_current_landscape' |                 'stay_current_portrait' |                 'stay_primary_landscape' |                 'stay_primary_portrait' |                 'sticky_note_2' |                 'stop' |                 'stop_circle' |                 'stop_screen_share' |                 'storage' |                 'store' |                 'store_mall_directory' |                 'storefront' |                 'storm' |                 'straight' |                 'straighten' |                 'stream' |                 'streetview' |                 'strikethrough_s' |                 'stroller' |                 'style' |                 'subdirectory_arrow_left' |                 'subdirectory_arrow_right' |                 'subject' |                 'subscript' |                 'subscriptions' |                 'subtitles' |                 'subtitles_off' |                 'subway' |                 'summarize' |                 'superscript' |                 'supervised_user_circle' |                 'supervisor_account' |                 'support' |                 'support_agent' |                 'surfing' |                 'surround_sound' |                 'swap_calls' |                 'swap_horiz' |                 'swap_horizontal_circle' |                 'swap_vert' |                 'swap_vertical_circle' |                 'swipe' |                 'swipe_down' |                 'swipe_down_alt' |                 'swipe_left' |                 'swipe_left_alt' |                 'swipe_right' |                 'swipe_right_alt' |                 'swipe_up' |                 'swipe_up_alt' |                 'swipe_vertical' |                 'switch_access_shortcut' |                 'switch_access_shortcut_add' |                 'switch_account' |                 'switch_camera' |                 'switch_left' |                 'switch_right' |                 'switch_video' |                 'synagogue' |                 'sync' |                 'sync_alt' |                 'sync_disabled' |                 'sync_lock' |                 'sync_problem' |                 'system_security_update' |                 'system_security_update_good' |                 'system_security_update_warning' |                 'system_update' |                 'system_update_alt' |                 'tab' |                 'tab_unselected' |                 'table_bar' |                 'table_chart' |                 'table_restaurant' |                 'table_rows' |                 'table_view' |                 'tablet' |                 'tablet_android' |                 'tablet_mac' |                 'tag' |                 'tag_faces' |                 'takeout_dining' |                 'tap_and_play' |                 'tapas' |                 'task' |                 'task_alt' |                 'taxi_alert' |                 'temple_buddhist' |                 'temple_hindu' |                 'terminal' |                 'terrain' |                 'text_decrease' |                 'text_fields' |                 'text_format' |                 'text_increase' |                 'text_rotate_up' |                 'text_rotate_vertical' |                 'text_rotation_angledown' |                 'text_rotation_angleup' |                 'text_rotation_down' |                 'text_rotation_none' |                 'text_snippet' |                 'textsms' |                 'texture' |                 'theater_comedy' |                 'theaters' |                 'thermostat' |                 'thermostat_auto' |                 'thumb_down' |                 'thumb_down_alt' |                 'thumb_down_off_alt' |                 'thumb_up' |                 'thumb_up_alt' |                 'thumb_up_off_alt' |                 'thumbs_up_down' |                 'thunderstorm' |                 'time_to_leave' |                 'timelapse' |                 'timeline' |                 'timer' |                 'timer_10' |                 'timer_10_select' |                 'timer_3' |                 'timer_3_select' |                 'timer_off' |                 'tips_and_updates' |                 'tire_repair' |                 'title' |                 'toc' |                 'today' |                 'toggle_off' |                 'toggle_on' |                 'token' |                 'toll' |                 'tonality' |                 'topic' |                 'tornado' |                 'touch_app' |                 'tour' |                 'toys' |                 'track_changes' |                 'traffic' |                 'train' |                 'tram' |                 'transcribe' |                 'transfer_within_a_station' |                 'transform' |                 'transgender' |                 'transit_enterexit' |                 'translate' |                 'travel_explore' |                 'trending_down' |                 'trending_flat' |                 'trending_up' |                 'trip_origin' |                 'troubleshoot' |                 'try' |                 'tsunami' |                 'tty' |                 'tune' |                 'tungsten' |                 'turn_left' |                 'turn_right' |                 'turn_sharp_left' |                 'turn_sharp_right' |                 'turn_slight_left' |                 'turn_slight_right' |                 'turned_in' |                 'turned_in_not' |                 'tv' |                 'tv_off' |                 'two_wheeler' |                 'type_specimen' |                 'u_turn_left' |                 'u_turn_right' |                 'umbrella' |                 'unarchive' |                 'undo' |                 'unfold_less' |                 'unfold_less_double' |                 'unfold_more' |                 'unfold_more_double' |                 'unpublished' |                 'unsubscribe' |                 'upcoming' |                 'update' |                 'update_disabled' |                 'upgrade' |                 'upload' |                 'upload_file' |                 'usb' |                 'usb_off' |                 'vaccines' |                 'vape_free' |                 'vaping_rooms' |                 'verified' |                 'verified_user' |                 'vertical_align_bottom' |                 'vertical_align_center' |                 'vertical_align_top' |                 'vertical_distribute' |                 'vertical_shades' |                 'vertical_shades_closed' |                 'vertical_split' |                 'vibration' |                 'video_call' |                 'video_camera_back' |                 'video_camera_front' |                 'video_chat' |                 'video_file' |                 'video_label' |                 'video_library' |                 'video_settings' |                 'video_stable' |                 'videocam' |                 'videocam_off' |                 'videogame_asset' |                 'videogame_asset_off' |                 'view_agenda' |                 'view_array' |                 'view_carousel' |                 'view_column' |                 'view_comfy' |                 'view_comfy_alt' |                 'view_compact' |                 'view_compact_alt' |                 'view_cozy' |                 'view_day' |                 'view_headline' |                 'view_in_ar' |                 'view_kanban' |                 'view_list' |                 'view_module' |                 'view_quilt' |                 'view_sidebar' |                 'view_stream' |                 'view_timeline' |                 'view_week' |                 'vignette' |                 'villa' |                 'visibility' |                 'visibility_off' |                 'voice_chat' |                 'voice_over_off' |                 'voicemail' |                 'volcano' |                 'volume_down' |                 'volume_mute' |                 'volume_off' |                 'volume_up' |                 'volunteer_activism' |                 'vpn_key' |                 'vpn_key_off' |                 'vpn_lock' |                 'vrpano' |                 'wallet' |                 'wallpaper' |                 'warehouse' |                 'warning' |                 'warning_amber' |                 'wash' |                 'watch' |                 'watch_later' |                 'watch_off' |                 'water' |                 'water_damage' |                 'water_drop' |                 'waterfall_chart' |                 'waves' |                 'waving_hand' |                 'wb_auto' |                 'wb_cloudy' |                 'wb_incandescent' |                 'wb_iridescent' |                 'wb_shade' |                 'wb_sunny' |                 'wb_twilight' |                 'wc' |                 'web' |                 'web_asset' |                 'web_asset_off' |                 'web_stories' |                 'webhook' |                 'weekend' |                 'west' |                 'whatshot' |                 'wheelchair_pickup' |                 'where_to_vote' |                 'widgets' |                 'width_full' |                 'width_normal' |                 'width_wide' |                 'wifi' |                 'wifi_1_bar' |                 'wifi_2_bar' |                 'wifi_calling' |                 'wifi_calling_3' |                 'wifi_channel' |                 'wifi_find' |                 'wifi_lock' |                 'wifi_off' |                 'wifi_password' |                 'wifi_protected_setup' |                 'wifi_tethering' |                 'wifi_tethering_error' |                 'wifi_tethering_off' |                 'wind_power' |                 'window' |                 'wine_bar' |                 'woman' |                 'woman_2' |                 'work' |                 'work_history' |                 'work_off' |                 'work_outline' |                 'workspace_premium' |                 'workspaces' |                 'wrap_text' |                 'wrong_location' |                 'wysiwyg' |                 'yard' |                 'youtube_searched_for' |                 'zoom_in' |                 'zoom_in_map' |                 'zoom_out' |                 'zoom_out_map';        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/components/Input/Input.wcl.avt">        <pre>            export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props                @Property()                public label?: string;                &nbsp;                @Property((target: Input) =&gt; {                    target.inputEl.value = target.value;                })                public value: string = "";                //#endregion            &nbsp;            &nbsp;                //#region variables                public change: Aventus.Callback&lt;(value: string) =&gt; void&gt; = new Aventus.Callback();            &nbsp;                @ViewElement()                protected inputEl!: HTMLInputElement;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods            &nbsp;                /**                 *                  */                protected updateValue() {                    this.value = this.inputEl.value;                    this.change.trigger([this.value]);                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/components/Input/Input.wcs.avt">        <pre>            :host {            	background-color: var(--color-surface-mixed-600);            	border-radius: 10px;            	display: flex;            	flex-direction: column;            	height: fit-content;            	overflow: hidden;            	width: 100%;            &nbsp;            	label {            		background-color: var(--color-surface-mixed-500);            		padding: 5px 15px;            		width: 100%;            	}            &nbsp;            	input {            		background-color: transparent;            		border: none;            		box-shadow: none;            		color: white;            		height: 100%;            		margin: 0;            		outline: none;            		padding: 15px 25px;            		width: 100%;            	}            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/components/Input/Input.wcv.avt">        <pre>            &lt;label &#102;or="input"&gt;&#123;&#123; this.label &#125;&#125;&lt;/label&gt;            &lt;input id="input" type="text" @element="inputEl" @change="updateValue"&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/data/Task.data.avt">        <pre>            export class Task extends Aventus.Data implements Aventus.IData {                public id: number = 0;                public name: string = "";            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/data/Todo.data.avt">        <pre>            import type { Task } from "./Task.data.avt";            &nbsp;            export class Todo extends Aventus.Data implements Aventus.IData {                public id: number = 0;                public name: string = "";                public tasks: Task[] = [];            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/ram/Todo.ram.avt">        <pre>            import { Todo } from "../data/Todo.data.avt";            &nbsp;            interface TodoMethod {                // define your methods here                validate(): void;            }            &nbsp;            export type TodoExtended = Todo & TodoMethod;            &nbsp;            export class TodoRAM extends Aventus.Ram&lt;Todo, TodoExtended&gt; implements Aventus.IRam {            &nbsp;                public isLoaded: boolean = false;                private static maxId: number = 0;            &nbsp;                /**                 * Create a singleton to store data                 */                public static getInstance() {                    return Aventus.Instance.get(TodoRAM);                }            &nbsp;                /**                 * @inheritdoc                 */                public override defineIndexKey(): keyof Todo {                    return 'id';                }                /**                 * @inheritdoc                 */                protected override getTypeForData(objJson: Aventus.KeysObject&lt;Todo&gt; | Todo): new () =&gt; TodoExtended {                    return this.addTodoMethod(Todo);                }            &nbsp;                /**                 * Mixin pattern to add methods                 */                private addTodoMethod&lt;B extends (new (...args: any[]) =&gt; Todo) & { className?: string; }&gt;(Base: B) {                    return class Extension extends Base implements TodoExtended {                        public static override get className(): string {                            return Base.className || Base.name;                        }                        public override get className(): string {                            return Base.className || Base.name;                        }            &nbsp;                        // code your methods here                        public validate(): void {                        }            &nbsp;                    };                }            &nbsp;            &nbsp;                protected saveToStorage() {                    let values = Array.from(this.records.values());                    localStorage.setItem("todos", JSON.stringify(values));                }                protected reloadFromStorage(result: Aventus.ResultRamWithError&lt;Map&lt;number, Aventus.RamItem&lt;TodoExtended&gt;&gt;&gt;) {                    let maxId = 0;                    let data = JSON.parse(localStorage.getItem("todos") ?? "[]");                    let values = Aventus.Converter.transform&lt;Todo[]&gt;(data);                    &#102;or(let value of values) {                        let resultTemp: Aventus.ResultWithError&lt;Aventus.RamItem&lt;Todo&gt;&gt; = new Aventus.ResultWithError();                        &#105;f(value.id &gt; maxId) {                            maxId = value.id;                        }                        this.addOrUpdateData(value, resultTemp);                        &#105;f(!resultTemp.success) {                            result.errors = [...result.errors, ...resultTemp.errors];                        }                    }                    TodoRAM.maxId = maxId;                }            &nbsp;            &nbsp;                protected override async beforeCreateItem(item: Todo, fromList: boolean, result: Aventus.ResultRamWithError&lt;Aventus.RamItem&lt;TodoExtended&gt;&gt;): Promise&lt;void&gt; {                    TodoRAM.maxId++;                    item.id = TodoRAM.maxId;                    debugger;                }                protected override async afterCreateItem(result: Aventus.ResultRamWithError&lt;Aventus.RamItem&lt;TodoExtended&gt;&gt;, fromList: boolean): Promise&lt;void&gt; {                    super.afterCreateItem(result, fromList);                    this.saveToStorage();                }                protected override async afterUpdateItem(result: Aventus.ResultRamWithError&lt;Aventus.RamItem&lt;TodoExtended&gt;&gt;, fromList: boolean): Promise&lt;void&gt; {                    super.afterUpdateItem(result, fromList);                    this.saveToStorage();                }                protected override async afterDeleteItem(result: Aventus.ResultRamWithError&lt;Aventus.RamItem&lt;TodoExtended&gt;&gt;, fromList: boolean): Promise&lt;void&gt; {                    super.afterDeleteItem(result, fromList);                    this.saveToStorage();                }                protected override async beforeGetAll(result: Aventus.ResultRamWithError&lt;Map&lt;number, Aventus.RamItem&lt;TodoExtended&gt;&gt;&gt;): Promise&lt;void&gt; {                    &#105;f(!this.isLoaded) {                        this.reloadFromStorage(result);                        this.isLoaded = true;                    }                }            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/states/todo/TodoCreateState.state.avt">        <pre>            import { TodoEditPage } from "../../apps/MainApp/pages/TodoEditPage/TodoEditPage.wcl.avt";            import { Todo } from "../../data/Todo.data.avt";            &nbsp;            export class TodoCreateState extends Aventus.State implements Aventus.IState {            &nbsp;            &nbsp;            	public editing?:Todo;            	/**            	 * @inheritdoc            	 */            	public override get name(): string {            		return TodoEditPage.pageUrl;            	}            &nbsp;            &nbsp;            	public override onActivate(): void {            		let newTodo = new Todo();            		newTodo.name =  "My todo";            		this.editing = newTodo;            	}            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/static/css/default.gs.avt">        <pre>            @import "./_theme.gs.avt";            &nbsp;            html,            body {            	color: white;            	cursor: default !important;            	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;            	height: 100%;            	margin: 0;            	overflow: hidden;            	padding: 0;            	position: relative;            	width: 100%;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/static/css/_theme.gs.avt">        <pre>            :root {            	--color-primary-100: #00b6e6;            	--color-primary-200: #48bee9;            	--color-primary-300: #69c6ec;            	--color-primary-400: #83ceef;            	--color-primary-500: #9ad6f1;            	--color-primary-600: #b0def4;            &nbsp;            	--color-surface-100: #0d2734;            	--color-surface-200: #263b48;            	--color-surface-300: #3f515c;            	--color-surface-400: #586772;            	--color-surface-500: #727f88;            	--color-surface-600: #8c979e;            &nbsp;            &nbsp;            	--color-surface-mixed-100: #103444;            	--color-surface-mixed-200: #2b4857;            	--color-surface-mixed-300: #445c6a;            	--color-surface-mixed-400: #5d727e;            	--color-surface-mixed-500: #768892;            	--color-surface-mixed-600: #909ea7;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Demo/src/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &nbsp;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Aventus Demo&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;                &lt;link rel="stylesheet" href="/css/default.css"&gt;            &lt;/head&gt;            &nbsp;            &lt;body&gt;                &lt;av-main-app&gt;&lt;/av-main-app&gt;            &lt;/body&gt;            &nbsp;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot>    <iframe slot="result" src="/tutorial/finalresult/index.html"></iframe></av-code-editor>` }
-    });
-}
-    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
-  "elements": [
-    {
-      "name": "editorEl",
-      "ids": [
-        "tutorialiniteditor_0"
-      ]
-    }
-  ]
-}); }
-    getClassName() {
-        return "TutorialInitEditor";
-    }
-    startupFile() {
-        return "Demo/src/apps/MainApp/MainApp.wcl.avt";
-    }
-    postCreation() {
-        let file = this.startupFile();
-        let splitted = file.split("/");
-        splitted.pop();
-        let dir = splitted.join("/");
-        this.editorEl.open_folder = dir;
-        this.editorEl.show = file;
-    }
-}
-TutorialInitEditor.Namespace=`${moduleName}`;
-TutorialInitEditor.Tag=`av-tutorial-init-editor`;
-_.TutorialInitEditor=TutorialInitEditor;
-if(!window.customElements.get('av-tutorial-init-editor')){window.customElements.define('av-tutorial-init-editor', TutorialInitEditor);Aventus.WebComponentInstance.registerDefinition(TutorialInitEditor);}
-
 const BaseEditor = class BaseEditor extends Aventus.WebComponent {
-    static __style = `:host{width:100%}`;
+    editorEl;
+    static __style = `:host{width:100%}:host iframe{border:none;height:400px;width:100%}`;
     __getStatic() {
         return BaseEditor;
     }
@@ -11688,12 +11711,24 @@ const BaseEditor = class BaseEditor extends Aventus.WebComponent {
     defineResult() {
         return null;
     }
+    all_open() {
+        return true;
+    }
+    open_folder() {
+        return undefined;
+    }
     postCreation() {
         let editorEl = this.shadowRoot.querySelector('av-code-editor');
         if (!editorEl)
             return;
         editorEl.highlights = JSON.stringify(this.hightlightFiles()).replace(/"/g, '\"');
         editorEl.show = this.startupFile();
+        editorEl.all_open = this.all_open();
+        let folders = this.open_folder();
+        if (Array.isArray(folders)) {
+            folders = JSON.stringify(folders).replace(/"/g, '\"');
+        }
+        editorEl.open_folder = folders;
         let result = this.defineResult();
         if (result) {
             result.setAttribute("slot", "result");
@@ -11705,6 +11740,31 @@ BaseEditor.Namespace=`${moduleName}`;
 BaseEditor.Tag=`av-base-editor`;
 _.BaseEditor=BaseEditor;
 if(!window.customElements.get('av-base-editor')){window.customElements.define('av-base-editor', BaseEditor);Aventus.WebComponentInstance.registerDefinition(BaseEditor);}
+
+const TutorialGenericPageEditor1 = class TutorialGenericPageEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return TutorialGenericPageEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TutorialGenericPageEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "TutorialGenericPageEditor1";
+    }
+}
+TutorialGenericPageEditor1.Namespace=`${moduleName}`;
+TutorialGenericPageEditor1.Tag=`av-tutorial-generic-page-editor-1`;
+_.TutorialGenericPageEditor1=TutorialGenericPageEditor1;
+if(!window.customElements.get('av-tutorial-generic-page-editor-1')){window.customElements.define('av-tutorial-generic-page-editor-1', TutorialGenericPageEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialGenericPageEditor1);}
 
 const DocWcLoopEditor = class DocWcLoopEditor extends BaseEditor {
     static __style = ``;
@@ -11830,6 +11890,507 @@ DocLibInstanceEditor1.Namespace=`${moduleName}`;
 DocLibInstanceEditor1.Tag=`av-doc-lib-instance-editor-1`;
 _.DocLibInstanceEditor1=DocLibInstanceEditor1;
 if(!window.customElements.get('av-doc-lib-instance-editor-1')){window.customElements.define('av-doc-lib-instance-editor-1', DocLibInstanceEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibInstanceEditor1);}
+
+const TutorialCreateAppEditor1 = class TutorialCreateAppEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return TutorialCreateAppEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TutorialCreateAppEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Demo">    <av-code language="typescript" filename="Demo/aventus.conf.avt">        <pre>            {            	"module": "TodoDemo",            	"componentPrefix": "td",            	"hideWarnings": true,            	"dependances": [            		{            			"uri": "@AventusUI"            		}            	],            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/apps/*",            				"./src/components/*",            				"./src/data/*",            				"./src/lib/*",            				"./src/ram/*",            				"./src/states/*"            			],            			"compile": [            				{            					"output": "./dist/todo.js"            				}            			]            		}            	],            	"static": [            		{            			"name": "Main",            			"input": "./src/static/*",            			"output": "./dist/"            		}            	]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">        <pre>            export class MainApp extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregions            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Demo/src/apps/MainApp/MainApp.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <div folder="Demo/src/components"></div>    <div folder="Demo/src/data"></div>    <div folder="Demo/src/lib"></div>    <div folder="Demo/src/ram"></div>    <div folder="Demo/src/states"></div>    <av-code language="css" filename="Demo/src/static/css/default.gs.avt">        <pre>            @import "./_theme.gs.avt";            &nbsp;            /* Define the global style &#102;or elements not contained inside a shadow root */            /* Compiled into default.css file */            &nbsp;            html,            body {            	background-color: var(--color-surface-mixed-100);            	color: var(--font-color);            	cursor: default !important;            	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;            	height: 100%;            	margin: 0;            	overflow: hidden;            	padding: 0;            	position: relative;            	width: 100%;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="css" filename="Demo/src/static/css/_theme.gs.avt">        <pre>            /* This file defines the theme &#102;or the application */            &nbsp;            /* color generated by : https://colorffy.com/dark-theme-generator*/            :root {            	--font-color: white;            &nbsp;            	--color-primary-100: #00b6e6;            	--color-primary-200: #48bee9;            	--color-primary-300: #69c6ec;            	--color-primary-400: #83ceef;            	--color-primary-500: #9ad6f1;            	--color-primary-600: #b0def4;            &nbsp;            	--color-surface-100: #0d2734;            	--color-surface-200: #263b48;            	--color-surface-300: #3f515c;            	--color-surface-400: #586772;            	--color-surface-500: #727f88;            	--color-surface-600: #8c979e;            &nbsp;            &nbsp;            	--color-surface-mixed-100: #103444;            	--color-surface-mixed-200: #2b4857;            	--color-surface-mixed-300: #445c6a;            	--color-surface-mixed-400: #5d727e;            	--color-surface-mixed-500: #768892;            	--color-surface-mixed-600: #909ea7;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Demo/src/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &nbsp;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Todo&lt;/title&gt;                &lt;script src="/todo.js"&gt;&lt;/script&gt;                &lt;link rel="stylesheet" href="/css/default.css"&gt;            &lt;/head&gt;            &nbsp;            &lt;body&gt;            &nbsp;            &lt;/body&gt;            &nbsp;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "TutorialCreateAppEditor1";
+    }
+    all_open() {
+        return false;
+    }
+}
+TutorialCreateAppEditor1.Namespace=`${moduleName}`;
+TutorialCreateAppEditor1.Tag=`av-tutorial-create-app-editor-1`;
+_.TutorialCreateAppEditor1=TutorialCreateAppEditor1;
+if(!window.customElements.get('av-tutorial-create-app-editor-1')){window.customElements.define('av-tutorial-create-app-editor-1', TutorialCreateAppEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialCreateAppEditor1);}
+
+const TutorialCreateAppEditor2 = class TutorialCreateAppEditor2 extends TutorialCreateAppEditor1 {
+    static __style = ``;
+    __getStatic() {
+        return TutorialCreateAppEditor2;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TutorialCreateAppEditor2.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code language="html" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">    <pre>        &lt;h1&gt;Hello world&lt;/h1&gt;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/static/index.html">    <pre>        &lt;!DOCTYPE html&gt;        &lt;html lang="en"&gt;        &nbsp;        &lt;head&gt;            &lt;meta charset="UTF-8"&gt;            &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;            &lt;title&gt;Todo&lt;/title&gt;            &lt;script src="/todo.js"&gt;&lt;/script&gt;            &lt;link rel="stylesheet" href="/css/default.css"&gt;        &lt;/head&gt;        &nbsp;        &lt;body&gt;            &lt;td-main-app&gt;&lt;/td-main-app&gt;        &lt;/body&gt;        &nbsp;        &lt;/html&gt;    </pre></av-code></av-code><slot></slot>` }
+    });
+}
+    getClassName() {
+        return "TutorialCreateAppEditor2";
+    }
+    startupFile() {
+        return 'Demo/src/apps/MainApp/MainApp.wcv.avt';
+    }
+    hightlightFiles() {
+        return [
+            'Demo/src/apps/MainApp/MainApp.wcv.avt',
+            'Demo/src/static/index.html'
+        ];
+    }
+    open_folder() {
+        return 'Demo/src/static';
+    }
+    defineResult() {
+        let iframe = document.createElement("iframe");
+        iframe.src = "/tutorial/createapp/step1/index.html";
+        return iframe;
+    }
+}
+TutorialCreateAppEditor2.Namespace=`${moduleName}`;
+TutorialCreateAppEditor2.Tag=`av-tutorial-create-app-editor-2`;
+_.TutorialCreateAppEditor2=TutorialCreateAppEditor2;
+if(!window.customElements.get('av-tutorial-create-app-editor-2')){window.customElements.define('av-tutorial-create-app-editor-2', TutorialCreateAppEditor2);Aventus.WebComponentInstance.registerDefinition(TutorialCreateAppEditor2);}
+
+const TutorialCreateAppEditor3 = class TutorialCreateAppEditor3 extends TutorialCreateAppEditor2 {
+    static __style = ``;
+    __getStatic() {
+        return TutorialCreateAppEditor3;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TutorialCreateAppEditor3.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">    <pre>        /**         * The MainApp &#102;or the Demo.         * The parent Aventus.Navigation.Router is a component that allows routing management         */        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables        &nbsp;            //#endregions        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            /**             * @inheritdoc             */            protected override defineRoutes(): void {                // define the routing here            }        &nbsp;        &nbsp;            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/apps/MainApp/MainApp.wcs.avt">    <pre>        :host {            display: flex;            flex-direction: row;            height: 100%;            overflow: hidden;            width: 100%;        &nbsp;            /* Add style to the sidenav */            .nav {                background-color: var(--color-surface-mixed-300);                height: 100%;                padding-top: 30px;                width: 200px;            }        &nbsp;            /* Change style of the .content declared inside the Aventus.Navigation.Router Component */            .content {                width: calc(100% - 200px);                height: 100%;            }        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">    <pre>        &lt;!-- The router has a slot name "before": we use it to define the sidenav --&gt;        &lt;block name="before"&gt;            &lt;div class="nav"&gt;                &nbsp;            &lt;/div&gt;        &lt;/block&gt;        &lt;slot&gt;&lt;/slot&gt;    </pre></av-code></av-code><slot></slot>` }
+    });
+}
+    getClassName() {
+        return "TutorialCreateAppEditor3";
+    }
+    hightlightFiles() {
+        return [
+            'Demo/src/apps/MainApp/MainApp.wcl.avt',
+            'Demo/src/apps/MainApp/MainApp.wcs.avt',
+            'Demo/src/apps/MainApp/MainApp.wcv.avt'
+        ];
+    }
+    startupFile() {
+        return 'Demo/src/apps/MainApp/MainApp.wcl.avt';
+    }
+    defineResult() {
+        let iframe = document.createElement("iframe");
+        iframe.src = "/tutorial/createapp/step2/index.html";
+        return iframe;
+    }
+}
+TutorialCreateAppEditor3.Namespace=`${moduleName}`;
+TutorialCreateAppEditor3.Tag=`av-tutorial-create-app-editor-3`;
+_.TutorialCreateAppEditor3=TutorialCreateAppEditor3;
+if(!window.customElements.get('av-tutorial-create-app-editor-3')){window.customElements.define('av-tutorial-create-app-editor-3', TutorialCreateAppEditor3);Aventus.WebComponentInstance.registerDefinition(TutorialCreateAppEditor3);}
+
+const TutorialCreateAppEditor4 = class TutorialCreateAppEditor4 extends TutorialCreateAppEditor3 {
+    static __style = `:host av-code-editor{--code-editor-menu-width: 290px}`;
+    __getStatic() {
+        return TutorialCreateAppEditor4;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TutorialCreateAppEditor4.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">    <pre>        import { TodoCreatePage } from "./pages/TodoCreatePage/TodoCreatePage.wcl.avt";        import { TodoListPage } from "./pages/TodoListPage/TodoListPage.wcl.avt";        &nbsp;        /**         * The MainApp &#102;or the Demo.         * The parent Aventus.Navigation.Router is a component that allows routing management         */        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables        &nbsp;            //#endregions        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            /**             * @inheritdoc             */            protected override defineRoutes(): void {                // define the routing here                this.addRoute("/", TodoListPage);                this.addRoute("/create", TodoCreatePage);            }        &nbsp;        &nbsp;            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt">    <pre>        /**         * The page to create new todo         */        export class TodoCreatePage extends Aventus.Navigation.Page implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods        &nbsp;            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcs.avt">    <pre>        :host {            .page-title {                height: 50px;                width: 100%;                display: flex;                align-items: center;                justify-content: center;                font-size: 30px;                margin: 30px 0;            }        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt">    <pre>        &lt;div class="page-title"&gt;Create todos&lt;/div&gt;    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt">    <pre>        /**         * The page to list all todos         */        export class TodoListPage extends Aventus.Navigation.Page implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods        &nbsp;            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcs.avt">    <pre>        :host {            .page-title {                height: 50px;                width: 100%;                display: flex;                align-items: center;                justify-content: center;                font-size: 30px;                margin: 30px 0;            }        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt">    <pre>        &lt;div class="page-title"&gt;List todos&lt;/div&gt;    </pre></av-code></av-code><slot></slot>` }
+    });
+}
+    getClassName() {
+        return "TutorialCreateAppEditor4";
+    }
+    startupFile() {
+        return "Demo/src/apps/MainApp/MainApp.wcl.avt";
+    }
+    hightlightFiles() {
+        return [
+            "Demo/src/apps/MainApp/MainApp.wcl.avt",
+            "Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt",
+            "Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcs.avt",
+            "Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt",
+            "Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt",
+            "Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcs.avt",
+            "Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt"
+        ];
+    }
+    open_folder() {
+        return [
+            'Demo/src/apps/MainApp/pages/TodoCreatePage',
+            'Demo/src/apps/MainApp/pages/TodoListPage'
+        ];
+    }
+    defineResult() {
+        let iframe = document.createElement("iframe");
+        iframe.src = "/tutorial/createapp/step3/index.html";
+        return iframe;
+    }
+}
+TutorialCreateAppEditor4.Namespace=`${moduleName}`;
+TutorialCreateAppEditor4.Tag=`av-tutorial-create-app-editor-4`;
+_.TutorialCreateAppEditor4=TutorialCreateAppEditor4;
+if(!window.customElements.get('av-tutorial-create-app-editor-4')){window.customElements.define('av-tutorial-create-app-editor-4', TutorialCreateAppEditor4);Aventus.WebComponentInstance.registerDefinition(TutorialCreateAppEditor4);}
+
+const TutorialCreateAppEditor5 = class TutorialCreateAppEditor5 extends TutorialCreateAppEditor4 {
+    static __style = ``;
+    __getStatic() {
+        return TutorialCreateAppEditor5;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TutorialCreateAppEditor5.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code language="css" filename="Demo/src/apps/MainApp/MainApp.wcs.avt">    <pre>        :host {            display: flex;            flex-direction: row;            height: 100%;            overflow: hidden;            width: 100%;        &nbsp;            /* Add style to the sidenav */            .nav {                background-color: var(--color-surface-mixed-300);                height: 100%;                padding-top: 30px;                width: 200px;        &nbsp;                /* Define style &#102;or sidnav item */                .nav-item {                    align-items: center;                    cursor: pointer;                    display: flex;                    margin: 5px 0;                    padding: 5px 15px;                    width: 100%;                    transition: background-color 0.2s linear;                }        &nbsp;                /* Define style &#102;or when the sidnav item is active. */                .nav-item.active {                    background-color: var(--color-surface-mixed-600);                }                /* Define style &#102;or when the sidnav item is hover. */                .nav-item:not(.active):hover {                    background-color: var(--color-surface-mixed-500);                }            }        &nbsp;            /* Change style of the .content declared inside the Aventus.Navigation.Router Component */            .content {                width: calc(100% - 200px);                height: 100%;            }        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">    <pre>        &lt;!-- The router has a slot name "before": we use it to define the sidenav --&gt;        &lt;block name="before"&gt;            &lt;div class="nav"&gt;                &lt;av-router-link class="nav-item" state="/"&gt;                    &lt;span class="name"&gt;Todo list&lt;/span&gt;                &lt;/av-router-link&gt;                &lt;av-router-link class="nav-item" state="/create"&gt;                    &lt;span class="name"&gt;Create todo&lt;/span&gt;                &lt;/av-router-link&gt;            &lt;/div&gt;        &lt;/block&gt;        &lt;slot&gt;&lt;/slot&gt;    </pre></av-code></av-code><slot></slot>` }
+    });
+}
+    getClassName() {
+        return "TutorialCreateAppEditor5";
+    }
+    startupFile() {
+        return 'Demo/src/apps/MainApp/MainApp.wcv.avt';
+    }
+    hightlightFiles() {
+        return [
+            'Demo/src/apps/MainApp/MainApp.wcv.avt',
+            'Demo/src/apps/MainApp/MainApp.wcs.avt'
+        ];
+    }
+    open_folder() {
+        return undefined;
+    }
+    defineResult() {
+        let iframe = document.createElement("iframe");
+        iframe.src = "/tutorial/createapp/step4/index.html";
+        return iframe;
+    }
+}
+TutorialCreateAppEditor5.Namespace=`${moduleName}`;
+TutorialCreateAppEditor5.Tag=`av-tutorial-create-app-editor-5`;
+_.TutorialCreateAppEditor5=TutorialCreateAppEditor5;
+if(!window.customElements.get('av-tutorial-create-app-editor-5')){window.customElements.define('av-tutorial-create-app-editor-5', TutorialCreateAppEditor5);Aventus.WebComponentInstance.registerDefinition(TutorialCreateAppEditor5);}
+
+const TutorialCreateAppEditor6 = class TutorialCreateAppEditor6 extends TutorialCreateAppEditor5 {
+    static __style = ``;
+    __getStatic() {
+        return TutorialCreateAppEditor6;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TutorialCreateAppEditor6.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code language="typescript" filename="Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcl.avt">    <pre>        export abstract class GenericPage extends Aventus.Navigation.Page implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            public abstract definePageTitle(): string;            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcs.avt">    <pre>        :host {            height: 100%;            overflow: hidden;            width: 100%;        &nbsp;            av-scrollable {                height: 100%;                width: 100%;                /* define the padding needed inside the scrollbar */                --scrollbar-content-padding: 15px;        &nbsp;                .page-title {                    height: 50px;                    width: 100%;                    display: flex;                    align-items: center;                    justify-content: center;                    font-size: 30px;                    margin: 30px 0;                }            }        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcv.avt">    <pre>        &lt;!-- use scrollable to display a scrollbar &#105;f the content is bigger than the size of the scrollable component --&gt;        &lt;av-scrollable&gt;            &lt;!-- Generic page title define by children pages --&gt;            &lt;div class="page-title"&gt;&#123;&#123; this.definePageTitle() &#125;&#125;&lt;/div&gt;            &lt;!-- Add a slot so that the children can add custom content --&gt;            &lt;slot&gt;&lt;/slot&gt;        &lt;/av-scrollable&gt;    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt">    <pre>        import { GenericPage } from "../GenericPage/GenericPage.wcl.avt";        &nbsp;        /**         * The page to create new todo         */        export class TodoCreatePage extends GenericPage implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            /**             * @inheritdoc             */            public override definePageTitle(): string {                return "Create todo";            }        &nbsp;            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcs.avt">    <pre>        :host {        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt">    <pre>        &nbsp;    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt">    <pre>        import { GenericPage } from "../GenericPage/GenericPage.wcl.avt";        &nbsp;        /**         * The page to list all todos         */        export class TodoListPage extends GenericPage implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            /**             * @inheritdoc             */            public override definePageTitle(): string {                return "List todos";            }        &nbsp;            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcs.avt">    <pre>        :host {        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt">    <pre>        &nbsp;    </pre></av-code></av-code><slot></slot>` }
+    });
+}
+    getClassName() {
+        return "TutorialCreateAppEditor6";
+    }
+    startupFile() {
+        return 'Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcl.avt';
+    }
+    hightlightFiles() {
+        return [
+            'Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcl.avt',
+            'Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcs.avt',
+            'Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcv.avt',
+            'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt',
+            'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcs.avt',
+            'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt',
+            'Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt',
+            'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoListPage.wcs.avt',
+            'Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt',
+        ];
+    }
+    open_folder() {
+        return [
+            'Demo/src/apps/MainApp/pages/GenericPage',
+            'Demo/src/apps/MainApp/pages/TodoCreatePage',
+            'Demo/src/apps/MainApp/pages/TodoListPage',
+        ];
+    }
+    defineResult() {
+        let iframe = document.createElement("iframe");
+        iframe.src = "/tutorial/createapp/step5/index.html";
+        return iframe;
+    }
+}
+TutorialCreateAppEditor6.Namespace=`${moduleName}`;
+TutorialCreateAppEditor6.Tag=`av-tutorial-create-app-editor-6`;
+_.TutorialCreateAppEditor6=TutorialCreateAppEditor6;
+if(!window.customElements.get('av-tutorial-create-app-editor-6')){window.customElements.define('av-tutorial-create-app-editor-6', TutorialCreateAppEditor6);Aventus.WebComponentInstance.registerDefinition(TutorialCreateAppEditor6);}
+
+const TutorialInitEditor3 = class TutorialInitEditor3 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return TutorialInitEditor3;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TutorialInitEditor3.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Demo">    <av-code language="typescript" filename="Demo/aventus.conf.avt">        <pre>            {            	"module": "TodoDemo",            	"componentPrefix": "td",            	"hideWarnings": true,            	"dependances": [            		{            			"uri": "@AventusUI"            		}            	],            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/apps/*", // tell aventus to watch the apps folder            				"./src/components/*",            				"./src/data/*",            				"./src/lib/*",            				"./src/ram/*",            				"./src/states/*" // change the name from socket to states            			],            			"compile": [            				{            					"output": "./dist/todo.js"            				}            			]            		}            	],            	"static": [            		{            			"name": "Main",            			"input": "./src/static/*",            			"output": "./dist/"            		}            	]            }        </pre>    </av-code></av-code>    <div folder="Demo/src/apps"></div>    <div folder="Demo/src/components"></div>    <div folder="Demo/src/data"></div>    <div folder="Demo/src/lib"></div>    <div folder="Demo/src/ram"></div>    <div folder="Demo/src/states"></div>    <av-code language="css" filename="Demo/src/static/css/default.gs.avt">        <pre>            @import "./_theme.gs.avt";            &nbsp;            /* Define the global style &#102;or elements not contained inside a shadow root */            /* Compiled into default.css file */            &nbsp;            html,            body {            	background-color: var(--color-surface-mixed-100);            	color: var(--font-color);            	cursor: default !important;            	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;            	height: 100%;            	margin: 0;            	overflow: hidden;            	padding: 0;            	position: relative;            	width: 100%;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="css" filename="Demo/src/static/css/_theme.gs.avt">        <pre>            /* This file defines the theme &#102;or the application */            &nbsp;            /* color generated by : https://colorffy.com/dark-theme-generator*/            :root {            	--font-color: white;            &nbsp;            	--color-primary-100: #00b6e6;            	--color-primary-200: #48bee9;            	--color-primary-300: #69c6ec;            	--color-primary-400: #83ceef;            	--color-primary-500: #9ad6f1;            	--color-primary-600: #b0def4;            &nbsp;            	--color-surface-100: #0d2734;            	--color-surface-200: #263b48;            	--color-surface-300: #3f515c;            	--color-surface-400: #586772;            	--color-surface-500: #727f88;            	--color-surface-600: #8c979e;            &nbsp;            &nbsp;            	--color-surface-mixed-100: #103444;            	--color-surface-mixed-200: #2b4857;            	--color-surface-mixed-300: #445c6a;            	--color-surface-mixed-400: #5d727e;            	--color-surface-mixed-500: #768892;            	--color-surface-mixed-600: #909ea7;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Demo/src/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &nbsp;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Todo&lt;/title&gt;                &lt;script src="/todo.js"&gt;&lt;/script&gt;                &lt;link rel="stylesheet" href="/css/default.css"&gt;            &lt;/head&gt;            &nbsp;            &lt;body&gt;            &nbsp;            &lt;/body&gt;            &nbsp;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "TutorialInitEditor3";
+    }
+    startupFile() {
+        return 'Demo/aventus.conf.avt';
+    }
+    open_folder() {
+        return [
+            "Demo/src"
+        ];
+    }
+    hightlightFiles() {
+        return [
+            'Demo/aventus.conf.avt',
+            "Demo/src/apps",
+            "Demo/src/states",
+        ];
+    }
+    postCreation() {
+        super.postCreation();
+    }
+}
+TutorialInitEditor3.Namespace=`${moduleName}`;
+TutorialInitEditor3.Tag=`av-tutorial-init-editor-3`;
+_.TutorialInitEditor3=TutorialInitEditor3;
+if(!window.customElements.get('av-tutorial-init-editor-3')){window.customElements.define('av-tutorial-init-editor-3', TutorialInitEditor3);Aventus.WebComponentInstance.registerDefinition(TutorialInitEditor3);}
+
+const TutorialInitEditor1 = class TutorialInitEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return TutorialInitEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TutorialInitEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Demo">    <av-code language="typescript" filename="Demo/aventus.conf.avt">        <pre>            {            	"module": "TodoDemo",            	"componentPrefix": "td",            	"hideWarnings": true, // we don't need warnings during this demo            	"dependances": [            		{            			"uri": "@AventusUI" // Load the native dependance AventusUI            		}            	],            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/components/*",            				"./src/data/*",            				"./src/lib/*",            				"./src/ram/*",            				"./src/socket/*"            			],            			"compile": [{            				"output": "./dist/todo.js" // change the name to todo.js            			}]            		}            	],            	"static": [            		{            			"name": "Main",            			"input": "./src/static/*",            			"output": "./dist/"            		}            	]            }        </pre>    </av-code></av-code>    <div folder="Demo/src/components"></div>    <div folder="Demo/src/data"></div>    <div folder="Demo/src/lib"></div>    <div folder="Demo/src/ram"></div>    <div folder="Demo/src/socket"></div>    <div folder="Demo/src/static"></div>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "TutorialInitEditor1";
+    }
+    all_open() {
+        return false;
+    }
+    open_folder() {
+        return "Demo";
+    }
+}
+TutorialInitEditor1.Namespace=`${moduleName}`;
+TutorialInitEditor1.Tag=`av-tutorial-init-editor-1`;
+_.TutorialInitEditor1=TutorialInitEditor1;
+if(!window.customElements.get('av-tutorial-init-editor-1')){window.customElements.define('av-tutorial-init-editor-1', TutorialInitEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialInitEditor1);}
+
+const TutorialInitEditor2 = class TutorialInitEditor2 extends TutorialInitEditor1 {
+    static __style = ``;
+    __getStatic() {
+        return TutorialInitEditor2;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TutorialInitEditor2.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code language="css" filename="Demo/src/static/css/default.gs.avt">    <pre>        @import "./_theme.gs.avt";        &nbsp;        /* Define the global style &#102;or elements not contained inside a shadow root */        /* Compiled into default.css file */        &nbsp;        html,        body {            background-color: var(--color-surface-mixed-100);            color: var(--font-color);            cursor: default !important;            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;            height: 100%;            margin: 0;            overflow: hidden;            padding: 0;            position: relative;            width: 100%;        }        &nbsp;    </pre></av-code></av-code><av-code language="css" filename="Demo/src/static/css/_theme.gs.avt">    <pre>        &nbsp;        /* This file defines the theme &#102;or the application */        &nbsp;        // color generated by : https://colorffy.com/dark-theme-generator        :root {            --font-color: white;        &nbsp;            --color-primary-100: #00b6e6;            --color-primary-200: #48bee9;            --color-primary-300: #69c6ec;            --color-primary-400: #83ceef;            --color-primary-500: #9ad6f1;            --color-primary-600: #b0def4;        &nbsp;            --color-surface-100: #0d2734;            --color-surface-200: #263b48;            --color-surface-300: #3f515c;            --color-surface-400: #586772;            --color-surface-500: #727f88;            --color-surface-600: #8c979e;        &nbsp;        &nbsp;            --color-surface-mixed-100: #103444;            --color-surface-mixed-200: #2b4857;            --color-surface-mixed-300: #445c6a;            --color-surface-mixed-400: #5d727e;            --color-surface-mixed-500: #768892;            --color-surface-mixed-600: #909ea7;        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/static/index.html">    <pre>        &lt;!DOCTYPE html&gt;        &lt;html lang="en"&gt;        &nbsp;        &lt;head&gt;            &lt;meta charset="UTF-8"&gt;            &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;            &lt;title&gt;Todo&lt;/title&gt;            &lt;script src="/todo.js"&gt;&lt;/script&gt;            &lt;link rel="stylesheet" href="/css/default.css"&gt;        &lt;/head&gt;        &nbsp;        &lt;body&gt;        &nbsp;        &lt;/body&gt;        &nbsp;        &lt;/html&gt;    </pre></av-code></av-code><slot></slot>` }
+    });
+}
+    getClassName() {
+        return "TutorialInitEditor2";
+    }
+    startupFile() {
+        return 'Demo/src/static/index.html';
+    }
+    hightlightFiles() {
+        return [
+            'Demo/src/static/css/default.gs.avt',
+            'Demo/src/static/css/_theme.gs.avt',
+            'Demo/src/static/index.html',
+        ];
+    }
+}
+TutorialInitEditor2.Namespace=`${moduleName}`;
+TutorialInitEditor2.Tag=`av-tutorial-init-editor-2`;
+_.TutorialInitEditor2=TutorialInitEditor2;
+if(!window.customElements.get('av-tutorial-init-editor-2')){window.customElements.define('av-tutorial-init-editor-2', TutorialInitEditor2);Aventus.WebComponentInstance.registerDefinition(TutorialInitEditor2);}
+
+const DocAdvancedTemplateEditor1 = class DocAdvancedTemplateEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocAdvancedTemplateEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocAdvancedTemplateEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Template">    <av-code language="json" filename="Template/aventus.conf.avt">        <pre>            {            	"module": "Tailwind",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [{            				"output": "./dist/Tailwind.js"            			}]            		}            	],                "aliases": {                    "@":"./src" // using alias to always have the right root folder                }            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Template/src/Tailwind/Tailwind.wcl.avt">        <pre>            /**             * This class is the root &#102;or all components using tailwind             */            export class Tailwind extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Template/src/Tailwind/Tailwind.wcs.avt">        <pre>            :host {}            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Template/src/Tailwind/Tailwind.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocAdvancedTemplateEditor1";
+    }
+}
+DocAdvancedTemplateEditor1.Namespace=`${moduleName}`;
+DocAdvancedTemplateEditor1.Tag=`av-doc-advanced-template-editor-1`;
+_.DocAdvancedTemplateEditor1=DocAdvancedTemplateEditor1;
+if(!window.customElements.get('av-doc-advanced-template-editor-1')){window.customElements.define('av-doc-advanced-template-editor-1', DocAdvancedTemplateEditor1);Aventus.WebComponentInstance.registerDefinition(DocAdvancedTemplateEditor1);}
+
+const DocAdvancedTemplateEditor2 = class DocAdvancedTemplateEditor2 extends DocAdvancedTemplateEditor1 {
+    static __style = ``;
+    __getStatic() {
+        return DocAdvancedTemplateEditor2;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocAdvancedTemplateEditor2.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code language="json" filename="Template/.aventus/templates/TailwindComponent/template.avt">    <pre>        {            "name": "Tailwind Component",            "description": "Create a tailwind component",            "version": "1.0.0",            "variables": {                "componentName": {                    "question": "Provide a name &#102;or your component",                    "type": "input"                }            }        }    </pre></av-code></av-code><slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocAdvancedTemplateEditor2";
+    }
+    startupFile() {
+        return 'Template/.aventus/templates/TailwindComponent/template.avt';
+    }
+}
+DocAdvancedTemplateEditor2.Namespace=`${moduleName}`;
+DocAdvancedTemplateEditor2.Tag=`av-doc-advanced-template-editor-2`;
+_.DocAdvancedTemplateEditor2=DocAdvancedTemplateEditor2;
+if(!window.customElements.get('av-doc-advanced-template-editor-2')){window.customElements.define('av-doc-advanced-template-editor-2', DocAdvancedTemplateEditor2);Aventus.WebComponentInstance.registerDefinition(DocAdvancedTemplateEditor2);}
+
+const DocAdvancedTemplateEditor3 = class DocAdvancedTemplateEditor3 extends DocAdvancedTemplateEditor2 {
+    static __style = ``;
+    __getStatic() {
+        return DocAdvancedTemplateEditor3;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocAdvancedTemplateEditor3.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code language="typescript" filename="Template/.aventus/templates/TailwindComponent/&dollar;&lcub;&lcub;componentName&rcub;&rcub;/&dollar;&lcub;&lcub;componentName&rcub;&rcub;.wcl.avt">    <pre>        import { Tailwind } from '@/Tailwind/Tailwind.wcl.avt'        &nbsp;        export class &dollar;&lcub;&lcub;componentName&rcub;&rcub; extends Tailwind implements Aventus.DefaultComponent {        &nbsp;            //#region static            &nbsp;            //#endregion            &nbsp;            &nbsp;            //#region props            &nbsp;            //#endregion            &nbsp;            &nbsp;            //#region variables            &nbsp;            //#endregion            &nbsp;            &nbsp;            //#region constructor            &nbsp;            //#endregion            &nbsp;            &nbsp;            //#region methods            &nbsp;            //#endregion            &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Template/.aventus/templates/TailwindComponent/&dollar;&lcub;&lcub;componentName&rcub;&rcub;/&dollar;&lcub;&lcub;componentName&rcub;&rcub;.wcs.avt">    <pre>        :host {        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Template/.aventus/templates/TailwindComponent/&dollar;&lcub;&lcub;componentName&rcub;&rcub;/&dollar;&lcub;&lcub;componentName&rcub;&rcub;.wcv.avt">    <pre>        &lt;slot&gt;&lt;/slot&gt;    </pre></av-code></av-code><slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocAdvancedTemplateEditor3";
+    }
+    startupFile() {
+        return 'Template/.aventus/templates/TailwindComponent/${{componentName}}/${{componentName}}.wcl.avt';
+    }
+}
+DocAdvancedTemplateEditor3.Namespace=`${moduleName}`;
+DocAdvancedTemplateEditor3.Tag=`av-doc-advanced-template-editor-3`;
+_.DocAdvancedTemplateEditor3=DocAdvancedTemplateEditor3;
+if(!window.customElements.get('av-doc-advanced-template-editor-3')){window.customElements.define('av-doc-advanced-template-editor-3', DocAdvancedTemplateEditor3);Aventus.WebComponentInstance.registerDefinition(DocAdvancedTemplateEditor3);}
+
+const DocAdvancedTemplateEditor4 = class DocAdvancedTemplateEditor4 extends DocAdvancedTemplateEditor3 {
+    static __style = ``;
+    __getStatic() {
+        return DocAdvancedTemplateEditor4;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocAdvancedTemplateEditor4.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code language="typescript" filename="Template/src/NewComp/NewComp.wcl.avt">    <pre>        import { Tailwind } from '@/Tailwind/Tailwind.wcl.avt'        &nbsp;        export class NewComp extends Tailwind implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods        &nbsp;            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Template/src/NewComp/NewComp.wcs.avt">    <pre>        :host {        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Template/src/NewComp/NewComp.wcv.avt">    <pre>        &lt;slot&gt;&lt;/slot&gt;    </pre></av-code></av-code><slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocAdvancedTemplateEditor4";
+    }
+    startupFile() {
+        return 'Template/src/NewComp/NewComp.wcl.avt';
+    }
+}
+DocAdvancedTemplateEditor4.Namespace=`${moduleName}`;
+DocAdvancedTemplateEditor4.Tag=`av-doc-advanced-template-editor-4`;
+_.DocAdvancedTemplateEditor4=DocAdvancedTemplateEditor4;
+if(!window.customElements.get('av-doc-advanced-template-editor-4')){window.customElements.define('av-doc-advanced-template-editor-4', DocAdvancedTemplateEditor4);Aventus.WebComponentInstance.registerDefinition(DocAdvancedTemplateEditor4);}
+
+const DocAdvancedTemplateEditor5 = class DocAdvancedTemplateEditor5 extends DocAdvancedTemplateEditor4 {
+    static __style = ``;
+    __getStatic() {
+        return DocAdvancedTemplateEditor5;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocAdvancedTemplateEditor5.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code language="json" filename="Template/.aventus/templates/TailwindComponent/template.avt">    <pre>        {            "name": "Tailwind Component",            "description": "Create a tailwind component",            "version": "1.0.0",            "variables": {                "componentName": {                    "question": "Provide a name &#102;or your component",                    "type": "input",                    "validation": [                        {                            "pattern": "[A-Z][A-Za-z0-9]+",                            "errorMsg": "Provide a valide component name"                        }                    ]                }            },            "filesToOpen": [                "/&dollar;&lcub;&lcub;componentName&rcub;&rcub;.wcl.avt$/"            ]        }    </pre></av-code></av-code><slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocAdvancedTemplateEditor5";
+    }
+    startupFile() {
+        return 'Template/.aventus/templates/TailwindComponent/template.avt';
+    }
+}
+DocAdvancedTemplateEditor5.Namespace=`${moduleName}`;
+DocAdvancedTemplateEditor5.Tag=`av-doc-advanced-template-editor-5`;
+_.DocAdvancedTemplateEditor5=DocAdvancedTemplateEditor5;
+if(!window.customElements.get('av-doc-advanced-template-editor-5')){window.customElements.define('av-doc-advanced-template-editor-5', DocAdvancedTemplateEditor5);Aventus.WebComponentInstance.registerDefinition(DocAdvancedTemplateEditor5);}
 
 const DocLibToolsEditor2 = class DocLibToolsEditor2 extends BaseEditor {
     static __style = ``;
@@ -12049,7 +12610,7 @@ const DocWcInheritanceEditor1 = class DocWcInheritanceEditor1 extends BaseEditor
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Inheritance">    <av-code language="json" filename="Inheritance/aventus.conf.avt">        <pre>            {            	"module": "Inheritance",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Inheritance/src/Fillable/Fillable.wcl.avt">        <pre>            export abstract class Fillable&lt;T&gt; extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props                @Property()                public label?: string; // you can use ctrl+k ctrl+numpad2 to generate the label property                //#endregion            &nbsp;            &nbsp;                //#region variables                @Watch((target: Fillable&lt;T&gt;, action: Aventus.WatchAction, path: string, value: any) =&gt; {                    target.onValueChange();                })                public value?: T; // you can use ctrl+k ctrl+numpad3 to generate the value property            &nbsp;                @ViewElement()                protected debugEl!: HTMLDivElement;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region events                /**                 * This is the event fired when the input value changed                 * Aventus.Callback create a variable that you can trigger and subscribe                 */                public onChange: Aventus.Callback&lt;(value?: T) =&gt; void&gt; = new Aventus.Callback();                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 * This function is fired when the value changed                 * Use it to update your view                 */                protected abstract onValueChange(): void;            &nbsp;                protected override postCreation(): void {            		// print the new value                    this.onChange.add(() =&gt; {                        const line = document.createElement("DIV");                        line.innerHTML = this.value + "";                        this.debugEl.appendChild(line);                    });                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="scss" filename="Inheritance/src/Fillable/Fillable.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Inheritance/src/Fillable/Fillable.wcv.avt">        <pre>            &lt;label&gt;&#123;&#123; this.label &#125;&#125;&lt;/label&gt;            &lt;slot&gt;&lt;/slot&gt;            &nbsp;            &lt;div @element="debugEl"&gt;&lt;/div&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="Inheritance/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Inheritance&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+        blocks: { 'default':`<av-code-editor name="Inheritance">    <av-code language="json" filename="Inheritance/aventus.conf.avt">        <pre>            {            	"module": "Inheritance",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Inheritance/src/Fillable/Fillable.wcl.avt">        <pre>            export abstract class Fillable&lt;T&gt; extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props                @Property()                public label?: string; // you can use ctrl+k ctrl+numpad2 to generate the label property                //#endregion            &nbsp;            &nbsp;                //#region variables                @Watch((target: Fillable&lt;T&gt;, action: Aventus.WatchAction, path: string, value: any) =&gt; {                    target.onValueChange();                })                public value?: T; // you can use ctrl+k ctrl+numpad3 to generate the value property            &nbsp;                @ViewElement()                protected debugEl!: HTMLDivElement;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region events                /**                 * This is the event fired when the input value changed                 * Aventus.Callback create a variable that you can trigger and subscribe                 */                public onChange: Aventus.Callback&lt;(value?: T) =&gt; void&gt; = new Aventus.Callback();                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 * This function is fired when the value changed                 * Use it to update your view                 */                protected abstract onValueChange(): void;            &nbsp;                protected override postCreation(): void {            		// print the new value                    this.onChange.add(() =&gt; {                        const line = document.createElement("DIV");                        line.innerHTML = this.value + "";                        this.debugEl.appendChild(line);                    });                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Inheritance/src/Fillable/Fillable.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Inheritance/src/Fillable/Fillable.wcv.avt">        <pre>            &lt;label&gt;&#123;&#123; this.label &#125;&#125;&lt;/label&gt;            &lt;slot&gt;&lt;/slot&gt;            &nbsp;            &lt;div @element="debugEl"&gt;&lt;/div&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="Inheritance/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Inheritance&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
     });
 }
     getClassName() {
@@ -12824,7 +13385,7 @@ const DocIntroduction = class DocIntroduction extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Introduction</h1><p>Aventus is a framework that allow you to create complex user interfaces by splitting common parts of a    front-end application in several well knowned files. It builds on top of standard HTML, CSS, JavaScript    and provide a way to keep your development under control.</p><p>Here is a minimal example:</p><av-code-editor name="Button example">    <av-code language="typescript" tab="1" filename="Button/Button.wcl.avt">        export class DocIntroductionButton extends Aventus.WebComponent implements Aventus.DefaultComponent {            @Property()            private count: number = 0;            private onClick(): void {                this.count++;            }        }    </av-code></av-code>    <av-code language="html" tab="1" filename="Button/Button.wcv.avt">        <button @click="onClick">Count is {{ this.count }}</button>    </av-code></av-code>    <av-code language="scss" tab="1" filename="Button/Button.wcs.avt">        :host {            button {                background-color: #e5540e;                border: none;                border-radius: 5px;                color: white;                cursor: pointer;                padding: 5px 15px;            }        }    </av-code></av-code>    <av-doc-introduction-button slot="result"></av-doc-introduction-button></av-code-editor><p>To understand the capabilities of Aventus, you need to learn about the following:</p><ul>    <li><span class="cn">Webcomponent</span></li>    <li><span class="cn">Data / Storage</span></li>    <li><span class="cn">States</span></li>    <li><span class="cn">Websocket</span></li></ul>` }
+        blocks: { 'default':`<h1>Introduction</h1><p>Aventus is a framework that allow you to create complex user interfaces by splitting common parts of a    front-end application in several well knowned files. It builds on top of standard HTML, CSS, JavaScript    and provide a way to keep your development under control.</p><p>Here is a minimal example:</p><av-code-editor name="Button example">    <av-code language="typescript" tab="1" filename="Button/Button.wcl.avt">        export class DocIntroductionButton extends Aventus.WebComponent implements Aventus.DefaultComponent {            @Property()            private count: number = 0;            private onClick(): void {                this.count++;            }        }    </av-code></av-code>    <av-code language="html" tab="1" filename="Button/Button.wcv.avt">        <button @click="onClick">Count is {{ this.count }}</button>    </av-code></av-code>    <av-code language="css" tab="1" filename="Button/Button.wcs.avt">        :host {            button {                background-color: #e5540e;                border: none;                border-radius: 5px;                color: white;                cursor: pointer;                padding: 5px 15px;            }        }    </av-code></av-code>    <av-doc-introduction-button slot="result"></av-doc-introduction-button></av-code-editor><p>To understand the capabilities of Aventus, you need to learn about the following:</p><ul>    <li><span class="cn">Webcomponent</span></li>    <li><span class="cn">Data / Storage</span></li>    <li><span class="cn">States</span></li>    <li><span class="cn">Websocket</span></li></ul>` }
     });
 }
     getClassName() {
@@ -13409,7 +13970,7 @@ const DocWcInheritanceEditor2 = class DocWcInheritanceEditor2 extends DocWcInher
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code language="typescript" filename="Inheritance/src/TextInput/TextInput.wcl.avt">    <pre>        import { Fillable } from "../Fillable/Fillable.wcl.avt";        &nbsp;        // write the TextInput.wcv.avt first then use ctrl+. to correct errors and auto create missing code        export class TextInput extends Fillable&lt;string&gt; implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables            @ViewElement()            protected inputEl!: HTMLInputElement;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            /**             * When the user use the input, this function will update the value and emit an event             */            protected triggerChange() {                this.value = this.inputEl.value;                this.onChange.trigger([this.value]);            }        &nbsp;            /**             * @inheritdoc             */            protected override onValueChange(): void {                this.inputEl.value = this.value ?? '';            }            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="scss" filename="Inheritance/src/TextInput/TextInput.wcs.avt">    <pre>        :host {        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Inheritance/src/TextInput/TextInput.wcv.avt">    <pre>        &lt;!-- this will replace the parent slot --&gt;        &lt;input @input="triggerChange" @element="inputEl"/&gt;    </pre></av-code></av-code><av-code language="html" filename="Inheritance/static/index.html">    <pre>        &lt;!DOCTYPE html&gt;        &lt;html lang="en"&gt;        &lt;head&gt;            &lt;meta charset="UTF-8"&gt;            &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;            &lt;title&gt;Inheritance&lt;/title&gt;            &lt;script src="/demo.js"&gt;&lt;/script&gt;        &lt;/head&gt;        &lt;body&gt;            &lt;av-text-input label="salut"&gt;&lt;/av-text-input&gt;        &lt;/body&gt;        &lt;/html&gt;    </pre></av-code></av-code><slot></slot>` }
+        blocks: { 'default':`<av-code language="typescript" filename="Inheritance/src/TextInput/TextInput.wcl.avt">    <pre>        import { Fillable } from "../Fillable/Fillable.wcl.avt";        &nbsp;        // write the TextInput.wcv.avt first then use ctrl+. to correct errors and auto create missing code        export class TextInput extends Fillable&lt;string&gt; implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables            @ViewElement()            protected inputEl!: HTMLInputElement;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            /**             * When the user use the input, this function will update the value and emit an event             */            protected triggerChange() {                this.value = this.inputEl.value;                this.onChange.trigger([this.value]);            }        &nbsp;            /**             * @inheritdoc             */            protected override onValueChange(): void {                this.inputEl.value = this.value ?? '';            }            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Inheritance/src/TextInput/TextInput.wcs.avt">    <pre>        :host {        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Inheritance/src/TextInput/TextInput.wcv.avt">    <pre>        &lt;!-- this will replace the parent slot --&gt;        &lt;input @input="triggerChange" @element="inputEl"/&gt;    </pre></av-code></av-code><av-code language="html" filename="Inheritance/static/index.html">    <pre>        &lt;!DOCTYPE html&gt;        &lt;html lang="en"&gt;        &lt;head&gt;            &lt;meta charset="UTF-8"&gt;            &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;            &lt;title&gt;Inheritance&lt;/title&gt;            &lt;script src="/demo.js"&gt;&lt;/script&gt;        &lt;/head&gt;        &lt;body&gt;            &lt;av-text-input label="salut"&gt;&lt;/av-text-input&gt;        &lt;/body&gt;        &lt;/html&gt;    </pre></av-code></av-code><slot></slot>` }
     });
 }
     getClassName() {
@@ -13535,7 +14096,7 @@ const DocWcInheritanceEditor4 = class DocWcInheritanceEditor4 extends DocWcInher
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code language="typescript" filename="Inheritance/src/CheckboxInput/CheckboxInput.wcl.avt">    <pre>        import { Fillable } from "../Fillable/Fillable.wcl.avt";        &nbsp;        @OverrideView() // The label won't be displayed        export class CheckboxInput extends Fillable&lt;boolean&gt; implements Aventus.DefaultComponent {        &nbsp;            //#region static            &nbsp;            //#endregion            &nbsp;            &nbsp;            //#region props            &nbsp;            //#endregion            &nbsp;            &nbsp;            //#region variables            @ViewElement()            protected inputEl!: HTMLInputElement;            //#endregion            &nbsp;            &nbsp;            //#region constructor            &nbsp;            //#endregion            &nbsp;            &nbsp;            //#region methods            /**             * @inheritdoc             */            protected override onValueChange(): void {                this.inputEl.checked = this.value ?? false;            }            &nbsp;            //#endregion            &nbsp;        }    </pre></av-code></av-code><av-code language="scss" filename="Inheritance/src/CheckboxInput/CheckboxInput.wcs.avt">    <pre>        :host {        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Inheritance/src/CheckboxInput/CheckboxInput.wcv.avt">    <pre>        &lt;input type="checkbox" @element="inputEl"/&gt;    </pre></av-code></av-code><av-code language="html" filename="Inheritance/static/index.html">    <pre>        &lt;!DOCTYPE html&gt;        &lt;html lang="en"&gt;        &lt;head&gt;            &lt;meta charset="UTF-8"&gt;            &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;            &lt;title&gt;Inheritance&lt;/title&gt;            &lt;script src="/demo.js"&gt;&lt;/script&gt;        &lt;/head&gt;        &lt;body&gt;            &lt;av-checkbox-input label="salut"&gt;&lt;/av-checkbox-input&gt;        &lt;/body&gt;        &lt;/html&gt;    </pre></av-code></av-code><slot></slot>` }
+        blocks: { 'default':`<av-code language="typescript" filename="Inheritance/src/CheckboxInput/CheckboxInput.wcl.avt">    <pre>        import { Fillable } from "../Fillable/Fillable.wcl.avt";        &nbsp;        @OverrideView() // The label won't be displayed        export class CheckboxInput extends Fillable&lt;boolean&gt; implements Aventus.DefaultComponent {        &nbsp;            //#region static            &nbsp;            //#endregion            &nbsp;            &nbsp;            //#region props            &nbsp;            //#endregion            &nbsp;            &nbsp;            //#region variables            @ViewElement()            protected inputEl!: HTMLInputElement;            //#endregion            &nbsp;            &nbsp;            //#region constructor            &nbsp;            //#endregion            &nbsp;            &nbsp;            //#region methods            /**             * @inheritdoc             */            protected override onValueChange(): void {                this.inputEl.checked = this.value ?? false;            }            &nbsp;            //#endregion            &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Inheritance/src/CheckboxInput/CheckboxInput.wcs.avt">    <pre>        :host {        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Inheritance/src/CheckboxInput/CheckboxInput.wcv.avt">    <pre>        &lt;input type="checkbox" @element="inputEl"/&gt;    </pre></av-code></av-code><av-code language="html" filename="Inheritance/static/index.html">    <pre>        &lt;!DOCTYPE html&gt;        &lt;html lang="en"&gt;        &lt;head&gt;            &lt;meta charset="UTF-8"&gt;            &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;            &lt;title&gt;Inheritance&lt;/title&gt;            &lt;script src="/demo.js"&gt;&lt;/script&gt;        &lt;/head&gt;        &lt;body&gt;            &lt;av-checkbox-input label="salut"&gt;&lt;/av-checkbox-input&gt;        &lt;/body&gt;        &lt;/html&gt;    </pre></av-code></av-code><slot></slot>` }
     });
 }
     getClassName() {
@@ -15021,6 +15582,30 @@ DocLibTools.Tag=`av-doc-lib-tools`;
 _.DocLibTools=DocLibTools;
 if(!window.customElements.get('av-doc-lib-tools')){window.customElements.define('av-doc-lib-tools', DocLibTools);Aventus.WebComponentInstance.registerDefinition(DocLibTools);}
 
+const DocAdvancedTemplate = class DocAdvancedTemplate extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocAdvancedTemplate;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocAdvancedTemplate.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Advanced - Template</h1><p>Because you will create some amazing components or patterns with Aventus, the framework includes a way to generate    files based on templates. For example, when you create a project with Tailwind, all your webcomponents must inherit    from a base component that contains the Tailwind style. This will be the example for this section.</p><h2>Setup for the example</h2><p>First of all you need to create a new empty project with a component named Tailwind. This component will be the root    for all others components.</p><av-doc-advanced-template-editor-1></av-doc-advanced-template-editor-1><h2>Creating a template</h2><p>You can create the following folder inside your workspace <span class="cn">/.aventus/templates/</span>. This is where    all your    templates will be stored. This folder must be at your workspace root, otherwise it will not work.</p><p>You can create a new folder named <span class="cn">TailwindComponent</span> inside ./aventus/templates/. and inside    this new folder,    you    can add a file named <span class="cn">template.avt</span>. This file define which questions must be asked to the    user. In the example    we need to know the component name.</p><av-doc-advanced-template-editor-2></av-doc-advanced-template-editor-2><p>The variable componentName will be now available inside the template creation flow. Every files at the same depth or    deeper than the template.avt will be copied when template is called. We can now create template files    : </p><av-doc-advanced-template-editor-3></av-doc-advanced-template-editor-3><p>Every &#36;&#123;&#123;componentName&#125;&#125; will be replaced by the user answer.</p><h2>Using the template</h2><p>Now if you right click on the <span class="cn">/src</span> folder and click on <span class="cn">Aventus :        Create...</span>. You can choose the    option    <span class="cn">Custom</span>. Inside the next dropdown, the option <span class="cn">Tailwind Template</span> must    be available.</p><av-img src="/img/doc/advanced/template/tailwind-template.png"></av-img><p>If you click on it, a prompt will ask you the new component name. If you fill it with <span class="cn">NewComp</span>    and press enter,    3 new files will be created.</p><av-doc-advanced-template-editor-4></av-doc-advanced-template-editor-4><h2>Predefined variables</h2><p>Aventus add predefined variables that you can use inside your template.</p><div class="table">    <av-dynamic-row class="header">        <av-dynamic-col size="4" center>Name</av-dynamic-col>        <av-dynamic-col size="8" center>Description</av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>path</av-dynamic-col>        <av-dynamic-col size="8" center>The full path of the folder where the user right click.</av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>folderName</av-dynamic-col>        <av-dynamic-col size="8" center>The folder name where the user right click.</av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>namespace</av-dynamic-col>        <av-dynamic-col size="8" center>The namespace that the path will have based on the namespace            strategy.</av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>module</av-dynamic-col>        <av-dynamic-col size="8" center>The module name defined inside your aventus.conf.avt.</av-dynamic-col>    </av-dynamic-row></div><h2>Optimize user experience</h2><p>    Until now, when you use the template, nothing is controlled and nothing notice the user that the creation is over.    We will add some check on the input and open the *.wcl.avt. To do that, open the <span class="cn">template.avt</span> and remplace    the content like that.</p><av-doc-advanced-template-editor-5></av-doc-advanced-template-editor-5><p>The <span class="cn">validation</span> field allows you to validate the input with a regex (<span class="cn">pattern</span>) and display a message if the check failed (<span class="cn">errorMsg</span>).</p><p>The    <span class="cn">filesToOpen</span> field allows you to open a file after the creation of your template. The value    of filesToOpen items must be the following.</p><ul>    <li>Starts and ends with a <span class="cn">/</span> : this is a regex</li>    <li>Otherwise: this is a path comparison</li></ul><h2>Expose the template globaly</h2><p>    To use a template across multiple project, you can expose your template globaly. To complete that, you must run the    command <span class="cn">Aventus : Open storage</span> and go inside the folder <span class="cn">templates</span>.    Then you can copy paste the previous template here. Notice: Aventus watch the global templates folder only during    starting process, so when you create a new global template, you must reload your Vscode instance.</p><h2>Project</h2><p>    In the previous section, you open the Aventus storage folder, you may have noticed that a <span class="cn">projects</span> exists. Inside this folder, you can find templates that will be used when you <span class="cn">init a new project</span>. So can you create your own template to init new project or download some    from the web. You must know that if a <span class="cn">aventus.conf.avt</span> file is at the same level of a <span class="cn">template.avt</span> file, the project will not be created. It means no autocompletion, no output    files, etc.</p><p>    Because in most of the case, the project creation involves to run commands, you can add inside your template file a    field named <span class="cn">cmdsAfter</span> and add which commands must be ran after the creation.</p><av-code language="json" filename="template.avt">    {    \t...    \t"cmdsAfter": ["npm run install"]    }</av-code></av-code>` }
+    });
+}
+    getClassName() {
+        return "DocAdvancedTemplate";
+    }
+}
+DocAdvancedTemplate.Namespace=`${moduleName}`;
+DocAdvancedTemplate.Tag=`av-doc-advanced-template`;
+_.DocAdvancedTemplate=DocAdvancedTemplate;
+if(!window.customElements.get('av-doc-advanced-template')){window.customElements.define('av-doc-advanced-template', DocAdvancedTemplate);Aventus.WebComponentInstance.registerDefinition(DocAdvancedTemplate);}
+
 const DocApp = class DocApp extends Aventus.Navigation.Router {
     docPage;
     static __style = `:host{height:100%}:host .content{height:100%}`;
@@ -15340,30 +15925,6 @@ TutorialData.Tag=`av-tutorial-data`;
 _.TutorialData=TutorialData;
 if(!window.customElements.get('av-tutorial-data')){window.customElements.define('av-tutorial-data', TutorialData);Aventus.WebComponentInstance.registerDefinition(TutorialData);}
 
-const TutorialCreateApp = class TutorialCreateApp extends TutorialGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return TutorialCreateApp;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(TutorialCreateApp.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Create app</h1><p>To simplify application management, for this example we will create a new <span class="cn">App</span> webcomponent that will be the application entry point. Over the folder <span class="cn">components</span> you can right click and select <span class="cn">Aventus : Create...</span>.</p><av-img src="/img/tuto/app/create.png"></av-img><p>Then you can select <span class="cn">Component</span></p><av-img src="/img/tuto/app/component.png"></av-img><p>Fill the component name with <span class="cn">App</span></p><av-img src="/img/tuto/app/name.png"></av-img><p>Select single file.</p><av-img src="/img/tuto/app/single.png"></av-img><p>A new file is created named <span class="cn">App.wc.avt</span>. This file will generate a webcomponent with the tag <span class="cn">&lt;td-app&gt;</span>. Inside this tag you can replace the content of the <span class="cn">&lt;slot&gt;&lt;/slot&gt;</span> with <span class="cn">&lt;h1&gt;Todo&lt;/h1&gt;</span></p><av-img src="/img/tuto/app/view.png"></av-img><p>Now we can replace <span class="cn">&lt;h1&gt;Todo&lt;/h1&gt;</span> inside the <span class="cn">index.html</span> by <span class="cn">&lt;td-app&gt;&lt;/td-app&gt;</span></p><av-code language="html" filename="index.html">    &lt;!DOCTYPE html&gt;    &lt;html lang="en"&gt;    &nbsp;    \t&lt;head&gt;    \t\t&lt;meta charset="UTF-8"&gt;    \t\t&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;    \t\t&lt;title&gt;Todo demo&lt;/title&gt;    \t\t&lt;script src="/todo.js"&gt;&lt;/script&gt;    \t&lt;/head&gt;    &nbsp;    \t&lt;body&gt;    \t\t&lt;td-app&gt;&lt;/td-app&gt;    \t&lt;/body&gt;    &nbsp;    &lt;/html&gt;</av-code></av-code><p>You can reload the page in your browser and open the <span class="cn">dev tools</span>. The html should be like this.</p><av-img src="/img/tuto/app/console.png"></av-img><p>You can notice that the tag <span class="cn">td-app</span> contains a <span class="cn"><a href="https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot" target="_blank">shadowroot</a></span> that contains a <span class="cn">&lt;h1&gt;</span></p>` }
-    });
-}
-    getClassName() {
-        return "TutorialCreateApp";
-    }
-}
-TutorialCreateApp.Namespace=`${moduleName}`;
-TutorialCreateApp.Tag=`av-tutorial-create-app`;
-_.TutorialCreateApp=TutorialCreateApp;
-if(!window.customElements.get('av-tutorial-create-app')){window.customElements.define('av-tutorial-create-app', TutorialCreateApp);Aventus.WebComponentInstance.registerDefinition(TutorialCreateApp);}
-
 const TutorialIntroduction = class TutorialIntroduction extends TutorialGenericPage {
     static __style = ``;
     __getStatic() {
@@ -15400,7 +15961,7 @@ const TutorialInit = class TutorialInit extends TutorialGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Init a project</h1><av-tutorial-init-editor></av-tutorial-init-editor><p>First of all, you need to create your project and configure it. Below you can find the specs of this project :</p><ul>    <li>Module name : TodoDemo</li>    <li>Component prefix : td</li>    <li>Output file : todo.js</li></ul><p>You can create folder where you want named <span class="cn">demo</span> and open it with VSCode. You can right click    on the Explorer section and select <span class="cn">Aventus : Create...</span>.</p><av-img src="/img/tuto/init/create.png"></av-img><p>Then select <span class="cn">Init</span>.</p><av-img src="/img/tuto/init/init.png"></av-img><p>Choose <span class="cn">Default</span></p><av-img src="/img/tuto/init/default.png"></av-img><p>Fill the name with <span class="cn">TodoDemo</span></p><av-img src="/img/tuto/init/default.png"></av-img><p>Fill the component prefix with <span class="cn">td</span></p><av-img src="/img/tuto/init/prefix.png"></av-img><p>The file <span class="cn">aventus.conf.avt</span> will open and the following structure is created</p><av-img src="/img/tuto/init/basic_struct.png"></av-img><p>Replace the <span class="cn">outputFile</span> with <span class="cn">./dist/todo.js</span> and save the file.</p><av-img src="/img/tuto/init/output.png"></av-img><p>Inside the folder static you can create a new file named <span class="cn">index.html</span> with the following    content</p><av-code language="html" filename="index.html">    &lt;!DOCTYPE html&gt;    &lt;html lang="en"&gt;    &nbsp;    \t&lt;head&gt;    \t\t&lt;meta charset="UTF-8"&gt;    \t\t&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;    \t\t&lt;title&gt;Todo demo&lt;/title&gt;    \t\t&lt;script src="/todo.js"&gt;&lt;/script&gt;    \t&lt;/head&gt;    &nbsp;    \t&lt;body&gt;    \t\t&lt;h1&gt;Todo&lt;/h1&gt;    \t&lt;/body&gt;    &nbsp;    &lt;/html&gt;</av-code></av-code><p>Start the live server by clicking on the play button</p><av-img src="/img/tuto/init/play.png"></av-img><p>Your browser will open a new page : </p><av-img src="/img/tuto/init/done.png"></av-img>` }
+        blocks: { 'default':`<h1>Init a project</h1><p>First of all, you need to create your project and configure it. Below you can find the specs of this project :</p><ul>    <li>Module name : TodoDemo</li>    <li>Component prefix : td</li>    <li>Output file : todo.js</li></ul><p>You can create folder where you want named <span class="cn">demo</span> and open it with VSCode. You can right click    on the Explorer section and select <span class="cn">Aventus : Create...</span>.</p><av-img src="/img/tuto/init/create.png"></av-img><p>Then select <span class="cn">Init</span>.</p><av-img src="/img/tuto/init/init.png"></av-img><p>Choose <span class="cn">Default</span></p><av-img src="/img/tuto/init/default.png"></av-img><p>Fill the name with <span class="cn">TodoDemo</span></p><av-img src="/img/tuto/init/name.png"></av-img><p>Fill the component prefix with <span class="cn">td</span></p><av-img src="/img/tuto/init/prefix.png"></av-img><p>The file <span class="cn">aventus.conf.avt</span> will open and the following structure is created. Apply the following actions:</p><ul>    <li>Add <span class="cn">"hideWarnings": true,</span> - This will hide warnings tell you that you need add documentation</li>    <li>Add <span class="cn">"dependances": [{"uri": "@AventusUI"}],</span> - This will load AventusUI as <a state="/docs/config/lib">dependances</a></li>    <li>Replace <span class="cn">"output": "./dist/TodoDemo.js"</span> by <span class="cn">"output": "./dist/todo.js"</span> - This is the file compiled</li></ul><av-tutorial-init-editor-1></av-tutorial-init-editor-1><p>Inside the folder static you can create three new files :</p><ul>    <li><span class="cn">/src/static/index.html</span> : The default page to render</li>    <li><span class="cn">/src/static/css/default.gs.avt</span> : The default style for the page</li>    <li><span class="cn">/src/static/css/_theme.gs.avt</span> : A file containing all css variables</li></ul><av-tutorial-init-editor-2></av-tutorial-init-editor-2><p>We are creating a SPA (Singe Page Application). You can create the folder <span class="cn">/src/apps/</span> where we    are going to create our entry point. Don't forget to update your <span class="cn">aventus.conf.avt</span> to add the    new directory to the <span class="cn">src</span>. For this example, we don't need socket but we need a folder where    the <span class="cn">states</span> will be defined. So you can rename <span class="cn">socket</span> into <span class="cn">states</span>.</p><av-tutorial-init-editor-3></av-tutorial-init-editor-3><p>Now we have a good project architecture to start the demo.</p>` }
     });
 }
     getClassName() {
@@ -15411,6 +15972,30 @@ TutorialInit.Namespace=`${moduleName}`;
 TutorialInit.Tag=`av-tutorial-init`;
 _.TutorialInit=TutorialInit;
 if(!window.customElements.get('av-tutorial-init')){window.customElements.define('av-tutorial-init', TutorialInit);Aventus.WebComponentInstance.registerDefinition(TutorialInit);}
+
+const TutorialCreateApp = class TutorialCreateApp extends TutorialGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return TutorialCreateApp;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TutorialCreateApp.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Create app</h1><h2>MainApp</h2><p>In web development, particularly in modern single-page applications (SPAs), structuring your codebase efficiently is    crucial for maintainability and scalability. One common practice is to designate a central file to serve as the main    entry point for your application. Here's why it's essential:</p><ul>    <li><span class="cn">Central Entry Point</span>: the central file acts as the main entry point, initializing your        Aventus application and        providing a centralized location for crucial configurations.</li>    <li><span class="cn">Navigation Management</span>: With this file, you can define routes and manage navigation        within your application. This        ensures smooth transitions between different views or pages without full page reloads, enhancing user        experience.</li>    <li><span class="cn">Initialization Hub</span>: It's responsible for bootstrapping your application, initializing        services, and configuring        Aventus-specific features. This ensures your application starts reliably and consistently.</li></ul><p>To create this central file, over the folder <span class="cn">apps</span> you can right click and    select <span class="cn">Aventus : Create...</span>.</p><p>Then you can select <span class="cn">Component</span>, fill the input with <span class="cn">MainApp</span> and select    <span class="cn">Multiple</span>.</p><p>Well done! You created your first component. Because the component name is <span class="cn">MainApp</span> and we set    the <span class="cn">"componentPrefix": "td"</span> inside the configuration, the component tag is <span class="cn">td-main-app</span></p><av-tutorial-create-app-editor-1></av-tutorial-create-app-editor-1><p>To display something on our page you must :</p><ul>    <li>Update your <span class="cn">index.html</span> to set <span class="cn">&lt;td-main-app&gt;&lt;/td-main-app&gt;</span></li>    <li>Update your <span class="cn">MainApp.wcv.avt</span> to replace <span class="cn">&lt;slot&gt;&lt;/slot&gt;</span>        by <span class="cn">&lt;h1&gt;Hello            world&lt;/h1&gt;</span></li></ul><av-tutorial-create-app-editor-2></av-tutorial-create-app-editor-2><p>To implement navigation, you can change the content of your <span class="cn">MainApp component</span> to extends    <span class="cn">Aventus.Navigation.Router</span></p><av-tutorial-create-app-editor-3></av-tutorial-create-app-editor-3><h2>Pages</h2><p>Now you have a router defined but without route and page. You can create a new folder <span class="cn">pages</span>    and two new components <span class="cn">TodoListPage</span> and <span class="cn">TodoCreatePage</span>. To use the    pages inside the router, the component must extends <span class="cn">Aventus.Navigation.Page</span>.</p><av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt">    <pre>            /**             * The page to list all todos             */            export class TodoListPage extends Aventus.Navigation.Page implements Aventus.DefaultComponent {                ...            }        </pre></av-code></av-code><p>Then you can edit the content of your <span class="cn">TodoListPage</span> to write a page title.</p><av-code language="css" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcs.avt">    <pre>        :host {            .page-title {                height: 50px;                width: 100%;                display: flex;                align-items: center;                justify-content: center;                font-size: 30px;                margin: 30px 0;            }        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt">    <pre>        &lt;div class="page-title"&gt;List todos&lt;/div&gt;    </pre></av-code></av-code><p>Finally you can define routes inside your MainApp to display the pages.</p><av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">    <pre>        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {            ...            protected override defineRoutes(): void {                // define the routing here                this.addRoute("/", TodoListPage);                this.addRoute("/create", TodoCreatePage);            }            ...        }    </pre></av-code></av-code><p>The current result is the following :</p><av-tutorial-create-app-editor-4></av-tutorial-create-app-editor-4><h2>Navigation</h2><p>Now, you can add navigation menu so that you will be able to navigate between creation and list.</p><p>Inside the <span class="cn">MainApp.wcv.avt</span> you can write the code below the add nav item and style it :</p><av-code language="html" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">    <pre>        &lt;!-- The router has a slot name "before": we use it to define the sidenav --&gt;        &lt;block name="before"&gt;            &lt;div class="nav"&gt;                &lt;av-router-link class="nav-item" state="/"&gt;                    &lt;span class="name"&gt;Todo list&lt;/span&gt;                &lt;/av-router-link&gt;                &lt;av-router-link class="nav-item" state="/create"&gt;                    &lt;span class="name"&gt;Create todo&lt;/span&gt;                &lt;/av-router-link&gt;            &lt;/div&gt;        &lt;/block&gt;        &lt;slot&gt;&lt;/slot&gt;    </pre></av-code></av-code><av-code language="css" filename="Demo/src/apps/MainApp/MainApp.wcs.avt">    <pre>        :host {            ...            /* Add style to the sidenav */            .nav {                ...                /* Define style &#102;or sidnav item */                .nav-item {                    align-items: center;                    cursor: pointer;                    display: flex;                    margin: 5px 0;                    padding: 5px 15px;                    width: 100%;                    transition: background-color 0.2s linear;                }        &nbsp;                /* Define style &#102;or when the sidnav item is active. */                .nav-item.active {                    background-color: var(--color-surface-mixed-600);                }                /* Define style &#102;or when the sidnav item is hover. */                .nav-item:not(.active):hover {                    background-color: var(--color-surface-mixed-500);                }            }            ...        }        &nbsp;    </pre></av-code></av-code><p>The tag <span class="cn">av-router-link</span> come from the package <span class="cn">AventusUI</span>. It allows you    to define what will be the state when a user click on it. When the state is matching the <span class="cn">active_state</span> if defined ir the <span class="cn">state</span>, an <span class="cn">active</span> class will added to the HtmlElement.</p><av-tutorial-create-app-editor-5></av-tutorial-create-app-editor-5><h2>Inheritance</h2><p>Because all of the pages will have a title, you can create a generic component named    <span class="cn">GenericPage</span>. This component can't be displayed so you must write your class as    <span class="cn">abstract</span>.</p><p>In addition, for all the pages, if the content is bigger than the screen, we must show a scrollbar.    Inside <span class="cn">AventusUI</span>, you can find a component named <span class="cn">av-scrollable</span> that    you can use to wrap your content.</p><av-code language="typescript" filename="Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcl.avt">    <pre>        export abstract class GenericPage extends Aventus.Navigation.Page implements Aventus.DefaultComponent {            ...            public abstract definePageTitle(): string;            ...        }        </pre></av-code></av-code><av-code language="css" filename="Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcs.avt">    <pre>        :host {            height: 100%;            overflow: hidden;            width: 100%;        &nbsp;            av-scrollable {                height: 100%;                width: 100%;                /* define the padding needed inside the scrollbar */                --scrollbar-content-padding: 15px;        &nbsp;                .page-title {                    ...                }            }        }        &nbsp;        </pre></av-code></av-code><av-code language="html" filename="Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcv.avt">    <pre>        &lt;!-- use scrollable to display a scrollbar &#105;f the content is bigger than the size of the scrollable component --&gt;        &lt;av-scrollable&gt;            &lt;!-- Generic page title define by children pages --&gt;            &lt;div class="page-title"&gt;&#123;&#123; this.definePageTitle() &#125;&#125;&lt;/div&gt;            &lt;!-- Add a slot so that the children can add custom content --&gt;            &lt;slot&gt;&lt;/slot&gt;        &lt;/av-scrollable&gt;        </pre></av-code></av-code><p>Now your components <span class="cn">TodoListPage</span> and <span class="cn">TodoCreatePage</span> can inherit from    <span class="cn">GenericPage</span>. Furthermore, you can clean the content of the view file.</p><av-tutorial-create-app-editor-6></av-tutorial-create-app-editor-6>` }
+    });
+}
+    getClassName() {
+        return "TutorialCreateApp";
+    }
+}
+TutorialCreateApp.Namespace=`${moduleName}`;
+TutorialCreateApp.Tag=`av-tutorial-create-app`;
+_.TutorialCreateApp=TutorialCreateApp;
+if(!window.customElements.get('av-tutorial-create-app')){window.customElements.define('av-tutorial-create-app', TutorialCreateApp);Aventus.WebComponentInstance.registerDefinition(TutorialCreateApp);}
 
 const TutorialApp = class TutorialApp extends Aventus.Navigation.Router {
     tutorialPage;

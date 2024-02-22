@@ -16,7 +16,7 @@
     <av-code language="html" tab="1" filename="Button/Button.wcv.avt">
         <button @click="onClick">Count is {{ this.count }}</button>
     </av-code>
-    <av-code language="scss" tab="1" filename="Button/Button.wcs.avt">
+    <av-code language="css" tab="1" filename="Button/Button.wcs.avt">
         :host {
             button {
                 background-color: #e5540e;

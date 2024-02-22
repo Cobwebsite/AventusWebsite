@@ -39,7 +39,7 @@
         }
     </pre>
 </av-code>
-<av-code language="scss" filename="Inheritance/src/CheckboxInput/CheckboxInput.wcs.avt">
+<av-code language="css" filename="Inheritance/src/CheckboxInput/CheckboxInput.wcs.avt">
     <pre>
         :host {
             

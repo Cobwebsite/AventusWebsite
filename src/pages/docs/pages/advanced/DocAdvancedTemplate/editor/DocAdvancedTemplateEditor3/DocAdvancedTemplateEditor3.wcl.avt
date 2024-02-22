@@ -1,0 +1,31 @@
+import { DocAdvancedTemplateEditor2 } from "../DocAdvancedTemplateEditor2/DocAdvancedTemplateEditor2.wcl.avt";
+
+export class DocAdvancedTemplateEditor3 extends DocAdvancedTemplateEditor2 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+		return 'Template/.aventus/templates/TailwindComponent/${{componentName}}/${{componentName}}.wcl.avt'
+	}
+	//#endregion
+	
+}

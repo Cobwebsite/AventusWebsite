@@ -1,0 +1,158 @@
+<av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">
+    <pre>
+        import { TodoCreatePage } from "./pages/TodoCreatePage/TodoCreatePage.wcl.avt";
+        import { TodoListPage } from "./pages/TodoListPage/TodoListPage.wcl.avt";
+        &nbsp;
+        /**
+         * The MainApp \for the Demo.
+         * The parent Aventus.Navigation.Router is a component that allows routing management
+         */
+        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region static
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region props
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region variables
+        &nbsp;
+            //#endregions
+        &nbsp;
+        &nbsp;
+            //#region constructor
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region methods
+            /**
+             * @inheritdoc
+             */
+            protected override defineRoutes(): void {
+                // define the routing here
+                this.addRoute("/", TodoListPage);
+                this.addRoute("/create", TodoCreatePage);
+            }
+        &nbsp;
+        &nbsp;
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
+<av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt">
+    <pre>
+        /**
+         * The page to create new todo
+         */
+        export class TodoCreatePage extends Aventus.Navigation.Page implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region static
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region props
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region variables
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region constructor
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region methods
+        &nbsp;
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
+<av-code language="css" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcs.avt">
+    <pre>
+        :host {
+            .page-title {
+                height: 50px;
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 30px;
+                margin: 30px 0;
+            }
+        }
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt">
+    <pre>
+        &lt;div class="page-title"&gt;Create todos&lt;/div&gt;
+    </pre>
+</av-code>
+<av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt">
+    <pre>
+        /**
+         * The page to list all todos
+         */
+        export class TodoListPage extends Aventus.Navigation.Page implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region static
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region props
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region variables
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region constructor
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region methods
+        &nbsp;
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
+<av-code language="css" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcs.avt">
+    <pre>
+        :host {
+            .page-title {
+                height: 50px;
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 30px;
+                margin: 30px 0;
+            }
+        }
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt">
+    <pre>
+        &lt;div class="page-title"&gt;List todos&lt;/div&gt;
+    </pre>
+</av-code>
+<slot></slot>

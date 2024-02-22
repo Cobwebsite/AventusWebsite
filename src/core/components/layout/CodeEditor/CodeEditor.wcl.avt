@@ -92,7 +92,7 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
     }
 
 
-    public openFile(file: CodeEditorFile) {
+    public openFile(file: CodeEditorFile, path?: string) {
         if(this.openedFile) {
             this.openedFile.active = false;
             this.openedFile.code.parentNode?.removeChild(this.openedFile.code);
@@ -100,8 +100,11 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
         this.openedFile = file;
         this.openedFile.active = true;
         this.displayEl.appendChild(this.openedFile.code);
+        if(path) {
+            this.openFolder(path);
+        }
     }
-    private store(path: string, code: AvCode) {
+    private store(path: string, code?: AvCode) {
         let splitted = path.split("/");
         let lastName = splitted.pop() ?? '';
         let current = this.info;
@@ -126,6 +129,9 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
             if(element instanceof AvCode && element.filename) {
                 this.store(element.filename, element);
                 element.filename = undefined;
+            }
+            else if(element.getAttribute("folder")) {
+                this.store(element.getAttribute("folder") ?? '');
             }
         }
         this.menuEl.innerHTML = "";
@@ -182,6 +188,9 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
                 if(this.all_open) {
                     folder.open = true;
                 }
+                if(highlights.includes(newPath)) {
+                    folder.highlight = true;
+                }
                 this.folders[newPath] = folder;
                 this.renderMenu(current.children, folder, newPath);
                 el.appendChild(folder);
@@ -202,12 +211,12 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
                 el.appendChild(file);
                 if(this.show) {
                     if(this.comparePath(this.show, newPath)) {
-                        this.openFile(file);
+                        this.openFile(file, path);
                     }
                 }
                 else {
                     if(!this.openedFile) {
-                        this.openFile(file);
+                        this.openFile(file, path);
                     }
                 }
             }
@@ -217,7 +226,19 @@ export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultC
 
     private openFolderAfterRender() {
         if(this.open_folder) {
-            this.openFolder(this.open_folder);
+            if(this.open_folder.startsWith("[")) {
+                try {
+                    let folders = JSON.parse(this.open_folder) as string[];
+                    for(let folder of folders) {
+                        this.openFolder(folder);
+                    }
+                } catch(e) {
+                    console.log(e);
+                }
+            }
+            else {
+                this.openFolder(this.open_folder);
+            }
         }
     }
 
