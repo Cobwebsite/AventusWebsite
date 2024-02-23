@@ -1,0 +1,77 @@
+<av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">
+    <pre>
+        import { Todo } from "../../data/Todo.data.avt";
+        import { Task } from "../../data/Task.data.avt";
+        import { TodoRAM } from "../../ram/Todo.ram.avt";
+        &nbsp;
+        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region static
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region props
+            @Attribute()
+            public todo_id!: number;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region variables
+            @Watch()
+            public todo!: Todo;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region constructor
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region methods
+            protected async loadData() {
+                const todo = new Todo();
+                todo.name = "My todo";
+                this.todo = todo;
+                // just create an interval to see the template reloading
+                setInterval(() =&gt; {
+                    this.todo.name = "My todo " + (new Date().getSeconds());
+                }, 1000);
+        &nbsp;
+                const task1 = new Task();
+                task1.description = "Test Aventus";
+        &nbsp;
+                const task2 = new Task();
+                task2.description = "Add a star to Aventus github";
+                this.todo.tasks = [task1, task2];
+        &nbsp;
+                // let todo = await TodoRAM.getInstance().get(this.todo_id);
+                // \if(todo) {
+                //     this.todo = todo;
+                // }
+                // else {
+                //     this.remove();
+                // }
+            }
+        &nbsp;
+            protected override postCreation(): void {
+                this.loadData();
+            }
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
+<av-code language="html" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcv.avt">
+    <pre>
+        &lt;div class="title"&gt;
+            &lt;span&gt;\{{ this.todo.name }}&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;ul&gt;
+            \for(let task of this.todo.tasks) { 
+                &lt;li&gt;\{{ task.description }}&lt;/li&gt;
+            }
+        &lt;/ul&gt;
+    </pre>
+</av-code>
+<slot></slot>

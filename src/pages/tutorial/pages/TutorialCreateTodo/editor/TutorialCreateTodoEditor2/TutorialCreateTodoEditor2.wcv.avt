@@ -1,0 +1,87 @@
+<av-code language="css" filename="Demo/src/apps/@default.wcs.avt">
+    <pre>
+        // this is the default style \for all components
+        :host {
+            box-sizing: border-box;
+            display: inline-block;
+        }
+        &nbsp;
+        :host * {
+            box-sizing: border-box;
+        }
+        &nbsp;
+        .card {
+            background-color: var(--color-surface-mixed-200);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: auto;
+            max-width: 500px;
+            padding: 15px;
+        }
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt">
+    <pre>
+        import { MainApp } from "../../MainApp.wcl.avt";
+        import type { Todo } from "../../../../data/Todo.data.avt";
+        import { TodoCreateState } from "../../../../states/TodoCreateState.state.avt";
+        import { GenericPage } from "../GenericPage/GenericPage.wcl.avt";
+        &nbsp;
+        /**
+         * The page to create new todo
+         */
+        export class TodoCreatePage extends GenericPage implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region static
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region props
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region variables
+            @Watch()
+            public todo!: Todo;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region constructor
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region methods
+            /**
+             * @inheritdoc
+             */
+            public override definePageTitle(): string {
+                return "Create todo";
+            }
+        &nbsp;
+            public override onShow(): void {
+                \if(this.currentState instanceof TodoCreateState && this.currentState.newTodo) {
+                    this.todo = this.currentState.newTodo;
+                }
+                \else {
+                    MainApp.instance.navigate("/");
+                }
+            }
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
+<av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt">
+    <pre>
+        &lt;div class="card"&gt;
+            &nbsp;
+        &lt;/div&gt;
+    </pre>
+</av-code>
+<slot></slot>

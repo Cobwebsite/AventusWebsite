@@ -1,0 +1,146 @@
+<av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt">
+    <pre>
+        import { TodoRAM } from "../../../../ram/Todo.ram.avt";
+        import type { Todo } from "../../../../data/Todo.data.avt";
+        import { GenericPage } from "../GenericPage/GenericPage.wcl.avt";
+        &nbsp;
+        /**
+         * The page to list all todos
+         */
+        export class TodoListPage extends GenericPage implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region static
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region props
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region variables
+            @Watch()
+            public todos: Todo[] = [];
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region constructor
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region methods
+            /**
+             * @inheritdoc
+             */
+            public override definePageTitle(): string {
+                return "List todos";
+            }
+        &nbsp;
+            protected async bindRAMData() {
+                // Load the todos from the RAM
+                this.todos = await TodoRAM.getInstance().getList();
+                // Callback when a new todo is created
+                TodoRAM.getInstance().onCreated((todo) =&gt; {
+                    this.todos.push(todo);
+                });
+                // Callback when a new todo is updated
+                TodoRAM.getInstance().onUpdated((todo) =&gt; {
+                    let index = this.todos.findIndex(t =&gt; t.id == todo.id);
+                    \if(index == -1) {
+                        this.todos.push(todo);
+                    }
+                    else {
+                        this.todos.splice(index, 1, todo);
+                    }
+                });
+                // Callback when a new todo is deleted
+                TodoRAM.getInstance().onDeleted((todo) =&gt; {
+                    let index = this.todos.findIndex(t =&gt; t.id == todo.id);
+                    this.todos.splice(index, 1);
+                });
+            }
+        &nbsp;
+            protected override postCreation(): void {
+                super.postCreation();
+                this.bindRAMData();
+            }
+        &nbsp;
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
+<av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt">
+    <pre>
+        &lt;div class="card"&gt;
+            \if(this.todos.length == 0) {
+                &lt;p&gt;No todo&lt;/p&gt;
+            }
+            else {
+                \for(let i = 0; i &lt; this.todos.length; i++) { 
+                    @Context('todo', this.todos[i])
+                    &lt;td-todo-display todo_id="\{{ todo.id }}"&gt;&lt;/td-todo-display&gt;
+                }
+            }
+        &lt;/div&gt;
+    </pre>
+</av-code>
+<av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">
+    <pre>
+        import { Todo } from "../../data/Todo.data.avt";
+        import { Task } from "../../data/Task.data.avt";
+        import { TodoRAM } from "../../ram/Todo.ram.avt";
+        &nbsp;
+        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region static
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region props
+            @Attribute()
+            public todo_id!: number;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region variables
+            @Watch()
+            public todo!: Todo;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region constructor
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region methods
+            protected async loadData() {
+                const todo = await TodoRAM.getInstance().get(this.todo_id);
+                \if(todo) {
+                    this.todo = todo;
+                }
+                else {
+                    this.remove();
+                }
+            }
+        &nbsp;
+            /**
+            * Remove the todo
+            */
+            protected async removeTodo() {
+                await TodoRAM.getInstance().deleteById(this.todo_id);
+            }
+        &nbsp;
+            protected override postCreation(): void {
+                this.loadData();
+            }
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
+<slot></slot>

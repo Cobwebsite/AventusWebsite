@@ -7,6 +7,9 @@ import { TutorialPage } from "../TutorialPage/TutorialPage.wcl.avt";
 import { TutorialRam } from "../pages/TutorialRam/TutorialRam.wcl.avt";
 import { Page404 } from "../../Page404/Page404.wcl.avt";
 import { TutorialDisplayTodo } from "../pages/TutorialDisplayTodo/TutorialDisplayTodo.wcl.avt";
+import { TutorialIcon } from "../pages/TutorialIcon/TutorialIcon.wcl.avt";
+import { TutorialCreateTodo } from "../pages/TutorialCreateTodo/TutorialCreateTodo.wcl.avt";
+import { TutorialListTodo } from "../pages/TutorialListTodo/TutorialListTodo.wcl.avt";
 
 	export class TutorialApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
 	    private tutorialPage?: TutorialPage;
@@ -18,6 +21,9 @@ import { TutorialDisplayTodo } from "../pages/TutorialDisplayTodo/TutorialDispla
 	        this.addRoute("/tutorial/data", TutorialData);
 	        this.addRoute("/tutorial/ram", TutorialRam);
 	        this.addRoute("/tutorial/display_todo", TutorialDisplayTodo);
+	        this.addRoute("/tutorial/using_icon", TutorialIcon);
+	        this.addRoute("/tutorial/create_todo", TutorialCreateTodo);
+	        this.addRoute("/tutorial/list_todo", TutorialListTodo);
 	    }
 
 	    protected override error404(state: Aventus.State): (new () => Aventus.Navigation.Page) | null {

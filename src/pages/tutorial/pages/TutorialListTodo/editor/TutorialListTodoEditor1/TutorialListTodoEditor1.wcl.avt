@@ -1,0 +1,50 @@
+import { TutorialCreateTodoEditor4 } from "../../../TutorialCreateTodo/editor/TutorialCreateTodoEditor4/TutorialCreateTodoEditor4.wcl.avt";
+
+export class TutorialListTodoEditor1 extends TutorialCreateTodoEditor4 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+		return 'Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt'
+	}
+	public override hightlightFiles(): string[] {
+		return [
+			'Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt',
+			'Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt',
+			'Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt',
+		]
+	}
+
+	public override open_folder(): string | string[] | undefined {
+		return [
+			'Demo/src/components/TodoDisplay'
+		]
+	}
+
+	public override defineResult(): HTMLElement | null {
+		let iframe = document.createElement("iframe");
+		iframe.src = "/tutorial/listtodo/step1/index.html"
+		return iframe
+	}
+	//#endregion
+	
+}

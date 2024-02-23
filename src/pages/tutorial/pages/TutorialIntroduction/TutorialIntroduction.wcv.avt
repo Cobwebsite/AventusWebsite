@@ -1,7 +1,7 @@
 <h1>Introduction</h1>
 <p>In this tutorial you are going to learn Aventus core concepts. For this, we are going to create a simple todo list.</p>
 
-<av-img src="/img/tuto/introduction/final_result.png"></av-img>
+<av-tutorial-introduction-editor-1></av-tutorial-introduction-editor-1>
 
 <p>At the end of this tutorial you will be able to :</p>
 <ul>

@@ -1,0 +1,51 @@
+import { TutorialIconEditor1 } from "../../../TutorialIcon/editor/TutorialIconEditor1/TutorialIconEditor1.wcl.avt";
+
+export class TutorialCreateTodoEditor1 extends TutorialIconEditor1 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+		return 'Demo/src/states/TodoCreateState.state.avt'
+	}
+	public override hightlightFiles(): string[] {
+		return [
+			'Demo/src/states/TodoCreateState.state.avt',
+			'Demo/src/apps/MainApp/MainApp.wcl.avt',
+			'Demo/src/apps/MainApp/MainApp.wcv.avt',
+
+		]
+	}
+
+	public override open_folder(): string | string[] | undefined {
+		return [
+			'Demo/src/apps/MainApp',
+		]
+	}
+
+	public override defineResult(): HTMLElement | null {
+		let iframe = document.createElement("iframe");
+		iframe.src = "/tutorial/createtodo/step1/index.html"
+		return iframe
+	}
+	//#endregion
+	
+}

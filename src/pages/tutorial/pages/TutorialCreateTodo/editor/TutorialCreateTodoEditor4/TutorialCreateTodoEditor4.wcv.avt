@@ -1,0 +1,169 @@
+<av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt">
+    <pre>
+        import { MainApp } from "../../MainApp.wcl.avt";
+        import type { Todo } from "../../../../data/Todo.data.avt";
+        import { Task } from "../../../../data/Task.data.avt";
+        import { TodoCreateState } from "../../../../states/TodoCreateState.state.avt";
+        import { GenericPage } from "../GenericPage/GenericPage.wcl.avt";
+        import type { Input } from "../../../../components/Input/Input.wcl.avt";
+        import { TodoRAM } from "../../../../ram/Todo.ram.avt";
+        &nbsp;
+        /**
+         * The page to create new todo
+         */
+        export class TodoCreatePage extends GenericPage implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region static
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region props
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region variables
+            @Watch()
+            public todo!: Todo;
+        &nbsp;
+            /**
+             * The input to create a description \for the todo
+             */
+            @ViewElement()
+            protected taskDescEl!: Input;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region constructor
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region methods
+            /**
+             * @inheritdoc
+             */
+            public override definePageTitle(): string {
+                return "Create todo";
+            }
+        &nbsp;
+            public override onShow(): void {
+                \if(this.currentState instanceof TodoCreateState && this.currentState.newTodo) {
+                    this.todo = this.currentState.newTodo;
+                }
+                else {
+                    MainApp.instance.navigate("/");
+                }
+            }
+        &nbsp;
+            /**
+            * Add a new task into the todo
+            * The view will be refreshed because the todo is a @Watch()
+            */
+            protected addTask() {
+                \if(this.taskDescEl.value) {
+                    let newTask = new Task();
+                    newTask.description = this.taskDescEl.value;
+                    this.todo.tasks.push(newTask);
+                    this.taskDescEl.value = "";
+                }
+            }
+        &nbsp;
+            /**
+             * Save the todo into the RAM
+             */
+            protected async save() {
+                \if(this.todo.name) {
+                    await TodoRAM.getInstance().create(this.todo);
+                    // clear the name to avoid confirmation popup
+                    this.todo.name = "";
+                    // navigate to the list page
+                    MainApp.instance.navigate("/");
+                }
+        &nbsp;
+            }
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
+<av-code language="css" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcs.avt">
+    <pre>
+        :host {
+            .tasks {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                padding: 0 15px;
+                width: 100%;
+        &nbsp;
+                .sub-title {
+                    font-size: 20px;
+                }
+        &nbsp;
+                .new-task {
+                    align-items: center;
+                    display: flex;
+                    gap: 10px;
+        &nbsp;
+                    td-input {
+                        flex-grow: 1;
+                    }
+        &nbsp;
+                    td-icon {
+                        cursor: pointer;
+                        flex-shrink: 0;
+                    }
+                }
+            }
+        &nbsp;
+            .create-container {
+                display: flex;
+                flex-direction: row;
+                justify-content: flex-end;
+                margin-top: 15px;
+                width: 100%;
+        &nbsp;
+                button {
+                    align-items: center;
+                    background-color: var(--color-primary-300);
+                    border: none;
+                    border-radius: 500px;
+                    color: var(--font-color);
+                    cursor: pointer;
+                    display: flex;
+                    justify-content: center;
+                    min-width: 100px;
+                    padding: 10px;
+                    transition: background-color 0.2s linear;
+                    width: fit-content;
+                }
+            }
+        }
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt">
+    <pre>
+        &lt;div class="card"&gt;
+            &lt;td-input label="Todo name" @bind="this.todo.name"&gt;&lt;/td-input&gt;
+            &lt;div class="tasks"&gt;
+                &lt;div class="sub-title"&gt;Tasks&lt;/div&gt;
+                &lt;ul class="list"&gt;
+                    \for(let task of this.todo.tasks) {
+                        &lt;li&gt;\{{ task.description }}&lt;/li&gt;
+                    }
+                &lt;/ul&gt;
+                &lt;div class="new-task"&gt;
+                    &lt;td-input label="Task name" @element="taskDescEl"&gt;&lt;/td-input&gt;
+                    &lt;td-icon icon="add_circle" @press="addTask"&gt;&lt;/td-icon&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class="create-container"&gt;
+                &lt;button class="create-btn" @press="save"&gt;Create&lt;/button&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    </pre>
+</av-code>
+<slot></slot>
