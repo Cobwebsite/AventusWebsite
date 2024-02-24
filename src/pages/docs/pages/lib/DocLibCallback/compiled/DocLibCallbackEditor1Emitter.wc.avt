@@ -1,0 +1,26 @@
+<script>
+	export class DocLibCallbackEditor1Emitter extends Aventus.WebComponent implements Aventus.DefaultComponent {
+		private emitMyEvent() {
+			setInterval(() => {
+				this.dispatchEvent(new CustomEvent("myEvent", {
+					detail: {
+						time: Date.now()
+					}
+				}));
+			}, 1000);
+		}
+		protected override postCreation(): void {
+			this.emitMyEvent();
+		}
+	}
+</script>
+
+<template>
+	<slot></slot>
+</template>
+
+<style>
+	:host {
+
+	}
+</style>

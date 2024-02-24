@@ -1,0 +1,32 @@
+import { DocWcLoopEditor2TodoList } from "../../compiled/DocWcLoopEditor2TodoList/DocWcLoopEditor2TodoList.wcl.avt";
+import { DocWcLoopEditor1 } from "../DocWcLoopEditor1/DocWcLoopEditor1.wcl.avt";
+
+export class DocWcLoopEditor2 extends DocWcLoopEditor1 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override defineResult(): HTMLElement | null {
+		return new DocWcLoopEditor2TodoList();
+	}
+	//#endregion
+	
+}

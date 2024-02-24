@@ -1,0 +1,114 @@
+<av-code-editor name="State Example">
+    <av-code language="json" filename="StateExample/aventus.conf.avt">
+        <pre>
+            {
+                "module": "StateExample",
+                "build": [
+                    {
+                        "name": "Main",
+                        "src": [
+                            './src/*'
+                        ]
+                    }
+                ]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="StateExample/src/CreatePerson.state.avt">
+        <pre>
+            import type { Person } from "./Person.data.avt";
+            &nbsp;
+            export class CreatePerson extends Aventus.State implements Aventus.IState {
+                &nbsp;
+                public editingPerson?: Person;
+                &nbsp;
+                /**
+                * @inheritdoc
+                */
+                public override get name(): string {
+                    return "/person/create";;
+                }
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="StateExample/src/Main.state.avt">
+        <pre>
+            export class MainStateManager extends Aventus.StateManager implements Aventus.IStateManager {
+                /**
+                 * Get the instance of the StateManager
+                 */
+                public static getInstance() {
+                    return Aventus.Instance.get(MainStateManager);
+                }
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="StateExample/src/Person.data.avt">
+        <pre>
+            export class Person extends Aventus.Data implements Aventus.IData {
+                public id: number = 0;
+                public firstname!: string;
+                public lastname!: string;
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="StateExample/src/Person.ram.avt">
+        <pre>
+            import { Person } from "./Person.data.avt";
+            &nbsp;
+            export class PersonRAM extends Aventus.Ram&lt;Person&gt; implements Aventus.IRam {
+                &nbsp;
+                /**
+                * Create a singleton to store data
+                */
+                public static getInstance() {
+                    return Aventus.Instance.get(PersonRAM);
+                }
+                &nbsp;
+                /**
+                * @inheritdoc
+                */
+                public override defineIndexKey(): keyof Person {
+                    return 'id';
+                }
+                /**
+                * @inheritdoc
+                */
+                protected override getTypeForData(objJson: Aventus.KeysObject&lt;Person&gt; | Person): new () => Person {
+                    return Person;
+                }
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="StateExample/src/Test.lib.avt">
+        <pre>
+            import { MainStateManager } from "./Main.state.avt";
+            &nbsp;
+            export async function subscribe() {
+                MainStateManager.getInstance().subscribe("/user/{id:number}", {
+                    active: (state: Aventus.State, slugs: Aventus.StateSlug) => {
+                        console.log("user active is " + slugs.id);
+                    },
+                    inactive: (state: Aventus.State, nextState: Aventus.State, oldSlugs: Aventus.StateSlug) => {
+                        console.log("new state is " + nextState.name);
+                    },
+                    askChange: async (state: Aventus.State, nextState: Aventus.State, slugs: Aventus.StateSlug) => {
+                        \if(slugs.id == 3) {
+                            return false;
+                        }
+                        return true;
+                    }
+                });
+            }
+            &nbsp;
+            export async function setUser(id: number) {
+                MainStateManager.getInstance().setState("/user/" + id);
+            }
+            &nbsp;
+            export async function removeUser() {
+                MainStateManager.getInstance().setState("/other");
+            }
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

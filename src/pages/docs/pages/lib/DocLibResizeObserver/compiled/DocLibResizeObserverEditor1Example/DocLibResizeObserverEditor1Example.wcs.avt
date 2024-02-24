@@ -1,0 +1,18 @@
+:host {
+	animation-name: resize;
+    animation-duration: 5s;
+    animation-direction: alternate;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+	height: 30px;
+}
+
+@keyframes resize {
+	0% {
+		width: 30px;
+	}
+
+	100% {
+		width: 70px;
+	}
+}

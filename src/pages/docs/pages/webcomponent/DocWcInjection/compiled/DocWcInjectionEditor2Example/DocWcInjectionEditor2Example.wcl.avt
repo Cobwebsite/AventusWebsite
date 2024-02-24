@@ -1,0 +1,35 @@
+export class DocWcInjectionEditor2Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	//#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+    @Watch()
+    private time: number = 0;
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    public getTimeTxt() {
+        return 'time : ' + this.time;
+    }
+    protected override postCreation() {
+        setInterval(() => {
+            this.time++;
+        }, 1000);
+    }
+    //#endregion
+	
+}

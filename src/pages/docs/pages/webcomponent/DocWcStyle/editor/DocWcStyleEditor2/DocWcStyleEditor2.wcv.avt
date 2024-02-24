@@ -1,0 +1,142 @@
+<av-code-editor name="Style">
+    <av-code language="json" filename="Style/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "Style",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [
+            				{
+            					"output": "./dist/demo.js"
+            				}
+            			]
+            		}
+            	],
+            	"static": [{
+            		"name": "Static",
+            		"input": "./static/*",
+            		"output": "./dist/"
+            	}]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Style/src/Child/Child.wcl.avt">
+        <pre>
+            import { Parent } from "../Parent/Parent.wcl.avt";
+            &nbsp;
+            export class Child extends Parent implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+            &nbsp;
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="Style/src/Child/Child.wcs.avt">
+        <pre>
+            :host {
+            	.title {
+            		color: blue;
+            	}
+            }
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Style/src/Child/Child.wcv.avt">
+        <pre>
+            &lt;slot&gt;&lt;/slot&gt;
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Style/src/Parent/Parent.wcl.avt">
+        <pre>
+            export class Parent extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+            &nbsp;
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="Style/src/Parent/Parent.wcs.avt">
+        <pre>
+            :host {
+            	background-color: gray;
+            	display: block;
+            &nbsp;
+            	.title {
+            		color: orange;
+            	}
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Style/src/Parent/Parent.wcv.avt">
+        <pre>
+            &lt;p class="title"&gt;I am an example&lt;/p&gt;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Style/static/index.html">
+        <pre>
+            &lt;!DOCTYPE html&gt;
+            &lt;html lang="en"&gt;
+            &lt;head&gt;
+                &lt;meta charset="UTF-8"&gt;
+                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+                &lt;title&gt;Style&lt;/title&gt;
+                &lt;script src="/demo.js"&gt;&lt;/script&gt;
+            &lt;/head&gt;
+            &lt;body&gt;
+                &lt;av-child&gt;&lt;/av-child&gt;
+                &lt;av-parent&gt;&lt;/av-parent&gt;
+            &lt;/body&gt;
+            &lt;/html&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

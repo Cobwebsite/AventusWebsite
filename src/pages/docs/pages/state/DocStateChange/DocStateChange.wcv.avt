@@ -4,40 +4,13 @@
 <p>You can change current state directly on the manager by calling the function <span class="cn">setState</span> with a
     <span class="cn">string</span> or a <span class="cn">State</span> item.
 </p>
-<av-code language="typescript" filename="Test.lib.avt">
-    export class Test {
-    \tpublic changeStateTxt() {
-    \t\tconst isApplied = await MainStateManager.getInstance().setState("/user/");
-    \t}
-    \tpublic async changeState() {
-    \t\tlet state = new CreateUser();
-    \t\tstate.user = await UserRAM.getInstance().get(1);
-    \t\tconst isApplied = await MainStateManager.getInstance().setState(state);
-    \t}
-    }
-</av-code>
+<av-doc-state-change-editor-1></av-doc-state-change-editor-1>
 <p>If you set a string, an <span class="cn">EmptyState</span> will be created with the name provided.</p>
 
 <h2>On the state - static</h2>
 <p>You can also activate a state with the static method <span class="cn">activate</span> on the class <span
         class="cn">Aventus.State</span>.</p>
-<av-code language="typescript" filename="Test.lib.avt">
-    export class Test {
-    \tpublic changeStateStatic() {
-    \t\tconst isApplied = await Aventus.State.activate("/user/", MainStateManager.getInstance());
-    \t}
-    }
-</av-code>
-
+<av-doc-state-change-editor-2></av-doc-state-change-editor-2>
 <h2>On the state - instance</h2>
 <p>Finally, you can activate the state with the method <span class="cn">activate</span> on a state instance.</p>
-
-<av-code language="typescript" filename="Test.lib.avt">
-    export class Test {
-    \tpublic changeStateInstance() {
-    \t\tlet state = new CreateUser();
-    \t\tstate.user = await UserRAM.getInstance().get(1);
-    \t\tconst isApplied = await state.activate(MainStateManager.getInstance());
-    \t}
-    }
-</av-code>
+<av-doc-state-change-editor-3></av-doc-state-change-editor-3>

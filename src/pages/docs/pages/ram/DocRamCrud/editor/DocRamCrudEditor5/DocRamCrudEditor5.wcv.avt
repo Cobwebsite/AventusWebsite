@@ -1,0 +1,20 @@
+<av-code language="typescript" filename="ExampleRAM/src/Test.lib.avt">
+    <pre>
+        import { PersonRAM } from "./Person.ram.avt";
+        import { Person } from "./Person.data.avt";
+        &nbsp;
+        export async function deleteFunctions() {
+            let person1: Aventus.RamItem&lt;Person&gt; | undefined = await PersonRAM.getInstance().get(1);
+            if(!person1) return;
+            let person2: Aventus.RamItem&lt;Person&gt; | undefined = await PersonRAM.getInstance().get(2);
+            if(!person2) return;
+                &nbsp;
+            await PersonRAM.getInstance().delete(person1);
+            await PersonRAM.getInstance().deleteById(1);
+            await PersonRAM.getInstance().deleteList([person1, person2]);
+            &nbsp;
+            person1.delete();
+        }
+    </pre>
+</av-code>
+<slot></slot>

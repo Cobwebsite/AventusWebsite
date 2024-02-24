@@ -1,0 +1,8 @@
+<div class="name" @press="toggleOpen">
+    <mi-icon icon="arrow_back_ios_new" class="arrow"></mi-icon>
+    <mi-icon class="icon" icon="folder"></mi-icon>
+    <span>{{ this.name }}</span>
+</div>
+<av-collapse class="content" open="{{this.open}}">
+    <slot></slot>
+</av-collapse>

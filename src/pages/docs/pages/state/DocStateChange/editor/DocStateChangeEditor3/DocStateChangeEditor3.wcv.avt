@@ -1,0 +1,27 @@
+<av-code language="typescript" filename="StateExample/src/Test.lib.avt">
+    <pre>
+        import { PersonRAM } from "./Person.ram.avt";
+        import { CreatePerson } from "./CreatePerson.state.avt";
+        import { MainStateManager } from "./Main.state.avt";
+        &nbsp;
+        export async function changeStateTxt() {
+            const isApplied = await MainStateManager.getInstance().setState("/user/");
+        }
+        export async function changeState() {
+            let state = new CreatePerson();
+            state.editingPerson = await PersonRAM.getInstance().get(1);
+            const isApplied = await MainStateManager.getInstance().setState(state);
+        }
+        &nbsp;
+        export async function changeStateStatic() {
+            const isApplied = await Aventus.State.activate("/user/", MainStateManager.getInstance());
+        }
+        &nbsp;
+        export async function changeStateInstance() {
+            let state = new CreatePerson();
+            state.editingPerson = await PersonRAM.getInstance().get(1);
+            const isApplied = await state.activate(MainStateManager.getInstance());
+        }
+    </pre>
+</av-code>
+<slot></slot>

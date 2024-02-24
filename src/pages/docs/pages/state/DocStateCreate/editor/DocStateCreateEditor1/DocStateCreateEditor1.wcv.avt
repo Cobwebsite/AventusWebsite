@@ -1,0 +1,56 @@
+<av-code-editor name="State Example">
+    <av-code language="json" filename="StateExample/aventus.conf.avt">
+        <pre>
+            {
+                "module": "StateExample",
+                "build": [
+                    {
+                        "name": "Main",
+                        "src": [
+                            './src/*'
+                        ]
+                    }
+                ]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="StateExample/src/CreatePerson.state.avt">
+        <pre>
+            import type { Person } from "./Person.data.avt";
+            &nbsp;
+            export class CreatePerson extends Aventus.State implements Aventus.IState {
+                &nbsp;
+                public editingPerson?: Person;
+                &nbsp;
+                /**
+                * @inheritdoc
+                */
+                public override get name(): string {
+                    return "/person/create";;
+                }
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="StateExample/src/Main.state.avt">
+        <pre>
+            export class MainStateManager extends Aventus.StateManager implements Aventus.IStateManager {
+                /**
+                 * Get the instance of the StateManager
+                 */
+                public static getInstance() {
+                    return Aventus.Instance.get(MainStateManager);
+                }
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="StateExample/src/Person.data.avt">
+        <pre>
+            export class Person extends Aventus.Data implements Aventus.IData {
+                public id: number = 0;
+                public firstname!: string;
+                public lastname!: string;
+            }
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

@@ -1,0 +1,3 @@
+<av-doc-wc-binding-editor-3-input @bind:val="this.value"></av-doc-wc-binding-editor-3-input>
+
+<p>{{ this.value }}</p>

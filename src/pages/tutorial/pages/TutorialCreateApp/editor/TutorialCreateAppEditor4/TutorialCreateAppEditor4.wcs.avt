@@ -1,0 +1,5 @@
+:host {
+	av-code-editor {
+		--code-editor-menu-width: 290px;
+	}
+}

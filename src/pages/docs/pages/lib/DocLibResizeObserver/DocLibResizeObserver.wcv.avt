@@ -5,26 +5,5 @@
     ResizeObserver under <span class="cn">Aventus.ResizeObserver</span>. The behavior is the same as the native one but
     behind, a <span class="cn">single instance</span> of native ResizeObserver is used and the callback function is
     limited to one trigger each <span class="cn">1000 / 60 ms</span>.</p>
-
-<av-code language="html" filename="Example.wc.avt">
-    &lt;script&gt;
-    \texport class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
-    \t\tprotected override postCreation(): void {
-    &nbsp;
-    \t\t\tconst observer = new Aventus.ResizeObserver(() =&gt; {
-    \t\t\t\tconsole.log("element size changed")
-    \t\t\t})
-    \t\t\tobserver.observe(this);
-    &nbsp;
-    \t\t\t// change max framerate
-    \t\t\tconst observer2 = new Aventus.ResizeObserver({
-    \t\t\t\tcallback: () =&gt; {
-    \t\t\t\t\tconsole.log("element size changed")
-    \t\t\t\t},
-    \t\t\t\tfps: 30
-    \t\t\t})
-    \t\t\tobserver2.observe(this);
-    \t\t}
-    \t}
-    &lt;/script&gt;
-</av-code>
+    
+<av-doc-lib-resize-observer-editor-1></av-doc-lib-resize-observer-editor-1>

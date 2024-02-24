@@ -1,0 +1,5 @@
+<div class="square" @element="squareEl"></div>
+<button @press="startAnimation1fps">Start 1fps</button>
+<button @press="startAnimation10fps">Start 10fps</button>
+<button @press="startAnimation30fps">Start 30fps</button>
+<button @press="startAnimation60fps">Start 60fps</button>

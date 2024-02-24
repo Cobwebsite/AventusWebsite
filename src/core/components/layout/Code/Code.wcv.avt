@@ -1,6 +1,6 @@
-<span @element="filenameEl" class="filename">{{filename}}</span>
+<span @element="filenameEl" class="filename">{{ this.filename }}</span>
 <pre>
-    <code @element="codeEl" class="language-{{language}}">
+    <code @element="codeEl" class="language-{{ this.language }}">
     </code>
 </pre>
 <template class="hided">

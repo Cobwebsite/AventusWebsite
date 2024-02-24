@@ -1,6 +1,15 @@
 :host {
+	--_code-padding: var(--code-padding, 30px 10px);
+}
+
+:host {
+	border-radius: 5px;
 	display: flex;
+	margin: 0.5em 0;
+	overflow: hidden;
 	position: relative;
+	box-shadow: var(--elevation-3);
+
 
 	.filename {
 		background-color: rgba(255, 255, 255, 0.3);
@@ -13,8 +22,8 @@
 	}
 
 	pre {
-		border-radius: 5px;
-		padding: 30px 10px;
+		margin: 0;
+		padding: var(--_code-padding);
 		width: 100%;
 	}
 

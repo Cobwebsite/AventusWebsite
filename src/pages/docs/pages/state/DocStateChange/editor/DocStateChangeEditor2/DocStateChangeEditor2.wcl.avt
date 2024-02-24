@@ -1,0 +1,29 @@
+import { DocStateChangeEditor1 } from "../DocStateChangeEditor1/DocStateChangeEditor1.wcl.avt";
+
+export class DocStateChangeEditor2 extends DocStateChangeEditor1 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	
+	//#endregion
+	
+}

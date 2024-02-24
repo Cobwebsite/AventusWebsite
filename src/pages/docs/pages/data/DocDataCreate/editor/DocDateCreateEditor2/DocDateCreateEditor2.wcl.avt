@@ -1,0 +1,31 @@
+import { DocDateCreateEditor1 } from "../DocDateCreateEditor1/DocDateCreateEditor1.wcl.avt";
+
+export class DocDateCreateEditor2 extends DocDateCreateEditor1 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+		return "ExampleData/src/Test.lib.avt";
+	}
+	//#endregion
+	
+}

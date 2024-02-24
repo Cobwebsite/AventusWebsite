@@ -1,0 +1,5 @@
+<slot name="error"></slot>
+<label>{{ this.label }}</label>
+<slot></slot>
+
+<div @element="debugEl"></div>

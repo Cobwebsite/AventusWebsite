@@ -1,0 +1,365 @@
+<h1>Create Todo</h1>
+
+<p>To create a todo, we'll utilize a new concept within Aventus called <span class="cn">state</span>. If you've been
+    using the router, you've
+    already encountered this concept, even if you don't know it. Using states within your application offers several
+    advantages.</p>
+<p> Firstly, states help manage the various states of your application at different moments. This includes
+    managing data, UI components, user interactions, and more. By encapsulating the state within a state manager like
+    Aventus, you can efficiently manage and transition between different states of your application.</p>
+<p>Additionally,
+    states ensure data consistency across your application, promote modularity and reusability, enable separation of
+    concerns, and manage the lifecycle of your application.
+</p>
+<p>In summary, leveraging states within your application
+    architecture contributes to a more organized, maintainable, and predictable development process.</p>
+
+<h2>Code it</h2>
+
+<p>First of all we need a to create a new state named <span class="cn">TodoDisplay</span> : </p>
+<ul>
+    <li>
+        Over the folder <span class="cn">states</span> you can right click and select <span class="cn">Aventus :
+            Create...</span>.
+    </li>
+    <li>You can select <span class="cn">State</span></li>
+    <li>You can fill the input with <span class="cn">TodoCreateState</span></li>
+</ul>
+
+<av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">
+    <pre>
+        export class TodoCreateState extends Aventus.State implements Aventus.IState {
+            /**
+             * @inheritdoc
+             */
+            public override get name(): string {
+                return ;
+            }
+        }
+    </pre>
+</av-code>
+
+<p>Now, we must enhance the <span class="cn">TodoCreateState</span> class by incorporating functionality to identify the
+    state's name and
+    initialize a new todo each time the state is activated. This ensures that the state is properly configured to manage
+    the
+    creation of new todo items within the application.</p>
+
+<av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">
+    <pre>
+        import { Todo } from "../data/Todo.data.avt";
+        &nbsp;
+        export class TodoCreateState extends Aventus.State implements Aventus.IState {
+        &nbsp;
+            /**
+            * This is the Todo that is currently created
+            */
+            public newTodo?: Todo;
+        &nbsp;
+            /**
+            * @inheritdoc
+            */
+            public override get name(): string {
+                // we must define what will be the state name
+                // in our example we will use '/create' because it's the url of the page TodoCreatePage
+                return '/create';
+            }
+        &nbsp;
+            /**
+            * This function is called when the current state is activated
+            */
+            public override onActivate(): void {
+                // You can init custom value for you todo here
+                this.newTodo = new Todo();
+            }
+        }
+    </pre>
+</av-code>
+
+<p>
+    In the <span class="cn">MainApp.wcv.avt</span> file, we need to replace the navigation button responsible for
+    setting the state to <span class="cn">"/create"</span> with a function that will activate our new <span
+        class="cn">TodoCreateState</span>. Additionally, we must ensure that the <span class="cn">active_state</span>
+    property is set to maintain the <span class="cn">"active"</span> class on the <span class="cn">av-router-link</span>
+    element when the URL is <span class="cn">"/create"</span>.
+</p>
+
+<av-code language="html" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">
+    <pre>
+        &lt;!-- The router has a slot name "before": we use it to define the sidenav --&gt;
+        &lt;block name="before"&gt;
+            &lt;div class="nav"&gt;
+                &lt;av-router-link class="nav-item" state="/"&gt;
+                    &lt;span class="name"&gt;Todo list&lt;/span&gt;
+                &lt;/av-router-link&gt;
+                &lt;av-router-link class="nav-item" @press="setCreateState" active_state="/create"&gt; 
+                    &lt;span class="name"&gt;Create todo&lt;/span&gt;
+                &lt;/av-router-link&gt;
+            &lt;/div&gt;
+        &lt;/block&gt;
+        &lt;slot&gt;&lt;/slot&gt;
+    </pre>
+</av-code>
+
+<av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">
+    <pre>
+        import { TodoCreateState } from "../../states/TodoCreateState.state.avt";
+        ...
+        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
+            ...
+            /**
+             * Set the create state
+             */
+            protected setCreateState() {
+                this.stateManager.setState(new TodoCreateState());
+            }
+            ...
+        }
+    </pre>
+</av-code>
+
+<p>At this point, nothing changed for the navigation process.</p>
+
+<av-tutorial-create-todo-editor-1></av-tutorial-create-todo-editor-1>
+
+<p>
+    To retrieve the state within the <span class="cn">TodoCreatePage</span>, we can override the <span
+        class="cn">onShow</span> method, which is triggered each time the page is displayed. Since we are utilizing
+    <span class="cn">Aventus.Navigation.Router</span>, the URL corresponds to the state. This implies that the state
+    <span class="cn">"/create"</span> can be triggered without necessarily being a <span
+        class="cn">TodoCreateState</span>. In such instances, we need to redirect the user to the home page.
+</p>
+
+<av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt">
+    <pre>
+        import { MainApp } from "../../MainApp.wcl.avt";
+        import type { Todo } from "../../../../data/Todo.data.avt";
+        import { TodoCreateState } from "../../../../states/TodoCreateState.state.avt";
+        ...
+        &nbsp;
+        export class TodoCreatePage extends GenericPage implements Aventus.DefaultComponent {
+            ...
+            //#region variables
+            @Watch()
+            public todo!: Todo; // create a watch variable for later
+            //#endregion
+            ...
+            &nbsp;
+            public override onShow(): void {
+                // check if the state if the TodoCreateState
+                &#105;f(this.currentState instanceof TodoCreateState && this.currentState.newTodo) {
+                    this.todo = this.currentState.newTodo;
+                }
+                &#101;lse {
+                    // else redirect to the Home page
+                    // MainApp.instance don't exist yet, don't worry
+                    MainApp.instance.navigate("/");
+                }
+            }
+            ...
+        }
+    </pre>
+</av-code>
+
+<p>We're currently utilizing a property, <span class="cn">MainApp.instance</span>, which doesn't exist yet. However,
+    since we're aware that only one instance of <span class="cn">MainApp</span> exists within the app, we can define a
+    static instance property on the <span class="cn">MainApp</span> class.</p>
+
+
+<av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">
+    <pre>
+        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
+            //#region static
+            private static _instance: MainApp;
+            public static get instance(): MainApp {
+                return this._instance;
+            }
+            //#endregion
+            ...
+            protected override postCreation(): void {
+                super.postCreation();
+                MainApp._instance = this;
+            }
+            ...
+        }
+    </pre>
+</av-code>
+
+<p>Let's initiate the design of our form. As an example, we'll create a <span class="cn">.card</span> class that will be
+    accessible within each web component. To accomplish this, we'll need to create a file named <span
+        class="cn">@default.wcs.avt</span> to override the default style for all web components. Within this file, we
+    can define the new class <span class="cn">.card</span>. <av-router-link state="/docs/wc/style">More
+        info</av-router-link></p>
+
+<av-code language="css" filename="Demo/src/apps/@default.wcs.avt">
+    <pre>
+        // this is the default style &#102;or all components
+        :host {
+            box-sizing: border-box;
+            display: inline-block;
+        }
+        &nbsp;
+        :host * {
+            box-sizing: border-box;
+        }
+        &nbsp;
+        .card {
+            background-color: var(--color-surface-mixed-200);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: auto;
+            max-width: 500px;
+            padding: 15px;
+        }
+        &nbsp;
+    </pre>
+</av-code>
+
+<p>Inside your page <span class="cn">TodoCreatePage.wcv.avt</span> you can add a <span class="cn">div.card</span></p>
+
+<av-tutorial-create-todo-editor-2></av-tutorial-create-todo-editor-2>
+
+<p>Before proceeding with the creation of our form, we require a component capable of managing user input, such as
+    filling in the todo name. Let's create this component. The input consists of a label and an input field with a
+    value. Additionally, it should emit an event whenever the input value changes.</p>
+
+<p>You can create a new <span class="cn">Input</span> inside the folder <span class="cn">components</span>.</p>
+
+<av-code language="typescript" filename="Demo/src/components/Input/Input.wcl.avt">
+    <pre>
+        export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            //#region props
+            /**
+             * Label &#102;or the input
+             */
+            @Property()
+            public label?: string;
+            /**
+             * Current value of the input
+             */
+            @Property((target: Input) =&gt; {
+                // When something change the td-input value property, we must update the input element value
+                target.inputEl.value = target.value;
+            })
+            public value: string = "";
+            //#endregion
+        &nbsp;
+            //#region variables
+            private _onChange: Aventus.Callback&lt;(value: string) =&gt; void&gt; = new Aventus.Callback();
+            /**
+             * A function trigger when the input value change
+             * Only trigger when a manual input change the vaue
+             */
+            public get onChange(): Aventus.Callback&lt;(value: string) =&gt; void&gt; {
+                return this._onChange;
+            }
+            /**
+             * A reference to the input element
+             */
+            @ViewElement()
+            protected inputEl!: HTMLInputElement;
+            //#endregion
+        &nbsp;
+            //#region methods
+            /**
+             * A function to emit refresh value and emit event when the value changed
+             */
+            protected updateValue() {
+                this.value = this.inputEl.value;
+                this.onChange.trigger([this.value]);
+            }
+            //#endregion
+        }
+    </pre>
+</av-code>
+<av-code language="css" filename="Demo/src/components/Input/Input.wcs.avt">
+    <pre>
+        :host {
+            background-color: var(--color-surface-mixed-600);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+            overflow: hidden;
+            width: 100%;
+        &nbsp;
+            label {
+                background-color: var(--color-surface-mixed-500);
+                padding: 5px 15px;
+                width: 100%;
+            }
+        &nbsp;
+            input {
+                background-color: transparent;
+                border: none;
+                box-shadow: none;
+                color: var(--font-color);
+                height: 100%;
+                margin: 0;
+                outline: none;
+                padding: 15px 25px;
+                width: 100%;
+            }
+        }
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="html" filename="Demo/src/components/Input/Input.wcv.avt">
+    <pre>
+        &lt;label &#102;or="input"&gt;&#123;&#123; this.label &#125;&#125;&lt;/label&gt;
+        &lt;input id="input" type="text" @element="inputEl" @input="updateValue"&gt;
+    </pre>
+</av-code>
+
+<p>By now, you should have a comprehensive understanding of each component within the provided source code. However,
+    we'll focus on two key aspects:</p>
+
+<ul>
+    <li><span class="cn">@ViewElement()</span>: This decorator marks a property as a reference to an element found
+        within the component's view. It establishes a connection between the view and the component's logic, enabling
+        seamless interaction between the two. <av-router-link state="/docs/wc/element">More info</av-router-link></li>
+    <li><span class="cn">onChange: Aventus.Callback<(value: string)=> void></span>: This property represents a callback
+        mechanism that facilitates subscription from external sources. It allows other parts of the application to
+        subscribe to value changes within the component. Additionally, it can be triggered, passing along a value of a
+        specified generic type, ensuring efficient communication between different components or modules within the
+        application. <av-router-link state="/docs/wc/event">More info</av-router-link></li>
+</ul>
+
+<p>We can now using this <span class="cn">Input</span> with a <span class="cn">@bind</span> to create a bidrectional
+    interaction between the name of the todo and the input.</p>
+
+<av-tutorial-create-todo-editor-3></av-tutorial-create-todo-editor-3>
+
+<p>When performing the following sequence of actions: navigating to the "Create todo" page, filling in the input field,
+    then navigating to the "Todo list" page, and finally returning to the "Create todo" page, you may observe that the
+    input field is cleared. This behavior is expected because a new todo is created each time you visit the "Create
+    todo" page.</p>
+
+<p>To mitigate the risk of data loss due to inadvertent actions, we can implement a confirmation prompt when the user
+    attempts to navigate to the "Todo list" page. This can be achieved by overriding the askChange method within the
+    TodoCreateState state and checking the value of todo name.</p>
+
+<av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">
+    <pre>
+        export class TodoCreateState extends Aventus.State implements Aventus.IState {
+            ...
+            /**
+            * This function is called when the state will change
+            */
+            public override async askChange(state: Aventus.State, nextState: Aventus.State): Promise&lt;boolean&gt; {
+                \if(this.newTodo?.name) {
+                    // ask the question
+                    return confirm("Changes are currently in progress. Are you sure you want to leave this page?")
+                }
+                // no change we can leave
+                return true;
+            }
+        }
+    </pre>
+</av-code>
+
+<p>Ultimately, we can enhance the functionality of the TodoCreatePage by introducing features to add tasks and save the todo within the RAM.</p>
+
+<av-tutorial-create-todo-editor-4></av-tutorial-create-todo-editor-4>

@@ -1,0 +1,104 @@
+<h1>List Todos</h1>
+
+<p>Our application is nearing completion, with the final step being to synchronize the <span class="cn">Todo</span> from
+    the <span class="cn">RAM</span> into the <span class="cn">TodoListPage</span>. To accomplish this, you'll need to
+    create a <span class="cn">Watch variable todos</span> within the page.</p>
+
+<av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt">
+    <pre>
+        import type { Todo } from "../../../../data/Todo.data.avt";
+        ...
+        export class TodoListPage extends GenericPage implements Aventus.DefaultComponent {
+            ...
+            //#region variables
+            @Watch()
+            public todos: Todo[] = [];
+            //#endregion
+            ...
+        }
+    </pre>
+</av-code>
+
+<p>We can enhance the view by incorporating a message display if no todos exist, or alternatively, iterate through the
+    todos to display them using the <span class="cn">TodoDisplay</span> component. In this instance, we'll utilize a
+    <span class="cn">for(i;length;i++)</span> loop to introduce the
+    final concept: <span class="cn">@Context</span>. With <span class="cn">@Context</span>, you can register a variable
+    for later use within your template.</p>
+
+<av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt">
+    <pre>
+        &lt;div class="card"&gt;
+            \if(this.todos.length == 0) {
+                &lt;p&gt;No todo&lt;/p&gt;
+            }
+            \else {
+                \for(let i = 0; i &lt; this.todos.length; i++) { 
+                    @Context('todo', this.todos[i])
+                    &lt;td-todo-display todo_id="\{{ todo.id }}"&gt;&lt;/td-todo-display&gt;
+                }
+            }
+        &lt;/div&gt;
+    </pre>
+</av-code>
+
+<p>Next, we can implement a function to bind the RAM event to the <span class="cn">TodoListPage</span>.</p>
+
+<av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt">
+    <pre>
+        import { TodoRAM } from "../../../../ram/Todo.ram.avt";
+        ...
+        export class TodoListPage extends GenericPage implements Aventus.DefaultComponent {
+            ...
+            protected async bindRAMData() {
+                // Load the todos from the RAM
+                this.todos = await TodoRAM.getInstance().getList();
+                // Callback when a new todo is created
+                TodoRAM.getInstance().onCreated((todo) =&gt; {
+                    this.todos.push(todo);
+                });
+                // Callback when a new todo is updated
+                TodoRAM.getInstance().onUpdated((todo) =&gt; {
+                    let index = this.todos.findIndex(t =&gt; t.id == todo.id);
+                    \if(index == -1) {
+                        this.todos.push(todo);
+                    }
+                    else {
+                        this.todos.splice(index, 1, todo);
+                    }
+                });
+                // Callback when a new todo is deleted
+                TodoRAM.getInstance().onDeleted((todo) =&gt; {
+                    let index = this.todos.findIndex(t =&gt; t.id == todo.id);
+                    this.todos.splice(index, 1);
+                });
+            }
+        &nbsp;
+            protected override postCreation(): void {
+                super.postCreation();
+                this.bindRAMData();
+            }
+            ...
+        }
+    </pre>
+</av-code>
+
+<p>Ultimately, we can eliminate the manual todo creation process implemented within the <span class="cn">TodoDisplay</span> component.</p>
+
+<av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">
+    <pre>
+        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            //#region methods
+            protected async loadData() {
+                const todo = await TodoRAM.getInstance().get(this.todo_id);
+                \if(todo) {
+                    this.todo = todo;
+                }
+                \else {
+                    this.remove();
+                }
+            }
+        }
+    </pre>
+</av-code>
+
+<av-tutorial-list-todo-editor-1></av-tutorial-list-todo-editor-1>

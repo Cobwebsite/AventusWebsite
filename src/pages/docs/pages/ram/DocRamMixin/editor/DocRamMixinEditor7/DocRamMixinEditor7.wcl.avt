@@ -1,0 +1,31 @@
+import { DocRamMixinEditor6 } from "../DocRamMixinEditor6/DocRamMixinEditor6.wcl.avt";
+
+export class DocRamMixinEditor7 extends DocRamMixinEditor6 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+		return 'ExampleRAM/src/Test.lib.avt'
+	}
+	//#endregion
+	
+}

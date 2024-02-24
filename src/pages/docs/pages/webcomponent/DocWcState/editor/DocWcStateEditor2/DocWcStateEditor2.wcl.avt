@@ -1,0 +1,32 @@
+import { DocWcStateEditor2Example } from "../../compiled/DocWcStateEditor2Example/DocWcStateEditor2Example.wcl.avt";
+import { DocWcStateEditor1 } from "../DocWcStateEditor1/DocWcStateEditor1.wcl.avt";
+
+export class DocWcStateEditor2 extends DocWcStateEditor1 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override defineResult(): HTMLElement | null {
+		return new DocWcStateEditor2Example();
+	}
+	//#endregion
+	
+}

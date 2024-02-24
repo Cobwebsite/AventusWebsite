@@ -1,0 +1,16 @@
+:host {
+	position: relative;
+    padding-top: 30px;
+	.square {
+		background-color: red;
+		height: 20px;
+		left: 0;
+		position: absolute;
+		top: 0;
+		width: 20px;
+	}
+
+    button {
+        margin: 5px;
+    }
+}

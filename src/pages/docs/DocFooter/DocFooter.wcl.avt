@@ -9,16 +9,16 @@ export class DocFooter extends Aventus.WebComponent implements Aventus.DefaultCo
 
     //#region props
     @Attribute()
-    public hide_previous: boolean;
+    public hide_previous!: boolean;
 
     @Attribute()
-    public hide_next: boolean;
+    public hide_next!: boolean;
     //#endregion
 
 
     //#region variables
-    private previousState: string;
-    private nextState: string;
+    private previousState?: string;
+    private nextState?: string;
     //#endregion
 
 
@@ -46,7 +46,7 @@ export class DocFooter extends Aventus.WebComponent implements Aventus.DefaultCo
     protected override postCreation(): void {
         let page = this.findParentByType(DocPage);
         if(page) {
-            let currentState =  Aventus.RouterStateManager.getInstance().getState().name;
+            let currentState =  Aventus.RouterStateManager.getInstance().getState()?.name ?? "";
             let info = page.getNextAndPrevious(currentState);
             if(!info.previous) {
                 this.hide_previous = true;

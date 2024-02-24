@@ -1,0 +1,32 @@
+import { DocWcStyleEditor4Example } from "../../compiled/DocWcStyleEditor4Example/DocWcStyleEditor4Example.wcl.avt";
+import { BaseEditor } from "../../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
+
+export class DocWcStyleEditor4 extends BaseEditor implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    public override defineResult(): HTMLElement | null {
+        return new DocWcStyleEditor4Example();
+    }
+    //#endregion
+
+}

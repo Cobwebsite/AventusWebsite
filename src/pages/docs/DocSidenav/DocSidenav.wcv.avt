@@ -31,7 +31,7 @@
         <div class="title" slot="header">ram</div>
         <ul>
             <li><av-router-link state="/docs/ram/create">Create</av-router-link></li>
-            <li><av-router-link state="/docs/ram/CRUD">CRUD operation</av-router-link></li>
+            <li><av-router-link state="/docs/ram/crud">CRUD operation</av-router-link></li>
             <li><av-router-link state="/docs/ram/listen_changes">Listen changes</av-router-link></li>
             <li><av-router-link state="/docs/ram/mixin">Extend data</av-router-link></li>
         </ul>
@@ -47,30 +47,22 @@
     </av-collapse>
 
     <av-collapse>
-        <div class="title" slot="header">socket</div>
-        <ul>
-            <li><av-router-link state="/docs/socket/create">Create</av-router-link></li>
-            <li><av-router-link state="/docs/socket/receive">Receive message</av-router-link></li>
-            <li><av-router-link state="/docs/socket/send">Send message</av-router-link></li>
-        </ul>
-    </av-collapse>
-
-    <av-collapse>
         <div class="title" slot="header">webcomponent</div>
         <ul>
             <li><av-router-link state="/docs/wc/create">Create</av-router-link></li>
+            <li><av-router-link state="/docs/wc/style">Style</av-router-link></li>
             <li><av-router-link state="/docs/wc/inheritance">Inhertiance</av-router-link></li>
             <li><av-router-link state="/docs/wc/attribute">Attribute</av-router-link></li>
             <li><av-router-link state="/docs/wc/property">Property</av-router-link></li>
             <li><av-router-link state="/docs/wc/watch">Watch</av-router-link></li>
-            <li><av-router-link state="/docs/wc/style">Style</av-router-link></li>
             <li><av-router-link state="/docs/wc/interpolation">Interpolation</av-router-link></li>
             <li><av-router-link state="/docs/wc/element">Select element</av-router-link></li>
             <li><av-router-link state="/docs/wc/injection">Injection</av-router-link></li>
-            <li><av-router-link state="/docs/wc/loop">Loop</av-router-link></li>
             <li><av-router-link state="/docs/wc/event">Event</av-router-link></li>
             <li><av-router-link state="/docs/wc/binding">Binding</av-router-link></li>
             <li><av-router-link state="/docs/wc/state">State</av-router-link></li>
+            <li><av-router-link state="/docs/wc/loop">Loop</av-router-link></li>
+            <li><av-router-link state="/docs/wc/condition">Condition</av-router-link></li>
         </ul>
     </av-collapse>
 

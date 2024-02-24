@@ -1,0 +1,15 @@
+<av-code language="typescript" filename="ExampleData/src/Test.lib.avt">
+    <pre>
+    import { Person } from "./Person.data.avt";
+    &nbsp;
+    export class Test {
+        public demo() {
+            console.log(Person.Fullname);
+            let p = new Person();
+            console.log(p.$type);
+            // $type and Fullname must be identical
+        }
+    }
+    </pre>
+</av-code>
+<slot></slot>

@@ -1,0 +1,35 @@
+import { DocWcEventEditor1Example } from "../../compiled/DocWcEventEditor1Example/DocWcEventEditor1Example.wcl.avt";
+import { BaseEditor } from "../../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
+
+export class DocWcEventEditor1 extends BaseEditor implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+	public override startupFile(): string {
+		return "Event/src/Example/Example.wcv.avt";
+	}
+    public override defineResult(): HTMLElement | null {
+        return new DocWcEventEditor1Example();
+    }
+    //#endregion
+
+}

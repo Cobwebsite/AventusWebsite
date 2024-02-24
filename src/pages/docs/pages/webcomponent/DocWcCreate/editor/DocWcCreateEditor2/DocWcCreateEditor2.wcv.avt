@@ -1,0 +1,102 @@
+<av-code-editor name="Component Example">
+    <av-code language="json" filename="ComponentExample/aventus.conf.avt">
+        <pre>
+            {
+                "module": "ComponentExample",
+                "componentPrefix": "av",
+                "build": [
+                    {
+                        "name": "Main",
+                        "src": [
+                            "./src/*"
+                        ],
+                        "compile": [
+                            {
+                                "output": "./dist/demo.js"
+                            }
+                        ]
+                    }
+                ],
+                "static": [{
+                    "name": "Static",
+                    "input": "./static/*",
+                    "output": "./dist/"
+                }]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="ComponentExample/src/Error/Error.wcl.avt">
+        <pre>
+            export class Error extends Aventus.Component implements Aventus.DefaultComponent {
+                &nbsp;
+                //#region static
+                &nbsp;
+                //#endregion
+                &nbsp;
+                &nbsp;
+                //#region props
+                &nbsp;
+                //#endregion
+                &nbsp;
+                &nbsp;
+                //#region variables
+                &nbsp;
+                //#endregion
+                &nbsp;
+                &nbsp;
+                //#region constructor
+                &nbsp;
+                //#endregion
+                &nbsp;
+                &nbsp;
+                //#region methods
+                &nbsp;
+                //#endregion
+                &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="html" filename="ComponentExample/src/Error/Error.wcv.avt">
+        <pre>
+            &lt;slot&gt; &lt;!-- The default content appends here --&gt;&lt;/slot&gt;
+            &lt;slot style="color:red" name="error"&gt;&lt;!-- The errors appends here --&gt;&lt;/slot&gt;
+            &lt;slot style="color:green" name="success"&gt;&lt;!-- The success appends here --&gt;&lt;/slot&gt;
+        </pre>
+    </av-code>
+    <av-code language="css" filename="ComponentExample/src/Error/Error.wcs.avt">
+        <pre>
+            :host {
+                
+            }
+        </pre>
+    </av-code>
+    <av-code language="html" filename="ComponentExample/static/index.html">
+        <pre>
+            &lt;!DOCTYPE html&gt;
+            &lt;html lang="en"&gt;
+            &lt;head&gt;
+                &lt;meta charset="UTF-8"&gt;
+                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+                &lt;title&gt;Aventus Demo&lt;/title&gt;
+                &lt;script src="/demo.js"&gt;&lt;/script&gt;
+            &lt;/head&gt;
+            &lt;body&gt;
+                &lt;av-error&gt;
+                    &lt;p&gt;I'm the default content&lt;/p&gt;
+                    &lt;p slot=""&gt;I'm the default content too&lt;/p&gt;
+                    &lt;p slot="error"&gt;I'm an error in red&lt;/p&gt;
+                    &lt;p slot="success"&gt;I'm a success in green&lt;/p&gt;
+                &lt;/av-error&gt;
+            &lt;/body&gt;
+            &lt;/html&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+
+    <av-doc-wc-create-editor-2-error slot="result">
+        <p>I'm the default content</p>
+        <p slot="">I'm the default content too</p>
+        <p slot="error">I'm an error in red</p>
+        <p slot="success">I'm a success in green</p>
+    </av-doc-wc-create-editor-2-error>
+</av-code-editor>

@@ -1,0 +1,10 @@
+<h1>Todos</h1>
+for(let todo of this.todos) { 
+    <div class="name">{{ todo.name }}</div>
+    <ul>
+        for(let task of todo.tasks) { 
+            <li>{{ task }}</li>
+        }
+    </ul>
+}
+<button @click="addTodo">Add</button>

@@ -1,0 +1,51 @@
+import { TutorialCreateTodoEditor3 } from "../TutorialCreateTodoEditor3/TutorialCreateTodoEditor3.wcl.avt";
+
+export class TutorialCreateTodoEditor4 extends TutorialCreateTodoEditor3 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+		return 'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt'
+	}
+	public override hightlightFiles(): string[] {
+		return [
+			'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt',
+			'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcs.avt',
+			'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt',
+			'Demo/src/states/TodoCreateState.state.avt',
+		]
+	}
+
+	public override open_folder(): string | string[] | undefined {
+		return [
+			'Demo/src/states'
+		]
+	}
+
+	public override defineResult(): HTMLElement | null {
+		let iframe = document.createElement("iframe");
+		iframe.src = "/tutorial/createtodo/step4/index.html"
+		return iframe
+	}
+	//#endregion
+	
+}

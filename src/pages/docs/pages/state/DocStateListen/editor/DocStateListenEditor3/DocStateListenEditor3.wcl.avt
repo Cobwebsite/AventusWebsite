@@ -1,0 +1,29 @@
+import { DocStateListenEditor2 } from "../DocStateListenEditor2/DocStateListenEditor2.wcl.avt";
+
+export class DocStateListenEditor3 extends DocStateListenEditor2 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	
+	//#endregion
+	
+}

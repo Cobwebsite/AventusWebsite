@@ -1,0 +1,36 @@
+import { DocWcLoopEditor1TodoList } from "../../compiled/DocWcLoopEditor1TodoList/DocWcLoopEditor1TodoList.wcl.avt";
+import { BaseEditor } from "../../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
+
+export class DocWcLoopEditor1 extends BaseEditor implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    public override defineResult(): HTMLElement | null {
+        return new DocWcLoopEditor1TodoList();
+    }
+
+    public override startupFile(): string {
+        return 'For/src/TodoList/TodoList.wcv.avt';
+    }
+    //#endregion
+
+}

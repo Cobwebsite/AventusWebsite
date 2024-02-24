@@ -1,5 +1,5 @@
 <h1>State - Create</h1>
-<p>In the section you are going to learn what is a state and how you can create it inside Aventus.</p>
+<p>In this section you are going to learn what is a state and how you can create it inside Aventus.</p>
 
 
 <h2>Definition</h2>
@@ -15,31 +15,4 @@
     <i>Aventus : Create...</i> and choose <i>State</i>. You must select between <span class="cn">State</span> or <span class="cn">Manager</span> and then
     inside the input you can enter the name for the class. This will create a basic class:
 </p>
-
-<av-code language="typescript" filename="Main.state.avt">
-    export class MainStateManager extends Aventus.StateManager {
-    &nbsp;
-    \t/**
-    \t* Get the instance of the StateManager
-    \t*/
-    \tpublic static getInstance() {
-    \t\treturn Aventus.Instance.get(MainStateManager);
-    \t}
-    &nbsp;
-    }
-</av-code>
-
-<av-code language="typescript" filename="CreateUser.state.avt">
-    export class CreateUser extends Aventus.State {
-    &nbsp;
-    \tpublic editingUser: User;
-    &nbsp;
-    \t/**
-    \t* @inheritdoc
-    \t*/
-    \tpublic override get name(): string {
-    \t\treturn "/user/create";
-    \t}
-    &nbsp;
-    }
-</av-code>
+<av-doc-state-create-editor-1></av-doc-state-create-editor-1>

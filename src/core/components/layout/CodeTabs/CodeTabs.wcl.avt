@@ -1,0 +1,82 @@
+import { AvCode } from "../Code/Code.wcl.avt";
+
+export class CodeTabs extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+    @Property((target: CodeTabs) => {
+        target.onTabSelected();
+    })
+    public tab: number = 0;
+    //#endregion
+
+
+    //#region variables
+
+    @ViewElement()
+    protected headerEl!: HTMLDivElement;
+    @ViewElement()
+    protected containerEl!: HTMLDivElement;
+
+    @Watch()
+    private tabs: {
+        code: AvCode,
+        name: string;
+    }[] = [];
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+
+    /**
+     * 
+     */
+    protected tabPress(e: Event, instance: Aventus.PressManager) {
+        let element = instance.getElement();
+        let parent = element.parentNode;
+        if(!parent) return;
+
+        let index = Array.from(parent.children).indexOf(element);
+        if(index == -1) return;
+
+        this.tab = index;
+    }
+    private onTabSelected() {
+        let children = Array.from(this.containerEl.children);
+        for(let child of children) {
+            child.parentNode?.removeChild(child);
+        }
+        if(this.tabs[this.tab]) {
+            this.containerEl.appendChild(this.tabs[this.tab].code);
+        }
+    }
+    protected override postCreation(): void {
+        let elements = this.getElementsInSlot();
+        let result: {
+            code: AvCode,
+            name: string;
+        }[] = [];
+        for(let element of elements) {
+            if(element instanceof AvCode && element.filename) {
+                result.push({
+                    name: element.filename,
+                    code: element
+                });
+                element.filename = undefined;
+            }
+        }
+        this.tabs = result;
+        this.onTabSelected();
+    }
+    //#endregion
+
+}

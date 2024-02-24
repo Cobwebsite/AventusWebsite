@@ -1,0 +1,21 @@
+<av-code language="typescript" filename="ExampleRAM/src/Test.lib.avt">
+    <pre>
+        import { PersonRAM } from "./Person.ram.avt";
+        import { Person } from "./Person.data.avt";
+        &nbsp;
+        export async function udpateFunctions() {
+            let person1: Aventus.RamItem&lt;Person&gt; | undefined = await PersonRAM.getInstance().get(1);
+            if(!person1) return;
+            let person2: Aventus.RamItem&lt;Person&gt; | undefined = await PersonRAM.getInstance().get(2);
+            if(!person2) return;
+            &nbsp;
+            person1.firstname = "John 2";
+            person2.firstname = "Jane 2";
+            const person: Aventus.RamItem&lt;Person&gt; | undefined = await PersonRAM.getInstance().update(person1);
+            const people: Aventus.RamItem&lt;Person&gt;[] = await PersonRAM.getInstance().updateList([person1, person2]);
+            &nbsp;
+            person1.update({firstname: "John 3"});
+        }
+    </pre>
+</av-code>
+<slot></slot>

@@ -1,7 +1,7 @@
 <h1>Installation</h1>
 <h2>Basic install</h2>
-<p>Aventus is actually only available as a vscode extension. You can download it directly inside the vscode extensions
-    tab by searching "Aventus" in the marketplace. Nothing else is required because everythink is wrapped inside the
+<p>Aventus is actually only available as a <a target="_blank" href="https://marketplace.visualstudio.com/items?itemName=Cobwebsite.aventus" rel="noopener noreferrer">vscode extension</a>. You can download it directly inside the vscode extensions
+    tab by searching "Aventus" in the marketplace. Nothing else is required because everything is wrapped inside the
     extension.
 </p>
 

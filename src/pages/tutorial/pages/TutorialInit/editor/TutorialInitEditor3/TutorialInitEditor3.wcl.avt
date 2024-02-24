@@ -1,0 +1,50 @@
+import { BaseEditor } from "../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
+
+export class TutorialInitEditor3 extends BaseEditor implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    public override startupFile(): string {
+        return 'Demo/aventus.conf.avt';
+    }
+
+    public override open_folder(): string | string[] | undefined {
+        return [
+            "Demo/src"
+        ];
+    }
+
+    public override hightlightFiles(): string[] {
+        return [
+            'Demo/aventus.conf.avt',
+			"Demo/src/apps",
+			"Demo/src/states",
+        ];
+    }
+
+
+    protected override postCreation(): void {
+        super.postCreation();
+    }
+    //#endregion
+
+}

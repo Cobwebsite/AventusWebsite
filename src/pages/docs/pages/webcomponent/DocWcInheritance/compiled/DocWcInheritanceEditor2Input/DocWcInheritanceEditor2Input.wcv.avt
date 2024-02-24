@@ -1,0 +1,3 @@
+
+<!-- this will replace the parent slot -->
+<input @input="triggerChange" @element="inputEl"/>

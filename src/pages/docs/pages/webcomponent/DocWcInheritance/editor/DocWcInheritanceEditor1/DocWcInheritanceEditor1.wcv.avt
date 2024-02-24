@@ -1,0 +1,120 @@
+<av-code-editor name="Inheritance">
+    <av-code language="json" filename="Inheritance/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "Inheritance",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [
+            				{
+            					"output": "./dist/demo.js"
+            				}
+            			]
+            		}
+            	],
+            	"static": [{
+            		"name": "Static",
+            		"input": "./static/*",
+            		"output": "./dist/"
+            	}]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Inheritance/src/Fillable/Fillable.wcl.avt">
+        <pre>
+            export abstract class Fillable&lt;T&gt; extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+                @Property()
+                public label?: string; // you can use ctrl+k ctrl+numpad2 to generate the label property
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+                @Watch((target: Fillable&lt;T&gt;, action: Aventus.WatchAction, path: string, value: any) =&gt; {
+                    target.onValueChange();
+                })
+                public value?: T; // you can use ctrl+k ctrl+numpad3 to generate the value property
+            &nbsp;
+                @ViewElement()
+                protected debugEl!: HTMLDivElement;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region events
+                /**
+                 * This is the event fired when the input value changed
+                 * Aventus.Callback create a variable that you can trigger and subscribe
+                 */
+                public onChange: Aventus.Callback&lt;(value?: T) =&gt; void&gt; = new Aventus.Callback();
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+                /**
+                 * This function is fired when the value changed
+                 * Use it to update your view
+                 */
+                protected abstract onValueChange(): void;
+            &nbsp;
+                protected override postCreation(): void {
+            		// print the new value
+                    this.onChange.add(() =&gt; {
+                        const line = document.createElement("DIV");
+                        line.innerHTML = this.value + "";
+                        this.debugEl.appendChild(line);
+                    });
+                }
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="Inheritance/src/Fillable/Fillable.wcs.avt">
+        <pre>
+            :host {
+            	
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Inheritance/src/Fillable/Fillable.wcv.avt">
+        <pre>
+            &lt;label&gt;&#123;&#123; this.label &#125;&#125;&lt;/label&gt;
+            &lt;slot&gt;&lt;/slot&gt;
+            &nbsp;
+            &lt;div @element="debugEl"&gt;&lt;/div&gt;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Inheritance/static/index.html">
+        <pre>
+            &lt;!DOCTYPE html&gt;
+            &lt;html lang="en"&gt;
+            &lt;head&gt;
+                &lt;meta charset="UTF-8"&gt;
+                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+                &lt;title&gt;Inheritance&lt;/title&gt;
+                &lt;script src="/demo.js"&gt;&lt;/script&gt;
+            &lt;/head&gt;
+            &lt;body&gt;
+            &lt;/body&gt;
+            &lt;/html&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

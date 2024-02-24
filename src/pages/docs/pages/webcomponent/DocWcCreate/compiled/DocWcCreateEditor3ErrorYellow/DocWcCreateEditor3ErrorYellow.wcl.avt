@@ -1,0 +1,29 @@
+import { DocWcCreateEditor2Error } from "../DocWcCreateEditor2Error/DocWcCreateEditor2Error.wcl.avt";
+
+export class DocWcCreateEditor3ErrorYellow extends DocWcCreateEditor2Error implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	
+	//#endregion
+	
+}

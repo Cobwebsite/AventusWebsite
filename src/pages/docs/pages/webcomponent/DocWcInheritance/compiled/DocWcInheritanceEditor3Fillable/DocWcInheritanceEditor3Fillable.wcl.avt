@@ -1,0 +1,56 @@
+export abstract class DocWcInheritanceEditor3Fillable<T> extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+//#region static
+
+//#endregion
+
+
+//#region props
+@Property()
+public label?: string; // you can use ctrl+k ctrl+numpad2 to generate the label property
+//#endregion
+
+
+//#region variables
+@Watch((target: DocWcInheritanceEditor3Fillable<T>, action: Aventus.WatchAction, path: string, value: any) => {
+	target.onValueChange();
+})
+public value?: T; // you can use ctrl+k ctrl+numpad3 to generate the value property
+
+@ViewElement()
+protected debugEl!: HTMLDivElement;
+//#endregion
+
+
+//#region constructor
+
+//#endregion
+
+
+//#region events
+/**
+ * This is the event fired when the input value changed
+ * Aventus.Callback create a variable that you can trigger and subscribe
+ */
+public onChange: Aventus.Callback<(value?: T) => void> = new Aventus.Callback();
+//#endregion
+
+
+//#region methods
+/**
+ * This function is fired when the value changed
+ * Use it to update your view
+ */
+protected abstract onValueChange(): void;
+
+protected override postCreation(): void {
+	// print the new value
+	this.onChange.add(() => {
+		const line = document.createElement("DIV");
+		line.innerHTML = this.value + "";
+		this.debugEl.appendChild(line);
+	});
+}
+//#endregion
+
+}

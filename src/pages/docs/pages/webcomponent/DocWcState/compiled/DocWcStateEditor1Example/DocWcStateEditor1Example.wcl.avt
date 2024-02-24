@@ -1,0 +1,60 @@
+import { DocWcStateEditor1StateManager } from "../DocWcStateEditor1.state.avt";
+
+export class DocWcStateEditor1Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	@ViewElement()
+    protected debugEl!: HTMLDivElement;
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	@StateActive("/state1", DocWcStateEditor1StateManager)
+    protected onStateActive(state: Aventus.State, slugs: Aventus.StateSlug) {
+        this.writeLog("/state1 on");
+    }
+
+    @StateInactive("/state1", DocWcStateEditor1StateManager.getInstance())
+    protected onStateInactive(state: Aventus.State, nextState: Aventus.State, slugs: Aventus.StateSlug) {
+        this.writeLog("/state1 off");
+    }
+
+    @StateChange("/state1", DocWcStateEditor1StateManager)
+    protected async onAskChange(state: Aventus.State, nextState: Aventus.State, slugs: Aventus.StateSlug) {
+        return confirm("set state1 off?");
+    }
+
+    protected writeLog(txt: string) {
+        const div = document.createElement("DIV");
+        div.innerHTML = txt;
+        this.debugEl.appendChild(div);
+    }
+
+
+    protected toggleState() {
+        let mainState = DocWcStateEditor1StateManager.getInstance();
+        if(mainState.getState()?.name == "/state1") {
+            mainState.setState("/");
+        }
+        else {
+            mainState.setState("/state1");
+        }
+    }
+	//#endregion
+	
+}

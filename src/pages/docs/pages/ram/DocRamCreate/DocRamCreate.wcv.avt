@@ -1,5 +1,5 @@
 <h1>RAM - Create</h1>
-<p>In the section you are going to learn what is a RAM and how you can create it inside Aventus.</p>
+<p>In this section you are going to learn what is a RAM and how you can create it inside Aventus.</p>
 
 
 <h2>Definition</h2>
@@ -12,89 +12,14 @@
 <p>Inside Aventus you can create RAM by right clicking on the explorer part inside vscode, choose <i>Aventus
         : Create...</i> and choose <i>RAM</i>. Inside the input you can enter the name of the class for which you create
     a store (ex: Person will create a PersonRAM class). This will create a basic RAM class:</p>
-<av-code language="typescript" filename="Person.ram.avt">
-    export class PersonRAM extends Aventus.Ram&lt;Person&gt; implements Aventus.IRam {
-
-    \t/**
-    \t* Create a singleton to store data
-    \t*/
-    \tpublic static getInstance() {
-    \t\treturn Aventus.Instance.get(PersonRAM);
-    \t}
-
-    \t/**
-    \t* @inheritdoc
-    \t*/
-    \tpublic override defineIndexKey(): keyof Person {
-    \t\treturn 'id';
-    \t}
-    \t/**
-    \t* @inheritdoc
-    \t*/
-    \tprotected override getTypeForData(objJson: Aventus.KeysObject&lt;Person&gt; | Person): new () =&gt; Person {
-    \t\treturn Person;
-    \t}
-
-    }
-</av-code>
+<av-doc-ram-create-editor-1></av-doc-ram-create-editor-1>
 <p>By default, the Aventus.RAM store data by index that must be a <span class="cn">number</span>. The method <span class="cn">defineIndexKey</span> ask
     you to define which key of your object is the primary key to index data. For example if you want to get a data
     inside your RAM you must provide a number that is egal to the index key defined. With the previous example, the code
     <span class="cn">PersonRAM.getInstance().get(1)</span> will check if the storage contains a Person where id is egal to 1.</p>
 <p>If you need another kind of index key, you can extend <span class="cn">Aventus.GenericRam</span> instead of Aventus.Ram</p>
-<av-code language="typescript" filename="Person.ram.avt">
-    export class PersonRAM extends Aventus.GenericRam&lt;string, Person&gt; implements Aventus.IRam {
-    \t...
-    }
-</av-code>
+<av-doc-ram-create-editor-2></av-doc-ram-create-editor-2>
 <p>The <span class="cn">getTypeForData</span> method allows you to define which object must be instanciated for a specific data. This
     isn't usefull when you work with concrete classes but if you have abstract classes or interfaces, you have to define
     which child must be stored inside RAM.</p>
-<av-code language="typescript" filename="Shape.ram.avt">
-    export class ShapeRAM extends Aventus.Ram&lt;Shape&gt; implements Aventus.IRam {
-    \t...
-    \t&nbsp;
-    \tprotected override getTypeForData(objJson: Aventus.KeysObject&lt;Shape&gt; | Shape): new () =&gt; Shape {
-    \t\tif(objJson.type == "circle"){
-    \t\t\treturn Circle;
-    \t\t}
-    \t\treturn OtherShape;
-    \t}
-
-    }
-</av-code>
-<p>The type <span class="cn">Aventus.KeysObject&lt;T&gt;</span> return all class T information without being a T instance. This prevents
-    using <span class="cn">instanceof</span> T.</p>
-<av-code language="typescript" filename="Person.data.avt">
-    export class Person extends Aventus.Data implements Aventus.IData {
-    \tpublic id: number = 0; // This is ok
-    \tpublic firstname: string; // This will trigger an error
-    \tpublic lastname: string = null; // This is ok
-    }
-</av-code>
-<av-code language="typescript" filename="Test.lib.avt">
-    export function test(p: Aventus.KeysObject&lt;Person&gt;) {
-        // p instanceof Person =&gt; false
-        p.fistname = "John";
-    }
-</av-code>
-<p>Aventus provide an other RAM type to perform CRUD opertations through websocket. You must extend <span class="cn">Aventus.RamWs</span>
-    or <span class="cn">Aventus.GenericRamWs</span> and define the socket to use and the base route of the socket. More informations on
-    the <av-router-link state="/docs/socket/create">socket section</av-router-link>.</p>
-<av-code language="typescript" filename="Person.ram.avt">
-    export class PersonRAM extends Aventus.RamWs&lt;Person&gt; implements Aventus.IRam {
-    \t...
-    \t/**
-    \t* @inheritdoc
-    \t*/
-    \tprotected override getWebSocket(): Aventus.Socket {
-    \t\treturn Aventus.Socket.getInstance();
-    \t}
-    \t/**
-    \t* @inheritdoc
-    \t*/
-    \tprotected override getWebSocketRoute(): string {
-    \t\treturn "/person";
-    \t}
-    }
-</av-code>
+<av-doc-ram-create-editor-3></av-doc-ram-create-editor-3>

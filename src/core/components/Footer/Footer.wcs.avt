@@ -3,10 +3,12 @@
 	display: block;
 	height: 50px;
 	width: 100%;
+	// position: fixed;
+	// bottom: 0;
 
 	.container {
 		align-items: center;
-		color: var(--secondary-color);
+		color: var(--primary-font-color);
 		display: flex;
 		height: 100%;
 		justify-content: space-between;

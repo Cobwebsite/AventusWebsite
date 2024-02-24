@@ -1,0 +1,173 @@
+@import '@root/_variables.gs.avt';
+
+:host {
+	--_code-editor-menu-width: var(--code-editor-menu-width, 250px);
+}
+
+:host {
+	--code-padding: 0;
+	background-color: #1e1e1e;
+	border-radius: 5px;
+	box-shadow: var(--elevation-3);
+	color: white;
+	display: flex;
+	flex-direction: column;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	margin-bottom: 15px;
+	overflow: hidden;
+	width: 100%;
+
+
+	.header {
+		align-items: center;
+		border-bottom: 1px solid #414141;
+		display: flex;
+		flex-shrink: 0;
+		height: 50px;
+		justify-content: center;
+		padding: 10px;
+		position: relative;
+		width: 100%;
+
+		mi-icon.menu-icon {
+			cursor: pointer;
+			display: none;
+			left: 10px;
+			position: absolute;
+			transition: background-color 0.5s var(--bezier-curve);
+		}
+
+		mi-icon.download {
+			cursor: pointer;
+			position: absolute;
+			right: 10px;
+			transition: background-color 0.5s var(--bezier-curve);
+		}
+
+		mi-icon.menu-icon:hover,
+		mi-icon.download:hover {
+			background-color: rgba(255, 255, 255, 0.1);
+		}
+
+		span {
+			display: block;
+			padding: 0 50px;
+			text-align: center;
+			width: 100%;
+		}
+	}
+
+	.content {
+		display: flex;
+		flex-grow: 1;
+		height: calc(100% - 50px);
+		max-height: 550px;
+		min-height: 300px;
+		padding: 0 10px;
+		position: relative;
+
+		.menu {
+			flex-shrink: 0;
+			height: 100%;
+			min-width: 20px;
+			min-width: 20px;
+			padding-bottom: 10px;
+			width: var(--_code-editor-menu-width);
+		}
+
+		.separator {
+			cursor: col-resize;
+			flex-grow: 0;
+			flex-shrink: 0;
+			inset: 0;
+			position: relative;
+			width: 5px;
+
+			&::after {
+				background-color: #414141;
+				bottom: 0;
+				content: "";
+				left: 2px;
+				position: absolute;
+				top: 0;
+				width: 1px;
+			}
+		}
+
+		.display {
+			--scrollbar-content-padding: 5px 15px;
+			height: 100%;
+			/* border-left: 1px solid #414141;*/
+			padding-bottom: 10px;
+			width: 100%;
+			av-code {
+				box-shadow: none;
+			}
+		}
+	}
+
+	.result {
+		/* background-color: var(--secondary-color);*/
+		border: 1px solid #1e1e1e;
+		border-top: 1px solid #414141;
+		display: none;
+		padding: 15px;
+
+		.title {
+			/* text-align: center;*/
+			margin-bottom: 15px;
+		}
+	}
+
+	.hidden {
+		display: none;
+	}
+}
+
+:host([has_result]) {
+	.result {
+		display: block;
+	}
+}
+
+@include mobile {
+	:host {
+		.header {
+			mi-icon.menu-icon {
+				display: inline-block;
+			}
+		}
+
+		.content {
+			.menu {
+				background-color: #1e1e1e;
+				border-right: 1px solid #414141;
+				left: 0;
+				position: absolute;
+				top: 0;
+				transform: translate(-100%);
+				transition: transform 0.4s var(--bezier-curve);
+				width: 250px !important;
+				z-index: 20;
+			}
+
+			.separator {
+				display: none;
+			}
+		}
+	}
+
+	:host([show_menu]) {
+		.header {
+			mi-icon.menu-icon {
+				background-color: rgba(255, 255, 255, 0.1);
+			}
+		}
+
+		.content {
+			.menu {
+				transform: translate(0);
+			}
+		}
+	}
+}

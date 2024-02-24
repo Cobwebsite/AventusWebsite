@@ -1,0 +1,57 @@
+<av-code-editor name="Example RAM">
+    <av-code language="json" filename="ExampleRAM/aventus.conf.avt">
+        <pre>
+            {
+                "module": "ExampleRAM",
+                "build": [
+                    {
+                        "name": "Main",
+                        "src": [
+                            "./src/*"
+                        ]
+                    }
+                ]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="ExampleRAM/src/Person.data.avt">
+        <pre>
+            export class Person extends Aventus.Data implements Aventus.IData {
+                public id: number = 0;
+                public firstname!: string;
+                public lastname!: string;
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="ExampleRAM/src/Person.ram.avt">
+        <pre>
+            import { Person } from "./Person.data.avt";
+            &nbsp;
+            export class PersonRAM extends Aventus.Ram&lt;Person&gt; implements Aventus.IRam {
+                &nbsp;
+                /**
+                * Create a singleton to store data
+                */
+                public static getInstance() {
+                    return Aventus.Instance.get(PersonRAM);
+                }
+                &nbsp;
+                /**
+                * @inheritdoc
+                */
+                public override defineIndexKey(): keyof Person {
+                    return 'id';
+                }
+                &nbsp;
+                /**
+                * @inheritdoc
+                */
+                protected override getTypeForData(objJson: Aventus.KeysObject&lt;Person&gt; | Person): new () => Person {
+                    return Person;
+                }
+                &nbsp;
+            }
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

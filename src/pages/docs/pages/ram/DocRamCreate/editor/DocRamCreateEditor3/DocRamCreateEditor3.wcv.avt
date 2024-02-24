@@ -1,0 +1,65 @@
+<av-code-editor name="Example RAM">
+    <av-code language="json" filename="ExampleRAM/aventus.conf.avt">
+        <pre>
+            {
+                "module": "ExampleRAM",
+                "build": [
+                    {
+                        "name": "Main",
+                        "src": [
+                            "./src/*"
+                        ]
+                    }
+                ]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="ExampleRAM/src/Shape.data.avt">
+        <pre>
+            export abstract class Shape extends Aventus.Data implements Aventus.IData {
+                public id: number = 0;
+            }
+            &nbsp;
+            export class Square extends Shape implements Aventus.IData {
+                &nbsp;
+            }
+            export class Triangle extends Shape implements Aventus.IData {
+                &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="ExampleRAM/src/Shape.ram.avt">
+        <pre>
+            import { Square, type Shape, Triangle } from "./Shape.data.avt";
+            &nbsp;
+            export class ShapeRAM extends Aventus.Ram&lt;Shape&gt; implements Aventus.IRam {
+                &nbsp;
+                /**
+                * Create a singleton to store data
+                */
+                public static getInstance() {
+                    return Aventus.Instance.get(ShapeRAM);
+                }
+                &nbsp;
+                /**
+                * @inheritdoc
+                */
+                public override defineIndexKey(): keyof Shape {
+                    return 'id';
+                }
+                &nbsp;
+                /**
+                * @inheritdoc
+                */
+                protected override getTypeForData(objJson: Aventus.KeysObject&lt;Shape&gt; | Shape): new () => Shape {
+                    if(objJson.$type == Square.Fullname) return Square;
+                    if(objJson.$type == Triangle.Fullname) return Triangle;
+                    &nbsp;
+                    throw 'Impossible'
+                }
+                &nbsp;
+            }
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

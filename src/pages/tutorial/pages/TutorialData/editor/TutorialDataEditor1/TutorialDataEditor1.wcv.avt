@@ -1,0 +1,27 @@
+
+<av-code language="typescript" filename="Demo/src/data/Task.data.avt">
+    <pre>
+        /**
+         * A task represents what you have to do to complete the Todo
+         */
+        export class Task extends Aventus.Data implements Aventus.IData {
+            public id: number = 0;
+            public description: string = "";
+        }
+    </pre>
+</av-code>
+<av-code language="typescript" filename="Demo/src/data/Todo.data.avt">
+    <pre>
+        import type { Task } from "./Task.data.avt";
+        &nbsp;
+        /**
+         * Represent a todo
+         */
+        export class Todo extends Aventus.Data implements Aventus.IData {
+            public id: number = 0;
+            public name: string = "";
+            public tasks: Task[] = [];
+        }
+    </pre>
+</av-code>
+<slot></slot>

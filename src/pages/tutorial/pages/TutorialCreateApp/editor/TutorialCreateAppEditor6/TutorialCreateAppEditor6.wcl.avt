@@ -1,0 +1,56 @@
+import { TutorialCreateAppEditor5 } from "../TutorialCreateAppEditor5/TutorialCreateAppEditor5.wcl.avt";
+
+export class TutorialCreateAppEditor6 extends TutorialCreateAppEditor5 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+		return 'Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcl.avt'
+	}
+	public override hightlightFiles(): string[] {
+		return [
+			'Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcl.avt',
+			'Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcs.avt',
+			'Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcv.avt',
+			'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt',
+			'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcs.avt',
+			'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt',
+			'Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt',
+			'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoListPage.wcs.avt',
+			'Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt',
+		]
+	}
+	public override open_folder(): string | string[] | undefined {
+		return [
+			'Demo/src/apps/MainApp/pages/GenericPage',
+			'Demo/src/apps/MainApp/pages/TodoCreatePage',
+			'Demo/src/apps/MainApp/pages/TodoListPage',
+		]
+	}
+	public override defineResult(): HTMLElement | null {
+		let iframe = document.createElement("iframe");
+		iframe.src = "/tutorial/createapp/step5/index.html"
+		return iframe
+	}
+	//#endregion
+	
+}

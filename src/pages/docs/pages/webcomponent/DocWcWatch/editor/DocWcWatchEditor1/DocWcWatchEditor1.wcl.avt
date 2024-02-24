@@ -1,0 +1,32 @@
+import { DocWcWatchEditor1Example } from "../../compiled/DocWcWatchEditor1Example/DocWcWatchEditor1Example.wcl.avt";
+import { BaseEditor } from "../../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
+
+export class DocWcWatchEditor1 extends BaseEditor implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override defineResult(): HTMLElement | null {
+		return new DocWcWatchEditor1Example();
+	}
+	//#endregion
+	
+}

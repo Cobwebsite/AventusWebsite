@@ -1,0 +1,11 @@
+<div class="name">
+    if(this.icon) {
+        <av-img src="{{ this.icon }}"></av-img>
+    }
+    else {
+        <mi-icon icon="description" class="icon"></mi-icon>
+    }
+    <span>
+        {{ this.name }}
+    </span>
+</div>

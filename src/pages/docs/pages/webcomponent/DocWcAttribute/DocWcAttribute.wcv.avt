@@ -1,5 +1,5 @@
 <h1>Webcomponent - Attribute</h1>
-<p>In the section you are going to learn what is an attribute on a webcomponent and how you can create it inside
+<p>In this section you are going to learn what is an attribute on a webcomponent and how you can create it inside
     Aventus.</p>
 
 <h2>Implementation</h2>
@@ -24,7 +24,7 @@
     \t//#region props
     \t/** Define if the element is active or not */
     \t@Attribute()
-    \tpublic active: boolean;
+    \tpublic active!: boolean;
     \t//#endregion
     &nbsp;
     \t//#region variables
@@ -72,6 +72,9 @@
     }
 </av-code>
 
+<av-doc-wc-attribute-editor-1></av-doc-wc-attribute-editor-1>
+
 <h2>Quick use</h2>
 <p>When you are editing a <span class="cn">*.wcl.avt</span>, you can right click where you want to create an attribute
     and select the option <i>Aventus: create attribute</i>. You must follow the instruction to get an attribute working.</p>
+<p>You can also use the shortcut <span class="cn">Ctrl + k Ctrl + numpad1</span>.</p>

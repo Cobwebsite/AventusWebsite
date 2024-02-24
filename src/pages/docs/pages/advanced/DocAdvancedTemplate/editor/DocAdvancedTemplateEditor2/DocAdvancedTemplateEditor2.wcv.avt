@@ -1,0 +1,16 @@
+<av-code language="json" filename="Template/.aventus/templates/TailwindComponent/template.avt">
+    <pre>
+        {
+            "name": "Tailwind Component",
+            "description": "Create a tailwind component",
+            "version": "1.0.0",
+            "variables": {
+                "componentName": {
+                    "question": "Provide a name \for your component",
+                    "type": "input"
+                }
+            }
+        }
+    </pre>
+</av-code>
+<slot></slot>

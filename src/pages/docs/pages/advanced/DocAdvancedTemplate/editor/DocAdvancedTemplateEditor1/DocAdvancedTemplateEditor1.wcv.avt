@@ -1,0 +1,70 @@
+<av-code-editor name="Template">
+    <av-code language="json" filename="Template/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "Tailwind",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [{
+            				"output": "./dist/Tailwind.js"
+            			}]
+            		}
+            	],
+                "aliases": {
+                    "@":"./src" // using alias to always have the right root folder
+                }
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Template/src/Tailwind/Tailwind.wcl.avt">
+        <pre>
+            /**
+             * This class is the root \for all components using tailwind
+             */
+            export class Tailwind extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+            &nbsp;
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="Template/src/Tailwind/Tailwind.wcs.avt">
+        <pre>
+            :host {}
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Template/src/Tailwind/Tailwind.wcv.avt">
+        <pre>
+            &lt;slot&gt;&lt;/slot&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

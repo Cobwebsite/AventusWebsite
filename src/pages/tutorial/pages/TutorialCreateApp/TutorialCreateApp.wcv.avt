@@ -1,43 +1,223 @@
 <h1>Create app</h1>
-<p>To simplify application management, for this example we will create a new <span class="cn">App</span> webcomponent that will be the application entry point. Over the folder <span class="cn">components</span> you can right click and select <span class="cn">Aventus : Create...</span>.</p>
 
-<av-img src="/img/tuto/app/create.png"></av-img>
+<h2>MainApp</h2>
 
-<p>Then you can select <span class="cn">Component</span></p>
-<av-img src="/img/tuto/app/component.png"></av-img>
+<p>In web development, particularly in modern single-page applications (SPAs), structuring your codebase efficiently is
+    crucial for maintainability and scalability. One common practice is to designate a central file to serve as the main
+    entry point for your application. Here's why it's essential:
+</p>
+<ul>
+    <li><span class="cn">Central Entry Point</span>: the central file acts as the main entry point, initializing your
+        Aventus application and
+        providing a centralized location for crucial configurations.</li>
+    <li><span class="cn">Navigation Management</span>: With this file, you can define routes and manage navigation
+        within your application. This
+        ensures smooth transitions between different views or pages without full page reloads, enhancing user
+        experience.</li>
+    <li><span class="cn">Initialization Hub</span>: It's responsible for bootstrapping your application, initializing
+        services, and configuring
+        Aventus-specific features. This ensures your application starts reliably and consistently.</li>
+</ul>
+<p>To create this central file :</p>
+<ul>
+    <li>
+        Over the folder <span class="cn">apps</span> you can right click and select <span class="cn">Aventus : Create...</span>.
+    </li>
+    <li>You can select <span class="cn">Component</span></li>
+    <li>You can fill the input with <span class="cn">MainApp</span></li>
+    <li>You can select <span class="cn">Multiple</span></li>
+</ul>
 
-<p>Fill the component name with <span class="cn">App</span></p>
-<av-img src="/img/tuto/app/name.png"></av-img>
+<p>Well done! You created your first component. Because the component name is <span class="cn">MainApp</span> and we set
+    the <span class="cn">"componentPrefix": "td"</span> inside the configuration, the component tag is <span
+        class="cn">td-main-app</span></p>
+<av-tutorial-create-app-editor-1></av-tutorial-create-app-editor-1>
 
-<p>Select single file.</p>
-<av-img src="/img/tuto/app/single.png"></av-img>
+<p>To display something on our page you must :</p>
+<ul>
+    <li>Update your <span class="cn">index.html</span> to set <span
+            class="cn">&lt;td-main-app&gt;&lt;/td-main-app&gt;</span></li>
+    <li>Update your <span class="cn">MainApp.wcv.avt</span> to replace <span class="cn">&lt;slot&gt;&lt;/slot&gt;</span>
+        by <span class="cn">&lt;h1&gt;Hello
+            world&lt;/h1&gt;</span></li>
+</ul>
+<av-tutorial-create-app-editor-2></av-tutorial-create-app-editor-2>
 
-<p>A new file is created named <span class="cn">App.wc.avt</span>. This file will generate a webcomponent with the tag <span class="cn">&lt;td-app&gt;</span>. Inside this tag you can replace the content of the <span class="cn">&lt;slot&gt;&lt;/slot&gt;</span> with <span class="cn">&lt;h1&gt;Todo&lt;/h1&gt;</span></p>
+<p>To implement navigation, you can change the content of your <span class="cn">MainApp component</span> to extends
+    <span class="cn">Aventus.Navigation.Router</span>
+</p>
+<av-tutorial-create-app-editor-3></av-tutorial-create-app-editor-3>
 
-<av-img src="/img/tuto/app/view.png"></av-img>
+<h2>Pages</h2>
 
-<p>Now we can replace <span class="cn">&lt;h1&gt;Todo&lt;/h1&gt;</span> inside the <span class="cn">index.html</span> by <span class="cn">&lt;td-app&gt;&lt;/td-app&gt;</span></p>
+<p>Now you have a router defined but without route and page. You can create a new folder <span class="cn">pages</span>
+    and two new components <span class="cn">TodoListPage</span> and <span class="cn">TodoCreatePage</span>. To use the
+    pages inside the router, the component must extends <span class="cn">Aventus.Navigation.Page</span>.</p>
+<av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt">
+    <pre>
+            /**
+             * The page to list all todos
+             */
+            export class TodoListPage extends Aventus.Navigation.Page implements Aventus.DefaultComponent {
+                ...
+            }
+        </pre>
+</av-code>
+<p>Then you can edit the content of your <span class="cn">TodoListPage</span> to write a page title.</p>
 
-
-<av-code language="html" filename="index.html">
-    &lt;!DOCTYPE html&gt;
-    &lt;html lang="en"&gt;
-    &nbsp;
-    \t&lt;head&gt;
-    \t\t&lt;meta charset="UTF-8"&gt;
-    \t\t&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
-    \t\t&lt;title&gt;Todo demo&lt;/title&gt;
-    \t\t&lt;script src="/todo.js"&gt;&lt;/script&gt;
-    \t&lt;/head&gt;
-    &nbsp;
-    \t&lt;body&gt;
-    \t\t&lt;td-app&gt;&lt;/td-app&gt;
-    \t&lt;/body&gt;
-    &nbsp;
-    &lt;/html&gt;
+<av-code language="css" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcs.avt">
+    <pre>
+        :host {
+            .page-title {
+                height: 50px;
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 30px;
+                margin: 30px 0;
+            }
+        }
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt">
+    <pre>
+        &lt;div class="page-title"&gt;List todos&lt;/div&gt;
+    </pre>
 </av-code>
 
-<p>You can reload the page in your browser and open the <span class="cn">dev tools</span>. The html should be like this.</p>
-<av-img src="/img/tuto/app/console.png"></av-img>
+<p>Finally you can define routes inside your MainApp to display the pages.</p>
 
-<p>You can notice that the tag <span class="cn">td-app</span> contains a <span class="cn"><a href="https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot" target="_blank" >shadowroot</a></span> that contains a <span class="cn">&lt;h1&gt;</span></p>
+<av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">
+    <pre>
+        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
+            ...
+            protected override defineRoutes(): void {
+                // define the routing here
+                this.addRoute("/", TodoListPage);
+                this.addRoute("/create", TodoCreatePage);
+            }
+            ...
+        }
+    </pre>
+</av-code>
+
+<p>The current result is the following :</p>
+<av-tutorial-create-app-editor-4></av-tutorial-create-app-editor-4>
+
+<h2>Navigation</h2>
+<p>Now, you can add navigation menu so that you will be able to navigate between creation and list.</p>
+<p>Inside the <span class="cn">MainApp.wcv.avt</span> you can write the code below the add nav item and style it :</p>
+<av-code language="html" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">
+    <pre>
+        &lt;!-- The router has a slot name "before": we use it to define the sidenav --&gt;
+        &lt;block name="before"&gt;
+            &lt;div class="nav"&gt;
+                &lt;av-router-link class="nav-item" state="/"&gt;
+                    &lt;span class="name"&gt;Todo list&lt;/span&gt;
+                &lt;/av-router-link&gt;
+                &lt;av-router-link class="nav-item" state="/create"&gt;
+                    &lt;span class="name"&gt;Create todo&lt;/span&gt;
+                &lt;/av-router-link&gt;
+            &lt;/div&gt;
+        &lt;/block&gt;
+        &lt;slot&gt;&lt;/slot&gt;
+    </pre>
+</av-code>
+<av-code language="css" filename="Demo/src/apps/MainApp/MainApp.wcs.avt">
+    <pre>
+        :host {
+            ...
+            /* Add style to the sidenav */
+            .nav {
+                ...
+                /* Define style &#102;or sidnav item */
+                .nav-item {
+                    align-items: center;
+                    cursor: pointer;
+                    display: flex;
+                    margin: 5px 0;
+                    padding: 5px 15px;
+                    width: 100%;
+                    transition: background-color 0.2s linear;
+                }
+        &nbsp;
+                /* Define style &#102;or when the sidnav item is active. */
+                .nav-item.active {
+                    background-color: var(--color-surface-mixed-600);
+                }
+                /* Define style &#102;or when the sidnav item is hover. */
+                .nav-item:not(.active):hover {
+                    background-color: var(--color-surface-mixed-500);
+                }
+            }
+            ...
+        }
+        &nbsp;
+    </pre>
+</av-code>
+
+<p>The tag <span class="cn">av-router-link</span> come from the package <span class="cn">AventusUI</span>. It allows you
+    to define what will be the state when a user click on it. When the state is matching the <span
+        class="cn">active_state</span> if defined ir the <span class="cn">state</span>, an <span
+        class="cn">active</span> class will added to the HtmlElement.</p>
+
+<av-tutorial-create-app-editor-5></av-tutorial-create-app-editor-5>
+
+<h2>Inheritance</h2>
+<p>Because all of the pages will have a title, you can create a generic component named
+    <span class="cn">GenericPage</span>. This component can't be displayed so you must write your class as
+    <span class="cn">abstract</span>.
+</p>
+<p>In addition, for all the pages, if the content is bigger than the screen, we must show a scrollbar.
+    Inside <span class="cn">AventusUI</span>, you can find a component named <span class="cn">av-scrollable</span> that
+    you can use to wrap your content.</p>
+
+<av-code language="typescript" filename="Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcl.avt">
+    <pre>
+        export abstract class GenericPage extends Aventus.Navigation.Page implements Aventus.DefaultComponent {
+            ...
+            public abstract definePageTitle(): string;
+            ...
+        }
+        </pre>
+</av-code>
+<av-code language="css" filename="Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcs.avt">
+    <pre>
+        :host {
+            height: 100%;
+            overflow: hidden;
+            width: 100%;
+        &nbsp;
+            av-scrollable {
+                height: 100%;
+                width: 100%;
+                /* define the padding needed inside the scrollbar */
+                --scrollbar-content-padding: 15px;
+        &nbsp;
+                .page-title {
+                    ...
+                }
+            }
+        }
+        &nbsp;
+        </pre>
+</av-code>
+<av-code language="html" filename="Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcv.avt">
+    <pre>
+        &lt;!-- use scrollable to display a scrollbar &#105;f the content is bigger than the size of the scrollable component --&gt;
+        &lt;av-scrollable&gt;
+            &lt;!-- Generic page title define by children pages --&gt;
+            &lt;div class="page-title"&gt;&#123;&#123; this.definePageTitle() &#125;&#125;&lt;/div&gt;
+            &lt;!-- Add a slot so that the children can add custom content --&gt;
+            &lt;slot&gt;&lt;/slot&gt;
+        &lt;/av-scrollable&gt;
+        </pre>
+</av-code>
+
+<p>Now your components <span class="cn">TodoListPage</span> and <span class="cn">TodoCreatePage</span> can inherit from
+    <span class="cn">GenericPage</span>. Furthermore, you can clean the content of the view file.
+</p>
+
+<av-tutorial-create-app-editor-6></av-tutorial-create-app-editor-6>

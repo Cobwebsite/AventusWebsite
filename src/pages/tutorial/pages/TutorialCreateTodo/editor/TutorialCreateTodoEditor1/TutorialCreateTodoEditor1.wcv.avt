@@ -1,0 +1,102 @@
+<av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">
+    <pre>
+        import { TodoCreateState } from "../../states/TodoCreateState.state.avt";
+        import { TodoCreatePage } from "./pages/TodoCreatePage/TodoCreatePage.wcl.avt";
+        import { TodoListPage } from "./pages/TodoListPage/TodoListPage.wcl.avt";
+        &nbsp;
+        /**
+         * The MainApp \for the Demo.
+         * The parent Aventus.Navigation.Router is a component that allows routing management
+         */
+        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region static
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region props
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region variables
+        &nbsp;
+            //#endregions
+        &nbsp;
+        &nbsp;
+            //#region constructor
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region methods
+            /**
+             * @inheritdoc
+             */
+            protected override defineRoutes(): void {
+                // define the routing here
+                this.addRoute("/", TodoListPage);
+                this.addRoute("/create", TodoCreatePage);
+            }
+        &nbsp;
+            /**
+             * Set the create state
+             */
+            protected setCreateState() {
+                this.stateManager.setState(new TodoCreateState());
+            }
+        &nbsp;
+        &nbsp;
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
+<av-code language="html" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">
+    <pre>
+        &lt;!-- The router has a slot name "before": we use it to define the sidenav --&gt;
+        &lt;block name="before"&gt;
+            &lt;div class="nav"&gt;
+                &lt;av-router-link class="nav-item" state="/"&gt;
+                    &lt;span class="name"&gt;Todo list&lt;/span&gt;
+                &lt;/av-router-link&gt;
+                &lt;av-router-link class="nav-item" @press="setCreateState" active_state="/create"&gt; 
+                    &lt;span class="name"&gt;Create todo&lt;/span&gt;
+                &lt;/av-router-link&gt;
+            &lt;/div&gt;
+        &lt;/block&gt;
+        &lt;slot&gt;&lt;/slot&gt;
+    </pre>
+</av-code>
+<av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">
+    <pre>
+        import { Todo } from "../data/Todo.data.avt";
+        &nbsp;
+        export class TodoCreateState extends Aventus.State implements Aventus.IState {
+        &nbsp;
+            /**
+             * This is the Todo that is currently created
+             */
+            public newTodo?: Todo;
+        &nbsp;
+            /**
+             * @inheritdoc
+             */
+            public override get name(): string {
+                // we must define what will be the state name
+                // in our example we will use '/create' because it's the url of the page TodoCreatePage
+                return '/create';
+            }
+        &nbsp;
+            /**
+             * This function is called when the current state is activated
+             */
+            public override onActivate(): void {
+                // You can init custom value for you todo here
+                this.newTodo = new Todo();
+            }
+        }
+    </pre>
+</av-code>
+<slot></slot>

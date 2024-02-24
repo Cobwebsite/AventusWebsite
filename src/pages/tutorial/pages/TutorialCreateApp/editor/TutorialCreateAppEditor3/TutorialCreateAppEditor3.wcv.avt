@@ -1,0 +1,80 @@
+<av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">
+    <pre>
+        /**
+         * The MainApp \for the Demo.
+         * The parent Aventus.Navigation.Router is a component that allows routing management
+         */
+        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region static
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region props
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region variables
+        &nbsp;
+            //#endregions
+        &nbsp;
+        &nbsp;
+            //#region constructor
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region methods
+            /**
+             * @inheritdoc
+             */
+            protected override defineRoutes(): void {
+                // define the routing here
+            }
+        &nbsp;
+        &nbsp;
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
+<av-code language="css" filename="Demo/src/apps/MainApp/MainApp.wcs.avt">
+    <pre>
+        :host {
+            display: flex;
+            flex-direction: row;
+            height: 100%;
+            overflow: hidden;
+            width: 100%;
+        &nbsp;
+            /* Add style to the sidenav */
+            .nav {
+                background-color: var(--color-surface-mixed-300);
+                height: 100%;
+                padding-top: 30px;
+                width: 200px;
+            }
+        &nbsp;
+            /* Change style of the .content declared inside the Aventus.Navigation.Router Component */
+            .content {
+                width: calc(100% - 200px);
+                height: 100%;
+            }
+        }
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="html" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">
+    <pre>
+        &lt;!-- The router has a slot name "before": we use it to define the sidenav --&gt;
+        &lt;block name="before"&gt;
+            &lt;div class="nav"&gt;
+                &nbsp;
+            &lt;/div&gt;
+        &lt;/block&gt;
+        &lt;slot&gt;&lt;/slot&gt;
+    </pre>
+</av-code>
+<slot></slot>

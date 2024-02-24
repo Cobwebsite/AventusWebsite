@@ -1,0 +1,33 @@
+export class DocWcAttributeEditor1Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	//#region static
+
+    //#endregion
+
+
+    //#region props
+	/** Define if the element is active or not */
+    @Attribute()
+    public active!: boolean;
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+	protected override postCreation(): void {
+		setInterval(() => {
+			this.active = !this.active;
+		}, 2000)
+	}
+    //#endregion
+	
+}

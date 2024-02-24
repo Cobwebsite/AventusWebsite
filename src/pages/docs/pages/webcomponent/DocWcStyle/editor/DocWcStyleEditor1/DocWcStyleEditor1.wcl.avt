@@ -1,0 +1,45 @@
+import { DocWcStyleEditor1Result } from "../../compiled/DocWcStyleEditor1Result/DocWcStyleEditor1Result.wcl.avt";
+import { BaseEditor } from "../../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
+
+export class DocWcStyleEditor1 extends BaseEditor implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    public override startupFile(): string {
+        return 'Style/src/Example/Example.wcs.avt';
+    }
+
+	public override defineResult(): HTMLElement | null {
+		const el = document.createElement("DIV");
+
+		const ex1 = new DocWcStyleEditor1Result();
+		el.appendChild(ex1);
+
+		const ex2 = new DocWcStyleEditor1Result();
+		ex2.active = true;
+		el.appendChild(ex2);
+
+		return el;
+	}
+    //#endregion
+
+}

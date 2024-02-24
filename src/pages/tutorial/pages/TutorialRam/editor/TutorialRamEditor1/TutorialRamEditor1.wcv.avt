@@ -1,0 +1,84 @@
+<av-code language="typescript" filename="Demo/src/ram/Todo.ram.avt">
+    <pre>
+        import { Todo } from "../data/Todo.data.avt";
+        &nbsp;
+        export class TodoRAM extends Aventus.Ram&lt;Todo&gt; implements Aventus.IRam {
+        &nbsp;
+            private isLoaded: boolean = false;
+            private static maxId: number = 0;
+        &nbsp;
+            /**
+             * Create a singleton to store data
+             */
+            public static getInstance() {
+                return Aventus.Instance.get(TodoRAM);
+            }
+        &nbsp;
+            /**
+             * @inheritdoc
+             */
+            public override defineIndexKey(): keyof Todo {
+                return 'id';
+            }
+            /**
+             * @inheritdoc
+             */
+            protected override getTypeForData(objJson: Aventus.KeysObject&lt;Todo&gt; | Todo): new () =&gt; Todo {
+                return Todo;
+            }
+        &nbsp;
+        &nbsp;
+            /**
+             * Save the content of the RAM inside local storage
+             */
+            protected saveToStorage() {
+                let values = Array.from(this.records.values());
+                localStorage.setItem("todos", JSON.stringify(values));
+            }
+            /**
+             * Reload the content of the RAM from the local storage
+             */
+            protected reloadFromStorage(result: Aventus.ResultRamWithError&lt;Map&lt;number, Aventus.RamItem&lt;Todo&gt;&gt;&gt;) {
+                let maxId = 0;
+                let data = JSON.parse(localStorage.getItem("todos") ?? "[]");
+                let values = Aventus.Converter.transform&lt;Todo[]&gt;(data);
+                \for(let value of values) {
+                    let resultTemp: Aventus.ResultWithError&lt;Aventus.RamItem&lt;Todo&gt;&gt; = new Aventus.ResultWithError();
+                    \if(value.id &gt; maxId) {
+                        maxId = value.id;
+                    }
+                    this.addOrUpdateData(value, resultTemp);
+                    \if(!resultTemp.success) {
+                        result.errors = [...result.errors, ...resultTemp.errors];
+                    }
+                }
+                TodoRAM.maxId = maxId;
+            }
+        &nbsp;
+            protected override async beforeCreateItem(item: Todo, fromList: boolean, result: Aventus.ResultRamWithError&lt;Aventus.RamItem&lt;Todo&gt;&gt;): Promise&lt;void&gt; {
+                TodoRAM.maxId++;
+                item.id = TodoRAM.maxId;
+            }
+            protected override async afterCreateItem(result: Aventus.ResultRamWithError&lt;Aventus.RamItem&lt;Todo&gt;&gt;, fromList: boolean): Promise&lt;void&gt; {
+                await super.afterCreateItem(result, fromList);
+                this.saveToStorage();
+            }
+            protected override async afterUpdateItem(result: Aventus.ResultRamWithError&lt;Aventus.RamItem&lt;Todo&gt;&gt;, fromList: boolean): Promise&lt;void&gt; {
+                await super.afterUpdateItem(result, fromList);
+                this.saveToStorage();
+            }
+            protected override async afterDeleteItem(result: Aventus.ResultRamWithError&lt;Aventus.RamItem&lt;Todo&gt;&gt;, fromList: boolean): Promise&lt;void&gt; {
+                await super.afterDeleteItem(result, fromList);
+                this.saveToStorage();
+            }
+            protected override async beforeGetAll(result: Aventus.ResultRamWithError&lt;Map&lt;number, Aventus.RamItem&lt;Todo&gt;&gt;&gt;): Promise&lt;void&gt; {
+                await super.beforeGetAll(result);
+                \if(!this.isLoaded) {
+                    this.reloadFromStorage(result);
+                    this.isLoaded = true;
+                }
+            }
+        }
+    </pre>
+</av-code>
+<slot></slot>

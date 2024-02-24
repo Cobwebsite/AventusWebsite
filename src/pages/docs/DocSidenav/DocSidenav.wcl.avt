@@ -30,18 +30,26 @@ export class DocSidenav extends Aventus.WebComponent implements Aventus.DefaultC
 
     //#region methods
     public getNextAndPrevious(state: string): { next: string | null, previous: string | null; } {
-        let result = {
+        let result: { next: string | null, previous: string | null; } = {
             next: null,
             previous: null
         };
         let active = this.shadowRoot.querySelector<Aventus.Navigation.RouterLink>(`av-router-link[state="${state}"]`);
-        let all = Array.from(this.shadowRoot.querySelectorAll<Aventus.Navigation.RouterLink>("av-router-link"));
-        let index = all.indexOf(active);
-        if(index > 0) {
-            result.previous = all[index - 1].state;
-        }
-        if(index < all.length - 1) {
-            result.next = all[index + 1].state;
+        if(active) {
+            let all = Array.from(this.shadowRoot.querySelectorAll<Aventus.Navigation.RouterLink>("av-router-link"));
+            let index = all.indexOf(active);
+            if(index > 0) {
+                let state = all[index - 1].state;
+                if(state) {
+                    result.previous = state
+                }
+            }
+            if(index < all.length - 1) {
+                let state = all[index + 1].state;
+                if(state) {
+                    result.next = state
+                }
+            }
         }
         return result;
     }
@@ -74,7 +82,7 @@ export class DocSidenav extends Aventus.WebComponent implements Aventus.DefaultC
      * 
      */
     protected closeNav() {
-        this.findParentByType(DocPage).closeMenu();
+        this.findParentByType(DocPage)?.closeMenu();
     }
 
     protected override postCreation(): void {

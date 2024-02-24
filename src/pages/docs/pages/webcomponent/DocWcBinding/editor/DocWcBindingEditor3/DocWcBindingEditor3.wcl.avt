@@ -1,0 +1,43 @@
+import { DocWcBindingEditor3Example } from "../../compiled/DocWcBindingEditor3Example/DocWcBindingEditor3Example.wcl.avt";
+import { BaseEditor } from "../../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
+
+export class DocWcBindingEditor3 extends BaseEditor implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+        return "Binding/src/Example/Example.wcv.avt";
+    }
+
+    public override hightlightFiles(): string[] {
+        return [
+            "Binding/src/Example/Example.wcl.avt",
+            "Binding/src/Example/Example.wcv.avt",
+        ];
+    }
+
+	public override defineResult(): HTMLElement | null {
+		return new DocWcBindingEditor3Example();
+	}
+	//#endregion
+	
+}

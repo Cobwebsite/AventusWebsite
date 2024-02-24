@@ -2,6 +2,21 @@
 	height: 100%;
 	width: 100%;
 
+	a {
+		color: var(--link-color);
+		text-decoration: none;
+	}
+
+	.height-wrapper {
+		flex-grow: 1;
+	}
+
+	.main-scroll::part(content-wrapper) {
+		display: flex;
+		flex-direction: column;
+		min-height: 100%;
+	}
+	
 	& > .container {
 		max-width: none;
 	}
@@ -67,6 +82,7 @@
 		.header {
 			align-items: center;
 			border-bottom: 1px solid #e5540e88;
+			border-bottom: 1px solid var(--aventus-color);
 			display: flex;
 			height: 50px;
 			margin-top: 50px;
@@ -75,7 +91,7 @@
 
 			.tab {
 				align-items: center;
-				background-color: #f0f0f0;
+				background-color: var(--primary-color);
 				border-top-left-radius: 5px;
 				border-top-right-radius: 5px;
 				cursor: pointer;
@@ -84,10 +100,11 @@
 				margin: 0 5px;
 				padding: 0 15px;
 				position: relative;
+				color:var(--primary-font-color);
 			}
 
 			.tab:not(.active):hover {
-				background-color: #e5540e22;
+				background-color: var(--aventus-color);
 			}
 
 			.tab:first-child {
@@ -95,19 +112,9 @@
 			}
 
 			.tab.active {
-				background-color: #e5540e44;
+				background-color: var(--aventus-color);
 			}
 
-			.tab.active::after {
-				background-color: #b9b9b9;
-				bottom: 0px;
-				content: "";
-				display: block;
-				height: 1px;
-				left: 0;
-				position: absolute;
-				width: 100%;
-			}
 		}
 
 		.body {
@@ -129,7 +136,7 @@
 		}
 
 		h2 {
-			color: var(--light-primary-color);
+			color: var(--title-color);
 			text-align: center;
 		}
 
@@ -157,6 +164,7 @@
 				justify-content: center;
 				max-width: 500px;
 				position: relative;
+				box-shadow: var(--elevation-3);
 
 				.img {
 					background-position: center center;
@@ -180,20 +188,20 @@
 				}
 
 				.location {
-					color: var(--secondary-color);
+					color: var(--primary-font-color);
 					font-size: 16px;
 
 				}
 
 				.language {
-					color: var(--secondary-color);
+					color: var(--primary-font-color);
 					font-size: 16px;
 					margin-bottom: 20px;
 				}
 
 				.sponsor {
 					align-items: center;
-					border: 1px solid var(--secondary-color);
+					border: 1px solid var(--primary-font-color);
 					border-radius: 5px;
 					cursor: pointer;
 					display: flex;
@@ -204,14 +212,14 @@
 					text-decoration: none;
 
 					svg {
-						fill: var(--secondary-color);
+						fill: var(--primary-font-color);
 						height: 20px;
 						transition: fill 0.2s linear;
 						width: 20px;
 					}
 
 					span {
-						color: var(--secondary-color);
+						color: var(--primary-font-color);
 						margin-left: 10px;
 						transition: color 0.2s linear;
 					}
@@ -238,7 +246,7 @@
 
 					svg {
 						cursor: pointer;
-						fill: var(--secondary-color);
+						fill: var(--primary-font-color);
 						transition: 0.2s fill linear;
 					}
 				}

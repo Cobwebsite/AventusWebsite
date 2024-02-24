@@ -1,0 +1,17 @@
+<h1>Webcomponent - Conditional rendering</h1>
+
+<p>Conditional rendering is a fundamental concept in web development that allows developers to display different content
+    based on certain conditions or criteria. It enables dynamic content presentation, enabling web applications to
+    respond and adapt to user interactions, data changes, or specific scenarios.</p>
+
+<p>In conditional rendering, sections of a web page are conditionally displayed or hidden depending on the evaluation of
+    logical expressions or variables. This capability is particularly useful for scenarios such as displaying
+    personalized greetings to logged-in users, rendering error messages when data is missing, or showing different views
+    based on user preferences.</p>
+
+<p>Conditional rendering is seamlessly integrated into the template syntax. Developers can use control flow constructs
+    such as if statements to conditionally include or exclude content within the template markup. This approach empowers
+    developers to create dynamic and interactive user interfaces that cater to diverse user scenarios and requirements.
+</p>
+
+<av-doc-wc-condition-editor-1></av-doc-wc-condition-editor-1>

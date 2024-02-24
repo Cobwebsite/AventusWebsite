@@ -1,13 +1,13 @@
 <h1>Webcomponent - Style</h1>
-<p>In the section you are going to learn how to apply a style to your component.</p>
+<p>In this section you are going to learn how to apply a style to your component.</p>
 
 <h2>Definition</h2>
 <p>Because Aventus is build on the top of webcomponent, the style is scoped. It means that the style from Component 1
-    won't affect the style from Component 2. If you wan't more information about scoped style inside webcomponent you
+    won't affect the style from Component 2. If you want more information about scoped style inside webcomponent you
     can read <a href="https://web.dev/shadowdom-v1/#component-defined-styles" target="_blank">this</a>. It's great but
     it involves that each components must include it own style locally. What if I want to create a general style for all
-    my components. This is why in addition to webcomponent scoped style, Aventus using the <span class="cn"><a
-            href="https://web.dev/constructable-stylesheets/" target="_blank">Constructable Stylesheets</a></span> to
+    my components? This is why in addition to webcomponent scoped style, Aventus using the <a
+        href="https://web.dev/constructable-stylesheets/" target="_blank">Constructable Stylesheets</a> to
     improve reusability.</p>
 
 <h2>Local style</h2>
@@ -15,128 +15,71 @@
     want written in SCSS. The only special selector inside webcomponent style is the <span class="cn">:host</span> that
     will target the current custom element.</p>
 
-<av-code language="css" filename="Example.wcs.avt">
-    :host {
-    \tbackground-color: gray;
-    \t.title {
-    \t\tcolor: orange;
-    \t}
-    }
-    &nbsp;
-    :host([active]) { // if the webcomponent has an attribute / property active
-    \t.title {
-    \t\tcolor: red;
-    \t}
-    }
-</av-code>
+<av-doc-wc-style-editor-1></av-doc-wc-style-editor-1>
 <h2>Inherit style</h2>
 <p>If a webcomponent is inheriting another webcomponent, their styles will be merged. Parent style will be written
     before Child style so that you can override parent style without problem.</p>
 
-<av-code language="css" filename="Parent.wcs.avt">
-    :host {
-    \tbackground-color: gray;
-    \t.title {
-    \t\tcolor: orange;
-    \t}
-    }
-</av-code>
-<av-code language="css" filename="Child.wcs.avt">
-    :host {
-    \t.title {
-    \t\tcolor: blue;
-    \t}
-    }
-</av-code>
-<av-code language="css" filename="merge.css">
-    :host {
-    \tbackground-color: gray;
-    }
-    :host .title {
-    \tcolor: orange;
-    }
-    :host .title {
-    \tcolor: blue;
-    }
-</av-code>
-<p>The title will be blue instead of orange.</p>
+<av-doc-wc-style-editor-2></av-doc-wc-style-editor-2>
+<p>The child title will be blue instead of orange.</p>
 
 <h2>External style</h2>
 <p>If you want to create some utility classes for components, you can create file named <span
-        class="cn">*.gwcs.avt</span> for Global WebComponent Style, then you can include this file inside component.
+        class="cn">@*.wcs.avt</span> for Global WebComponent Style, then you can include this file inside component.
     This file is also a SCSS file.</p>
 <h3>Create the file</h3>
 <p>You can create the global style file where you want, but you have to add it inside the <span
-        class="cn">aventus.conf.avt</span> under the section <span class="cn">build.componentStyle</span>.</p>
-<av-code language="css" filename="utility.gwcs.avt">
-    .center {
-    \ttext-align: center;
-    }
-</av-code>
-<av-code language="json" filename="aventus.conf.avt">
-    {
-    \t...
-    \tbuild: [
-    \t\t{
-    \t\t\t...
-    \t\t\t"componentStyle": [
-    \t\t\t\t{
-    \t\t\t\t\t"name": "@Utility",
-    \t\t\t\t\t"path": "./src/styles/utility.gwcs.avt"
-    \t\t\t\t}
-    \t\t\t]
-    \t\t\t...
-    \t\t}
-    \t]
-    }
-</av-code>
-<p>This will register the file <span class="cn">utility.gwcs.avt</span> inside the <span class="cn">Aventus.Style</span>
-    lib with the name <span class="cn">@Utility</span>.</p>
+        class="cn">aventus.conf.avt</span> under the section <span class="cn">build.src</span>.</p>
+<av-doc-wc-style-editor-3></av-doc-wc-style-editor-3>
+
+<p>This will register the file <span class="cn">@utility.wcs.avt</span> inside the <span class="cn">Aventus.Style</span>
+    lib with the name <span class="cn">@utility</span>.</p>
 <av-img src="/img/doc/wc/style/stylemanager.png"></av-img>
 <p>If you want to use an external lib as a style for your component, you can use the <span class="cn">load</span>
     function. For example to load the bootstrap class : </p>
-<av-code language="typescript" filename="Bootstrap.lib.avt">
-    export function loadBootstrap() {
-    Aventus.Style.getInstance().load("@Bootstrap",
-    "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css");
-    }
-</av-code>
+<av-doc-wc-style-editor-4></av-doc-wc-style-editor-4>
 <p>By default, a base style existing inside <span class="cn">Style</span>. This style is named <span
-        class="cn">@general</span> and is composed by</p>
-<av-code language="css" filename="@general">
-    :host{
-    \tdisplay:inline-block;
-    \tbox-sizing:border-box
+        class="cn">@default</span> and is composed by</p>
+<av-code language="css" filename="@default">
+    <pre>
+    :host {
+        display: inline-block;
+        box-sizing: border-box;
     }
-    :host *{
-    \tbox-sizing:border-box
+    :host * {
+        box-sizing: border-box;
     }
+    </pre>
 </av-code>
-
+<p>If you want that all your components contains some styles, you can write your own <span
+        class="cn">@default.wcs.avt</span>. That will override the default style.</p>
 <h3>Use global style</h3>
 <p>Now that you have style registered, you can tell your component to use this style. You can override 2 methods inside
     the logical file <span class="cn">*.wcl.avt</span> named : <span class="cn">styleBefore</span> and <span
         class="cn">styleAfter</span>.</p>
 <av-code language="typescript" filename="Example.wcl.avt">
+    <pre>
     export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
-    \t...
-    \t // Inside Aventus.WebCompoent the value of styleBefore is ["@general"]
-    \tprotected override styleBefore(): string[] {
-    \t\treturn ["@general", "@Bootstrap"];
-    \t}
-    \tprotected override styleAfter(): string[] {
-    \t\treturn ["@Utility"];
-    \t}
-    \t...
+        ...
+        // Inside Aventus.WebCompoent the value of styleBefore is addStyle("@default")
+        protected override styleBefore(addStyle: (name: string) => void): void {
+            super.styleBefore(addStyle);
+            addStyle("@Bootstrap");
+        }
+        protected override styleAfter(addStyle: (name: string) => void): void {
+            addStyle("@utility");
+        }
+        ...
     }
+    </pre>
 </av-code>
 <p>The style loaded will be the following :</p>
 <ol>
-    <li>@general</li>
+    <li>@default</li>
     <li>@Bootstrap</li>
     <li>parent style inside <span class="cn">*.wcs.avt</span></li>
     <li>local style inside <span class="cn">*.wcs.avt</span></li>
-    <li>@Utility</li>
+    <li>@utility</li>
 </ol>
 
 <h2>Edit style from outside</h2>
@@ -146,29 +89,37 @@
     property can be done by following the next pattern:</p>
 
 <av-code language="css" filename="Example.wcs.avt">
+    <pre>
     :host {
-    \t--internal-background-color: var(--background-color, red);
+        --_example-background-color: var(--example-background-color, red);
     }
     &nbsp;
     :host {
-    \t.content {
-    \t\tbackgroud-color: var(--internal-background-color);
-    \t}
+        .content {
+            backgroud-color: var(--_example-background-color);
+        }
     }
+    </pre>
 </av-code>
 <p>The property declaration must be done inside the <span class="cn">:host</span> at the first level and following the
-    schema --internal-<b>x</b>: var(--<b>x</b>). In the future version of Aventus you will be able to use the <span
-        class="cn">@property</span> tag in css and the completion will be improved. The current schema is used to be
+    schema --_<b>componentName</b>-<b>propName</b>: var(--<b>componentName</b>-<b>propName</b>). In the future version
+    of Aventus you will be able to use the <span class="cn">@property</span> tag in css and the completion will be
+    improved. The current schema is used to be
     detected by the parser so that an auto-completion can be provided when you editing the style of the element.</p>
 
 <av-code language="css" filename="Example2.wcs.avt">
+    <pre>
     :host {
-    \tav-example {
-    \t\t// come from auto-completion
-    \t\t--background-color: red;
-    \t}
+        av-example {
+            // come from auto-completion because the rules is the tag av-example
+            --background-color: red;
+        }
     }
+    </pre>
 </av-code>
+
+<p>You can also quick create a variable by pressing <span class="cn">Ctrl + k Ctrl + numpad1</span> and provide the name
+    for what the variable is for.</p>
 
 <h2>Creating theme</h2>
 <p>A good pratice when you developing application is to create theme file where you can declare globals properties for
@@ -177,16 +128,4 @@
             state="/docs/config/static">static</av-router-link></span> part of your project. This allows you to have
     auto-completion for all your global variables that must be declared inside the <span class="cn">:root</span>
     selector.</p>
-
-<av-code language="css" filename="main.gs.avt">
-    :root {
-    \t--primary-color: red;
-    \t--secondary-color: blue;
-    ...
-    }
-</av-code>
-<av-code language="css" filename="Example.wcs.avt">
-    :host {
-    \tbackground-color: var(--primary-color);
-    }
-</av-code>
+<av-doc-wc-style-editor-5></av-doc-wc-style-editor-5>

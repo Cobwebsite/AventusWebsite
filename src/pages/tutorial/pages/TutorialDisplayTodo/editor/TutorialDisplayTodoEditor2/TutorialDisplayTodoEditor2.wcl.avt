@@ -1,0 +1,49 @@
+import { TutorialDisplayTodoEditor1 } from "../TutorialDisplayTodoEditor1/TutorialDisplayTodoEditor1.wcl.avt";
+
+export class TutorialDisplayTodoEditor2 extends TutorialDisplayTodoEditor1 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+		return 'Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt'
+	}
+	public override hightlightFiles(): string[] {
+		return [
+			'Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt',
+			'Demo/src/components/TodoDisplay/TodoDisplay.wcv.avt',
+		]
+	}
+
+	public override open_folder(): string | string[] | undefined {
+		return [
+			'Demo/src/components/TodoDisplay',
+		]
+	}
+
+	public override defineResult(): HTMLElement | null {
+		let iframe = document.createElement("iframe");
+		iframe.src = "/tutorial/displaytodo/step2/index.html"
+		return iframe
+	}
+	//#endregion
+	
+}

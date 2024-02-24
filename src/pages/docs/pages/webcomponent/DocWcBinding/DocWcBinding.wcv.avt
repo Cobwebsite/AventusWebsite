@@ -1,5 +1,5 @@
 <h1>Webcomponent - Binding</h1>
-<p>In the section you are going to learn how to bind data between parent and child component.</p>
+<p>In this section you are going to learn how to bind data between parent and child component.</p>
 
 <p>The data binding is a mix between <av-router-link state="/docs/wc/injection">Injection</av-router-link> and
     <av-router-link state="/docs/wc/event">Event</av-router-link>. It will inject the data from parent to the child and
@@ -9,67 +9,34 @@
 <h2>Basic binding</h2>
 <p>To add binding you must add the attribute <span class="cn">@bind</span> inside your <span class="cn">*.wcv.avt</span>
     and add the field to watch as attribute value.</p>
-<av-code language="html" filename="Input.wcv.avt">
-    &lt;input @bind="myValue" /&gt;
-</av-code>
-<av-code language="typescript" filename="Input.wcl.avt">
-    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
-    &nbsp;
-    \t//#region static
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \t//#region props
-    \t@Watch()
-    \tpublic myValue: string = "";
-    \t//#endregion
-    &nbsp;
-    \t//#region variables
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \t//#region constructor
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \t//#region methods
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    }
-</av-code>
-<p>The code above will inject the field <span class="cn">myValue</span> inside the input <span class="cn">value</span>
+<av-doc-wc-binding-editor-1></av-doc-wc-binding-editor-1>
+<p>The code above will inject the field <span class="cn">value</span> inside the input <span class="cn">value</span>
     and when the input trigger the event <span class="cn">change</span> or <span class="cn">input</span>, the value of
-    the field myValue will be changed. The default binding order is the following : </p>
+    the field value will be changed. The default binding order is the following : </p>
 <ul>
     <li>input or textarea will listen on <span class="cn">change</span> and <span class="cn">input</span> event</li>
-    <li>other tag will check if a <av-router-link state="/docs/lib/callback">Aventus.CallbackManager</av-router-link> named <span
+    <li>other tag will check if a <av-router-link state="/docs/lib/callback">Aventus.Callback</av-router-link> named <span
             class="cn">change</span> exists on the child.</li>
-    <li>if no CallbackManger, a listener for the event <span class="cn">change</span> will be added</li>
+    <li>if no Callback, a listener for the event <span class="cn">change</span> will be added</li>
     <p></p>
     <li><b>Nb:</b> for all tag, the value checked on child must be named <span class="cn">value</span></li>
 </ul>
 
 <h2>Select the event to listen to</h2>
 <p>If you need to define which event or CallbackManger the code must listen, you can write your binding like below.</p>
-<av-code language="html" filename="Input.wcv.avt">
-    &lt;input @bind_keyup="myValue" /&gt;
-</av-code>
-<p>In this example, the field <span class="cn">myValue</span> will be updated when the <span class="cn">keyup</span>
-    event is triggered on the input. Notice that if you have a CallbackManger named keyup, the code will listen to the
-    keyup CallbackManger instead of the keyup event.</p>
+<av-doc-wc-binding-editor-2></av-doc-wc-binding-editor-2>
+<p>In this example, the field <span class="cn">value</span> will be updated when the <span class="cn">keyup</span>
+    event is triggered on the input. Notice that if you have a Callback named keyup, the code will listen to the
+    keyup Callback instead of the keyup event.</p>
 
 <h2>Select the child field to bind with</h2>
 <p>If you need to define which field the code must synchronize instead of <span class="cn">value</span>, you can write your binding like below.
 </p>
-<av-code language="html" filename="MyTest.wcl.avt">
-    &lt;av-input @bind:customValue="myValue"&gt;&lt;/av-input&gt;
-</av-code>
-<p>In this example, the parent field <span class="cn">myValue</span> will be synchronized with the child field <span
-        class="cn">customValue</span></p>
+<av-doc-wc-binding-editor-3></av-doc-wc-binding-editor-3>
+
+<p>In this example, the parent field <span class="cn">value</span> will be synchronized with the child field <span
+        class="cn">val</span></p>
 
 <h2>Full custom binding</h2>
 <p>You can mix the two previous cases to fully customize your binding.</p>
-<av-code language="html" filename="MyTest.wcl.avt">
-    &lt;av-input @bind_keyup:customValue="myValue"&gt;&lt;/av-input&gt;
-</av-code>
+<av-doc-wc-binding-editor-4></av-doc-wc-binding-editor-4>

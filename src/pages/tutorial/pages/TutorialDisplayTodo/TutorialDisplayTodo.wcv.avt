@@ -1,0 +1,255 @@
+<h1>Display Todo</h1>
+
+<p>Now that we've set up the foundation for managing todo data within our Aventus application using the TodoRAM class,
+    let's move on to creating a user interface component to display individual todo items.</p>
+
+<p>In this next step of the tutorial, we'll design and implement a component responsible for rendering a single todo
+    item. This component will provide a visually appealing and intuitive interface for users to view and interact with
+    their todo entries.</p>
+
+<p>By creating a dedicated component for todo display, we'll ensure modularity and reusability within our application's
+    architecture. This component will encapsulate the presentation logic related to individual todo items, allowing us
+    to easily integrate it into different parts of our application as needed.</p>
+
+<p>Throughout this process, we'll leverage Aventus's component-based architecture to design a cohesive and responsive
+    user interface that enhances the overall user experience. We'll also explore how to bind the data from our TodoRAM
+    instance to the component.</p>
+
+<h2>Code it</h2>
+
+<p>First of all we need a to create a new component named <span class="cn">TodoDisplay : </span></p>
+<ul>
+    <li>
+        Over the folder <span class="cn">components</span> you can right click and select <span class="cn">Aventus :
+            Create...</span>.
+    </li>
+    <li>You can select <span class="cn">Component</span></li>
+    <li>You can fill the input with <span class="cn">TodoDisplay</span></li>
+    <li>You can select <span class="cn">Multiple</span></li>
+</ul>
+
+<p>The component logic flow is the following : </p>
+<ol>
+    <li><span class="cn">Attribute todo_id</span>: It expects a todo_id attribute to identify the todo item.</li>
+    <li><span class="cn">Load Todo from RAM</span>: Using the todo_id, it fetches the corresponding todo item from
+        TodoRAM.</li>
+    <li><span class="cn">Check Todo Existence</span>: If the todo item doesn't exist, the component removes itself from
+        the DOM.</li>
+</ol>
+
+<p>First of all, you can set your cursor inside the region <span class="cn">props</span> and <span class="cn">right
+        click > Aventus: Create attribute</span> or use the shortcut <span class="cn">ctrl + k ctrl + numpad1</span>.
+    You can fill the input with <span class="cn">todo_id</span> and select the type <span class="cn">Number</span>.
+</p>
+
+<av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">
+    <pre>
+        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            ...
+            //#region props
+            @Attribute()
+            public todo_id!: number; // this represents an attribute on you component &lt;td-todo-display todo_id="2"&gt;
+            // The ! inform typescript that the value of todo_id won't be null (default number value is 0)
+            //#endregion
+            ...
+        }
+    </pre>
+</av-code>
+
+<p>Now, you can write a function to load data from the <span class="cn">TodoRAM</span>.</p>
+
+<av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">
+    <pre>
+        import { TodoRAM } from "../../ram/Todo.ram.avt";
+        &nbsp;
+        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            ...
+            //#region methods
+            protected async loadData() {
+                let todo = await TodoRAM.getInstance().get(this.todo_id);
+            }
+            //#endregion
+            ...
+        }
+    </pre>
+</av-code>
+
+<p>For the view, we will only display the todo name right now. Inside your view file, you can write some code when you
+    are inside <span class="cn">&#123;&#123;&#125;&#125;</span>.</p>
+
+<av-code language="html" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcv.avt">
+    <pre>
+        &lt;div class="title"&gt;
+            &lt;span&gt;&#123;&#123; this.todo.name &#125;&#125;&lt;/span&gt;
+        &lt;/div&gt;
+        &nbsp;
+    </pre>
+</av-code>
+
+<p>This will trigger an error because our component don't have a variable <span class="cn">todo</span>. So you can edit
+    your logical file to add this variable. Because it's inside the view, we want a variable that will refresh the view
+    when a change occured. This kind of variable is called <span class="cn">Watch</span> <av-router-link
+        state="/docs/wc/watch">(more info)</av-router-link>.</p>
+<p>To create this variable, you can set your cursor inside the region <span class="cn">variables</span> and <span
+        class="cn">right
+        click > Aventus: Create watch</span> or use the shortcut <span class="cn">ctrl + k ctrl + numpad3</span>.
+    You can fill the name with <span class="cn">todo</span>, fill the type with <span class="cn">Todo</span> and we
+    don't need a callback.
+</p>
+<p>Don't forget to import your <span class="cn">Todo class</span> from file <span class="cn">Todo.data.avt</span>.</p>
+
+<av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">
+    <pre>
+        import type { Todo } from "../../data/Todo.data.avt";
+        ...
+        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            ...
+            //#region variables
+            @Watch()
+            public todo?: Todo;
+            //#endregion
+            ...
+        }
+    </pre>
+</av-code>
+
+<p>You must still have an error inside you view telling : <span class="cn">Object is possibly 'undefined'</span>. This
+    is because by default a watch can be undefined. But in our flow, we know that if the todo didn't exist we won't
+    display the element.</p>
+<p>You can edit the logical file to tell Aventus that your todo will exist and assign you todo from the Ram to the
+    variable.</p>
+
+<av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">
+    <pre>
+        import type { Todo } from "../../data/Todo.data.avt";
+        import { TodoRAM } from "../../ram/Todo.ram.avt";
+        &nbsp;
+        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            ...
+            //#region variables
+            @Watch()
+            public todo!: Todo;
+            //#endregion
+            ...
+            //#region methods
+            protected async loadData() {
+                const todo = await TodoRAM.getInstance().get(this.todo_id);
+                &#105;f(todo) {
+                    this.todo = todo; // assign the todo. This will trigger a view refresh
+                }
+                &#101;lse {
+                    this.remove(); // remove the component if the todo don't exist
+                }
+            }
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
+
+<p>Now we can add the logic to load data on display.</p>
+
+<av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">
+    <pre>
+        ...
+        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            ...
+            protected override postCreation(): void {
+                this.loadData();
+            }
+            ...
+        }
+    </pre>
+</av-code>
+
+
+<p>Now to show the component we must apply 2 changes</p>
+
+<ul>
+    <li>Edit the file <span class="cn">TodoListPage.wcv.avt</span> to add the tag <span
+            class="cn">td-todo-display</span></li>
+    <li>Emulate the data loading inside the file <span class="cn">TodoDisplay.wcl.avt</span></li>
+</ul>
+
+<av-tutorial-display-todo-editor-1></av-tutorial-display-todo-editor-1>
+
+<p>Now you can add a display to render all tasks inside the todo. We are going to use a <span class="cn">for loop</span>
+    to list though the tasks of a todo.</p>
+
+<av-code language="html" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcv.avt">
+    <pre>
+        &lt;div class="title"&gt;
+            &lt;span&gt;&#123;&#123; this.todo.name &#125;&#125;&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;ul&gt;
+            &#102;or(let task of this.todo.tasks) { 
+                &lt;li&gt;&#123;&#123; task.description &#125;&#125;&lt;/li&gt;
+            }
+        &lt;/ul&gt;
+    </pre>
+</av-code>
+
+<p>The code <span class="cn">&#123;&#123; task.description &#125;&#125;</span> will trigger an error telling :
+    <span class="cn">Cannot find name 'Task'.</span>
+</p>
+<p>To correct this error we must import the <span class="cn">Task</span> class inside <span
+        class="cn">TodoDisplay.wcl.avt</span>
+</p>
+
+<av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">
+    <pre>
+        import { Todo } from "../../data/Todo.data.avt";
+        import { Task } from "../../data/Task.data.avt";
+        import { TodoRAM } from "../../ram/Todo.ram.avt";
+        &nbsp;
+        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            ...
+        }
+    </pre>
+</av-code>
+
+<p>Now we can change the function that is loading data to add tasks inside the todo.</p>
+
+<av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">
+    <pre>
+        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            ...
+            //#region methods
+            protected async loadData() {
+                const todo = new Todo();
+                todo.name = "My todo";
+                this.todo = todo;
+                // just create an interval to see the template reloading
+                setInterval(() =&gt; {
+                    this.todo.name = "My todo " + (new Date().getSeconds());
+                }, 1000);
+        &nbsp;
+                const task1 = new Task();
+                task1.description = "Test Aventus";
+        &nbsp;
+                const task2 = new Task();
+                task2.description = "Add a star to Aventus github";
+                this.todo.tasks = [task1, task2];
+        &nbsp;
+                // let todo = await TodoRAM.getInstance().get(this.todo_id);
+                // &#105;f(todo) {
+                //     this.todo = todo;
+                // }
+                // else {
+                //     this.remove();
+                // }
+            }
+            //#endregion
+        }
+    </pre>
+</av-code>
+
+<p>The final result is the following : </p>
+<av-tutorial-display-todo-editor-2></av-tutorial-display-todo-editor-2>
+
+<p>Although we've successfully created a component to display a todo, we've yet to implement any interaction with it. To
+    enhance user functionality, we require a trash button to enable users to delete todos effortlessly.</p>
+
+<p>In the upcoming section, we'll introduce a new component called Icon. This component will be responsible for
+    rendering material icons, including the trash icon for deleting todos. By incorporating the Icon component into our
+    todo display component, we'll enable users to interact with todos by providing a convenient delete option.</p>

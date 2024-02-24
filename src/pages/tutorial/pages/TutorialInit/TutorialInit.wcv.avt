@@ -19,40 +19,34 @@
 <av-img src="/img/tuto/init/default.png"></av-img>
 
 <p>Fill the name with <span class="cn">TodoDemo</span></p>
-<av-img src="/img/tuto/init/default.png"></av-img>
+<av-img src="/img/tuto/init/name.png"></av-img>
 
 <p>Fill the component prefix with <span class="cn">td</span></p>
 <av-img src="/img/tuto/init/prefix.png"></av-img>
 
-<p>The file <span class="cn">aventus.conf.avt</span> will open and the following structure is created</p>
-<av-img src="/img/tuto/init/basic_struct.png"></av-img>
+<p>The file <span class="cn">aventus.conf.avt</span> will open and the following structure is created. Apply the following actions:</p>
+<ul>
+    <li>Add <span class="cn">"hideWarnings": true,</span> - This will hide warnings tell you that you need add documentation</li>
+    <li>Add <span class="cn">"dependances": [{"uri": "@AventusUI"}],</span> - This will load AventusUI as <a state="/docs/config/lib">dependances</a></li>
+    <li>Replace <span class="cn">"output": "./dist/TodoDemo.js"</span> by <span class="cn">"output": "./dist/todo.js"</span> - This is the file compiled</li>
+</ul>    
 
-<p>Replace the <span class="cn">outputFile</span> with <span class="cn">./dist/todo.js</span> and save the file.</p>
-<av-img src="/img/tuto/init/output.png"></av-img>
 
-<p>Inside the folder static you can create a new file named <span class="cn">index.html</span> with the following
-    content</p>
+<av-tutorial-init-editor-1></av-tutorial-init-editor-1>
 
-<av-code language="html" filename="index.html">
-    &lt;!DOCTYPE html&gt;
-    &lt;html lang="en"&gt;
-    &nbsp;
-    \t&lt;head&gt;
-    \t\t&lt;meta charset="UTF-8"&gt;
-    \t\t&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
-    \t\t&lt;title&gt;Todo demo&lt;/title&gt;
-    \t\t&lt;script src="/todo.js"&gt;&lt;/script&gt;
-    \t&lt;/head&gt;
-    &nbsp;
-    \t&lt;body&gt;
-    \t\t&lt;h1&gt;Todo&lt;/h1&gt;
-    \t&lt;/body&gt;
-    &nbsp;
-    &lt;/html&gt;
-</av-code>
+<p>Inside the folder static you can create three new files :</p>
+<ul>
+    <li><span class="cn">/src/static/index.html</span> : The default page to render</li>
+    <li><span class="cn">/src/static/css/default.gs.avt</span> : The default style for the page</li>
+    <li><span class="cn">/src/static/css/_theme.gs.avt</span> : A file containing all css variables</li>
+</ul>
+<av-tutorial-init-editor-2></av-tutorial-init-editor-2>
 
-<p>Start the live server by clicking on the play button</p>
-<av-img src="/img/tuto/init/play.png"></av-img>
+<p>We are creating a SPA (Singe Page Application). You can create the folder <span class="cn">/src/apps/</span> where we
+    are going to create our entry point. Don't forget to update your <span class="cn">aventus.conf.avt</span> to add the
+    new directory to the <span class="cn">src</span>. For this example, we don't need socket but we need a folder where
+    the <span class="cn">states</span> will be defined. So you can rename <span class="cn">socket</span> into <span
+        class="cn">states</span>.</p>
+<av-tutorial-init-editor-3></av-tutorial-init-editor-3>
 
-<p>Your browser will open a new page : </p>
-<av-img src="/img/tuto/init/done.png"></av-img>
+<p>Now we have a good project architecture to start the demo.</p>

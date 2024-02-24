@@ -1,0 +1,3 @@
+<slot> <!-- The default content appends here --></slot>
+<slot style="color:red" name="error"><!-- The errors appends here --></slot>
+<slot style="color:green" name="success"><!-- The success appends here --></slot>

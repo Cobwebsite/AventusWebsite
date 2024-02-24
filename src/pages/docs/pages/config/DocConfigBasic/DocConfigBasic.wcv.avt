@@ -10,7 +10,7 @@
         <av-dynamic-col size="8" center>Description</av-dynamic-col>
     </av-dynamic-row>
     <av-dynamic-row>
-        <av-dynamic-col size="4" center>module</av-dynamic-col>
+        <av-dynamic-col size="4" center><span class="mandatory">module</span></av-dynamic-col>
         <av-dynamic-col size="8" center>This is the name of the module you are building. All your code will be inside
             the module to avoid global variables.
             <span class="constraint">Must satisfy: <span class="cn">^[a-zA-Z0-9_]+$</span></span>
@@ -26,7 +26,7 @@
     </av-dynamic-row>
     <av-dynamic-row>
         <av-dynamic-col size="4" center>componentPrefix</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is the prefix that are going to be used by all your webcomponents inside the module. For example if my class is named "Test" and my prefix is "av", the final tag will be "av-test".
+        <av-dynamic-col size="8" center>This is the prefix that are going to be used by all your webcomponents inside the module. For example if my class is named "Test" and my prefix is "av", the final tag will be "av-test". By default, it will use the module name as prefix.
             <span class="constraint">Must satisfy: <span class="cn">^[a-z]{2,}$</span></span>
         </av-dynamic-col>
     </av-dynamic-row>
@@ -43,9 +43,17 @@
         </av-dynamic-col>
     </av-dynamic-row>
     <av-dynamic-row>
-        <av-dynamic-col size="4" center>build</av-dynamic-col>
+        <av-dynamic-col size="4" center>aliases</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is an object of string that allows replacement of code. For example { "@root": "./"} will replace any @root to resolve the root folder</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center><span class="mandatory">build</span></av-dynamic-col>
         <av-dynamic-col size="8" center>This is an array of <av-router-link state="/docs/config/build">build options</av-router-link>. Each build is defined by a list of input and will output a .js file and / or a package.avt file
         </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>dependances</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is an array of <av-router-link state="/docs/config/lib">dependances options</av-router-link>.</av-dynamic-col>
     </av-dynamic-row>
     <av-dynamic-row>
         <av-dynamic-col size="4" center>static</av-dynamic-col>

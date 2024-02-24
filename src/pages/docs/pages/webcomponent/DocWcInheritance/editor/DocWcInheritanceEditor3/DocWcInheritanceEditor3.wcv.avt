@@ -1,0 +1,20 @@
+<av-code language="html" filename="Inheritance/src/Fillable/Fillable.wcv.avt">
+    <pre>
+        &lt;slot name="error"&gt;&lt;/slot&gt;
+        &nbsp;
+        &lt;label&gt;\{{ this.label }}&lt;/label&gt;
+        &lt;slot&gt;&lt;/slot&gt;
+        &nbsp;
+        &lt;div @element="debugEl"&gt;&lt;/div&gt;
+    </pre>
+</av-code>
+<av-code language="html" filename="Inheritance/src/TextInput/TextInput.wcv.avt">
+    <pre>
+        &lt;block name="error"&gt;
+            &lt;div&gt;I'm an error&lt;/div&gt;
+        &lt;/block&gt;
+        &lt;input @input="triggerChange" @element="inputEl" /&gt;
+    </pre>
+</av-code>
+
+<slot></slot>

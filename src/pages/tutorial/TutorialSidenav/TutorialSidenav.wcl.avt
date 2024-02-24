@@ -3,40 +3,48 @@ import { TutorialPage } from "../TutorialPage/TutorialPage.wcl.avt";
 
 export class TutorialSidenav extends Aventus.WebComponent implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	public getNextAndPrevious(state: string): { next: string | null, previous: string | null; } {
-        let result = {
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    public getNextAndPrevious(state: string): { next: string | null, previous: string | null; } {
+        let result: { next: string | null, previous: string | null; } = {
             next: null,
             previous: null
         };
         let active = this.shadowRoot.querySelector<Aventus.Navigation.RouterLink>(`av-router-link[state="${state}"]`);
-        let all = Array.from(this.shadowRoot.querySelectorAll<Aventus.Navigation.RouterLink>("av-router-link"));
-        let index = all.indexOf(active);
-        if(index > 0) {
-            result.previous = all[index - 1].state;
-        }
-        if(index < all.length - 1) {
-            result.next = all[index + 1].state;
+        if(active) {
+            let all = Array.from(this.shadowRoot.querySelectorAll<Aventus.Navigation.RouterLink>("av-router-link"));
+            let index = all.indexOf(active);
+            if(index > 0) {
+                let state = all[index - 1].state;
+                if(state) {
+                    result.previous = state
+                }
+            }
+            if(index < all.length - 1) {
+                let state = all[index + 1].state;
+                if(state) {
+                    result.next = state
+                }
+            }
         }
         return result;
     }
@@ -69,12 +77,12 @@ export class TutorialSidenav extends Aventus.WebComponent implements Aventus.Def
      * 
      */
     protected closeNav() {
-        this.findParentByType(TutorialPage).closeMenu();
+        this.findParentByType(TutorialPage)?.closeMenu();
     }
 
     protected override postCreation(): void {
         this.addActiveWatch();
     }
-	//#endregion
-	
+    //#endregion
+
 }

@@ -1,0 +1,297 @@
+import { CodeEditorFile } from "./CodeEditorFile/CodeEditorFile.wcl.avt";
+import { AvCode } from "../Code/Code.wcl.avt";
+import { CodeEditorFolder } from "./CodeEditorFolder/CodeEditorFolder.wcl.avt";
+// import * as JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+
+type Explorer = {
+    [name: string]: {
+        file?: AvCode;
+        children: Explorer;
+    };
+};
+
+export class CodeEditor extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+    @Property()
+    public name?: string;
+    @Attribute()
+    public has_result: boolean = false;
+    @Attribute()
+    public all_open: boolean = true;
+    @Property()
+    public show?: string;
+    @Attribute()
+    public open_folder?: string;
+    @Attribute()
+    public show_menu!: boolean;
+
+    @Attribute()
+    public highlights?: string;
+    //#endregion
+
+
+    //#region variables
+    private info: Explorer = {};
+    private files: { [path: string]: CodeEditorFile; } = {};
+    private folders: { [path: string]: CodeEditorFolder; } = {};
+
+    @ViewElement()
+    protected menuEl!: Aventus.Layout.Scrollable;
+
+    @ViewElement()
+    protected displayEl!: Aventus.Layout.Scrollable;
+
+    @ViewElement()
+    protected separatorEl!: HTMLDivElement;
+
+    @ViewElement()
+    protected contentEl!: HTMLDivElement;
+
+    private openedFile?: CodeEditorFile;
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    private async loadJSZip() {
+        await Aventus.ResourceLoader.loadInHead({
+            type: 'js',
+            url: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
+        });
+    }
+    protected async download() {
+        await this.loadJSZip();
+        let zip = new (window as any).JSZip();
+        for(let path in this.files) {
+            let p = path;
+            if(path.startsWith("/")) {
+                p = p.substring(1);
+            }
+            zip.file(path, this.files[path].code.codeEl.innerText);
+        }
+        let content = await zip.generateAsync({ type: 'blob' });
+        saveAs(content, this.name + ".zip");
+    }
+    /**
+     * 
+     */
+    protected toggleMenu() {
+        this.show_menu = !this.show_menu;
+    }
+
+
+    public openFile(file: CodeEditorFile, path?: string) {
+        if(this.openedFile) {
+            this.openedFile.active = false;
+            this.openedFile.code.parentNode?.removeChild(this.openedFile.code);
+        }
+        this.openedFile = file;
+        this.openedFile.active = true;
+        this.displayEl.appendChild(this.openedFile.code);
+        if(path) {
+            this.openFolder(path);
+        }
+    }
+    private store(path: string, code?: AvCode) {
+        let splitted = path.split("/");
+        let lastName = splitted.pop() ?? '';
+        let current = this.info;
+
+        for(let split of splitted) {
+            if(!current[split]) {
+                current[split] = {
+                    children: {}
+                };
+            }
+            current = current[split].children;
+        }
+
+        current[lastName] = {
+            children: {},
+            file: code
+        };
+    }
+    private loadContent() {
+        let elements = this.getElementsInSlot();
+        for(let element of elements) {
+            if(element instanceof AvCode && element.filename) {
+                this.store(element.filename, element);
+                element.filename = undefined;
+            }
+            else if(element.getAttribute("folder")) {
+                this.store(element.getAttribute("folder") ?? '');
+            }
+        }
+        this.menuEl.innerHTML = "";
+        this.renderMenu(this.info, this.menuEl);
+        this.openFolderAfterRender();
+        this.has_result = this.getElementsInSlot("result").length > 0;
+    }
+
+    public openFolder(path: string) {
+        let splitted = path.split("/");
+        let currentPath = "";
+        for(let i = 0; i < splitted.length; i++) {
+            currentPath += splitted[i];
+
+            if(this.folders[currentPath]) {
+                this.folders[currentPath].open = true;
+            }
+            else if(this.folders["/" + currentPath]) {
+                this.folders["/" + currentPath].open = true;
+            }
+
+            currentPath += "/";
+        }
+
+    }
+
+    public closeFolder(path: string) {
+        if(this.folders[path]) {
+            this.folders[path].open = false;
+        }
+    }
+
+    private renderMenu(info: Explorer, el: HTMLElement, path: string = "") {
+        let highlights: string[] = [];
+        if(this.highlights) {
+            try {
+                highlights = JSON.parse(this.highlights);
+                for(let i = 0; i < highlights.length; i++) {
+                    if(!highlights[i].startsWith("/")) {
+                        highlights[i] = '/' + highlights[i];
+                    }
+                }
+            } catch(e) {
+                console.log(e);
+            }
+        }
+        let names = Object.keys(info).sort();
+        for(let name of names) {
+            let current = info[name];
+            if(!current.file) {
+                let folder = new CodeEditorFolder();
+                folder.name = name;
+                let newPath = path + "/" + name;
+                if(this.all_open) {
+                    folder.open = true;
+                }
+                if(highlights.includes(newPath)) {
+                    folder.highlight = true;
+                }
+                this.folders[newPath] = folder;
+                this.renderMenu(current.children, folder, newPath);
+                el.appendChild(folder);
+            }
+        }
+        for(let name of names) {
+            let current = info[name];
+            if(current.file) {
+                let newPath = path + "/" + name;
+                let file = new CodeEditorFile();
+                file.code = current.file;
+                if(highlights.includes(newPath)) {
+                    file.highlight = true;
+                }
+                file.editor = this;
+                file.name = name;
+                this.files[newPath] = file;
+                el.appendChild(file);
+                if(this.show) {
+                    if(this.comparePath(this.show, newPath)) {
+                        this.openFile(file, path);
+                    }
+                }
+                else {
+                    if(!this.openedFile) {
+                        this.openFile(file, path);
+                    }
+                }
+            }
+        }
+
+    }
+
+    private openFolderAfterRender() {
+        if(this.open_folder) {
+            if(this.open_folder.startsWith("[")) {
+                try {
+                    let folders = JSON.parse(this.open_folder) as string[];
+                    for(let folder of folders) {
+                        this.openFolder(folder);
+                    }
+                } catch(e) {
+                    console.log(e);
+                }
+            }
+            else {
+                this.openFolder(this.open_folder);
+            }
+        }
+    }
+
+    private comparePath(p1: string, p2: string) {
+        if(p2.startsWith("/")) {
+            p2 = p2.slice(1);
+        }
+        if(p1.startsWith("/")) {
+            p1 = p1.slice(1);
+        }
+        return p1 == p2;
+    }
+
+    private addResizeMenu() {
+        let startX = 0;
+        let startMenuWidth = 0;
+        new Aventus.DragAndDrop({
+            element: this.separatorEl,
+            applyDrag: false,
+            offsetDrag: 0,
+            onStart: (e) => {
+                startMenuWidth = this.menuEl.offsetWidth;
+                startX = e.pageX;
+            },
+            onMove: (e, position) => {
+                let diff = e.pageX - startX;
+                let newWidth = startMenuWidth + diff;
+                this.style.setProperty("--code-editor-menu-width", newWidth + 'px');
+            }
+        });
+    }
+
+    private addResizeObserver() {
+        // TODO correct
+        let observer = new Aventus.ResizeObserver(() => {
+            if(this.displayEl['contentWrapper'].offsetHeight >= 550 || this.menuEl['contentWrapper'].offsetHeight >= 550) {
+                this.contentEl.style.height = 550 + 'px';
+            }
+            else {
+                this.contentEl.style.height = '';
+            }
+        });
+        observer.observe(this.displayEl['contentWrapper']);
+        observer.observe(this.menuEl['contentWrapper']);
+    }
+
+
+
+    protected override postCreation(): void {
+        this.loadContent();
+        this.addResizeMenu();
+        this.addResizeObserver();
+    }
+    //#endregion
+
+}

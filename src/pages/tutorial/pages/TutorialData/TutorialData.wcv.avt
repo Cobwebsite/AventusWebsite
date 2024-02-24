@@ -1,32 +1,53 @@
 <h1>Create data</h1>
-<p>First of all we have to define the backbone for the application what consists to create all data classes. For this
-    example we only need a class Todo with basics informations.</p>
+<h2>Why ?</h2>
+<p>Using a data class in Aventus for managing data logic is particularly advantageous because it serves as a clear
+    representation of your data structure. It's important to note that this class primarily focuses on defining the
+    shape and behavior of data within your application and doesn't necessarily include business logic.</p>
+<p>Moreover, in many real-world scenarios, data classes can be generated from other sources, such as backend
+    services or other programming languages. For instance, you might have a backend written in C# that defines a
+    class. By mirroring this structure in your frontend code, you maintain consistency across
+    your application stack.</p>
 
-<p>You can right click on the folder <span class="cn">data</span> then select the option <span class="cn">Aventus :
-        Create...</span>.</p>
+<h2>Code it</h2>
 
-<av-img src="/img/tuto/data/create.png"></av-img>
+<p>For this example, you are going to write the data class manually. You need 2 classes : <span class="cn">Todo</span>
+    and <span class="cn">Task</span>.</p>
 
-<p>Then you can select <span class="cn">Data</span> in the options.</p>
+<ul>
+    <li>You can right click on the folder <span class="cn">data</span> then select the option <span class="cn">Aventus :
+            Create...</span>.</li>
+    <li>You can select <span class="cn">Data</span> in the options.</li>
+    <li>You can fill the ouput with the name <span class="cn">Task</span></li>
+    <li>You can add a property <span class="cn">description</span> as a <span class="cn">string</span></li>
+</ul>
 
-<av-img src="/img/tuto/data/data_options.png"></av-img>
-
-<p>You can fill the ouput with the name <span class="cn">Todo</span></p>
-<av-img src="/img/tuto/data/name.png"></av-img>
-
-<p>You can replace the content of the new file created by </p>
-<av-code language="typescript" filename="Todo.data.avt">
-    export enum TodoStatus {
-    \tWaiting,
-    \tProgress,
-    \tDone
-    }
-
-    export class Todo extends Aventus.Data implements Aventus.IData {
-    &nbsp;
-    \tpublic id: number = 0;
-    \tpublic name: string = "";
-    \tpublic status: TodoStatus = TodoStatus.Waiting;
-    &nbsp;
-    }
+<av-code language="typescript" filename="Demo/src/data/Task.data.avt">
+    <pre>
+        /**
+         * A task represents what you have to do to complete the Todo
+         */
+        export class Task extends Aventus.Data implements Aventus.IData {
+            public id: number = 0;
+            public description: string = "";
+        }
+    </pre>
 </av-code>
+
+<p>You can repeat the operation to create the class <span class="cn">Todo</span></p>
+<av-code language="typescript" filename="Demo/src/data/Todo.data.avt">
+    <pre>
+        import type { Task } from "./Task.data.avt";
+        &nbsp;
+        /**
+         * Represent a todo
+         */
+        export class Todo extends Aventus.Data implements Aventus.IData {
+            public id: number = 0;
+            public name: string = "";
+            public tasks: Task[] = [];
+        }
+    </pre>
+</av-code>
+
+<p>The current project state is the following : </p>
+<av-tutorial-data-editor-1></av-tutorial-data-editor-1>

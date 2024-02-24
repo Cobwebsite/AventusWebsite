@@ -1,6 +1,6 @@
 <div class="card">
     <div class="info">
-        <h3 class="title">{{name}}</h3>
+        <h3 class="title">{{ this.name }}</h3>
         <p>
             <slot></slot>
         </p>

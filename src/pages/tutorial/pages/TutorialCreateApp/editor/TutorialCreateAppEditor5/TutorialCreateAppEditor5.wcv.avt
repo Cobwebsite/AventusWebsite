@@ -1,0 +1,63 @@
+<av-code language="css" filename="Demo/src/apps/MainApp/MainApp.wcs.avt">
+    <pre>
+        :host {
+            display: flex;
+            flex-direction: row;
+            height: 100%;
+            overflow: hidden;
+            width: 100%;
+        &nbsp;
+            /* Add style to the sidenav */
+            .nav {
+                background-color: var(--color-surface-mixed-300);
+                height: 100%;
+                padding-top: 30px;
+                width: 200px;
+        &nbsp;
+                /* Define style \for sidnav item */
+                .nav-item {
+                    align-items: center;
+                    cursor: pointer;
+                    display: flex;
+                    margin: 5px 0;
+                    padding: 5px 15px;
+                    width: 100%;
+                    transition: background-color 0.2s linear;
+                }
+        &nbsp;
+                /* Define style \for when the sidnav item is active. */
+                .nav-item.active {
+                    background-color: var(--color-surface-mixed-600);
+                }
+                /* Define style \for when the sidnav item is hover. */
+                .nav-item:not(.active):hover {
+                    background-color: var(--color-surface-mixed-500);
+                }
+            }
+        &nbsp;
+            /* Change style of the .content declared inside the Aventus.Navigation.Router Component */
+            .content {
+                width: calc(100% - 200px);
+                height: 100%;
+            }
+        }
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="html" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">
+    <pre>
+        &lt;!-- The router has a slot name "before": we use it to define the sidenav --&gt;
+        &lt;block name="before"&gt;
+            &lt;div class="nav"&gt;
+                &lt;av-router-link class="nav-item" state="/"&gt;
+                    &lt;span class="name"&gt;Todo list&lt;/span&gt;
+                &lt;/av-router-link&gt;
+                &lt;av-router-link class="nav-item" state="/create"&gt;
+                    &lt;span class="name"&gt;Create todo&lt;/span&gt;
+                &lt;/av-router-link&gt;
+            &lt;/div&gt;
+        &lt;/block&gt;
+        &lt;slot&gt;&lt;/slot&gt;
+    </pre>
+</av-code>
+<slot></slot>

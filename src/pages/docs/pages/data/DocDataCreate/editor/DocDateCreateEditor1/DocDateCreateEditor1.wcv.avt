@@ -1,0 +1,28 @@
+<av-code-editor name="First Project">
+    <av-code language="json" filename="ExampleData/aventus.conf.avt">
+        <pre>
+            {
+                "module": "ExampleData",
+                "build": [
+                    {
+                        "name": "Main",
+                        "src": [
+                            "./src/*"
+                        ],
+                        "compile": [
+                            {
+                                "output": "./dist/helloaventus.js"
+                            }
+                        ]
+                    }
+                ]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="ExampleData/src/Person.data.avt">
+        export class Person extends Aventus.Data implements Aventus.IData {
+        \tpublic id: number = 0;
+        }
+    </av-code>
+    <slot></slot>
+</av-code-editor>

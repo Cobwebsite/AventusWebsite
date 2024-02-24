@@ -1,0 +1,44 @@
+import { TutorialListTodoEditor1 } from "../../../TutorialListTodo/editor/TutorialListTodoEditor1/TutorialListTodoEditor1.wcl.avt";
+
+export class TutorialIntroductionEditor1 extends TutorialListTodoEditor1 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override startupFile(): string {
+		return 'Demo/aventus.conf.avt'
+	}
+	public override hightlightFiles(): string[] {
+		return []
+	}
+
+	public override open_folder(): string | string[] | undefined {
+		return ['Demo/src']
+	}
+
+	public override defineResult(): HTMLElement | null {
+		let iframe = document.createElement("iframe");
+		iframe.src = "/tutorial/final/index.html"
+		return iframe
+	}
+	//#endregion
+	
+}

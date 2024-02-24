@@ -1,33 +1,105 @@
 <h1>Library - Watcher</h1>
-<p>A watcher is an object that will notify any changes it undergoes. This is based on the <span class="cn"><a
-            href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy"
-            target="_blank" rel="noopener noreferrer">Proxy</a></span> pattern.</p>
+<p>In the Aventus framework, watchable objects serve as dynamic data structures that enable developers to monitor
+    changes to their properties. These objects are created using the <span class="cn">Aventus.Watcher.get()</span> function, which initializes a
+    watchable object with optional initial properties and a callback function to handle property changes.</p>
+<p>Consider the following example:</p>
 
 <av-code language="typescript" filename="Example.lib.avt">
-    export function createWatcher() {
-    \tlet watchableObj = Aventus.Watcher.get({}, (action: WatchAction, path: string, element: any) =&gt; {
-    \t\tconsole.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);
-    \t});
-    \treturn watchableObj;
-    }
+    <pre>
+        export function runWatcher() {
+            const watchableObj = Aventus.Watcher.get({}, (action: Aventus.WatchAction, path: string, value: any) => {
+                console.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);
+            });
+        
+            watchableObj.name = "John"; // Triggers a CREATED action
+            // Log: CREATED on name with value "John"
+        
+            watchableObj.name = "John Doe"; // Triggers an UPDATED action
+            // Log: UPDATED on name with value "John Doe"
+        
+            delete watchableObj.name; // Triggers a DELETED action
+            // Log: DELETED on name with value "John Doe"
+        }
+    </pre>
 </av-code>
 
-<p>The callback is fired when one of the following action occured : <span class="cn">CREATED</span>, <span class="cn">UPDATED</span>, <span class="cn">DELETED</span>.</p>
+<p>In this code snippet, <span class="cn">watchableObj</span> is a watchable object initialized without any initial
+    properties. The <span class="cn">Aventus.Watcher.get()</span> function also accepts a callback function, which is
+    invoked whenever a
+    property of the watchable object is created, updated, or deleted. This callback function receives parameters
+    indicating the action type (<span class="cn">CREATED</span>, <span class="cn">UPDATED</span>, or <span
+        class="cn">DELETED</span>), the path of the property being modified, and its new
+    value.</p>
+<p>Watchable objects enable developers to reactively respond to changes in data, facilitating real-time updates and
+    synchronization across different parts of their applications. By monitoring changes to watchable object properties,
+    developers can implement dynamic behaviors and ensure that their applications remain responsive and up-to-date.</p>
 
+<p>The watcher lib is similar to <span class="cn">Signals</span> that you can find in others frameworks. You can also
+    find a <span class="cn">computed</span> and an <span class="cn">effect</span> that are functions.</p>
+
+
+<h2>Effect</h2>
+<p>In Aventus, effects are functions that are executed in response to changes in state or data within your application.
+    Effects are created using the <span class="cn">Aventus.Watcher.effect(fn: () =>
+        void)</span> function. Effects are used to perform side-effects such as logging, updating the user
+    interface, or interacting with external services.</p>
+<p>Effects encapsulate logic to perform specific actions or behaviors whenever their dependencies change. For instance,
+    you can define an effect to log a message whenever there is a change in the first name or last name properties of a
+    person object.</p>
+<p>By separating side-effects from the core logic of your application, effects help to keep your code organized,
+    maintainable, and predictable. They promote a declarative programming style, allowing you to focus on what your
+    application should do rather than how it should do it.</p>
 
 <av-code language="typescript" filename="Example.lib.avt">
-    export function runWatcher() {
-    \tlet watchableObj = Aventus.Watcher.get({}, (action: WatchAction, path: string, element: any) =&gt; {
-    \t\tconsole.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);
-    \t});
-    &nbsp;
-    \twatchableObj.name = "John"; // Fire a CREATED
-    \t// the log : CREATED on name with value "John"
-    &nbsp;
-    \twatchableObj.name = "John Doe"; // Fire a UPDATED
-    \t// the log : UPDATED on name with value "John Doe"
-    &nbsp;
-    \tdelete watchableObj.name; // Fire a DELETED
-    \t// the log : DELETED on name with value "John Doe"
-    }
+    <pre>
+            export function createEffect() {
+                const watchableObj = Aventus.Watcher.get({
+                    firstname: "John",
+                    lastname: "Doe"
+                });
+                &nbsp;
+                Aventus.Watcher.effect(() => {
+                    console.log(&#96;My name is &#36;{watchableObj.firstname} &#36;{watchableObj.lastname}&#96;);
+                })
+                &nbsp;
+                watchableObj.firstname = "Jane"; // this will print My name is Jane Doe 
+            }
+        </pre>
+</av-code>
+
+<h2>Computed</h2>
+
+<p>In the Aventus framework, computed values are a fundamental concept that allows developers to derive new data based
+    on existing data within their applications. Computed values are created using the <span
+        class="cn">Aventus.Watcher.computed(fn: () => any)</span> function,
+    which enables you to define a function that computes a value based on other data or state variables.</p>
+<p>Unlike traditional effects, computed values are expected to return a value. They encapsulate logic to calculate a new
+    value based on changes to their dependencies, ensuring that the computed value remains up-to-date whenever its
+    dependencies change.</p>
+<p>For example, in Aventus, you can define a computed value to calculate the full name of a person based on their first
+    name and last name properties. Whenever either the first name or last name changes, the computed value automatically
+    updates to reflect the new full name, ensuring consistency and accuracy throughout your application.</p>
+<p>Computed values provide a powerful tool for managing derived data and ensuring that your application remains
+    responsive to changes in state or data dependencies. By leveraging computed values, developers can streamline their
+    code, improve performance, and maintain a clear and consistent data model within their applications.</p>
+
+<av-code language="typescript" filename="Example.lib.avt">
+    <pre>
+        export function createComputed() {
+            const watchableObj = Aventus.Watcher.get({
+                firstname: "John",
+                lastname: "Doe"
+            });
+            &nbsp;
+            const fullName = Aventus.Watcher.computed(() => {
+                return &#96;&#36;{watchableObj.firstname} &#36;{watchableObj.lastname}&#96;;
+            });
+            &nbsp;
+            console.log(fullName.value); // write "John Doe"
+            &nbsp;
+            watchableObj.firstname = "Jane"; // this will recompute the fullName
+            &nbsp;
+            console.log(fullName.value); // write "Jane Doe"
+        }
+    </pre>
 </av-code>

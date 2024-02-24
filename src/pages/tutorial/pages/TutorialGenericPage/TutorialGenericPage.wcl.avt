@@ -3,13 +3,13 @@ import { Page } from "../../../../core/components/Page/Page.wcl.avt";
 
 export class TutorialGenericPage extends Page implements Aventus.DefaultComponent {
     @Attribute()
-    public fade: boolean;
+    public fade!: boolean;
 
     /**
      * 
      */
     public openMenu() {
-        this.findParentByType(TutorialPage).openMenu();
+        this.findParentByType(TutorialPage)?.openMenu();
     }
     public override async show() {
         super.show();
@@ -23,6 +23,6 @@ export class TutorialGenericPage extends Page implements Aventus.DefaultComponen
         super.hide();
     }
     public override pageTitle(): string {
-        return "Avenuts - Tutorial";
+        return "Aventus - Tutorial";
     }
 }

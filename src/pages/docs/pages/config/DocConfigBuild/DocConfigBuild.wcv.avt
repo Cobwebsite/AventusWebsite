@@ -19,25 +19,41 @@
         </av-dynamic-col>
     </av-dynamic-row>
     <av-dynamic-row>
-        <av-dynamic-col size="4" center>inputPath</av-dynamic-col>
+        <av-dynamic-col size="4" center>src</av-dynamic-col>
         <av-dynamic-col size="8" center>This is an array of string to define which folders Aventus will watch. For
             example, if you set "./src/*", all files inside the folder "src" will be compiled.
         </av-dynamic-col>
     </av-dynamic-row>
     <av-dynamic-row>
-        <av-dynamic-col size="4" center>outputFile</av-dynamic-col>
+        <av-dynamic-col size="4" center>disabled</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is a boolean to define if the build is active or not.
+            <span class="constraint">Must satisfy: <span class="cn">true|false</span></span>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>compile</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is an array to define how to compile your build.
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>compile.input</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is string or an array to define the entries points of your program. If not set, all the files matching the build.src will be compiled. Otherwise, only the needed file by your entries points will be compiled
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>compile.output</av-dynamic-col>
         <av-dynamic-col size="8" center>This is string to define where the compiled JavaScript file must be written.
             <span class="constraint">Must satisfy: ^\\S+\\.js</span>
         </av-dynamic-col>
     </av-dynamic-row>
     <av-dynamic-row>
-        <av-dynamic-col size="4" center>outputPackage</av-dynamic-col>
+        <av-dynamic-col size="4" center>compile.package</av-dynamic-col>
         <av-dynamic-col size="8" center>This is string to define where the .package.avt file must be written.
             <span class="constraint">Must satisfy: ^\\S+\\.package\\.avt</span>
         </av-dynamic-col>
     </av-dynamic-row>
     <av-dynamic-row>
-        <av-dynamic-col size="4" center>outsideModulePath</av-dynamic-col>
+        <av-dynamic-col size="4" center>outsideModule</av-dynamic-col>
         <av-dynamic-col size="8" center>
             <div>This is an array of string to define which folders Aventus will watch. The
                 watched file will be compiled outside of the module. For example, if you define a class "Test" inside a
@@ -70,12 +86,14 @@
             <span>This is an object to define the namespace based on the uri where the key is the namespace and the
                 value is an array of string to match uri</span>
             <av-code language="json">
+                <pre>
                 {
-                ...,
-                namespaceRules:{
-                "Data": ["./src/data/*"]
+                    ...,
+                    namespaceRules:{
+                        "Data": ["./src/data/*"]
+                    }
                 }
-                }
+                </pre>
             </av-code>
         </av-dynamic-col>
     </av-dynamic-row>
@@ -86,7 +104,11 @@
                 use code and/or autocompletion inside your code.</span>
         </av-dynamic-col>
     </av-dynamic-row>
-
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>nodeModulesDir</av-dynamic-col>
+        <av-dynamic-col size="8" center>The path where the node_modules are installed. By default the value is ./node_modules
+        </av-dynamic-col>
+    </av-dynamic-row>
     <av-dynamic-row>
         <av-dynamic-col size="4" center>module</av-dynamic-col>
         <av-dynamic-col size="8" center>This will override the module value of the <av-router-link

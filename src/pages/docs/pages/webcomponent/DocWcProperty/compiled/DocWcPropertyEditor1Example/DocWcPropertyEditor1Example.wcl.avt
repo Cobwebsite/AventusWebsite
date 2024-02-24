@@ -1,0 +1,34 @@
+export class DocWcPropertyEditor1Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	//#region static
+
+    //#endregion
+
+
+    //#region props
+    @Property((target: DocWcPropertyEditor1Example) => {
+        console.log("my label changed")
+    })
+    public label?: string;
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    protected override postCreation(): void {
+        setInterval(() => {
+            this.label = Math.random() + '';
+        }, 2000);
+    }
+	//#endregion
+
+}

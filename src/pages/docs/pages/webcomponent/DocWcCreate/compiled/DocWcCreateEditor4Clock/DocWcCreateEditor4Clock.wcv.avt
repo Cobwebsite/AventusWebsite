@@ -1,0 +1,1 @@
+<p style="color:{{ this.color }}">Time : {{ this.timeTxt }}</p>

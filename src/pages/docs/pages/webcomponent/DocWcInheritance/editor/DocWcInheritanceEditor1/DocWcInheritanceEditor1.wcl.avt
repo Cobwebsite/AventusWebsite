@@ -1,0 +1,38 @@
+import { BaseEditor } from "../../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
+
+export class DocWcInheritanceEditor1 extends BaseEditor implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+    
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    public override startupFile(): string {
+        return "Inheritance/src/Fillable/Fillable.wcl.avt";
+    }
+    public override hightlightFiles(): string[] {
+        return [
+            'Inheritance/src/Fillable/Fillable.wcl.avt',
+            'Inheritance/src/Fillable/Fillable.wcv.avt',
+        ];
+    }
+
+    //#endregion
+
+}

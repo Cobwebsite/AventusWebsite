@@ -1,0 +1,45 @@
+<av-code-editor name="Demo">
+    <av-code language="typescript" filename="Demo/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "TodoDemo",
+            	"componentPrefix": "td",
+            	"hideWarnings": true, // we don't need warnings during this demo
+            	"dependances": [
+            		{
+            			"uri": "@AventusUI" // Load the native dependance AventusUI
+            		}
+            	],
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/components/*",
+            				"./src/data/*",
+            				"./src/lib/*",
+            				"./src/ram/*",
+            				"./src/socket/*"
+            			],
+            			"compile": [{
+            				"output": "./dist/todo.js" // change the name to todo.js
+            			}]
+            		}
+            	],
+            	"static": [
+            		{
+            			"name": "Main",
+            			"input": "./src/static/*",
+            			"output": "./dist/"
+            		}
+            	]
+            }
+        </pre>
+    </av-code>
+    <div folder="Demo/src/components"></div>
+    <div folder="Demo/src/data"></div>
+    <div folder="Demo/src/lib"></div>
+    <div folder="Demo/src/ram"></div>
+    <div folder="Demo/src/socket"></div>
+    <div folder="Demo/src/static"></div>
+    <slot></slot>
+</av-code-editor>

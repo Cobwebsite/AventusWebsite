@@ -1,0 +1,1 @@
+<av-doc-wc-event-editor-2-button @customClick="sayHello">Say hello</av-doc-wc-event-editor-2-button>

@@ -1,0 +1,28 @@
+<av-code language="json" filename="HelloAventus/aventus.conf.avt">
+    <pre>
+    {
+        "module": "HelloAventus",
+        "componentPrefix": "ha",
+        "build": [
+            {
+                "name": "Main",
+                "src": [
+                    "./src/*"
+                ],
+                "compile": [
+                    {
+                        "output": "./dist/helloaventus.js"
+                    }
+                ]
+            }
+        ],
+        "static": [
+            {
+                "name": "Static",
+                "input": "./static/*",
+                "output": "./dist/"
+            }
+        ]
+    }
+    </pre>
+</av-code>

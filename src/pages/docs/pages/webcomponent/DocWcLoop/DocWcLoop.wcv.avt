@@ -1,48 +1,71 @@
 <h1>Webcomponent - Loop</h1>
-<p>In the section you are going to learn how you can create a loop inside your view to display array.</p>
 
-<p>Inside Aventus, you can declare loop inside your <span class="cn">*.wcv.avt</span> with the following pattern :
-    <br /><span class="cn">@for="$item, $index in $data"</span>. As en example we will display a list of todos.
+<p>
+    Loops are a fundamental concept in programming that allow you to iterate over collections of data, such as arrays or
+    objects, and perform operations on each element. In the context of Aventus views, loops provide a powerful
+    mechanism for dynamically rendering content based on the data available. They enable you to generate repetitive
+    structures, such as lists or tables, and customize the display of each item.
 </p>
 
-<av-code language="typescript" filename="Todo.data.avt">
-    export class Todo extends Aventus.Data implements Aventus.IData {
-    \tpublic id: number = 0;
-    \tpublic name: string = "";
-    \tpublic tasks: string[] = [];
-    }
-</av-code>
-
-<av-code language="typescript" filename="List.wcl.avt">
-    export class List extends Aventus.WebComponent implements Aventus.DefaultComponent {
-    \t@Watch()
-    \tpublic todos: Todo = [];
-    &nbsp;
-    \tpublic addTodo() {
-    \t\tlet todo = new Todo();
-    \t\ttodo.name = "My todo";
-    \t\ttodo.tasks = ["task1", "task2"];
-    \t\tthis.todos.push(todo);
-    \t}
-    }
-</av-code>
-
-<av-code language="html" filename="List.wcv.avt">
-    &lt;h1&gt;Todos&lt;/h1&gt;
-    &lt;div class="todo" @for="todo, i in todos" style="margin-bottom:10px"&gt;
-    \t&lt;div class="name"&gt;{{todo.name}}&lt;/div&gt;
-    \t&lt;div class="tasks"&gt;
-    \t\t&lt;div class="task" @for="task, j in todo.tasks" style="margin-left:10px"&gt;{{i}}-{{j}}. {{task}}&lt;/div&gt;
-    \t&lt;/div&gt;
-    &lt;/div&gt;
-    &lt;button @click="addTodo"&gt;Add&lt;/button&gt;
-</av-code>
+<p>Loops are invaluable in template development for several reasons:</p>
+<ul>
+    <li>Loops enable the dynamic generation of content based on the data provided. This flexibility allows for the
+        creation of interactive and data-driven user interfaces.</li>
+    <li>Loops help reduce code duplication by automating repetitive tasks, leading to cleaner and more maintainable
+        templates.</li>
+    <li>Loops facilitate the iteration over arrays, objects, or other iterable data structures, allowing you to access
+        and manipulate each element individually.</li>
+</ul>
 
 
-<av-img src="/img/doc/wc/loop/todos.png" mode="contains" class="todos-img"></av-img>
+<p>Aventus aims to prioritize developer friendliness by streamlining the template development process. One notable
+    feature illustrating this commitment is the ability to use loops directly within the template code. With Aventus,
+    developers can seamlessly integrate loop constructs, such as for loops, directly into their templates without the
+    need for additional setup or configuration. The Aventus compiler intelligently detects loop structures within the
+    template code, allowing developers to focus on building dynamic and responsive user interfaces without cumbersome
+    boilerplate code. This approach enhances developer productivity and promotes a more intuitive and efficient
+    workflow, ultimately contributing to a more enjoyable and streamlined development experience.</p>
 
-<p>You can see that the <span class="cn">i</span> and the <span class="cn">j</span> value starting at 0. You can add a +1 inside the curly braces (<span class="cn">\{{i+1}}-\{{j+1}}. \{{task}}</span>) but Aventus will trigger an error. The code will compile anyway so you can write it. This is because inside Aventus future version you will be able to write Typescript code between curly braces.</p>
+<h2>For</h2>
 
-<p>With the help on the <span class="cn"><av-router-link state="/docs/wc/watch">Watch</av-router-link></span> variable, the component can know what changed and can update only the part impacted by the change. No virtual DOM is involved and only the needed part is updated inside the DOM.</p>
+<p>The <span class="cn">for</span> loop is a classic iteration construct in programming, commonly used to traverse
+    arrays or perform repetitive
+    tasks a fixed number of times. In Aventus templates, the for loop provides a straightforward approach to iterating
+    over arrays and generating dynamic content based on each element.</p>
 
-<p>If you use <span class="cn">@element</span> inside a loop, the variable will be imported as an array.</p>
+<av-doc-wc-loop-editor-1></av-doc-wc-loop-editor-1>
+
+<p>When working with nested loops in Aventus templates, referencing properties of outer loop iterations within inner
+    loops can lead to verbose and repetitive code. In the provided example, accessing properties like <span
+        class="cn">this.todos[i]</span>
+    within each inner loop creates code clutter and decreases readability, especially when dealing with deeply nested
+    structures or long property names.</p>
+
+<p>To address this issue, Aventus introduces a concept called <span class="cn">@Context</span>. It allows developers to
+    define a context variable within the loop iteration, simplifying property references within nested loops. By
+    assigning the current loop iteration to a context variable, developers can then access properties of the current
+    iteration directly using the context variable within inner loops. This approach significantly reduces code
+    verbosity, enhances code clarity, and improves maintainability, especially in scenarios involving complex nested
+    loops and data structures. Ultimately, <span class="cn">@Context</span> streamlines the template development process
+    and promotes cleaner and more concise code.</p>
+
+<av-doc-wc-loop-editor-2></av-doc-wc-loop-editor-2>
+
+<h2>For...in</h2>
+
+<p>The <span class="cn">for...in</span> loop in JavaScript iterates over the enumerable properties of an object, making it suitable for looping
+    through key-value pairs. In Aventus templates, it offers a convenient way to iterate over object
+    properties and render content dynamically based on each key-value pair.</p>
+
+<av-doc-wc-loop-editor-3></av-doc-wc-loop-editor-3>
+
+<h2>For...of</h2>
+
+<p>
+    The <span class="cn">for...of</span> loop is a modern iteration construct introduced in ES6, designed specifically for iterating over
+    iterable objects such as arrays, strings, and other collection types. In Aventus templates, it
+    simplifies the iteration process by directly accessing the values of iterable objects, enabling seamless content
+    rendering based on each item.
+</p>
+
+<av-doc-wc-loop-editor-4></av-doc-wc-loop-editor-4>

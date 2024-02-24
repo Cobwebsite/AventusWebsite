@@ -1,0 +1,24 @@
+<script>
+	import type { DocLibCallbackEditor1Emitter } from "./DocLibCallbackEditor1Emitter.wc.avt";	
+
+	export class DocLibCallbackEditor1Receiver extends Aventus.WebComponent implements Aventus.DefaultComponent {
+		protected override postCreation(): void {
+			let emitter = this.parentNode?.querySelector<DocLibCallbackEditor1Emitter>("av-doc-lib-callback-editor-1-emitter");
+			if(emitter) {
+				emitter.addEventListener("myEvent", (e: CustomEvent) => {
+					this.shadowRoot.innerHTML = 'Time is ' + e.detail.time;
+				});
+			}
+		}
+	}
+</script>
+
+<template>
+	<slot></slot>
+</template>
+
+<style>
+	:host {
+		
+	}
+</style>

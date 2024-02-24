@@ -1,0 +1,14 @@
+<div class="header" @element="headerEl">
+    <av-scrollable y_scroll="false" x_scroll x_scroll_visible="false">
+        <div class="tab-container">
+            for(let i = 0; i < this.tabs.length; i++) { 
+                <div class="tab {{ i == this.tab ? 'active' : '' }}" @press="tabPress">{{ this.tabs[i].name }}</div>
+            }
+        </div>
+    </av-scrollable>
+</div>
+<div class="container" @element="containerEl">
+</div>
+<div class="hidden">
+    <slot></slot>
+</div>

@@ -1,0 +1,31 @@
+import { DocStateListenEditor3 } from "../DocStateListenEditor3/DocStateListenEditor3.wcl.avt";
+
+export class DocStateListenEditor4 extends DocStateListenEditor3 implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    public override startupFile(): string {
+        return "StateExample/src/CreatePerson.state.avt";
+    }
+    //#endregion
+
+}

@@ -1,39 +1,16 @@
 <h1>Webcomponent - Event</h1>
-<p>In the section you are going to learn how you can listen to event trigger.</p>
+<p>In this section you are going to learn how you can listen to event trigger.</p>
 
 <h2>Add event</h2>
 <p>To bind an event on a child inside the shadowroot, you can use the following syntax : <span
         class="cn">@eventname=""</span></p>
-<p>With the code below, a "Hello world" will be printed</p>
-<av-code language="html" filename="Button.wcv.avt">
-    &lt;button @click="sayHello"&gt;Say hello to console&lt;/button&gt;
-</av-code>
-<av-code language="typescript" filename="Button.wcl.avt">
-    export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {
-    &nbsp;
-    \t//#region static
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \t//#region props
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \t//#region variables
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \t//#region constructor
-    &nbsp;
-    \t//#endregion
-    &nbsp;
-    \t//#region methods
-    \tprivate sayHello(): void {
-    \t\tconsole.log("Hello world");
-    \t}
-    \t//#endregion
-    &nbsp;
-    }
-</av-code>
-<p>If you have an <av-router-link state="/docs/lib/callback">Aventus.CallbackManager</av-router-link> instead of an event, you can use
+<p>With the code below, an alert saying "Hello" will be opened when the button is clicked.</p>
+<av-doc-wc-event-editor-1></av-doc-wc-event-editor-1>
+<p>If you have an <av-router-link state="/docs/lib/callback">Aventus.Callback</av-router-link> instead of an event, you
+    can use
     this syntax to subscribe to the trigger.</p>
+<av-doc-wc-event-editor-2></av-doc-wc-event-editor-2>
+<p>If it's an Aventus.Callback, the compiler will take the name of your event and check if the property <span
+        class="cn">$event</span>, <span class="cn">on$event</span> or <span class="cn">on$Event</span> exists on the
+    element. For the example above, you can use <span class="cn">@onCustomClick</span>, <span
+        class="cn">@customClick</span> or <span class="cn">@CustomClick</span>.</p>

@@ -1,0 +1,2 @@
+<div class="debug" @element="debugEl"></div>
+<button @click="toggleState">Change state</button>

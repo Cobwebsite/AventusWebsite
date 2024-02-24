@@ -1,0 +1,47 @@
+<av-code language="typescript" filename="Template/src/NewComp/NewComp.wcl.avt">
+    <pre>
+        import { Tailwind } from '@/Tailwind/Tailwind.wcl.avt'
+        &nbsp;
+        export class NewComp extends Tailwind implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region static
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region props
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region variables
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region constructor
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region methods
+        &nbsp;
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
+<av-code language="css" filename="Template/src/NewComp/NewComp.wcs.avt">
+    <pre>
+        :host {
+            
+        }
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="html" filename="Template/src/NewComp/NewComp.wcv.avt">
+    <pre>
+        &lt;slot&gt;&lt;/slot&gt;
+    </pre>
+</av-code>
+<slot></slot>

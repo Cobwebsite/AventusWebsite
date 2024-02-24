@@ -79,7 +79,7 @@
     }
 </av-code>
 <p>This is useful if you are alone on a project or if you need to debug something, but this way is strongly discouraged
-    because it means that you have to open all your projects at least one time what is not really scalable friendly.</p>
+    because it means that you have to open all your projects at least one time which is not really scalable friendly.</p>
 <h3>Same module</h3>
 <p>To include a build inside another build on the same <span class="cn">aventus.conf.avt</span>, you can type the uri
     <span class="cn">&:$build</span>

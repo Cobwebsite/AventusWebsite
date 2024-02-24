@@ -13,13 +13,13 @@
         </av-dynamic-col>
     </av-dynamic-row>
     <av-dynamic-row>
-        <av-dynamic-col size="4" center>inputPath</av-dynamic-col>
+        <av-dynamic-col size="4" center>input</av-dynamic-col>
         <av-dynamic-col size="8" center>This is a string to define which folder Aventus will watch. For
             example, if you set "./src/static/*", all files inside the folder "src/static" will be exported.
         </av-dynamic-col>
     </av-dynamic-row>
     <av-dynamic-row>
-        <av-dynamic-col size="4" center>outputPath</av-dynamic-col>
+        <av-dynamic-col size="4" center>output</av-dynamic-col>
         <av-dynamic-col size="8" center>This is string to define where the static files will be exported.
         </av-dynamic-col>
     </av-dynamic-row>

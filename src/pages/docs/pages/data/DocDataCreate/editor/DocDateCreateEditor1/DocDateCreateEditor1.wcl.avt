@@ -1,0 +1,32 @@
+import { BaseEditor } from "../../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
+import type { CodeEditor } from "../../../../../../../core/components/layout/CodeEditor/CodeEditor.wcl.avt";
+
+export class DocDateCreateEditor1 extends BaseEditor implements Aventus.DefaultComponent {
+
+	//#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+    
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    public override startupFile(): string {
+        return "ExampleData/src/Person.data.avt";
+    }
+    //#endregion
+	
+}

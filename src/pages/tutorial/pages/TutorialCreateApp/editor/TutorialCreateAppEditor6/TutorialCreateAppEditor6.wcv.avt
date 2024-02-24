@@ -1,0 +1,181 @@
+<av-code language="typescript" filename="Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcl.avt">
+    <pre>
+        export abstract class GenericPage extends Aventus.Navigation.Page implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region static
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region props
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region variables
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region constructor
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region methods
+            public abstract definePageTitle(): string;
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
+<av-code language="css" filename="Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcs.avt">
+    <pre>
+        :host {
+            height: 100%;
+            overflow: hidden;
+            width: 100%;
+        &nbsp;
+            av-scrollable {
+                height: 100%;
+                width: 100%;
+                /* define the padding needed inside the scrollbar */
+                --scrollbar-content-padding: 15px;
+        &nbsp;
+                .page-title {
+                    height: 50px;
+                    width: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 30px;
+                    margin: 30px 0;
+                }
+            }
+        }
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="html" filename="Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcv.avt">
+    <pre>
+        &lt;!-- use scrollable to display a scrollbar &#105;f the content is bigger than the size of the scrollable component --&gt;
+        &lt;av-scrollable&gt;
+            &lt;!-- Generic page title define by children pages --&gt;
+            &lt;div class="page-title"&gt;&#123;&#123; this.definePageTitle() &#125;&#125;&lt;/div&gt;
+            &lt;!-- Add a slot so that the children can add custom content --&gt;
+            &lt;slot&gt;&lt;/slot&gt;
+        &lt;/av-scrollable&gt;
+    </pre>
+</av-code>
+<av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt">
+    <pre>
+        import { GenericPage } from "../GenericPage/GenericPage.wcl.avt";
+        &nbsp;
+        /**
+         * The page to create new todo
+         */
+        export class TodoCreatePage extends GenericPage implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region static
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region props
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region variables
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region constructor
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region methods
+            /**
+             * @inheritdoc
+             */
+            public override definePageTitle(): string {
+                return "Create todo";
+            }
+        &nbsp;
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
+<av-code language="css" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcs.avt">
+    <pre>
+        :host {
+            
+        }
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt">
+    <pre>
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt">
+    <pre>
+        import { GenericPage } from "../GenericPage/GenericPage.wcl.avt";
+        &nbsp;
+        /**
+         * The page to list all todos
+         */
+        export class TodoListPage extends GenericPage implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region static
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region props
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region variables
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region constructor
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region methods
+            /**
+             * @inheritdoc
+             */
+            public override definePageTitle(): string {
+                return "List todos";
+            }
+        &nbsp;
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
+<av-code language="css" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcs.avt">
+    <pre>
+        :host {
+            
+        }
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt">
+    <pre>
+        &lt;!-- Only to show the scrollbar --&gt;
+        &lt;div style="height:800px;width:40px;background:red"&gt;&lt;/div&gt;
+    </pre>
+</av-code>
+<slot></slot>

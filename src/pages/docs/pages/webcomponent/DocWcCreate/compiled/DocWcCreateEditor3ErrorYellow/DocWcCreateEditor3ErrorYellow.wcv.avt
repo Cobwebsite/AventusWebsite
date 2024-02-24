@@ -1,0 +1,6 @@
+<block name="error">
+	<span style="color:yellow">
+		<!-- The errors will be displayed in yellow now -->
+        <slot name="error"></slot>
+	</span>
+</block>

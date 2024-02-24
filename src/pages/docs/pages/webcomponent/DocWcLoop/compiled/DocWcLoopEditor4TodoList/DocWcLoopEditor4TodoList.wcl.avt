@@ -1,0 +1,40 @@
+import { DocWcLoopEditor1Todo } from "../DocWcLoopEditor1Todo.data.avt";
+
+export class DocWcLoopEditor4TodoList extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+    @Watch()
+    public todos: DocWcLoopEditor1Todo[] = [];
+
+    private todoId: number = 0;
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    protected addTodo() {
+        this.todoId++;
+        let todo = new DocWcLoopEditor1Todo();
+        todo.name = "My todo " + this.todoId;
+        todo.tasks = ["task1", "task2"];
+        this.todos.push(todo);
+    }
+    //#endregion
+
+	
+}

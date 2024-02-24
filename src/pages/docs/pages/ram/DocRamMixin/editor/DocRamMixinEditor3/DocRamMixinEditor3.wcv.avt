@@ -1,0 +1,11 @@
+<av-code language="typescript" filename="ExampleRAM/src/Person.ram.avt">
+    import { Person } from "./Person.data.avt";
+    &nbsp;
+    interface PersonAction {
+        // define your function here
+        helloWorld(): void;
+    }
+    &nbsp;
+    type PersonExtended = Person & PersonAction;
+</av-code>
+<slot></slot>
