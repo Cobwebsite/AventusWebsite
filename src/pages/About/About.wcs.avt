@@ -2,6 +2,11 @@
 	height: 100%;
 	width: 100%;
 
+	a {
+		color: var(--link-color);
+		text-decoration: none;
+	}
+
 	.height-wrapper {
 		flex-grow: 1;
 	}

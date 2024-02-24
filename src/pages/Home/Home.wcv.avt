@@ -30,6 +30,9 @@
                 <av-dynamic-col size_sm="12" size_md="4" size="12">
                     <div class="block">
                         <div class="title">Encapsulation</div>
+                        <div class="icon">
+                            <mi-icon icon="category"></mi-icon>
+                        </div>
                         <p>Avoiding conflicts through encapsulation to build scalable application. Each file has a role
                             to play in keeping your code tidy.</p>
                     </div>
@@ -38,6 +41,9 @@
                 <av-dynamic-col size_sm="12" size_md="4" size="12">
                     <div class="block">
                         <div class="title">For OOP lovers</div>
+                        <div class="icon">
+                            <mi-icon icon="linked_services"></mi-icon>
+                        </div>
                         <p>Even your graphic components can be defined by class which allows inheritance and genericity.
                             If you love OOP, you will love making views.</p>
                     </div>
@@ -46,6 +52,9 @@
                 <av-dynamic-col size_sm="12" size_md="4" size="12">
                     <div class="block">
                         <div class="title">Type safe</div>
+                        <div class="icon">
+                            <mi-icon icon="health_and_safety"></mi-icon>
+                        </div>
                         <p>Prevent errors through typing and make your code more secure. Maintaining a growing
                             application over the long term.</p>
                     </div>
@@ -57,14 +66,16 @@
 
         <div class="why">
             <h2>The Aventus mindset</h2>
-            <p>Aventus aims to simplify the web by leveraging new native technologies. Webcomponents are just one
-                example. Nowadays, it's possible to build large applications without relying on millions of libraries
-                downloaded via npm and then compiled via a module bundler.</p>
-            <p>The tool must not be complicated to install, and projects must be able to be created quickly. It's
-                important for users to be able to access and create their own templates to save time. That's why Aventus
-                is only available as a VSCode extension right now, making it easy to use.</p>
+            <p>Aventus strives to streamline web development by harnessing modern native technologies, with web
+                components serving as a prime illustration of this approach. In today's landscape, developers can
+                construct robust applications without the need for an extensive array of libraries obtained via npm and
+                subsequently processed through a module bundler.</p>
+            <p>Ease of installation and rapid project setup are paramount considerations. Users should have the ability
+                to swiftly access and generate templates to expedite development workflows. Presently, Aventus is
+                exclusively offered as a VSCode extension, ensuring user-friendly accessibility and simplicity of
+                utilization. This decision simplifies the onboarding process, making the tool readily accessible to
+                developers, thereby enhancing overall productivity and efficiency in web development efforts.</p>
         </div>
     </div>
-
     <av-footer></av-footer>
 </av-scrollable>

@@ -24,8 +24,8 @@
 	--light-primary-color: #282c34;
 	--secondary-color: #e1e1e1;
 	--aventus-color: #e5540e;
-	--aventus-font-color: white;
-	--primary-font-color: white;
+	--aventus-font-color: #e1e1e1;
+	--primary-font-color: #e1e1e1;
 	--link-color: #5680ed;
 
 	--title-color: var(--light-primary-color);
@@ -65,7 +65,7 @@
 
 :root.dark {
 	--secondary-color: #323232;
-	--title-color: #eaeaea;
+	--title-color: #e1e1e1;
 	--text-color: #d9d9d9;
 }
 

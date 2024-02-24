@@ -78,6 +78,7 @@
 				color: var(--primary-font-color);
 				font-size: 30px;
 			}
+			
 		}
 
 
@@ -133,6 +134,7 @@
 				flex-direction: column;
 				height: 100%;
 				padding: 30px;
+				padding-bottom: 20px;
 				width: 100%;
 
 				.title {
@@ -146,6 +148,15 @@
 					display: flex;
 					flex-grow: 1;
 					text-align: justify;
+					margin: 0;
+				}
+
+				.icon {
+					margin: 25px 0;
+					text-align: center;
+					mi-icon {
+						font-size: 60px;
+					}
 				}
 			}
 		}
