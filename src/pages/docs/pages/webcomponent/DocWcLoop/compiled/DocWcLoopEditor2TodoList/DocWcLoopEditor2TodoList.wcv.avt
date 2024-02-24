@@ -1,0 +1,11 @@
+<h1>Todos</h1>
+for(let i = 0; i < this.todos.length; i++) { 
+    @Context('todo', this.todos[i])
+    <div class="name">{{ todo.name }}</div>
+    <ul>
+        for(let j = 0; j < todo.tasks.length; j++) { 
+            <li>{{ i + 1 }}-{{ j + 1 }}. {{ todo.tasks[j] }}</li>
+        }
+    </ul>
+}
+<button @click="addTodo">Add</button>

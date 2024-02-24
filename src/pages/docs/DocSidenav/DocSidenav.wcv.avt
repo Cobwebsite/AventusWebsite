@@ -62,6 +62,7 @@
             <li><av-router-link state="/docs/wc/binding">Binding</av-router-link></li>
             <li><av-router-link state="/docs/wc/state">State</av-router-link></li>
             <li><av-router-link state="/docs/wc/loop">Loop</av-router-link></li>
+            <li><av-router-link state="/docs/wc/condition">Condition</av-router-link></li>
         </ul>
     </av-collapse>
 

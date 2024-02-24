@@ -1,0 +1,17 @@
+<av-code language="html" filename="For/src/TodoList/TodoList.wcv.avt">
+    <pre>
+        &lt;h1&gt;Todos&lt;/h1&gt;
+        \for(let index in this.todos) { 
+            \@Context('todo', this.todos[index])
+            &lt;div class="name"&gt;\{{ todo.name }}&lt;/div&gt;
+            &lt;ul&gt;
+                \for(let index2 in todo.tasks) { 
+                    &lt;li&gt;\{{ index + 1 }}-\{{ index2 + 1 }}. \{{ todo.tasks[index2] }}&lt;/li&gt;
+                }
+            &lt;/ul&gt;
+        }
+        &lt;button @click="addTodo"&gt;Add&lt;/button&gt;
+    </pre>
+</av-code>
+
+<slot></slot>

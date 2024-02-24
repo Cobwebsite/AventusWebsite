@@ -1,0 +1,30 @@
+export class DocWcConditionEditor1Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	//#region static
+
+    //#endregion
+
+
+    //#region props
+    @Property()
+    public number!: number;
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    protected increment() {
+        this.number++;
+    }
+    //#endregion
+	
+}

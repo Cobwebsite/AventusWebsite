@@ -2327,7 +2327,7 @@
     <pre>
         &lt;div class="title"&gt;
             &lt;span&gt;\{{ this.todo.name }}&lt;/span&gt;
-            &lt;td-icon icon="delete"&gt;&lt;/td-icon&gt;
+            &lt;td-icon icon="delete" @press="removeTodo"&gt;&lt;/td-icon&gt;
         &lt;/div&gt;
         &lt;ul&gt;
             \for(let task of this.todo.tasks) { 

@@ -1,3 +1,4 @@
+import { DocWcConditionEditor1Example } from "../../compiled/DocWcConditionEditor1Example/DocWcConditionEditor1Example.wcl.avt";
 import { BaseEditor } from "../../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
 
 export class DocWcConditionEditor1 extends BaseEditor implements Aventus.DefaultComponent {
@@ -23,7 +24,12 @@ export class DocWcConditionEditor1 extends BaseEditor implements Aventus.Default
 	
 	
 	//#region methods
-	
+	public override startupFile(): string {
+		return 'Conditional/src/Example/Example.wcv.avt';
+	}
+	public override defineResult(): HTMLElement | null {
+		return new DocWcConditionEditor1Example()
+	}
 	//#endregion
 	
 }

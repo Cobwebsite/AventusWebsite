@@ -29,6 +29,7 @@ export class TutorialCreateTodoEditor2 extends TutorialCreateTodoEditor1 impleme
 	public override hightlightFiles(): string[] {
 		return [
 			'Demo/src/apps/@default.wcs.avt',
+			'Demo/src/apps/MainApp/MainApp.wcl.avt',
 			'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt',
 			'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt',
 

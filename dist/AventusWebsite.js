@@ -41,20 +41,6 @@ const sleep=function sleep(ms) {
 }
 
 _.sleep=sleep;
-const setValueToObject=function setValueToObject(path, obj, value) {
-    path = path.replace(/\[(.*?)\]/g, '.$1');
-    let splitted = path.split(".");
-    for (let i = 0; i < splitted.length - 1; i++) {
-        let split = splitted[i];
-        if (!obj[split]) {
-            obj[split] = {};
-        }
-        obj = obj[split];
-    }
-    obj[splitted[splitted.length - 1]] = value;
-}
-
-_.setValueToObject=setValueToObject;
 var WatchAction;
 (function (WatchAction) {
     WatchAction[WatchAction["CREATED"] = 0] = "CREATED";
@@ -113,6 +99,20 @@ const compareObject=function compareObject(obj1, obj2) {
 }
 
 _.compareObject=compareObject;
+const setValueToObject=function setValueToObject(path, obj, value) {
+    path = path.replace(/\[(.*?)\]/g, '.$1');
+    let splitted = path.split(".");
+    for (let i = 0; i < splitted.length - 1; i++) {
+        let split = splitted[i];
+        if (!obj[split]) {
+            obj[split] = {};
+        }
+        obj = obj[split];
+    }
+    obj[splitted[splitted.length - 1]] = value;
+}
+
+_.setValueToObject=setValueToObject;
 const getValueFromObject=function getValueFromObject(path, obj) {
     path = path.replace(/\[(.*?)\]/g, '.$1');
     if (path == "") {
@@ -635,6 +635,396 @@ const Mutex=class Mutex {
 }
 Mutex.Namespace=`${moduleName}`;
 _.Mutex=Mutex;
+const PressManager=class PressManager {
+    static create(options) {
+        if (Array.isArray(options.element)) {
+            let result = [];
+            for (let el of options.element) {
+                let cloneOpt = { ...options };
+                cloneOpt.element = el;
+                result.push(new PressManager(cloneOpt));
+            }
+            return result;
+        }
+        else {
+            return new PressManager(options);
+        }
+    }
+    options;
+    element;
+    delayDblPress = 150;
+    delayLongPress = 700;
+    nbPress = 0;
+    offsetDrag = 20;
+    state = {
+        oneActionTriggered: false,
+        isMoving: false,
+    };
+    startPosition = { x: 0, y: 0 };
+    customFcts = {};
+    timeoutDblPress = 0;
+    timeoutLongPress = 0;
+    downEventSaved;
+    actionsName = {
+        press: "press",
+        longPress: "longPress",
+        dblPress: "dblPress",
+        drag: "drag"
+    };
+    useDblPress = false;
+    stopPropagation = () => true;
+    functionsBinded = {
+        downAction: (e) => { },
+        upAction: (e) => { },
+        moveAction: (e) => { },
+        childPressStart: (e) => { },
+        childPressEnd: (e) => { },
+        childPress: (e) => { },
+        childDblPress: (e) => { },
+        childLongPress: (e) => { },
+        childDragStart: (e) => { },
+    };
+    /**
+     * @param {*} options - The options
+     * @param {HTMLElement | HTMLElement[]} options.element - The element to manage
+     */
+    constructor(options) {
+        if (options.element === void 0) {
+            throw 'You must provide an element';
+        }
+        this.element = options.element;
+        this.checkDragConstraint(options);
+        this.assignValueOption(options);
+        this.options = options;
+        this.init();
+    }
+    /**
+     * Get the current element focused by the PressManager
+     */
+    getElement() {
+        return this.element;
+    }
+    checkDragConstraint(options) {
+        if (options.onDrag !== void 0) {
+            if (options.onDragStart === void 0) {
+                options.onDragStart = (e) => { };
+            }
+            if (options.onDragEnd === void 0) {
+                options.onDragEnd = (e) => { };
+            }
+        }
+        if (options.onDragStart !== void 0) {
+            if (options.onDrag === void 0) {
+                options.onDrag = (e) => { };
+            }
+            if (options.onDragEnd === void 0) {
+                options.onDragEnd = (e) => { };
+            }
+        }
+        if (options.onDragEnd !== void 0) {
+            if (options.onDragStart === void 0) {
+                options.onDragStart = (e) => { };
+            }
+            if (options.onDrag === void 0) {
+                options.onDrag = (e) => { };
+            }
+        }
+    }
+    assignValueOption(options) {
+        if (options.delayDblPress !== undefined) {
+            this.delayDblPress = options.delayDblPress;
+        }
+        if (options.delayLongPress !== undefined) {
+            this.delayLongPress = options.delayLongPress;
+        }
+        if (options.offsetDrag !== undefined) {
+            this.offsetDrag = options.offsetDrag;
+        }
+        if (options.onDblPress !== undefined) {
+            this.useDblPress = true;
+        }
+        if (options.forceDblPress) {
+            this.useDblPress = true;
+        }
+        if (typeof options.stopPropagation == 'function') {
+            this.stopPropagation = options.stopPropagation;
+        }
+        else if (options.stopPropagation === false) {
+            this.stopPropagation = () => false;
+        }
+        if (!options.buttonAllowed)
+            options.buttonAllowed = [0];
+    }
+    bindAllFunction() {
+        this.functionsBinded.downAction = this.downAction.bind(this);
+        this.functionsBinded.moveAction = this.moveAction.bind(this);
+        this.functionsBinded.upAction = this.upAction.bind(this);
+        this.functionsBinded.childDblPress = this.childDblPress.bind(this);
+        this.functionsBinded.childDragStart = this.childDragStart.bind(this);
+        this.functionsBinded.childLongPress = this.childLongPress.bind(this);
+        this.functionsBinded.childPress = this.childPress.bind(this);
+        this.functionsBinded.childPressStart = this.childPressStart.bind(this);
+        this.functionsBinded.childPressEnd = this.childPressEnd.bind(this);
+    }
+    init() {
+        this.bindAllFunction();
+        this.element.addEventListener("pointerdown", this.functionsBinded.downAction);
+        this.element.addEventListener("trigger_pointer_press", this.functionsBinded.childPress);
+        this.element.addEventListener("trigger_pointer_pressstart", this.functionsBinded.childPressStart);
+        this.element.addEventListener("trigger_pointer_pressend", this.functionsBinded.childPressEnd);
+        this.element.addEventListener("trigger_pointer_dblpress", this.functionsBinded.childDblPress);
+        this.element.addEventListener("trigger_pointer_longpress", this.functionsBinded.childLongPress);
+        this.element.addEventListener("trigger_pointer_dragstart", this.functionsBinded.childDragStart);
+    }
+    downAction(e) {
+        if (!this.options.buttonAllowed?.includes(e.button)) {
+            return;
+        }
+        this.downEventSaved = e;
+        if (this.stopPropagation()) {
+            e.stopImmediatePropagation();
+        }
+        this.customFcts = {};
+        if (this.nbPress == 0) {
+            this.state.oneActionTriggered = false;
+            clearTimeout(this.timeoutDblPress);
+        }
+        this.startPosition = { x: e.pageX, y: e.pageY };
+        document.addEventListener("pointerup", this.functionsBinded.upAction);
+        document.addEventListener("pointermove", this.functionsBinded.moveAction);
+        this.timeoutLongPress = setTimeout(() => {
+            if (!this.state.oneActionTriggered) {
+                if (this.options.onLongPress) {
+                    this.state.oneActionTriggered = true;
+                    this.options.onLongPress(e, this);
+                    this.triggerEventToParent(this.actionsName.longPress, e);
+                }
+                else {
+                    this.emitTriggerFunction(this.actionsName.longPress, e);
+                }
+            }
+        }, this.delayLongPress);
+        if (this.options.onPressStart) {
+            this.options.onPressStart(e, this);
+            this.emitTriggerFunctionParent("pressstart", e);
+        }
+        else {
+            this.emitTriggerFunction("pressstart", e);
+        }
+    }
+    upAction(e) {
+        if (this.stopPropagation()) {
+            e.stopImmediatePropagation();
+        }
+        document.removeEventListener("pointerup", this.functionsBinded.upAction);
+        document.removeEventListener("pointermove", this.functionsBinded.moveAction);
+        clearTimeout(this.timeoutLongPress);
+        if (this.state.isMoving) {
+            this.state.isMoving = false;
+            if (this.options.onDragEnd) {
+                this.options.onDragEnd(e, this);
+            }
+            else if (this.customFcts.src && this.customFcts.onDragEnd) {
+                this.customFcts.onDragEnd(e, this.customFcts.src);
+            }
+        }
+        else {
+            if (this.useDblPress) {
+                this.nbPress++;
+                if (this.nbPress == 2) {
+                    if (!this.state.oneActionTriggered) {
+                        this.state.oneActionTriggered = true;
+                        this.nbPress = 0;
+                        if (this.options.onDblPress) {
+                            this.options.onDblPress(e, this);
+                            this.triggerEventToParent(this.actionsName.dblPress, e);
+                        }
+                        else {
+                            this.emitTriggerFunction(this.actionsName.dblPress, e);
+                        }
+                    }
+                }
+                else if (this.nbPress == 1) {
+                    this.timeoutDblPress = setTimeout(() => {
+                        this.nbPress = 0;
+                        if (!this.state.oneActionTriggered) {
+                            if (this.options.onPress) {
+                                this.state.oneActionTriggered = true;
+                                this.options.onPress(e, this);
+                                this.triggerEventToParent(this.actionsName.press, e);
+                            }
+                            else {
+                                this.emitTriggerFunction(this.actionsName.press, e);
+                            }
+                        }
+                    }, this.delayDblPress);
+                }
+            }
+            else {
+                if (!this.state.oneActionTriggered) {
+                    if (this.options.onPress) {
+                        this.state.oneActionTriggered = true;
+                        this.options.onPress(e, this);
+                        this.triggerEventToParent(this.actionsName.press, e);
+                    }
+                    else {
+                        this.emitTriggerFunction("press", e);
+                    }
+                }
+            }
+        }
+        if (this.options.onPressEnd) {
+            this.options.onPressEnd(e, this);
+            this.emitTriggerFunctionParent("pressend", e);
+        }
+        else {
+            this.emitTriggerFunction("pressend", e);
+        }
+    }
+    moveAction(e) {
+        if (!this.state.isMoving && !this.state.oneActionTriggered) {
+            if (this.stopPropagation()) {
+                e.stopImmediatePropagation();
+            }
+            let xDist = e.pageX - this.startPosition.x;
+            let yDist = e.pageY - this.startPosition.y;
+            let distance = Math.sqrt(xDist * xDist + yDist * yDist);
+            if (distance > this.offsetDrag && this.downEventSaved) {
+                this.state.oneActionTriggered = true;
+                if (this.options.onDragStart) {
+                    this.state.isMoving = true;
+                    this.options.onDragStart(this.downEventSaved, this);
+                    this.triggerEventToParent(this.actionsName.drag, e);
+                }
+                else {
+                    this.emitTriggerFunction("dragstart", this.downEventSaved);
+                }
+            }
+        }
+        else if (this.state.isMoving) {
+            if (this.options.onDrag) {
+                this.options.onDrag(e, this);
+            }
+            else if (this.customFcts.src && this.customFcts.onDrag) {
+                this.customFcts.onDrag(e, this.customFcts.src);
+            }
+        }
+    }
+    triggerEventToParent(eventName, pointerEvent) {
+        if (this.element.parentNode) {
+            this.element.parentNode.dispatchEvent(new CustomEvent("pressaction_trigger", {
+                bubbles: true,
+                cancelable: false,
+                composed: true,
+                detail: {
+                    target: this.element,
+                    eventName: eventName,
+                    realEvent: pointerEvent
+                }
+            }));
+        }
+    }
+    childPressStart(e) {
+        if (this.options.onPressStart) {
+            this.options.onPressStart(e.detail.realEvent, this);
+        }
+    }
+    childPressEnd(e) {
+        if (this.options.onPressEnd) {
+            this.options.onPressEnd(e.detail.realEvent, this);
+        }
+    }
+    childPress(e) {
+        if (this.options.onPress) {
+            if (this.stopPropagation()) {
+                e.stopImmediatePropagation();
+            }
+            e.detail.state.oneActionTriggered = true;
+            this.options.onPress(e.detail.realEvent, this);
+            this.triggerEventToParent(this.actionsName.press, e.detail.realEvent);
+        }
+    }
+    childDblPress(e) {
+        if (this.options.onDblPress) {
+            if (this.stopPropagation()) {
+                e.stopImmediatePropagation();
+            }
+            if (e.detail.state) {
+                e.detail.state.oneActionTriggered = true;
+            }
+            this.options.onDblPress(e.detail.realEvent, this);
+            this.triggerEventToParent(this.actionsName.dblPress, e.detail.realEvent);
+        }
+    }
+    childLongPress(e) {
+        if (this.options.onLongPress) {
+            if (this.stopPropagation()) {
+                e.stopImmediatePropagation();
+            }
+            e.detail.state.oneActionTriggered = true;
+            this.options.onLongPress(e.detail.realEvent, this);
+            this.triggerEventToParent(this.actionsName.longPress, e.detail.realEvent);
+        }
+    }
+    childDragStart(e) {
+        if (this.options.onDragStart) {
+            if (this.stopPropagation()) {
+                e.stopImmediatePropagation();
+            }
+            e.detail.state.isMoving = true;
+            e.detail.customFcts.src = this;
+            e.detail.customFcts.onDrag = this.options.onDrag;
+            e.detail.customFcts.onDragEnd = this.options.onDragEnd;
+            e.detail.customFcts.offsetDrag = this.options.offsetDrag;
+            this.options.onDragStart(e.detail.realEvent, this);
+            this.triggerEventToParent(this.actionsName.drag, e.detail.realEvent);
+        }
+    }
+    emitTriggerFunctionParent(action, e) {
+        let el = this.element.parentElement;
+        if (el == null) {
+            let parentNode = this.element.parentNode;
+            if (parentNode instanceof ShadowRoot) {
+                this.emitTriggerFunction(action, e, parentNode.host);
+            }
+        }
+        else {
+            this.emitTriggerFunction(action, e, el);
+        }
+    }
+    emitTriggerFunction(action, e, el) {
+        let ev = new CustomEvent("trigger_pointer_" + action, {
+            bubbles: true,
+            cancelable: true,
+            composed: true,
+            detail: {
+                state: this.state,
+                customFcts: this.customFcts,
+                realEvent: e
+            }
+        });
+        if (!el) {
+            el = this.element;
+        }
+        el.dispatchEvent(ev);
+    }
+    /**
+     * Destroy the Press instance byremoving all events
+     */
+    destroy() {
+        if (this.element) {
+            this.element.removeEventListener("pointerdown", this.functionsBinded.downAction);
+            this.element.removeEventListener("trigger_pointer_press", this.functionsBinded.childPress);
+            this.element.removeEventListener("trigger_pointer_pressstart", this.functionsBinded.childPressStart);
+            this.element.removeEventListener("trigger_pointer_pressend", this.functionsBinded.childPressEnd);
+            this.element.removeEventListener("trigger_pointer_dblpress", this.functionsBinded.childDblPress);
+            this.element.removeEventListener("trigger_pointer_longpress", this.functionsBinded.childLongPress);
+            this.element.removeEventListener("trigger_pointer_dragstart", this.functionsBinded.childDragStart);
+        }
+    }
+}
+PressManager.Namespace=`${moduleName}`;
+_.PressManager=PressManager;
 const Effect=class Effect {
     callbacks = [];
     isInit = false;
@@ -1411,396 +1801,6 @@ const Watcher=class Watcher {
 }
 Watcher.Namespace=`${moduleName}`;
 _.Watcher=Watcher;
-const PressManager=class PressManager {
-    static create(options) {
-        if (Array.isArray(options.element)) {
-            let result = [];
-            for (let el of options.element) {
-                let cloneOpt = { ...options };
-                cloneOpt.element = el;
-                result.push(new PressManager(cloneOpt));
-            }
-            return result;
-        }
-        else {
-            return new PressManager(options);
-        }
-    }
-    options;
-    element;
-    delayDblPress = 150;
-    delayLongPress = 700;
-    nbPress = 0;
-    offsetDrag = 20;
-    state = {
-        oneActionTriggered: false,
-        isMoving: false,
-    };
-    startPosition = { x: 0, y: 0 };
-    customFcts = {};
-    timeoutDblPress = 0;
-    timeoutLongPress = 0;
-    downEventSaved;
-    actionsName = {
-        press: "press",
-        longPress: "longPress",
-        dblPress: "dblPress",
-        drag: "drag"
-    };
-    useDblPress = false;
-    stopPropagation = () => true;
-    functionsBinded = {
-        downAction: (e) => { },
-        upAction: (e) => { },
-        moveAction: (e) => { },
-        childPressStart: (e) => { },
-        childPressEnd: (e) => { },
-        childPress: (e) => { },
-        childDblPress: (e) => { },
-        childLongPress: (e) => { },
-        childDragStart: (e) => { },
-    };
-    /**
-     * @param {*} options - The options
-     * @param {HTMLElement | HTMLElement[]} options.element - The element to manage
-     */
-    constructor(options) {
-        if (options.element === void 0) {
-            throw 'You must provide an element';
-        }
-        this.element = options.element;
-        this.checkDragConstraint(options);
-        this.assignValueOption(options);
-        this.options = options;
-        this.init();
-    }
-    /**
-     * Get the current element focused by the PressManager
-     */
-    getElement() {
-        return this.element;
-    }
-    checkDragConstraint(options) {
-        if (options.onDrag !== void 0) {
-            if (options.onDragStart === void 0) {
-                options.onDragStart = (e) => { };
-            }
-            if (options.onDragEnd === void 0) {
-                options.onDragEnd = (e) => { };
-            }
-        }
-        if (options.onDragStart !== void 0) {
-            if (options.onDrag === void 0) {
-                options.onDrag = (e) => { };
-            }
-            if (options.onDragEnd === void 0) {
-                options.onDragEnd = (e) => { };
-            }
-        }
-        if (options.onDragEnd !== void 0) {
-            if (options.onDragStart === void 0) {
-                options.onDragStart = (e) => { };
-            }
-            if (options.onDrag === void 0) {
-                options.onDrag = (e) => { };
-            }
-        }
-    }
-    assignValueOption(options) {
-        if (options.delayDblPress !== undefined) {
-            this.delayDblPress = options.delayDblPress;
-        }
-        if (options.delayLongPress !== undefined) {
-            this.delayLongPress = options.delayLongPress;
-        }
-        if (options.offsetDrag !== undefined) {
-            this.offsetDrag = options.offsetDrag;
-        }
-        if (options.onDblPress !== undefined) {
-            this.useDblPress = true;
-        }
-        if (options.forceDblPress) {
-            this.useDblPress = true;
-        }
-        if (typeof options.stopPropagation == 'function') {
-            this.stopPropagation = options.stopPropagation;
-        }
-        else if (options.stopPropagation === false) {
-            this.stopPropagation = () => false;
-        }
-        if (!options.buttonAllowed)
-            options.buttonAllowed = [0];
-    }
-    bindAllFunction() {
-        this.functionsBinded.downAction = this.downAction.bind(this);
-        this.functionsBinded.moveAction = this.moveAction.bind(this);
-        this.functionsBinded.upAction = this.upAction.bind(this);
-        this.functionsBinded.childDblPress = this.childDblPress.bind(this);
-        this.functionsBinded.childDragStart = this.childDragStart.bind(this);
-        this.functionsBinded.childLongPress = this.childLongPress.bind(this);
-        this.functionsBinded.childPress = this.childPress.bind(this);
-        this.functionsBinded.childPressStart = this.childPressStart.bind(this);
-        this.functionsBinded.childPressEnd = this.childPressEnd.bind(this);
-    }
-    init() {
-        this.bindAllFunction();
-        this.element.addEventListener("pointerdown", this.functionsBinded.downAction);
-        this.element.addEventListener("trigger_pointer_press", this.functionsBinded.childPress);
-        this.element.addEventListener("trigger_pointer_pressstart", this.functionsBinded.childPressStart);
-        this.element.addEventListener("trigger_pointer_pressend", this.functionsBinded.childPressEnd);
-        this.element.addEventListener("trigger_pointer_dblpress", this.functionsBinded.childDblPress);
-        this.element.addEventListener("trigger_pointer_longpress", this.functionsBinded.childLongPress);
-        this.element.addEventListener("trigger_pointer_dragstart", this.functionsBinded.childDragStart);
-    }
-    downAction(e) {
-        if (!this.options.buttonAllowed?.includes(e.button)) {
-            return;
-        }
-        this.downEventSaved = e;
-        if (this.stopPropagation()) {
-            e.stopImmediatePropagation();
-        }
-        this.customFcts = {};
-        if (this.nbPress == 0) {
-            this.state.oneActionTriggered = false;
-            clearTimeout(this.timeoutDblPress);
-        }
-        this.startPosition = { x: e.pageX, y: e.pageY };
-        document.addEventListener("pointerup", this.functionsBinded.upAction);
-        document.addEventListener("pointermove", this.functionsBinded.moveAction);
-        this.timeoutLongPress = setTimeout(() => {
-            if (!this.state.oneActionTriggered) {
-                if (this.options.onLongPress) {
-                    this.state.oneActionTriggered = true;
-                    this.options.onLongPress(e, this);
-                    this.triggerEventToParent(this.actionsName.longPress, e);
-                }
-                else {
-                    this.emitTriggerFunction(this.actionsName.longPress, e);
-                }
-            }
-        }, this.delayLongPress);
-        if (this.options.onPressStart) {
-            this.options.onPressStart(e, this);
-            this.emitTriggerFunctionParent("pressstart", e);
-        }
-        else {
-            this.emitTriggerFunction("pressstart", e);
-        }
-    }
-    upAction(e) {
-        if (this.stopPropagation()) {
-            e.stopImmediatePropagation();
-        }
-        document.removeEventListener("pointerup", this.functionsBinded.upAction);
-        document.removeEventListener("pointermove", this.functionsBinded.moveAction);
-        clearTimeout(this.timeoutLongPress);
-        if (this.state.isMoving) {
-            this.state.isMoving = false;
-            if (this.options.onDragEnd) {
-                this.options.onDragEnd(e, this);
-            }
-            else if (this.customFcts.src && this.customFcts.onDragEnd) {
-                this.customFcts.onDragEnd(e, this.customFcts.src);
-            }
-        }
-        else {
-            if (this.useDblPress) {
-                this.nbPress++;
-                if (this.nbPress == 2) {
-                    if (!this.state.oneActionTriggered) {
-                        this.state.oneActionTriggered = true;
-                        this.nbPress = 0;
-                        if (this.options.onDblPress) {
-                            this.options.onDblPress(e, this);
-                            this.triggerEventToParent(this.actionsName.dblPress, e);
-                        }
-                        else {
-                            this.emitTriggerFunction(this.actionsName.dblPress, e);
-                        }
-                    }
-                }
-                else if (this.nbPress == 1) {
-                    this.timeoutDblPress = setTimeout(() => {
-                        this.nbPress = 0;
-                        if (!this.state.oneActionTriggered) {
-                            if (this.options.onPress) {
-                                this.state.oneActionTriggered = true;
-                                this.options.onPress(e, this);
-                                this.triggerEventToParent(this.actionsName.press, e);
-                            }
-                            else {
-                                this.emitTriggerFunction(this.actionsName.press, e);
-                            }
-                        }
-                    }, this.delayDblPress);
-                }
-            }
-            else {
-                if (!this.state.oneActionTriggered) {
-                    if (this.options.onPress) {
-                        this.state.oneActionTriggered = true;
-                        this.options.onPress(e, this);
-                        this.triggerEventToParent(this.actionsName.press, e);
-                    }
-                    else {
-                        this.emitTriggerFunction("press", e);
-                    }
-                }
-            }
-        }
-        if (this.options.onPressEnd) {
-            this.options.onPressEnd(e, this);
-            this.emitTriggerFunctionParent("pressend", e);
-        }
-        else {
-            this.emitTriggerFunction("pressend", e);
-        }
-    }
-    moveAction(e) {
-        if (!this.state.isMoving && !this.state.oneActionTriggered) {
-            if (this.stopPropagation()) {
-                e.stopImmediatePropagation();
-            }
-            let xDist = e.pageX - this.startPosition.x;
-            let yDist = e.pageY - this.startPosition.y;
-            let distance = Math.sqrt(xDist * xDist + yDist * yDist);
-            if (distance > this.offsetDrag && this.downEventSaved) {
-                this.state.oneActionTriggered = true;
-                if (this.options.onDragStart) {
-                    this.state.isMoving = true;
-                    this.options.onDragStart(this.downEventSaved, this);
-                    this.triggerEventToParent(this.actionsName.drag, e);
-                }
-                else {
-                    this.emitTriggerFunction("dragstart", this.downEventSaved);
-                }
-            }
-        }
-        else if (this.state.isMoving) {
-            if (this.options.onDrag) {
-                this.options.onDrag(e, this);
-            }
-            else if (this.customFcts.src && this.customFcts.onDrag) {
-                this.customFcts.onDrag(e, this.customFcts.src);
-            }
-        }
-    }
-    triggerEventToParent(eventName, pointerEvent) {
-        if (this.element.parentNode) {
-            this.element.parentNode.dispatchEvent(new CustomEvent("pressaction_trigger", {
-                bubbles: true,
-                cancelable: false,
-                composed: true,
-                detail: {
-                    target: this.element,
-                    eventName: eventName,
-                    realEvent: pointerEvent
-                }
-            }));
-        }
-    }
-    childPressStart(e) {
-        if (this.options.onPressStart) {
-            this.options.onPressStart(e.detail.realEvent, this);
-        }
-    }
-    childPressEnd(e) {
-        if (this.options.onPressEnd) {
-            this.options.onPressEnd(e.detail.realEvent, this);
-        }
-    }
-    childPress(e) {
-        if (this.options.onPress) {
-            if (this.stopPropagation()) {
-                e.stopImmediatePropagation();
-            }
-            e.detail.state.oneActionTriggered = true;
-            this.options.onPress(e.detail.realEvent, this);
-            this.triggerEventToParent(this.actionsName.press, e.detail.realEvent);
-        }
-    }
-    childDblPress(e) {
-        if (this.options.onDblPress) {
-            if (this.stopPropagation()) {
-                e.stopImmediatePropagation();
-            }
-            if (e.detail.state) {
-                e.detail.state.oneActionTriggered = true;
-            }
-            this.options.onDblPress(e.detail.realEvent, this);
-            this.triggerEventToParent(this.actionsName.dblPress, e.detail.realEvent);
-        }
-    }
-    childLongPress(e) {
-        if (this.options.onLongPress) {
-            if (this.stopPropagation()) {
-                e.stopImmediatePropagation();
-            }
-            e.detail.state.oneActionTriggered = true;
-            this.options.onLongPress(e.detail.realEvent, this);
-            this.triggerEventToParent(this.actionsName.longPress, e.detail.realEvent);
-        }
-    }
-    childDragStart(e) {
-        if (this.options.onDragStart) {
-            if (this.stopPropagation()) {
-                e.stopImmediatePropagation();
-            }
-            e.detail.state.isMoving = true;
-            e.detail.customFcts.src = this;
-            e.detail.customFcts.onDrag = this.options.onDrag;
-            e.detail.customFcts.onDragEnd = this.options.onDragEnd;
-            e.detail.customFcts.offsetDrag = this.options.offsetDrag;
-            this.options.onDragStart(e.detail.realEvent, this);
-            this.triggerEventToParent(this.actionsName.drag, e.detail.realEvent);
-        }
-    }
-    emitTriggerFunctionParent(action, e) {
-        let el = this.element.parentElement;
-        if (el == null) {
-            let parentNode = this.element.parentNode;
-            if (parentNode instanceof ShadowRoot) {
-                this.emitTriggerFunction(action, e, parentNode.host);
-            }
-        }
-        else {
-            this.emitTriggerFunction(action, e, el);
-        }
-    }
-    emitTriggerFunction(action, e, el) {
-        let ev = new CustomEvent("trigger_pointer_" + action, {
-            bubbles: true,
-            cancelable: true,
-            composed: true,
-            detail: {
-                state: this.state,
-                customFcts: this.customFcts,
-                realEvent: e
-            }
-        });
-        if (!el) {
-            el = this.element;
-        }
-        el.dispatchEvent(ev);
-    }
-    /**
-     * Destroy the Press instance byremoving all events
-     */
-    destroy() {
-        if (this.element) {
-            this.element.removeEventListener("pointerdown", this.functionsBinded.downAction);
-            this.element.removeEventListener("trigger_pointer_press", this.functionsBinded.childPress);
-            this.element.removeEventListener("trigger_pointer_pressstart", this.functionsBinded.childPressStart);
-            this.element.removeEventListener("trigger_pointer_pressend", this.functionsBinded.childPressEnd);
-            this.element.removeEventListener("trigger_pointer_dblpress", this.functionsBinded.childDblPress);
-            this.element.removeEventListener("trigger_pointer_longpress", this.functionsBinded.childLongPress);
-            this.element.removeEventListener("trigger_pointer_dragstart", this.functionsBinded.childDragStart);
-        }
-    }
-}
-PressManager.Namespace=`${moduleName}`;
-_.PressManager=PressManager;
 const Uri=class Uri {
     static prepare(uri) {
         let params = [];
@@ -2246,7 +2246,10 @@ const ComputedNoRecomputed=class ComputedNoRecomputed extends Computed {
         Watcher._registering.splice(Watcher._registering.length - 1, 1);
     }
     computedValue() {
-        this._value = this.fct();
+        if (this.isInit)
+            this._value = this.fct();
+        else
+            this.init();
     }
     run() { }
 }
@@ -2305,12 +2308,12 @@ const TemplateContext=class TemplateContext {
         }
         return fullName;
     }
-    registerLoop(dataName, _indexValue, _indexName, indexName, itemName) {
+    registerLoop(dataName, _indexValue, _indexName, indexName, itemName, onThis) {
         this.watch[_indexName] = _indexValue;
         let getItems;
         let mustBeRecomputed = /if|switch|\?|\[.+?\]/g.test(dataName);
         let _class = mustBeRecomputed ? Computed : ComputedNoRecomputed;
-        if (!dataName.startsWith("this.")) {
+        if (!onThis) {
             getItems = new _class(() => {
                 return getValueFromObject(dataName, this.data);
             });
@@ -2419,6 +2422,22 @@ const TemplateContext=class TemplateContext {
     }
     updateWatch(name, value) {
         this.watch[name] = value;
+    }
+    normalizePath(path) {
+        path = path.replace(/^this\./, '');
+        const regex = /\[(.*?)\]/g;
+        let m;
+        while ((m = regex.exec(path)) !== null) {
+            if (m.index === regex.lastIndex) {
+                regex.lastIndex++;
+            }
+            let name = m[1];
+            let result = getValueFromObject(name, this.data);
+            if (result !== undefined) {
+                path = path.replace(m[0], `[${result}]`);
+            }
+        }
+        return path;
     }
     getValueFromItem(name) {
         if (!name)
@@ -2684,10 +2703,15 @@ const TemplateInstance=class TemplateInstance {
                 return change.fct(this.context);
             }
             catch (e) {
-                if (computed instanceof ComputedNoRecomputed) {
-                    computed.isInit = false;
+                if (e instanceof TypeError && e.message.startsWith("Cannot read properties of undefined")) {
+                    if (computed instanceof ComputedNoRecomputed) {
+                        computed.isInit = false;
+                    }
                 }
-                debugger;
+                else {
+                    console.log(e);
+                    debugger;
+                }
             }
             return "";
         });
@@ -2711,7 +2735,20 @@ const TemplateInstance=class TemplateInstance {
             return;
         let _class = injection.once ? ComputedNoRecomputed : Computed;
         let computed = new _class(() => {
-            return injection.inject(this.context);
+            try {
+                return injection.inject(this.context);
+            }
+            catch (e) {
+                if (e instanceof TypeError && e.message.startsWith("Cannot read properties of undefined")) {
+                    if (computed instanceof ComputedNoRecomputed) {
+                        computed.isInit = false;
+                    }
+                }
+                else {
+                    console.log(e);
+                    debugger;
+                }
+            }
         });
         this.computeds.push(computed);
         computed.subscribe(() => {
@@ -2729,7 +2766,20 @@ const TemplateInstance=class TemplateInstance {
         let isLocalChange = false;
         let _class = binding.once ? ComputedNoRecomputed : Computed;
         let computed = new _class(() => {
-            return binding.inject(this.context);
+            try {
+                return binding.inject(this.context);
+            }
+            catch (e) {
+                if (e instanceof TypeError && e.message.startsWith("Cannot read properties of undefined")) {
+                    if (computed instanceof ComputedNoRecomputed) {
+                        computed.isInit = false;
+                    }
+                }
+                else {
+                    console.log(e);
+                    debugger;
+                }
+            }
         });
         this.computeds.push(computed);
         computed.subscribe(() => {
@@ -2790,22 +2840,16 @@ const TemplateInstance=class TemplateInstance {
             this.renderLoopSimple(loop, loop.simple);
         }
     }
-    resetLoop(loop) {
-        if (this.loopRegisteries[loop.anchorId]) {
-            for (let item of this.loopRegisteries[loop.anchorId].templates) {
+    resetLoopComplex(anchorId) {
+        if (this.loopRegisteries[anchorId]) {
+            for (let item of this.loopRegisteries[anchorId].templates) {
                 item.destructor();
             }
-            for (let item of this.loopRegisteries[loop.anchorId].computeds) {
+            for (let item of this.loopRegisteries[anchorId].computeds) {
                 item.destroy();
             }
-            if (loop.simple && this.loopRegisteries[loop.anchorId].sub) {
-                let elements = this.context.getValueFromItem(loop.simple.data.replace(/^this\./, ''));
-                if (elements) {
-                    elements.unsubscribe(this.loopRegisteries[loop.anchorId].sub);
-                }
-            }
         }
-        this.loopRegisteries[loop.anchorId] = {
+        this.loopRegisteries[anchorId] = {
             templates: [],
             computeds: [],
         };
@@ -2819,7 +2863,7 @@ const TemplateInstance=class TemplateInstance {
             condition: fctsTemp.condition,
             transform: fctsTemp.transform ?? (() => { })
         };
-        this.resetLoop(loop);
+        this.resetLoopComplex(loop.anchorId);
         let computedsCondition = [];
         let alreadyRecreated = false;
         const createComputedCondition = () => {
@@ -2855,9 +2899,17 @@ const TemplateInstance=class TemplateInstance {
             this.loopRegisteries[loop.anchorId].templates.push(instance);
         }
     }
+    resetLoopSimple(anchorId, basePath) {
+        let elements = this.context.getValueFromItem(basePath);
+        if (elements && this.loopRegisteries[anchorId]) {
+            elements.unsubscribe(this.loopRegisteries[anchorId].sub);
+        }
+        this.resetLoopComplex(anchorId);
+    }
     renderLoopSimple(loop, simple) {
-        this.resetLoop(loop);
-        let basePath = simple.data.replace(/^this\./, '');
+        let onThis = simple.data.startsWith("this.");
+        let basePath = this.context.normalizePath(simple.data);
+        this.resetLoopSimple(loop.anchorId, basePath);
         let getElements = () => this.context.getValueFromItem(basePath);
         let elements = getElements();
         if (!elements) {
@@ -2868,7 +2920,7 @@ const TemplateInstance=class TemplateInstance {
                 currentPath = splittedPath.join(".");
                 elements = this.context.getValueFromItem(currentPath);
             }
-            if (!elements && simple.data.startsWith("this.")) {
+            if (!elements && onThis) {
                 elements = this.component.__watch;
             }
             if (!elements || !elements.__isProxy) {
@@ -2922,7 +2974,7 @@ const TemplateInstance=class TemplateInstance {
                     let registry = this.loopRegisteries[loop.anchorId];
                     if (action == WatchAction.CREATED) {
                         let context = new TemplateContext(this.component, {}, this.context, registry);
-                        context.registerLoop(simple.data, index, indexName, simple.index, simple.item);
+                        context.registerLoop(basePath, index, indexName, simple.index, simple.item, onThis);
                         let content = loop.template.template?.content.cloneNode(true);
                         let actions = loop.template.actions;
                         let instance = new TemplateInstance(this.component, content, actions, loop.template.loops, loop.template.ifs, context);
@@ -2955,7 +3007,7 @@ const TemplateInstance=class TemplateInstance {
         let anchor = this._components[loop.anchorId][0];
         for (let i = 0; i < keys.length; i++) {
             let context = new TemplateContext(this.component, {}, this.context, this.loopRegisteries[loop.anchorId]);
-            context.registerLoop(simple.data, i, indexName, simple.index, simple.item);
+            context.registerLoop(basePath, i, indexName, simple.index, simple.item, onThis);
             let content = loop.template.template?.content.cloneNode(true);
             let actions = loop.template.actions;
             let instance = new TemplateInstance(this.component, content, actions, loop.template.loops, loop.template.ifs, context);
@@ -6615,6 +6667,342 @@ DocWcEventEditor1Example.Tag=`av-doc-wc-event-editor-1-example`;
 _.DocWcEventEditor1Example=DocWcEventEditor1Example;
 if(!window.customElements.get('av-doc-wc-event-editor-1-example')){window.customElements.define('av-doc-wc-event-editor-1-example', DocWcEventEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocWcEventEditor1Example);}
 
+const DocWcConditionEditor1Example = class DocWcConditionEditor1Example extends Aventus.WebComponent {
+    static get observedAttributes() {return ["number"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'number'() { return this.getNumberProp('number') }
+    set 'number'(val) { this.setNumberAttr('number', val) }    static __style = ``;
+    __getStatic() {
+        return DocWcConditionEditor1Example;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcConditionEditor1Example.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<p _id="docwcconditioneditor1example_0"></p><template _id="docwcconditioneditor1example_1"></template><button _id="docwcconditioneditor1example_4">Increment</button>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "content": {
+    "docwcconditioneditor1example_0°@HTML": {
+      "fct": (c) => `The current number is ${c.print(c.comp.__bf05c2bcf69fc0887e431ab8efb00b4cmethod1())}`,
+      "once": true
+    }
+  },
+  "events": [
+    {
+      "eventName": "click",
+      "id": "docwcconditioneditor1example_4",
+      "fct": (e, c) => c.comp.increment(e)
+    }
+  ]
+});const templ0 = new Aventus.Template(this);templ0.setTemplate(`    <p style="background:blue" _id="docwcconditioneditor1example_2"></p>`);templ0.setActions({
+  "content": {
+    "docwcconditioneditor1example_2°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__bf05c2bcf69fc0887e431ab8efb00b4cmethod1())} is even.`,
+      "once": true
+    }
+  }
+});const templ1 = new Aventus.Template(this);templ1.setTemplate(`    <p style="background:red" _id="docwcconditioneditor1example_3"></p>`);templ1.setActions({
+  "content": {
+    "docwcconditioneditor1example_3°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__bf05c2bcf69fc0887e431ab8efb00b4cmethod1())} is odd.`,
+      "once": true
+    }
+  }
+});this.__getStatic().__template.addIf({
+                    anchorId: 'docwcconditioneditor1example_1',
+                    parts: [{once: true,
+                    condition: (c) => c.comp.__bf05c2bcf69fc0887e431ab8efb00b4cmethod0(),
+                    template: templ0
+                },{once: true,
+                    condition: (c) => true,
+                    template: templ1
+                }]
+            }); }
+    getClassName() {
+        return "DocWcConditionEditor1Example";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('number')){ this['number'] = undefined; } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('number'); }
+    increment() {
+        this.number++;
+    }
+    __bf05c2bcf69fc0887e431ab8efb00b4cmethod1() {
+        return this.number;
+    }
+    __bf05c2bcf69fc0887e431ab8efb00b4cmethod0() {
+        return this.number % 2 === 0;
+    }
+}
+DocWcConditionEditor1Example.Namespace=`${moduleName}`;
+DocWcConditionEditor1Example.Tag=`av-doc-wc-condition-editor-1-example`;
+_.DocWcConditionEditor1Example=DocWcConditionEditor1Example;
+if(!window.customElements.get('av-doc-wc-condition-editor-1-example')){window.customElements.define('av-doc-wc-condition-editor-1-example', DocWcConditionEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocWcConditionEditor1Example);}
+
+const DocWcLoopEditor1Todo=class DocWcLoopEditor1Todo extends Aventus.Data {
+    id = 0;
+    name = "";
+    tasks = [];
+}
+DocWcLoopEditor1Todo.Namespace=`${moduleName}`;DocWcLoopEditor1Todo.$schema={"id":"number","name":"string","tasks":"string"};Aventus.DataManager.register(DocWcLoopEditor1Todo.Fullname, DocWcLoopEditor1Todo);
+_.DocWcLoopEditor1Todo=DocWcLoopEditor1Todo;
+const DocWcLoopEditor4TodoList = class DocWcLoopEditor4TodoList extends Aventus.WebComponent {
+    get 'todos'() {
+						return this.__watch["todos"];
+					}
+					set 'todos'(val) {
+						this.__watch["todos"] = val;
+					}    todoId = 0;
+    __registerWatchesActions() {
+    this.__addWatchesActions("todos");    super.__registerWatchesActions();
+}
+    static __style = ``;
+    __getStatic() {
+        return DocWcLoopEditor4TodoList;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcLoopEditor4TodoList.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Todos</h1><template _id="docwcloopeditor4todolist_0"></template><button _id="docwcloopeditor4todolist_4">Add</button>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "events": [
+    {
+      "eventName": "click",
+      "id": "docwcloopeditor4todolist_4",
+      "fct": (e, c) => c.comp.addTodo(e)
+    }
+  ]
+});const templ0 = new Aventus.Template(this);templ0.setTemplate(`     <div class="name" _id="docwcloopeditor4todolist_1"></div>    <ul>        <template _id="docwcloopeditor4todolist_2"></template>    </ul>`);templ0.setActions({
+  "content": {
+    "docwcloopeditor4todolist_1°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__466b3e12a1b602fb72ea68af19cf44a4method2(c.data.todo))}`,
+      "once": true
+    }
+  }
+});this.__getStatic().__template.addLoop({
+                    anchorId: 'docwcloopeditor4todolist_0',
+                    template: templ0,
+                simple:{data: "this.todos",item:"todo"}});const templ1 = new Aventus.Template(this);templ1.setTemplate(`             <li _id="docwcloopeditor4todolist_3"></li>        `);templ1.setActions({
+  "content": {
+    "docwcloopeditor4todolist_3°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__466b3e12a1b602fb72ea68af19cf44a4method3(c.data.task))}`,
+      "once": true
+    }
+  }
+});templ0.addLoop({
+                    anchorId: 'docwcloopeditor4todolist_2',
+                    template: templ1,
+                simple:{data: "todo.tasks",item:"task"}}); }
+    getClassName() {
+        return "DocWcLoopEditor4TodoList";
+    }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["todos"] = []; }
+    addTodo() {
+        this.todoId++;
+        let todo = new DocWcLoopEditor1Todo();
+        todo.name = "My todo " + this.todoId;
+        todo.tasks = ["task1", "task2"];
+        this.todos.push(todo);
+    }
+    __466b3e12a1b602fb72ea68af19cf44a4method2(todo) {
+        return todo.name;
+    }
+    __466b3e12a1b602fb72ea68af19cf44a4method3(task) {
+        return task;
+    }
+}
+DocWcLoopEditor4TodoList.Namespace=`${moduleName}`;
+DocWcLoopEditor4TodoList.Tag=`av-doc-wc-loop-editor-4-todo-list`;
+_.DocWcLoopEditor4TodoList=DocWcLoopEditor4TodoList;
+if(!window.customElements.get('av-doc-wc-loop-editor-4-todo-list')){window.customElements.define('av-doc-wc-loop-editor-4-todo-list', DocWcLoopEditor4TodoList);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor4TodoList);}
+
+const DocWcLoopEditor3TodoList = class DocWcLoopEditor3TodoList extends Aventus.WebComponent {
+    get 'todos'() {
+						return this.__watch["todos"];
+					}
+					set 'todos'(val) {
+						this.__watch["todos"] = val;
+					}    todoId = 0;
+    __registerWatchesActions() {
+    this.__addWatchesActions("todos");    super.__registerWatchesActions();
+}
+    static __style = ``;
+    __getStatic() {
+        return DocWcLoopEditor3TodoList;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcLoopEditor3TodoList.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Todos</h1><template _id="docwcloopeditor3todolist_0"></template><button _id="docwcloopeditor3todolist_4">Add</button>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "events": [
+    {
+      "eventName": "click",
+      "id": "docwcloopeditor3todolist_4",
+      "fct": (e, c) => c.comp.addTodo(e)
+    }
+  ]
+});const templ0 = new Aventus.Template(this);templ0.setTemplate(`     <div class="name" _id="docwcloopeditor3todolist_1"></div>    <ul>        <template _id="docwcloopeditor3todolist_2"></template>    </ul>`);templ0.setActions({
+  "content": {
+    "docwcloopeditor3todolist_1°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__f781a9b17ed151e6d4c1749ee3dd2263method3(c.data.todo))}`,
+      "once": true
+    }
+  },
+  "contextEdits": [
+    {
+      "fct": (c) => c.comp.__f781a9b17ed151e6d4c1749ee3dd2263method1(c.data.index)
+    }
+  ]
+});this.__getStatic().__template.addLoop({
+                    anchorId: 'docwcloopeditor3todolist_0',
+                    template: templ0,
+                simple:{data: "this.todos",index:"index"}});const templ2 = new Aventus.Template(this);templ2.setTemplate(`             <li _id="docwcloopeditor3todolist_3"></li>        `);templ2.setActions({
+  "content": {
+    "docwcloopeditor3todolist_3°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__f781a9b17ed151e6d4c1749ee3dd2263method4(c.data.index))}-${c.print(c.comp.__f781a9b17ed151e6d4c1749ee3dd2263method5(c.data.index2))}. ${c.print(c.comp.__f781a9b17ed151e6d4c1749ee3dd2263method6(c.data.todo,c.data.index2))}`
+    }
+  }
+});templ0.addLoop({
+                    anchorId: 'docwcloopeditor3todolist_2',
+                    template: templ2,
+                simple:{data: "todo.tasks",index:"index2"}}); }
+    getClassName() {
+        return "DocWcLoopEditor3TodoList";
+    }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["todos"] = []; }
+    addTodo() {
+        this.todoId++;
+        let todo = new DocWcLoopEditor1Todo();
+        todo.name = "My todo " + this.todoId;
+        todo.tasks = ["task1", "task2"];
+        this.todos.push(todo);
+    }
+    __f781a9b17ed151e6d4c1749ee3dd2263method3(todo) {
+        return todo.name;
+    }
+    __f781a9b17ed151e6d4c1749ee3dd2263method4(index) {
+        return index + 1;
+    }
+    __f781a9b17ed151e6d4c1749ee3dd2263method5(index2) {
+        return index2 + 1;
+    }
+    __f781a9b17ed151e6d4c1749ee3dd2263method6(todo, index2) {
+        return todo.tasks[index2];
+    }
+    __f781a9b17ed151e6d4c1749ee3dd2263method1(index) {
+        return { 'todo': this.todos[index] };
+    }
+}
+DocWcLoopEditor3TodoList.Namespace=`${moduleName}`;
+DocWcLoopEditor3TodoList.Tag=`av-doc-wc-loop-editor-3-todo-list`;
+_.DocWcLoopEditor3TodoList=DocWcLoopEditor3TodoList;
+if(!window.customElements.get('av-doc-wc-loop-editor-3-todo-list')){window.customElements.define('av-doc-wc-loop-editor-3-todo-list', DocWcLoopEditor3TodoList);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor3TodoList);}
+
+const DocWcLoopEditor2TodoList = class DocWcLoopEditor2TodoList extends Aventus.WebComponent {
+    get 'todos'() {
+						return this.__watch["todos"];
+					}
+					set 'todos'(val) {
+						this.__watch["todos"] = val;
+					}    todoId = 0;
+    __registerWatchesActions() {
+    this.__addWatchesActions("todos");    super.__registerWatchesActions();
+}
+    static __style = ``;
+    __getStatic() {
+        return DocWcLoopEditor2TodoList;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcLoopEditor2TodoList.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Todos</h1><template _id="docwcloopeditor2todolist_0"></template><button _id="docwcloopeditor2todolist_4">Add</button>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "events": [
+    {
+      "eventName": "click",
+      "id": "docwcloopeditor2todolist_4",
+      "fct": (e, c) => c.comp.addTodo(e)
+    }
+  ]
+});const templ0 = new Aventus.Template(this);templ0.setTemplate(`     <div class="name" _id="docwcloopeditor2todolist_1"></div>    <ul>        <template _id="docwcloopeditor2todolist_2"></template>    </ul>`);templ0.setActions({
+  "content": {
+    "docwcloopeditor2todolist_1°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__34268725a497226bbf42ef36aa70ba68method3(c.data.todo))}`,
+      "once": true
+    }
+  },
+  "contextEdits": [
+    {
+      "fct": (c) => c.comp.__34268725a497226bbf42ef36aa70ba68method1(c.data.i)
+    }
+  ]
+});this.__getStatic().__template.addLoop({
+                    anchorId: 'docwcloopeditor2todolist_0',
+                    template: templ0,
+                simple:{data: "this.todos",index:"i"}});const templ2 = new Aventus.Template(this);templ2.setTemplate(`             <li _id="docwcloopeditor2todolist_3"></li>        `);templ2.setActions({
+  "content": {
+    "docwcloopeditor2todolist_3°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__34268725a497226bbf42ef36aa70ba68method4(c.data.i))}-${c.print(c.comp.__34268725a497226bbf42ef36aa70ba68method5(c.data.j))}. ${c.print(c.comp.__34268725a497226bbf42ef36aa70ba68method6(c.data.todo,c.data.j))}`
+    }
+  }
+});templ0.addLoop({
+                    anchorId: 'docwcloopeditor2todolist_2',
+                    template: templ2,
+                simple:{data: "todo.tasks",index:"j"}}); }
+    getClassName() {
+        return "DocWcLoopEditor2TodoList";
+    }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["todos"] = []; }
+    addTodo() {
+        this.todoId++;
+        let todo = new DocWcLoopEditor1Todo();
+        todo.name = "My todo " + this.todoId;
+        todo.tasks = ["task1", "task2"];
+        this.todos.push(todo);
+    }
+    __34268725a497226bbf42ef36aa70ba68method3(todo) {
+        return todo.name;
+    }
+    __34268725a497226bbf42ef36aa70ba68method4(i) {
+        return i + 1;
+    }
+    __34268725a497226bbf42ef36aa70ba68method5(j) {
+        return j + 1;
+    }
+    __34268725a497226bbf42ef36aa70ba68method6(todo, j) {
+        return todo.tasks[j];
+    }
+    __34268725a497226bbf42ef36aa70ba68method1(i) {
+        return { 'todo': this.todos[i] };
+    }
+}
+DocWcLoopEditor2TodoList.Namespace=`${moduleName}`;
+DocWcLoopEditor2TodoList.Tag=`av-doc-wc-loop-editor-2-todo-list`;
+_.DocWcLoopEditor2TodoList=DocWcLoopEditor2TodoList;
+if(!window.customElements.get('av-doc-wc-loop-editor-2-todo-list')){window.customElements.define('av-doc-wc-loop-editor-2-todo-list', DocWcLoopEditor2TodoList);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor2TodoList);}
+
 const DocWcInjectionEditor2Example = class DocWcInjectionEditor2Example extends Aventus.WebComponent {
     get 'time'() {
 						return this.__watch["time"];
@@ -7847,7 +8235,7 @@ const DocFooter = class DocFooter extends Aventus.WebComponent {
     set 'hide_previous'(val) { this.setBoolAttr('hide_previous', val) }get 'hide_next'() { return this.getBoolAttr('hide_next') }
     set 'hide_next'(val) { this.setBoolAttr('hide_next', val) }    previousState;
     nextState;
-    static __style = `:host{align-items:center;display:flex;justify-content:center;margin:30px 0;width:100%}:host div{background-color:var(--aventus-color);border-radius:5px;box-shadow:var(--elevation-3);color:#cfd1d4;cursor:pointer;font-size:16px;font-weight:400;margin:0 30px;padding:5px 15px;-webkit-tap-highlight-color:rgba(0,0,0,0);user-select:none;transition:box-shadow .2s linear}:host div:hover{box-shadow:var(--elevation-1)}:host([hide_next]) .next{opacity:0;visibility:hidden}:host([hide_previous]) .previous{opacity:0;visibility:hidden}`;
+    static __style = `:host{align-items:center;display:flex;justify-content:center;margin:30px 0;width:100%}:host div{background-color:var(--aventus-color);border-radius:5px;box-shadow:var(--elevation-3);color:var(--aventus-font-color);cursor:pointer;font-size:16px;font-weight:400;margin:0 30px;padding:5px 15px;-webkit-tap-highlight-color:rgba(0,0,0,0);user-select:none;transition:box-shadow .2s linear}:host div:hover{box-shadow:var(--elevation-1)}:host([hide_next]) .next{opacity:0;visibility:hidden}:host([hide_previous]) .previous{opacity:0;visibility:hidden}`;
     __getStatic() {
         return DocFooter;
     }
@@ -8201,7 +8589,7 @@ const Home = class Home extends Page {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<av-scrollable floating_scroll class="main-scroll">    <div class="height-wrapper">        <div class="main">            <av-dynamic-row class="icon-text">                <av-dynamic-col size="6">                    <av-img src="/img/logo.svg"></av-img>                </av-dynamic-col>                <av-dynamic-col size="4">                    <div class="title">                        The Webcomponent Javascript Framework                    </div>                </av-dynamic-col>            </av-dynamic-row>            <av-dynamic-row class="btn-container">                <av-dynamic-col size="12">                    <av-router-link state="/docs/introduction" class="menu"><av-button>Get                            started</av-button></av-router-link>                    <av-router-link state="/tutorial/introduction" class="menu"><av-button>Tutorial</av-button></av-router-link>                </av-dynamic-col>            </av-dynamic-row>            <av-img class="design-logo" src="/img/logo.svg"></av-img>            <av-img class="design-logo2" src="/img/logo.svg"></av-img>        </div>        <div class="blocks">            <av-dynamic-row>                <av-dynamic-col size_sm="12" size_md="4" size="12">                    <div class="block">                        <div class="title">Encapsulation</div>                        <p>Avoiding conflicts through encapsulation to build scalable application. Each file has a role                            to play in keeping your code tidy.</p>                    </div>                </av-dynamic-col>                <av-dynamic-col size_sm="12" size_md="4" size="12">                    <div class="block">                        <div class="title">For OOP lovers</div>                        <p>Even your graphic components can be defined by class which allows inheritance and genericity.                            If you love OOP, you will love making views.</p>                    </div>                </av-dynamic-col>                <av-dynamic-col size_sm="12" size_md="4" size="12">                    <div class="block">                        <div class="title">Type safe</div>                        <p>Prevent errors through typing and make your code more secure. Maintaining a growing                            application over the long term.</p>                    </div>                </av-dynamic-col>            </av-dynamic-row>        </div>        <div class="separator"></div>        <div class="why">            <h2>The Aventus mindset</h2>            <p>Aventus aims to simplify the web by leveraging new native technologies. Webcomponents are just one                example. Nowadays, it's possible to build large applications without relying on millions of libraries                downloaded via npm and then compiled via a module bundler.</p>            <p>The tool must not be complicated to install, and projects must be able to be created quickly. It's                important for users to be able to access and create their own templates to save time. That's why Aventus                is only available as a VSCode extension, making it easy to use.</p>            <p>In short, Aventus is : <span class="important">One tech to rule them all</span>.</p>        </div>    </div>    <av-footer></av-footer></av-scrollable>` }
+        blocks: { 'default':`<av-scrollable floating_scroll class="main-scroll">    <div class="height-wrapper">        <div class="main">            <av-dynamic-row class="icon-text">                <av-dynamic-col size="6">                    <av-img src="/img/logo.svg"></av-img>                </av-dynamic-col>                <av-dynamic-col size="4">                    <div class="title">                        The Webcomponent Javascript Framework                    </div>                </av-dynamic-col>            </av-dynamic-row>            <av-dynamic-row class="btn-container">                <av-dynamic-col size="12">                    <av-router-link state="/docs/introduction" class="menu"><av-button>Get                            started</av-button></av-router-link>                    <av-router-link state="/tutorial/introduction" class="menu"><av-button>Tutorial</av-button></av-router-link>                </av-dynamic-col>            </av-dynamic-row>            <av-img class="design-logo" src="/img/logo.svg"></av-img>            <av-img class="design-logo2" src="/img/logo.svg"></av-img>        </div>        <div class="blocks">            <av-dynamic-row>                <av-dynamic-col size_sm="12" size_md="4" size="12">                    <div class="block">                        <div class="title">Encapsulation</div>                        <p>Avoiding conflicts through encapsulation to build scalable application. Each file has a role                            to play in keeping your code tidy.</p>                    </div>                </av-dynamic-col>                <av-dynamic-col size_sm="12" size_md="4" size="12">                    <div class="block">                        <div class="title">For OOP lovers</div>                        <p>Even your graphic components can be defined by class which allows inheritance and genericity.                            If you love OOP, you will love making views.</p>                    </div>                </av-dynamic-col>                <av-dynamic-col size_sm="12" size_md="4" size="12">                    <div class="block">                        <div class="title">Type safe</div>                        <p>Prevent errors through typing and make your code more secure. Maintaining a growing                            application over the long term.</p>                    </div>                </av-dynamic-col>            </av-dynamic-row>        </div>        <div class="separator"></div>        <div class="why">            <h2>The Aventus mindset</h2>            <p>Aventus aims to simplify the web by leveraging new native technologies. Webcomponents are just one                example. Nowadays, it's possible to build large applications without relying on millions of libraries                downloaded via npm and then compiled via a module bundler.</p>            <p>The tool must not be complicated to install, and projects must be able to be created quickly. It's                important for users to be able to access and create their own templates to save time. That's why Aventus                is only available as a VSCode extension right now, making it easy to use.</p>        </div>    </div>    <av-footer></av-footer></av-scrollable>` }
     });
 }
     getClassName() {
@@ -10949,7 +11337,7 @@ const DocSidenav = class DocSidenav extends Aventus.WebComponent {
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<av-icon icon="close" class="close-icon" _id="docsidenav_0"></av-icon><av-scrollable class="menu">    <av-collapse>        <div class="title" slot="header">install</div>        <ul>            <li><av-router-link state="/docs/introduction">Introduction</av-router-link></li>            <li><av-router-link state="/docs/installation">Install Aventus</av-router-link></li>            <li><av-router-link state="/docs/experience">Dev experience</av-router-link></li>            <li><av-router-link state="/docs/first_app">Your first app</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">configuration</div>        <ul>            <li><av-router-link state="/docs/config/basic_prop">Generic properties</av-router-link></li>            <li><av-router-link state="/docs/config/build">Builds</av-router-link></li>            <li><av-router-link state="/docs/config/static">Statics</av-router-link></li>            <li><av-router-link state="/docs/config/lib">Import libs</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">data</div>        <ul>            <li><av-router-link state="/docs/data/create">Create</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">ram</div>        <ul>            <li><av-router-link state="/docs/ram/create">Create</av-router-link></li>            <li><av-router-link state="/docs/ram/crud">CRUD operation</av-router-link></li>            <li><av-router-link state="/docs/ram/listen_changes">Listen changes</av-router-link></li>            <li><av-router-link state="/docs/ram/mixin">Extend data</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">state</div>        <ul>            <li><av-router-link state="/docs/state/create">Create</av-router-link></li>            <li><av-router-link state="/docs/state/change">Change state</av-router-link></li>            <li><av-router-link state="/docs/state/listen_changes">Listen state change</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">webcomponent</div>        <ul>            <li><av-router-link state="/docs/wc/create">Create</av-router-link></li>            <li><av-router-link state="/docs/wc/style">Style</av-router-link></li>            <li><av-router-link state="/docs/wc/inheritance">Inhertiance</av-router-link></li>            <li><av-router-link state="/docs/wc/attribute">Attribute</av-router-link></li>            <li><av-router-link state="/docs/wc/property">Property</av-router-link></li>            <li><av-router-link state="/docs/wc/watch">Watch</av-router-link></li>            <li><av-router-link state="/docs/wc/interpolation">Interpolation</av-router-link></li>            <li><av-router-link state="/docs/wc/element">Select element</av-router-link></li>            <li><av-router-link state="/docs/wc/injection">Injection</av-router-link></li>            <li><av-router-link state="/docs/wc/event">Event</av-router-link></li>            <li><av-router-link state="/docs/wc/binding">Binding</av-router-link></li>            <li><av-router-link state="/docs/wc/state">State</av-router-link></li>            <li><av-router-link state="/docs/wc/loop">Loop</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">lib</div>        <ul>            <li><av-router-link state="/docs/lib/create">Create</av-router-link></li>            <li><av-router-link state="/docs/lib/animation">Animation</av-router-link></li>            <li><av-router-link state="/docs/lib/callback">Callback</av-router-link></li>            <li><av-router-link state="/docs/lib/press_manager">PressManager</av-router-link></li>            <li><av-router-link state="/docs/lib/drag_and_drop">Drag&Drop</av-router-link></li>            <li><av-router-link state="/docs/lib/instance">Instance</av-router-link></li>            <li><av-router-link state="/docs/lib/resize_observer">ResizeObserver</av-router-link></li>            <li><av-router-link state="/docs/lib/resource_loader">ResourceLoader</av-router-link></li>            <li><av-router-link state="/docs/lib/watcher">Watcher</av-router-link></li>            <li><av-router-link state="/docs/lib/tools">Tools</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">advanced</div>        <ul>            <li><av-router-link state="/docs/advanced/template">Template</av-router-link></li>        </ul>    </av-collapse></av-scrollable>` }
+        blocks: { 'default':`<av-icon icon="close" class="close-icon" _id="docsidenav_0"></av-icon><av-scrollable class="menu">    <av-collapse>        <div class="title" slot="header">install</div>        <ul>            <li><av-router-link state="/docs/introduction">Introduction</av-router-link></li>            <li><av-router-link state="/docs/installation">Install Aventus</av-router-link></li>            <li><av-router-link state="/docs/experience">Dev experience</av-router-link></li>            <li><av-router-link state="/docs/first_app">Your first app</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">configuration</div>        <ul>            <li><av-router-link state="/docs/config/basic_prop">Generic properties</av-router-link></li>            <li><av-router-link state="/docs/config/build">Builds</av-router-link></li>            <li><av-router-link state="/docs/config/static">Statics</av-router-link></li>            <li><av-router-link state="/docs/config/lib">Import libs</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">data</div>        <ul>            <li><av-router-link state="/docs/data/create">Create</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">ram</div>        <ul>            <li><av-router-link state="/docs/ram/create">Create</av-router-link></li>            <li><av-router-link state="/docs/ram/crud">CRUD operation</av-router-link></li>            <li><av-router-link state="/docs/ram/listen_changes">Listen changes</av-router-link></li>            <li><av-router-link state="/docs/ram/mixin">Extend data</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">state</div>        <ul>            <li><av-router-link state="/docs/state/create">Create</av-router-link></li>            <li><av-router-link state="/docs/state/change">Change state</av-router-link></li>            <li><av-router-link state="/docs/state/listen_changes">Listen state change</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">webcomponent</div>        <ul>            <li><av-router-link state="/docs/wc/create">Create</av-router-link></li>            <li><av-router-link state="/docs/wc/style">Style</av-router-link></li>            <li><av-router-link state="/docs/wc/inheritance">Inhertiance</av-router-link></li>            <li><av-router-link state="/docs/wc/attribute">Attribute</av-router-link></li>            <li><av-router-link state="/docs/wc/property">Property</av-router-link></li>            <li><av-router-link state="/docs/wc/watch">Watch</av-router-link></li>            <li><av-router-link state="/docs/wc/interpolation">Interpolation</av-router-link></li>            <li><av-router-link state="/docs/wc/element">Select element</av-router-link></li>            <li><av-router-link state="/docs/wc/injection">Injection</av-router-link></li>            <li><av-router-link state="/docs/wc/event">Event</av-router-link></li>            <li><av-router-link state="/docs/wc/binding">Binding</av-router-link></li>            <li><av-router-link state="/docs/wc/state">State</av-router-link></li>            <li><av-router-link state="/docs/wc/loop">Loop</av-router-link></li>            <li><av-router-link state="/docs/wc/condition">Condition</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">lib</div>        <ul>            <li><av-router-link state="/docs/lib/create">Create</av-router-link></li>            <li><av-router-link state="/docs/lib/animation">Animation</av-router-link></li>            <li><av-router-link state="/docs/lib/callback">Callback</av-router-link></li>            <li><av-router-link state="/docs/lib/press_manager">PressManager</av-router-link></li>            <li><av-router-link state="/docs/lib/drag_and_drop">Drag&Drop</av-router-link></li>            <li><av-router-link state="/docs/lib/instance">Instance</av-router-link></li>            <li><av-router-link state="/docs/lib/resize_observer">ResizeObserver</av-router-link></li>            <li><av-router-link state="/docs/lib/resource_loader">ResourceLoader</av-router-link></li>            <li><av-router-link state="/docs/lib/watcher">Watcher</av-router-link></li>            <li><av-router-link state="/docs/lib/tools">Tools</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">advanced</div>        <ul>            <li><av-router-link state="/docs/advanced/template">Template</av-router-link></li>        </ul>    </av-collapse></av-scrollable>` }
     });
 }
     __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
@@ -11075,30 +11463,6 @@ DocGenericPage.Tag=`av-doc-generic-page`;
 _.DocGenericPage=DocGenericPage;
 if(!window.customElements.get('av-doc-generic-page')){window.customElements.define('av-doc-generic-page', DocGenericPage);Aventus.WebComponentInstance.registerDefinition(DocGenericPage);}
 
-const DocWcCondition = class DocWcCondition extends DocGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return DocWcCondition;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocWcCondition.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Webcomponent - Conditional rendering</h1><p>In the section you are going to learn how you can use conditional rendering inside your view.</p>` }
-    });
-}
-    getClassName() {
-        return "DocWcCondition";
-    }
-}
-DocWcCondition.Namespace=`${moduleName}`;
-DocWcCondition.Tag=`av-doc-wc-condition`;
-_.DocWcCondition=DocWcCondition;
-if(!window.customElements.get('av-doc-wc-condition')){window.customElements.define('av-doc-wc-condition', DocWcCondition);Aventus.WebComponentInstance.registerDefinition(DocWcCondition);}
-
 const DocLibWatcher = class DocLibWatcher extends DocGenericPage {
     static __style = ``;
     __getStatic() {
@@ -11194,30 +11558,6 @@ DocLibCreate.Namespace=`${moduleName}`;
 DocLibCreate.Tag=`av-doc-lib-create`;
 _.DocLibCreate=DocLibCreate;
 if(!window.customElements.get('av-doc-lib-create')){window.customElements.define('av-doc-lib-create', DocLibCreate);Aventus.WebComponentInstance.registerDefinition(DocLibCreate);}
-
-const DocWcLoop = class DocWcLoop extends DocGenericPage {
-    static __style = `:host .todos-img{margin:auto;max-height:none;max-width:200px;display:flex}`;
-    __getStatic() {
-        return DocWcLoop;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocWcLoop.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Webcomponent - Loop</h1><p>In this section you are going to learn how you can create a loop inside your view to display array.</p><p>Inside Aventus, you can declare loop inside your <span class="cn">*.wcv.avt</span> with the following pattern :    <br /><span class="cn">@for="$item, $index in $data"</span>. As en example we will display a list of todos.</p><av-code language="typescript" filename="Todo.data.avt">    export class Todo extends Aventus.Data implements Aventus.IData {    \tpublic id: number = 0;    \tpublic name: string = "";    \tpublic tasks: string[] = [];    }</av-code></av-code><av-code language="typescript" filename="List.wcl.avt">    export class List extends Aventus.WebComponent implements Aventus.DefaultComponent {    \t@Watch()    \tpublic todos: Todo = [];    &nbsp;    \tpublic addTodo() {    \t\tlet todo = new Todo();    \t\ttodo.name = "My todo";    \t\ttodo.tasks = ["task1", "task2"];    \t\tthis.todos.push(todo);    \t}    }</av-code></av-code><av-code language="html" filename="List.wcv.avt">    &lt;h1&gt;Todos&lt;/h1&gt;    &lt;div class="todo" @for="todo, i in todos" style="margin-bottom:10px"&gt;    \t&lt;div class="name"&gt;{{todo.name}}&lt;/div&gt;    \t&lt;div class="tasks"&gt;    \t\t&lt;div class="task" @for="task, j in todo.tasks" style="margin-left:10px"&gt;{{i}}-{{j}}. {{task}}&lt;/div&gt;    \t&lt;/div&gt;    &lt;/div&gt;    &lt;button @click="addTodo"&gt;Add&lt;/button&gt;</av-code></av-code><av-img src="/img/doc/wc/loop/todos.png" mode="contains" class="todos-img"></av-img><p>You can see that the <span class="cn">i</span> and the <span class="cn">j</span> value starting at 0. You can add a +1 inside the curly braces (<span class="cn">&#123;&#123;i+1&#125;&#125;-&#123;&#123;j+1&#125;&#125;. &#123;&#123;task&#125;&#125;</span>) but Aventus will trigger an error. The code will compile anyway so you can write it. This is because inside Aventus future version you will be able to write Typescript code between curly braces.</p><p>With the help on the <span class="cn"><av-router-link state="/docs/wc/watch">Watch</av-router-link></span> variable, the component can know what changed and can update only the part impacted by the change. No virtual DOM is involved and only the needed part is updated inside the DOM.</p><p>If you use <span class="cn">@element</span> inside a loop, the variable will be imported as an array.</p>` }
-    });
-}
-    getClassName() {
-        return "DocWcLoop";
-    }
-}
-DocWcLoop.Namespace=`${moduleName}`;
-DocWcLoop.Tag=`av-doc-wc-loop`;
-_.DocWcLoop=DocWcLoop;
-if(!window.customElements.get('av-doc-wc-loop')){window.customElements.define('av-doc-wc-loop', DocWcLoop);Aventus.WebComponentInstance.registerDefinition(DocWcLoop);}
 
 const DocWcElement = class DocWcElement extends DocGenericPage {
     static __style = ``;
@@ -11351,7 +11691,7 @@ const DocInstallation = class DocInstallation extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Installation</h1><h2>Basic install</h2><p>Aventus is actually only available as a <a target="_blank" href="https://marketplace.visualstudio.com/items?itemName=Cobwebsite.aventus" rel="noopener noreferrer">vscode extension</a>. You can download it directly inside the vscode extensions    tab by searching "Aventus" in the marketplace. Nothing else is required because everythink is wrapped inside the    extension.</p><h2>Useful command inside vscode</h2><p>Because Aventus is fully integrated inside vscode, you must know how to run some commands. By default the shortcut to    list all the commands is : <b>ctrl</b>+<b>shift</b>+<b>p</b>. This action open a dropdown with all commands available inside your vscode instance.</p><ul class="list-commands">    <li><b>Developer: Reload Window</b> <av-icon icon="arrow-right"></av-icon> To reload the vscode instance</li>    <li><b>Aventus : Compile</b> <av-icon icon="arrow-right"></av-icon> To compile a build</li>    <li><b>Aventus : Copy static</b> <av-icon icon="arrow-right"></av-icon> To export a static a folder</li>    <li><b>Aventus : Import template</b> <av-icon icon="arrow-right"></av-icon> To import Aventus templates</li>    <li><b>Aventus : Open storage</b> <av-icon icon="arrow-right"></av-icon> To open the folder where Aventus store data</li></ul><h2>Source code</h2><p>The Aventus source code can be downloaded on <a href="https://github.com/Cobwebsite/Aventus" target="_blank" rel="noopener noreferrer">github.</a></p>` }
+        blocks: { 'default':`<h1>Installation</h1><h2>Basic install</h2><p>Aventus is actually only available as a <a target="_blank" href="https://marketplace.visualstudio.com/items?itemName=Cobwebsite.aventus" rel="noopener noreferrer">vscode extension</a>. You can download it directly inside the vscode extensions    tab by searching "Aventus" in the marketplace. Nothing else is required because everything is wrapped inside the    extension.</p><h2>Useful command inside vscode</h2><p>Because Aventus is fully integrated inside vscode, you must know how to run some commands. By default the shortcut to    list all the commands is : <b>ctrl</b>+<b>shift</b>+<b>p</b>. This action open a dropdown with all commands available inside your vscode instance.</p><ul class="list-commands">    <li><b>Developer: Reload Window</b> <av-icon icon="arrow-right"></av-icon> To reload the vscode instance</li>    <li><b>Aventus : Compile</b> <av-icon icon="arrow-right"></av-icon> To compile a build</li>    <li><b>Aventus : Copy static</b> <av-icon icon="arrow-right"></av-icon> To export a static a folder</li>    <li><b>Aventus : Import template</b> <av-icon icon="arrow-right"></av-icon> To import Aventus templates</li>    <li><b>Aventus : Open storage</b> <av-icon icon="arrow-right"></av-icon> To open the folder where Aventus store data</li></ul><h2>Source code</h2><p>The Aventus source code can be downloaded on <a href="https://github.com/Cobwebsite/Aventus" target="_blank" rel="noopener noreferrer">github.</a></p>` }
     });
 }
     getClassName() {
@@ -11744,56 +12084,6 @@ TutorialGenericPageEditor1.Namespace=`${moduleName}`;
 TutorialGenericPageEditor1.Tag=`av-tutorial-generic-page-editor-1`;
 _.TutorialGenericPageEditor1=TutorialGenericPageEditor1;
 if(!window.customElements.get('av-tutorial-generic-page-editor-1')){window.customElements.define('av-tutorial-generic-page-editor-1', TutorialGenericPageEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialGenericPageEditor1);}
-
-const DocWcLoopEditor = class DocWcLoopEditor extends BaseEditor {
-    static __style = ``;
-    __getStatic() {
-        return DocWcLoopEditor;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocWcLoopEditor.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
-    });
-}
-    getClassName() {
-        return "DocWcLoopEditor";
-    }
-}
-DocWcLoopEditor.Namespace=`${moduleName}`;
-DocWcLoopEditor.Tag=`av-doc-wc-loop-editor`;
-_.DocWcLoopEditor=DocWcLoopEditor;
-if(!window.customElements.get('av-doc-wc-loop-editor')){window.customElements.define('av-doc-wc-loop-editor', DocWcLoopEditor);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor);}
-
-const DocWcConditionEditor1 = class DocWcConditionEditor1 extends BaseEditor {
-    static __style = ``;
-    __getStatic() {
-        return DocWcConditionEditor1;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocWcConditionEditor1.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
-    });
-}
-    getClassName() {
-        return "DocWcConditionEditor1";
-    }
-}
-DocWcConditionEditor1.Namespace=`${moduleName}`;
-DocWcConditionEditor1.Tag=`av-doc-wc-condition-editor-1`;
-_.DocWcConditionEditor1=DocWcConditionEditor1;
-if(!window.customElements.get('av-doc-wc-condition-editor-1')){window.customElements.define('av-doc-wc-condition-editor-1', DocWcConditionEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcConditionEditor1);}
 
 const DocLibWatcherEditor1 = class DocLibWatcherEditor1 extends BaseEditor {
     static __style = ``;
@@ -14659,6 +14949,280 @@ DocWcInjection.Tag=`av-doc-wc-injection`;
 _.DocWcInjection=DocWcInjection;
 if(!window.customElements.get('av-doc-wc-injection')){window.customElements.define('av-doc-wc-injection', DocWcInjection);Aventus.WebComponentInstance.registerDefinition(DocWcInjection);}
 
+const DocWcLoopEditor1TodoList = class DocWcLoopEditor1TodoList extends Aventus.WebComponent {
+    get 'todos'() {
+						return this.__watch["todos"];
+					}
+					set 'todos'(val) {
+						this.__watch["todos"] = val;
+					}    todoId = 0;
+    __registerWatchesActions() {
+    this.__addWatchesActions("todos");    super.__registerWatchesActions();
+}
+    static __style = ``;
+    __getStatic() {
+        return DocWcLoopEditor1TodoList;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcLoopEditor1TodoList.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Todos</h1><template _id="docwcloopeditor1todolist_0"></template><button _id="docwcloopeditor1todolist_4">Add</button>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "events": [
+    {
+      "eventName": "click",
+      "id": "docwcloopeditor1todolist_4",
+      "fct": (e, c) => c.comp.addTodo(e)
+    }
+  ]
+});const templ0 = new Aventus.Template(this);templ0.setTemplate(`     <div class="name" _id="docwcloopeditor1todolist_1"></div>    <ul>        <template _id="docwcloopeditor1todolist_2"></template>    </ul>`);templ0.setActions({
+  "content": {
+    "docwcloopeditor1todolist_1°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__c8e599cb8d8cef45f2c845cb1508ac1cmethod2(c.data.i))}`
+    }
+  }
+});this.__getStatic().__template.addLoop({
+                    anchorId: 'docwcloopeditor1todolist_0',
+                    template: templ0,
+                simple:{data: "this.todos",index:"i"}});const templ1 = new Aventus.Template(this);templ1.setTemplate(`             <li _id="docwcloopeditor1todolist_3"></li>        `);templ1.setActions({
+  "content": {
+    "docwcloopeditor1todolist_3°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__c8e599cb8d8cef45f2c845cb1508ac1cmethod3(c.data.i))}-${c.print(c.comp.__c8e599cb8d8cef45f2c845cb1508ac1cmethod4(c.data.j))}. ${c.print(c.comp.__c8e599cb8d8cef45f2c845cb1508ac1cmethod5(c.data.i,c.data.j))}`
+    }
+  }
+});templ0.addLoop({
+                    anchorId: 'docwcloopeditor1todolist_2',
+                    template: templ1,
+                simple:{data: "this.todos[i].tasks",index:"j"}}); }
+    getClassName() {
+        return "DocWcLoopEditor1TodoList";
+    }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["todos"] = []; }
+    addTodo() {
+        this.todoId++;
+        let todo = new DocWcLoopEditor1Todo();
+        todo.name = "My todo " + this.todoId;
+        todo.tasks = ["task1", "task2"];
+        this.todos.push(todo);
+    }
+    __c8e599cb8d8cef45f2c845cb1508ac1cmethod2(i) {
+        return this.todos[i].name;
+    }
+    __c8e599cb8d8cef45f2c845cb1508ac1cmethod3(i) {
+        return i + 1;
+    }
+    __c8e599cb8d8cef45f2c845cb1508ac1cmethod4(j) {
+        return j + 1;
+    }
+    __c8e599cb8d8cef45f2c845cb1508ac1cmethod5(i, j) {
+        return this.todos[i].tasks[j];
+    }
+}
+DocWcLoopEditor1TodoList.Namespace=`${moduleName}`;
+DocWcLoopEditor1TodoList.Tag=`av-doc-wc-loop-editor-1-todo-list`;
+_.DocWcLoopEditor1TodoList=DocWcLoopEditor1TodoList;
+if(!window.customElements.get('av-doc-wc-loop-editor-1-todo-list')){window.customElements.define('av-doc-wc-loop-editor-1-todo-list', DocWcLoopEditor1TodoList);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor1TodoList);}
+
+const DocWcLoopEditor1 = class DocWcLoopEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocWcLoopEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcLoopEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="For">    <av-code language="typescript" filename="For/aventus.conf.avt">        <pre>            {            	"module": "For",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [            		{            			"name": "Static",            			"input": "./static/*",            			"output": "./dist/"            		}            	]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="For/src/Todo.data.avt">        <pre>            export class Todo extends Aventus.Data implements Aventus.IData {            	public id: number = 0;            	public name: string = "";            	public tasks: string[] = [];            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="For/src/TodoList/TodoList.wcl.avt">        <pre>            import { Todo } from "../Todo.data.avt";            &nbsp;            export class TodoList extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                @Watch()                public todos: Todo[] = [];            &nbsp;                private todoId: number = 0;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                protected addTodo() {                    this.todoId++;                    let todo = new Todo();                    todo.name = "My todo " + this.todoId;                    todo.tasks = ["task1", "task2"];                    this.todos.push(todo);                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="For/src/TodoList/TodoList.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="For/src/TodoList/TodoList.wcv.avt">        <pre>            &lt;h1&gt;Todos&lt;/h1&gt;            &#102;or(let i = 0; i &lt; this.todos.length; i++) {                 &lt;div class="name"&gt;&#123;&#123; this.todos[i].name &#125;&#125;&lt;/div&gt;                &lt;ul&gt;                    &#102;or(let j = 0; j &lt; this.todos[i].tasks.length; j++) {                         &lt;li&gt;&#123;&#123; i + 1 &#125;&#125;-&#123;&#123; j + 1 &#125;&#125;. &#123;&#123; this.todos[i].tasks[j] &#125;&#125;&lt;/li&gt;                    }                &lt;/ul&gt;            }            &lt;button @click="addTodo"&gt;Add&lt;/button&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="For/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;For&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-todo-list&gt;&lt;/av-todo-list&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocWcLoopEditor1";
+    }
+    defineResult() {
+        return new DocWcLoopEditor1TodoList();
+    }
+    startupFile() {
+        return 'For/src/TodoList/TodoList.wcv.avt';
+    }
+}
+DocWcLoopEditor1.Namespace=`${moduleName}`;
+DocWcLoopEditor1.Tag=`av-doc-wc-loop-editor-1`;
+_.DocWcLoopEditor1=DocWcLoopEditor1;
+if(!window.customElements.get('av-doc-wc-loop-editor-1')){window.customElements.define('av-doc-wc-loop-editor-1', DocWcLoopEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor1);}
+
+const DocWcLoopEditor2 = class DocWcLoopEditor2 extends DocWcLoopEditor1 {
+    static __style = ``;
+    __getStatic() {
+        return DocWcLoopEditor2;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcLoopEditor2.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code language="html" filename="For/src/TodoList/TodoList.wcv.avt">    <pre>        &lt;h1&gt;Todos&lt;/h1&gt;        &#102;or(let i = 0; i &lt; this.todos.length; i++) {            &#64;Context('todo', this.todos[i])            &lt;div class="name"&gt;&#123;&#123; todo.name &#125;&#125;&lt;/div&gt;            &lt;ul&gt;                &#102;or(let j = 0; j &lt; todo.tasks.length; j++) {                     &lt;li&gt;&#123;&#123; i + 1 &#125;&#125;-&#123;&#123; j + 1 &#125;&#125;. &#123;&#123; todo.tasks[j] &#125;&#125;&lt;/li&gt;                }            &lt;/ul&gt;        }        &lt;button @click="addTodo"&gt;Add&lt;/button&gt;    </pre></av-code></av-code><slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocWcLoopEditor2";
+    }
+    defineResult() {
+        return new DocWcLoopEditor2TodoList();
+    }
+}
+DocWcLoopEditor2.Namespace=`${moduleName}`;
+DocWcLoopEditor2.Tag=`av-doc-wc-loop-editor-2`;
+_.DocWcLoopEditor2=DocWcLoopEditor2;
+if(!window.customElements.get('av-doc-wc-loop-editor-2')){window.customElements.define('av-doc-wc-loop-editor-2', DocWcLoopEditor2);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor2);}
+
+const DocWcLoopEditor3 = class DocWcLoopEditor3 extends DocWcLoopEditor2 {
+    static __style = ``;
+    __getStatic() {
+        return DocWcLoopEditor3;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcLoopEditor3.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code language="html" filename="For/src/TodoList/TodoList.wcv.avt">    <pre>        &lt;h1&gt;Todos&lt;/h1&gt;        &#102;or(let index in this.todos) {             &#64;Context('todo', this.todos[index])            &lt;div class="name"&gt;&#123;&#123; todo.name &#125;&#125;&lt;/div&gt;            &lt;ul&gt;                &#102;or(let index2 in todo.tasks) {                     &lt;li&gt;&#123;&#123; index + 1 &#125;&#125;-&#123;&#123; index2 + 1 &#125;&#125;. &#123;&#123; todo.tasks[index2] &#125;&#125;&lt;/li&gt;                }            &lt;/ul&gt;        }        &lt;button @click="addTodo"&gt;Add&lt;/button&gt;    </pre></av-code></av-code><slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocWcLoopEditor3";
+    }
+    defineResult() {
+        return new DocWcLoopEditor3TodoList();
+    }
+}
+DocWcLoopEditor3.Namespace=`${moduleName}`;
+DocWcLoopEditor3.Tag=`av-doc-wc-loop-editor-3`;
+_.DocWcLoopEditor3=DocWcLoopEditor3;
+if(!window.customElements.get('av-doc-wc-loop-editor-3')){window.customElements.define('av-doc-wc-loop-editor-3', DocWcLoopEditor3);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor3);}
+
+const DocWcLoopEditor4 = class DocWcLoopEditor4 extends DocWcLoopEditor3 {
+    static __style = ``;
+    __getStatic() {
+        return DocWcLoopEditor4;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcLoopEditor4.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code language="html" filename="For/src/TodoList/TodoList.wcv.avt">    <pre>        &lt;h1&gt;Todos&lt;/h1&gt;        &#102;or(let todo of this.todos) {             &lt;div class="name"&gt;&#123;&#123; todo.name &#125;&#125;&lt;/div&gt;            &lt;ul&gt;                &#102;or(let task of todo.tasks) {                     &lt;li&gt;&#123;&#123; task &#125;&#125;&lt;/li&gt;                }            &lt;/ul&gt;        }        &lt;button @click="addTodo"&gt;Add&lt;/button&gt;    </pre></av-code></av-code><slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocWcLoopEditor4";
+    }
+    defineResult() {
+        return new DocWcLoopEditor4TodoList();
+    }
+}
+DocWcLoopEditor4.Namespace=`${moduleName}`;
+DocWcLoopEditor4.Tag=`av-doc-wc-loop-editor-4`;
+_.DocWcLoopEditor4=DocWcLoopEditor4;
+if(!window.customElements.get('av-doc-wc-loop-editor-4')){window.customElements.define('av-doc-wc-loop-editor-4', DocWcLoopEditor4);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor4);}
+
+const DocWcLoop = class DocWcLoop extends DocGenericPage {
+    static __style = `:host .todos-img{margin:auto;max-height:none;max-width:200px;display:flex}`;
+    __getStatic() {
+        return DocWcLoop;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcLoop.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Webcomponent - Loop</h1><p>    Loops are a fundamental concept in programming that allow you to iterate over collections of data, such as arrays or    objects, and perform operations on each element. In the context of Aventus views, loops provide a powerful    mechanism for dynamically rendering content based on the data available. They enable you to generate repetitive    structures, such as lists or tables, and customize the display of each item.</p><p>Loops are invaluable in template development for several reasons:</p><ul>    <li>Loops enable the dynamic generation of content based on the data provided. This flexibility allows for the        creation of interactive and data-driven user interfaces.</li>    <li>Loops help reduce code duplication by automating repetitive tasks, leading to cleaner and more maintainable        templates.</li>    <li>Loops facilitate the iteration over arrays, objects, or other iterable data structures, allowing you to access        and manipulate each element individually.</li></ul><p>Aventus aims to prioritize developer friendliness by streamlining the template development process. One notable    feature illustrating this commitment is the ability to use loops directly within the template code. With Aventus,    developers can seamlessly integrate loop constructs, such as for loops, directly into their templates without the    need for additional setup or configuration. The Aventus compiler intelligently detects loop structures within the    template code, allowing developers to focus on building dynamic and responsive user interfaces without cumbersome    boilerplate code. This approach enhances developer productivity and promotes a more intuitive and efficient    workflow, ultimately contributing to a more enjoyable and streamlined development experience.</p><h2>For</h2><p>The <span class="cn">for</span> loop is a classic iteration construct in programming, commonly used to traverse    arrays or perform repetitive    tasks a fixed number of times. In Aventus templates, the for loop provides a straightforward approach to iterating    over arrays and generating dynamic content based on each element.</p><av-doc-wc-loop-editor-1></av-doc-wc-loop-editor-1><p>When working with nested loops in Aventus templates, referencing properties of outer loop iterations within inner    loops can lead to verbose and repetitive code. In the provided example, accessing properties like <span class="cn">this.todos[i]</span>    within each inner loop creates code clutter and decreases readability, especially when dealing with deeply nested    structures or long property names.</p><p>To address this issue, Aventus introduces a concept called <span class="cn">@Context</span>. It allows developers to    define a context variable within the loop iteration, simplifying property references within nested loops. By    assigning the current loop iteration to a context variable, developers can then access properties of the current    iteration directly using the context variable within inner loops. This approach significantly reduces code    verbosity, enhances code clarity, and improves maintainability, especially in scenarios involving complex nested    loops and data structures. Ultimately, <span class="cn">@Context</span> streamlines the template development process    and promotes cleaner and more concise code.</p><av-doc-wc-loop-editor-2></av-doc-wc-loop-editor-2><h2>For...in</h2><p>The <span class="cn">for...in</span> loop in JavaScript iterates over the enumerable properties of an object, making it suitable for looping    through key-value pairs. In Aventus templates, it offers a convenient way to iterate over object    properties and render content dynamically based on each key-value pair.</p><av-doc-wc-loop-editor-3></av-doc-wc-loop-editor-3><h2>For...of</h2><p>    The <span class="cn">for...of</span> loop is a modern iteration construct introduced in ES6, designed specifically for iterating over    iterable objects such as arrays, strings, and other collection types. In Aventus templates, it    simplifies the iteration process by directly accessing the values of iterable objects, enabling seamless content    rendering based on each item.</p><av-doc-wc-loop-editor-4></av-doc-wc-loop-editor-4>` }
+    });
+}
+    getClassName() {
+        return "DocWcLoop";
+    }
+}
+DocWcLoop.Namespace=`${moduleName}`;
+DocWcLoop.Tag=`av-doc-wc-loop`;
+_.DocWcLoop=DocWcLoop;
+if(!window.customElements.get('av-doc-wc-loop')){window.customElements.define('av-doc-wc-loop', DocWcLoop);Aventus.WebComponentInstance.registerDefinition(DocWcLoop);}
+
+const DocWcConditionEditor1 = class DocWcConditionEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocWcConditionEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcConditionEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Conditional">    <av-code language="typescript" filename="Conditional/aventus.conf.avt">        <pre>            {            	"module": "Conditional",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [            		{            			"name": "Static",            			"input": "./static/*",            			"output": "./dist/"            		}            	]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Conditional/src/Example/Example.wcl.avt">        <pre>            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props                @Property()                public number!: number;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                protected increment() {                    this.number++;                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Conditional/src/Example/Example.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Conditional/src/Example/Example.wcv.avt">        <pre>            &lt;p&gt;The current number is &#123;&#123; this.number &#125;&#125;&lt;/p&gt;            &nbsp;            &#105;f (this.number % 2 === 0) {                &lt;p style="background:blue"&gt;&#123;&#123; this.number &#125;&#125; is even.&lt;/p&gt;            } else {                &lt;p style="background:red"&gt;&#123;&#123; this.number &#125;&#125; is odd.&lt;/p&gt;            }            &nbsp;            &lt;button @click="increment"&gt;Increment&lt;/button&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="Conditional/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Conditional&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-example&gt;&lt;/av-example&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocWcConditionEditor1";
+    }
+    startupFile() {
+        return 'Conditional/src/Example/Example.wcv.avt';
+    }
+    defineResult() {
+        return new DocWcConditionEditor1Example();
+    }
+}
+DocWcConditionEditor1.Namespace=`${moduleName}`;
+DocWcConditionEditor1.Tag=`av-doc-wc-condition-editor-1`;
+_.DocWcConditionEditor1=DocWcConditionEditor1;
+if(!window.customElements.get('av-doc-wc-condition-editor-1')){window.customElements.define('av-doc-wc-condition-editor-1', DocWcConditionEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcConditionEditor1);}
+
+const DocWcCondition = class DocWcCondition extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocWcCondition;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcCondition.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Webcomponent - Conditional rendering</h1><p>Conditional rendering is a fundamental concept in web development that allows developers to display different content    based on certain conditions or criteria. It enables dynamic content presentation, enabling web applications to    respond and adapt to user interactions, data changes, or specific scenarios.</p><p>In conditional rendering, sections of a web page are conditionally displayed or hidden depending on the evaluation of    logical expressions or variables. This capability is particularly useful for scenarios such as displaying    personalized greetings to logged-in users, rendering error messages when data is missing, or showing different views    based on user preferences.</p><p>Conditional rendering is seamlessly integrated into the template syntax. Developers can use control flow constructs    such as if statements to conditionally include or exclude content within the template markup. This approach empowers    developers to create dynamic and interactive user interfaces that cater to diverse user scenarios and requirements.</p><av-doc-wc-condition-editor-1></av-doc-wc-condition-editor-1>` }
+    });
+}
+    getClassName() {
+        return "DocWcCondition";
+    }
+}
+DocWcCondition.Namespace=`${moduleName}`;
+DocWcCondition.Tag=`av-doc-wc-condition`;
+_.DocWcCondition=DocWcCondition;
+if(!window.customElements.get('av-doc-wc-condition')){window.customElements.define('av-doc-wc-condition', DocWcCondition);Aventus.WebComponentInstance.registerDefinition(DocWcCondition);}
+
 const DocWcEventEditor1 = class DocWcEventEditor1 extends BaseEditor {
     static __style = ``;
     __getStatic() {
@@ -15416,6 +15980,7 @@ const DocApp = class DocApp extends Aventus.Navigation.Router {
         this.addRoute("/docs/wc/binding", DocWcBinding);
         this.addRoute("/docs/wc/injection", DocWcInjection);
         this.addRoute("/docs/wc/loop", DocWcLoop);
+        this.addRoute("/docs/wc/condition", DocWcCondition);
         this.addRoute("/docs/wc/event", DocWcEvent);
         this.addRoute("/docs/wc/state", DocWcState);
         //#endregion
@@ -16019,6 +16584,30 @@ TutorialDisplayTodoEditor2.Tag=`av-tutorial-display-todo-editor-2`;
 _.TutorialDisplayTodoEditor2=TutorialDisplayTodoEditor2;
 if(!window.customElements.get('av-tutorial-display-todo-editor-2')){window.customElements.define('av-tutorial-display-todo-editor-2', TutorialDisplayTodoEditor2);Aventus.WebComponentInstance.registerDefinition(TutorialDisplayTodoEditor2);}
 
+const TutorialDisplayTodo = class TutorialDisplayTodo extends TutorialGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return TutorialDisplayTodo;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TutorialDisplayTodo.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Display Todo</h1><p>Now that we've set up the foundation for managing todo data within our Aventus application using the TodoRAM class,    let's move on to creating a user interface component to display individual todo items.</p><p>In this next step of the tutorial, we'll design and implement a component responsible for rendering a single todo    item. This component will provide a visually appealing and intuitive interface for users to view and interact with    their todo entries.</p><p>By creating a dedicated component for todo display, we'll ensure modularity and reusability within our application's    architecture. This component will encapsulate the presentation logic related to individual todo items, allowing us    to easily integrate it into different parts of our application as needed.</p><p>Throughout this process, we'll leverage Aventus's component-based architecture to design a cohesive and responsive    user interface that enhances the overall user experience. We'll also explore how to bind the data from our TodoRAM    instance to the component.</p><h2>Code it</h2><p>First of all we need a to create a new component named <span class="cn">TodoDisplay : </span></p><ul>    <li>        Over the folder <span class="cn">components</span> you can right click and select <span class="cn">Aventus :            Create...</span>.    </li>    <li>You can select <span class="cn">Component</span></li>    <li>You can fill the input with <span class="cn">TodoDisplay</span></li>    <li>You can select <span class="cn">Multiple</span></li></ul><p>The component logic flow is the following : </p><ol>    <li><span class="cn">Attribute todo_id</span>: It expects a todo_id attribute to identify the todo item.</li>    <li><span class="cn">Load Todo from RAM</span>: Using the todo_id, it fetches the corresponding todo item from        TodoRAM.</li>    <li><span class="cn">Check Todo Existence</span>: If the todo item doesn't exist, the component removes itself from        the DOM.</li></ol><p>First of all, you can set your cursor inside the region <span class="cn">props</span> and <span class="cn">right        click > Aventus: Create attribute</span> or use the shortcut <span class="cn">ctrl + k ctrl + numpad1</span>.    You can fill the input with <span class="cn">todo_id</span> and select the type <span class="cn">Number</span>.</p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            //#region props            @Attribute()            public todo_id!: number; // this represents an attribute on you component &lt;td-todo-display todo_id="2"&gt;            // The ! inform typescript that the value of todo_id won't be null (default number value is 0)            //#endregion            ...        }    </pre></av-code></av-code><p>Now, you can write a function to load data from the <span class="cn">TodoRAM</span>.</p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        import { TodoRAM } from "../../ram/Todo.ram.avt";        &nbsp;        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            //#region methods            protected async loadData() {                let todo = await TodoRAM.getInstance().get(this.todo_id);            }            //#endregion            ...        }    </pre></av-code></av-code><p>For the view, we will only display the todo name right now. Inside your view file, you can write some code when you    are inside <span class="cn">&#123;&#123;&#125;&#125;</span>.</p><av-code language="html" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcv.avt">    <pre>        &lt;div class="title"&gt;            &lt;span&gt;&#123;&#123; this.todo.name &#125;&#125;&lt;/span&gt;        &lt;/div&gt;        &nbsp;    </pre></av-code></av-code><p>This will trigger an error because our component don't have a variable <span class="cn">todo</span>. So you can edit    your logical file to add this variable. Because it's inside the view, we want a variable that will refresh the view    when a change occured. This kind of variable is called <span class="cn">Watch</span> <av-router-link state="/docs/wc/watch">(more info)</av-router-link>.</p><p>To create this variable, you can set your cursor inside the region <span class="cn">variables</span> and <span class="cn">right        click > Aventus: Create watch</span> or use the shortcut <span class="cn">ctrl + k ctrl + numpad3</span>.    You can fill the name with <span class="cn">todo</span>, fill the type with <span class="cn">Todo</span> and we    don't need a callback.</p><p>Don't forget to import your <span class="cn">Todo class</span> from file <span class="cn">Todo.data.avt</span>.</p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        import type { Todo } from "../../data/Todo.data.avt";        ...        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            //#region variables            @Watch()            public todo?: Todo;            //#endregion            ...        }    </pre></av-code></av-code><p>You must still have an error inside you view telling : <span class="cn">Object is possibly 'undefined'</span>. This    is because by default a watch can be undefined. But in our flow, we know that if the todo didn't exist we won't    display the element.</p><p>You can edit the logical file to tell Aventus that your todo will exist and assign you todo from the Ram to the    variable.</p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        import type { Todo } from "../../data/Todo.data.avt";        import { TodoRAM } from "../../ram/Todo.ram.avt";        &nbsp;        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            //#region variables            @Watch()            public todo!: Todo;            //#endregion            ...            //#region methods            protected async loadData() {                const todo = await TodoRAM.getInstance().get(this.todo_id);                &#105;f(todo) {                    this.todo = todo; // assign the todo. This will trigger a view refresh                }                &#101;lse {                    this.remove(); // remove the component if the todo don't exist                }            }            //#endregion        &nbsp;        }    </pre></av-code></av-code><p>Now we can add the logic to load data on display.</p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        ...        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            protected override postCreation(): void {                this.loadData();            }            ...        }    </pre></av-code></av-code><p>Now to show the component we must apply 2 changes</p><ul>    <li>Edit the file <span class="cn">TodoListPage.wcv.avt</span> to add the tag <span class="cn">td-todo-display</span></li>    <li>Emulate the data loading inside the file <span class="cn">TodoDisplay.wcl.avt</span></li></ul><av-tutorial-display-todo-editor-1></av-tutorial-display-todo-editor-1><p>Now you can add a display to render all tasks inside the todo. We are going to use a <span class="cn">for loop</span>    to list though the tasks of a todo.</p><av-code language="html" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcv.avt">    <pre>        &lt;div class="title"&gt;            &lt;span&gt;&#123;&#123; this.todo.name &#125;&#125;&lt;/span&gt;        &lt;/div&gt;        &lt;ul&gt;            &#102;or(let task of this.todo.tasks) {                 &lt;li&gt;&#123;&#123; task.description &#125;&#125;&lt;/li&gt;            }        &lt;/ul&gt;    </pre></av-code></av-code><p>The code <span class="cn">&#123;&#123; task.description &#125;&#125;</span> will trigger an error telling :    <span class="cn">Cannot find name 'Task'.</span></p><p>To correct this error we must import the <span class="cn">Task</span> class inside <span class="cn">TodoDisplay.wcl.avt</span></p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        import { Todo } from "../../data/Todo.data.avt";        import { Task } from "../../data/Task.data.avt";        import { TodoRAM } from "../../ram/Todo.ram.avt";        &nbsp;        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...        }    </pre></av-code></av-code><p>Now we can change the function that is loading data to add tasks inside the todo.</p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            //#region methods            protected async loadData() {                const todo = new Todo();                todo.name = "My todo";                this.todo = todo;                // just create an interval to see the template reloading                setInterval(() =&gt; {                    this.todo.name = "My todo " + (new Date().getSeconds());                }, 1000);        &nbsp;                const task1 = new Task();                task1.description = "Test Aventus";        &nbsp;                const task2 = new Task();                task2.description = "Add a star to Aventus github";                this.todo.tasks = [task1, task2];        &nbsp;                // let todo = await TodoRAM.getInstance().get(this.todo_id);                // &#105;f(todo) {                //     this.todo = todo;                // }                // else {                //     this.remove();                // }            }            //#endregion        }    </pre></av-code></av-code><p>The final result is the following : </p><av-tutorial-display-todo-editor-2></av-tutorial-display-todo-editor-2><p>Although we've successfully created a component to display a todo, we've yet to implement any interaction with it. To    enhance user functionality, we require a trash button to enable users to delete todos effortlessly.</p><p>In the upcoming section, we'll introduce a new component called Icon. This component will be responsible for    rendering material icons, including the trash icon for deleting todos. By incorporating the Icon component into our    todo display component, we'll enable users to interact with todos by providing a convenient delete option.</p>` }
+    });
+}
+    getClassName() {
+        return "TutorialDisplayTodo";
+    }
+}
+TutorialDisplayTodo.Namespace=`${moduleName}`;
+TutorialDisplayTodo.Tag=`av-tutorial-display-todo`;
+_.TutorialDisplayTodo=TutorialDisplayTodo;
+if(!window.customElements.get('av-tutorial-display-todo')){window.customElements.define('av-tutorial-display-todo', TutorialDisplayTodo);Aventus.WebComponentInstance.registerDefinition(TutorialDisplayTodo);}
+
 const TutorialIconEditor1 = class TutorialIconEditor1 extends TutorialDisplayTodoEditor2 {
     static __style = ``;
     __getStatic() {
@@ -16032,7 +16621,7 @@ const TutorialIconEditor1 = class TutorialIconEditor1 extends TutorialDisplayTod
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code language="typescript" filename="Demo/src/components/Icon/Icon.wcl.avt">    <pre>        import type { IconType } from "./IconType.lib.avt";        &nbsp;        export class Icon extends Aventus.WebComponent implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props            /**             * Icon from https://fonts.google.com/icons             */            @Property((target: Icon) =&gt; {                &#105;f(target.isReady)                    target.shadowRoot.innerHTML = target.icon;            })            public icon: IconType = "check_box_outline_blank";        &nbsp;            /**             * The type of the icon             */            @Property((target: Icon) =&gt; {                &#105;f(target.isReady)                    target.loadFont();            })            public type: 'sharp' | 'rounded' | 'outlined' = 'outlined';        &nbsp;        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            /**             * Add link tag into document head to load the font based on the type             */            private async loadFont() {                &#105;f(!this.type) return;        &nbsp;                let url = 'https://fonts.googleapis.com/icon?family=Material+Symbols+';                url += this.type.charAt(0).toUpperCase() + this.type.slice(1);                // check &#105;f the url exist inside head and create a link tag &#105;f not exist                await Aventus.ResourceLoader.loadInHead({                    type: "css",                    url: url                });            }            /**             * Init the icon after rendering             */            private async init() {                await this.loadFont();                this.shadowRoot.innerHTML = this.icon;            }            protected override postCreation(): void {                this.init();            }            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/components/Icon/Icon.wcs.avt">    <pre>        :host {            direction: ltr;            display: inline-block;            font-family: 'Material Symbols Outlined';            -webkit-font-feature-settings: 'liga';            font-size: 24px;            -webkit-font-smoothing: antialiased;            font-style: normal;            font-weight: normal;            letter-spacing: normal;            line-height: 1;            text-transform: none;            white-space: nowrap;            word-wrap: normal;        }        &nbsp;        :host([type="sharp"]) {            font-family: 'Material Symbols Sharp';        }        &nbsp;        :host([type="rounded"]) {            font-family: 'Material Symbols Rounded';        }        &nbsp;        :host([type="outlined"]) {            font-family: 'Material Symbols Outlined';        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/components/Icon/Icon.wcv.avt">    <pre>        &nbsp;    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/components/Icon/IconType.lib.avt">    <pre>        export type IconType =            '10k' |             '10mp' |             '11mp' |             '123' |             '12mp' |             '13mp' |             '14mp' |             '15mp' |             '16mp' |             '17mp' |             '18_up_rating' |             '18mp' |             '19mp' |             '1k' |             '1k_plus' |             '1x_mobiledata' |             '20mp' |             '21mp' |             '22mp' |             '23mp' |             '24mp' |             '2k' |             '2k_plus' |             '2mp' |             '30fps' |             '30fps_select' |             '360' |             '3d_rotation' |             '3g_mobiledata' |             '3k' |             '3k_plus' |             '3mp' |             '3p' |             '4g_mobiledata' |             '4g_plus_mobiledata' |             '4k' |             '4k_plus' |             '4mp' |             '5g' |             '5k' |             '5k_plus' |             '5mp' |             '60fps' |             '60fps_select' |             '6_ft_apart' |             '6k' |             '6k_plus' |             '6mp' |             '7k' |             '7k_plus' |             '7mp' |             '8k' |             '8k_plus' |             '8mp' |             '9k' |             '9k_plus' |             '9mp' |             'abc' |             'ac_unit' |             'access_alarm' |             'access_alarms' |             'access_time' |             'access_time_filled' |             'accessibility' |             'accessibility_new' |             'accessible' |             'accessible_forward' |             'account_balance' |             'account_balance_wallet' |             'account_box' |             'account_circle' |             'account_tree' |             'ad_units' |             'adb' |             'add' |             'add_a_photo' |             'add_alarm' |             'add_alert' |             'add_box' |             'add_business' |             'add_card' |             'add_chart' |             'add_circle' |             'add_circle_outline' |             'add_comment' |             'add_home' |             'add_home_work' |             'add_ic_call' |             'add_link' |             'add_location' |             'add_location_alt' |             'add_moderator' |             'add_photo_alternate' |             'add_reaction' |             'add_road' |             'add_shopping_cart' |             'add_task' |             'add_to_drive' |             'add_to_home_screen' |             'add_to_photos' |             'add_to_queue' |             'addchart' |             'adf_scanner' |             'adjust' |             'admin_panel_settings' |             'ads_click' |             'agriculture' |             'air' |             'airline_seat_flat' |             'airline_seat_flat_angled' |             'airline_seat_individual_suite' |             'airline_seat_legroom_extra' |             'airline_seat_legroom_normal' |             'airline_seat_legroom_reduced' |             'airline_seat_recline_extra' |             'airline_seat_recline_normal' |             'airline_stops' |             'airlines' |             'airplane_ticket' |             'airplanemode_active' |             'airplanemode_inactive' |             'airplay' |             'airport_shuttle' |             'alarm' |             'alarm_add' |             'alarm_off' |             'alarm_on' |             'album' |             'align_horizontal_center' |             'align_horizontal_left' |             'align_horizontal_right' |             'align_vertical_bottom' |             'align_vertical_center' |             'align_vertical_top' |             'all_inbox' |             'all_inclusive' |             'all_out' |             'alt_route' |             'alternate_email' |             'analytics' |             'anchor' |             'android' |             'animation' |             'announcement' |             'aod' |             'apartment' |             'api' |             'app_blocking' |             'app_registration' |             'app_settings_alt' |             'app_shortcut' |             'approval' |             'apps' |             'apps_outage' |             'architecture' |             'archive' |             'area_chart' |             'arrow_back' |             'arrow_back_ios' |             'arrow_back_ios_new' |             'arrow_circle_down' |             'arrow_circle_left' |             'arrow_circle_right' |             'arrow_circle_up' |             'arrow_downward' |             'arrow_drop_down' |             'arrow_drop_down_circle' |             'arrow_drop_up' |             'arrow_forward' |             'arrow_forward_ios' |             'arrow_left' |             'arrow_outward' |             'arrow_right' |             'arrow_right_alt' |             'arrow_upward' |             'art_track' |             'article' |             'aspect_ratio' |             'assessment' |             'assignment' |             'assignment_ind' |             'assignment_late' |             'assignment_return' |             'assignment_returned' |             'assignment_turned_in' |             'assist_walker' |             'assistant' |             'assistant_direction' |             'assistant_photo' |             'assured_workload' |             'atm' |             'attach_email' |             'attach_file' |             'attach_money' |             'attachment' |             'attractions' |             'attribution' |             'audio_file' |             'audiotrack' |             'auto_awesome' |             'auto_awesome_mosaic' |             'auto_awesome_motion' |             'auto_delete' |             'auto_fix_high' |             'auto_fix_normal' |             'auto_fix_off' |             'auto_graph' |             'auto_mode' |             'auto_stories' |             'autofps_select' |             'autorenew' |             'av_timer' |             'baby_changing_station' |             'back_hand' |             'backpack' |             'backspace' |             'backup' |             'backup_table' |             'badge' |             'bakery_dining' |             'balance' |             'balcony' |             'ballot' |             'bar_chart' |             'batch_prediction' |             'bathroom' |             'bathtub' |             'battery_0_bar' |             'battery_1_bar' |             'battery_2_bar' |             'battery_3_bar' |             'battery_4_bar' |             'battery_5_bar' |             'battery_6_bar' |             'battery_alert' |             'battery_charging_full' |             'battery_full' |             'battery_saver' |             'battery_std' |             'battery_unknown' |             'beach_access' |             'bed' |             'bedroom_baby' |             'bedroom_child' |             'bedroom_parent' |             'bedtime' |             'bedtime_off' |             'beenhere' |             'bento' |             'bike_scooter' |             'biotech' |             'blender' |             'blind' |             'blinds' |             'blinds_closed' |             'block' |             'bloodtype' |             'bluetooth' |             'bluetooth_audio' |             'bluetooth_connected' |             'bluetooth_disabled' |             'bluetooth_drive' |             'bluetooth_searching' |             'blur_circular' |             'blur_linear' |             'blur_off' |             'blur_on' |             'bolt' |             'book' |             'book_online' |             'bookmark' |             'bookmark_add' |             'bookmark_added' |             'bookmark_border' |             'bookmark_remove' |             'bookmarks' |             'border_all' |             'border_bottom' |             'border_clear' |             'border_color' |             'border_horizontal' |             'border_inner' |             'border_left' |             'border_outer' |             'border_right' |             'border_style' |             'border_top' |             'border_vertical' |             'boy' |             'branding_watermark' |             'breakfast_dining' |             'brightness_1' |             'brightness_2' |             'brightness_3' |             'brightness_4' |             'brightness_5' |             'brightness_6' |             'brightness_7' |             'brightness_auto' |             'brightness_high' |             'brightness_low' |             'brightness_medium' |             'broadcast_on_home' |             'broadcast_on_personal' |             'broken_image' |             'browse_gallery' |             'browser_not_supported' |             'browser_updated' |             'brunch_dining' |             'brush' |             'bubble_chart' |             'bug_report' |             'build' |             'build_circle' |             'bungalow' |             'burst_mode' |             'bus_alert' |             'business' |             'business_center' |             'cabin' |             'cable' |             'cached' |             'cake' |             'calculate' |             'calendar_month' |             'calendar_today' |             'calendar_view_day' |             'calendar_view_month' |             'calendar_view_week' |             'call' |             'call_end' |             'call_made' |             'call_merge' |             'call_missed' |             'call_missed_outgoing' |             'call_received' |             'call_split' |             'call_to_action' |             'camera' |             'camera_alt' |             'camera_enhance' |             'camera_front' |             'camera_indoor' |             'camera_outdoor' |             'camera_rear' |             'camera_roll' |             'cameraswitch' |             'campaign' |             'cancel' |             'cancel_presentation' |             'cancel_schedule_send' |             'candlestick_chart' |             'car_crash' |             'car_rental' |             'car_repair' |             'card_giftcard' |             'card_membership' |             'card_travel' |             'carpenter' |             'cases' |             'casino' |             'cast' |             'cast_connected' |             'cast_for_education' |             'castle' |             'catching_pokemon' |             'category' |             'celebration' |             'cell_tower' |             'cell_wifi' |             'center_focus_strong' |             'center_focus_weak' |             'chair' |             'chair_alt' |             'chalet' |             'change_circle' |             'change_history' |             'charging_station' |             'chat' |             'chat_bubble' |             'chat_bubble_outline' |             'check' |             'check_box' |             'check_box_outline_blank' |             'check_circle' |             'check_circle_outline' |             'checklist' |             'checklist_rtl' |             'checkroom' |             'chevron_left' |             'chevron_right' |             'child_care' |             'child_friendly' |             'chrome_reader_mode' |             'church' |             'circle' |             'circle_notifications' |             'class' |             'clean_hands' |             'cleaning_services' |             'clear' |             'clear_all' |             'close' |             'close_fullscreen' |             'closed_caption' |             'closed_caption_disabled' |             'closed_caption_off' |             'cloud' |             'cloud_circle' |             'cloud_done' |             'cloud_download' |             'cloud_off' |             'cloud_queue' |             'cloud_sync' |             'cloud_upload' |             'co2' |             'co_present' |             'code' |             'code_off' |             'coffee' |             'coffee_maker' |             'collections' |             'collections_bookmark' |             'color_lens' |             'colorize' |             'comment' |             'comment_bank' |             'comments_disabled' |             'commit' |             'commute' |             'compare' |             'compare_arrows' |             'compass_calibration' |             'compost' |             'compress' |             'computer' |             'confirmation_number' |             'connect_without_contact' |             'connected_tv' |             'connecting_airports' |             'construction' |             'contact_emergency' |             'contact_mail' |             'contact_page' |             'contact_phone' |             'contact_support' |             'contactless' |             'contacts' |             'content_copy' |             'content_cut' |             'content_paste' |             'content_paste_go' |             'content_paste_off' |             'content_paste_search' |             'contrast' |             'control_camera' |             'control_point' |             'control_point_duplicate' |             'cookie' |             'copy_all' |             'copyright' |             'coronavirus' |             'corporate_fare' |             'cottage' |             'countertops' |             'create' |             'create_new_folder' |             'credit_card' |             'credit_card_off' |             'credit_score' |             'crib' |             'crisis_alert' |             'crop' |             'crop_16_9' |             'crop_3_2' |             'crop_5_4' |             'crop_7_5' |             'crop_din' |             'crop_free' |             'crop_landscape' |             'crop_original' |             'crop_portrait' |             'crop_rotate' |             'crop_square' |             'cruelty_free' |             'css' |             'currency_bitcoin' |             'currency_exchange' |             'currency_franc' |             'currency_lira' |             'currency_pound' |             'currency_ruble' |             'currency_rupee' |             'currency_yen' |             'currency_yuan' |             'curtains' |             'curtains_closed' |             'cyclone' |             'dangerous' |             'dark_mode' |             'dashboard' |             'dashboard_customize' |             'data_array' |             'data_exploration' |             'data_object' |             'data_saver_off' |             'data_saver_on' |             'data_thresholding' |             'data_usage' |             'dataset' |             'dataset_linked' |             'date_range' |             'deblur' |             'deck' |             'dehaze' |             'delete' |             'delete_forever' |             'delete_outline' |             'delete_sweep' |             'delivery_dining' |             'density_large' |             'density_medium' |             'density_small' |             'departure_board' |             'description' |             'deselect' |             'design_services' |             'desk' |             'desktop_access_disabled' |             'desktop_mac' |             'desktop_windows' |             'details' |             'developer_board' |             'developer_board_off' |             'developer_mode' |             'device_hub' |             'device_thermostat' |             'device_unknown' |             'devices' |             'devices_fold' |             'devices_other' |             'dialer_sip' |             'dialpad' |             'diamond' |             'difference' |             'dining' |             'dinner_dining' |             'directions' |             'directions_bike' |             'directions_boat' |             'directions_boat_filled' |             'directions_bus' |             'directions_bus_filled' |             'directions_car' |             'directions_car_filled' |             'directions_off' |             'directions_railway' |             'directions_railway_filled' |             'directions_run' |             'directions_subway' |             'directions_subway_filled' |             'directions_transit' |             'directions_transit_filled' |             'directions_walk' |             'dirty_lens' |             'disabled_by_default' |             'disabled_visible' |             'disc_full' |             'discount' |             'display_settings' |             'diversity_1' |             'diversity_2' |             'diversity_3' |             'dns' |             'do_disturb' |             'do_disturb_alt' |             'do_disturb_off' |             'do_disturb_on' |             'do_not_disturb' |             'do_not_disturb_alt' |             'do_not_disturb_off' |             'do_not_disturb_on' |             'do_not_disturb_on_total_silence' |             'do_not_step' |             'do_not_touch' |             'dock' |             'document_scanner' |             'domain' |             'domain_add' |             'domain_disabled' |             'domain_verification' |             'done' |             'done_all' |             'done_outline' |             'donut_large' |             'donut_small' |             'door_back' |             'door_front' |             'door_sliding' |             'doorbell' |             'double_arrow' |             'downhill_skiing' |             'download' |             'download_done' |             'download_for_offline' |             'downloading' |             'drafts' |             'drag_handle' |             'drag_indicator' |             'draw' |             'drive_eta' |             'drive_file_move' |             'drive_file_move_rtl' |             'drive_file_rename_outline' |             'drive_folder_upload' |             'dry' |             'dry_cleaning' |             'duo' |             'dvr' |             'dynamic_feed' |             'dynamic_form' |             'e_mobiledata' |             'earbuds' |             'earbuds_battery' |             'east' |             'edgesensor_high' |             'edgesensor_low' |             'edit' |             'edit_attributes' |             'edit_calendar' |             'edit_location' |             'edit_location_alt' |             'edit_note' |             'edit_notifications' |             'edit_off' |             'edit_road' |             'egg' |             'egg_alt' |             'eject' |             'elderly' |             'elderly_woman' |             'electric_bike' |             'electric_bolt' |             'electric_car' |             'electric_meter' |             'electric_moped' |             'electric_rickshaw' |             'electric_scooter' |             'electrical_services' |             'elevator' |             'email' |             'emergency' |             'emergency_recording' |             'emergency_share' |             'emoji_emotions' |             'emoji_events' |             'emoji_food_beverage' |             'emoji_nature' |             'emoji_objects' |             'emoji_people' |             'emoji_symbols' |             'emoji_transportation' |             'energy_savings_leaf' |             'engineering' |             'enhanced_encryption' |             'equalizer' |             'error' |             'error_outline' |             'escalator' |             'escalator_warning' |             'euro' |             'euro_symbol' |             'ev_station' |             'event' |             'event_available' |             'event_busy' |             'event_note' |             'event_repeat' |             'event_seat' |             'exit_to_app' |             'expand' |             'expand_circle_down' |             'expand_less' |             'expand_more' |             'explicit' |             'explore' |             'explore_off' |             'exposure' |             'exposure_neg_1' |             'exposure_neg_2' |             'exposure_plus_1' |             'exposure_plus_2' |             'exposure_zero' |             'extension' |             'extension_off' |             'face' |             'face_2' |             'face_3' |             'face_4' |             'face_5' |             'face_6' |             'face_retouching_natural' |             'face_retouching_off' |             'fact_check' |             'factory' |             'family_restroom' |             'fast_forward' |             'fast_rewind' |             'fastfood' |             'favorite' |             'favorite_border' |             'fax' |             'featured_play_list' |             'featured_video' |             'feed' |             'feedback' |             'female' |             'fence' |             'festival' |             'fiber_dvr' |             'fiber_manual_record' |             'fiber_new' |             'fiber_pin' |             'fiber_smart_record' |             'file_copy' |             'file_download' |             'file_download_done' |             'file_download_off' |             'file_open' |             'file_present' |             'file_upload' |             'filter' |             'filter_1' |             'filter_2' |             'filter_3' |             'filter_4' |             'filter_5' |             'filter_6' |             'filter_7' |             'filter_8' |             'filter_9' |             'filter_9_plus' |             'filter_alt' |             'filter_alt_off' |             'filter_b_and_w' |             'filter_center_focus' |             'filter_drama' |             'filter_frames' |             'filter_hdr' |             'filter_list' |             'filter_list_off' |             'filter_none' |             'filter_tilt_shift' |             'filter_vintage' |             'find_in_page' |             'find_replace' |             'fingerprint' |             'fire_extinguisher' |             'fire_hydrant_alt' |             'fire_truck' |             'fireplace' |             'first_page' |             'fit_screen' |             'fitbit' |             'fitness_center' |             'flag' |             'flag_circle' |             'flaky' |             'flare' |             'flash_auto' |             'flash_off' |             'flash_on' |             'flashlight_off' |             'flashlight_on' |             'flatware' |             'flight' |             'flight_class' |             'flight_land' |             'flight_takeoff' |             'flip' |             'flip_camera_android' |             'flip_camera_ios' |             'flip_to_back' |             'flip_to_front' |             'flood' |             'fluorescent' |             'flutter_dash' |             'fmd_bad' |             'fmd_good' |             'folder' |             'folder_copy' |             'folder_delete' |             'folder_off' |             'folder_open' |             'folder_shared' |             'folder_special' |             'folder_zip' |             'follow_the_signs' |             'font_download' |             'font_download_off' |             'food_bank' |             'forest' |             'fork_left' |             'fork_right' |             'format_align_center' |             'format_align_justify' |             'format_align_left' |             'format_align_right' |             'format_bold' |             'format_clear' |             'format_color_fill' |             'format_color_reset' |             'format_color_text' |             'format_indent_decrease' |             'format_indent_increase' |             'format_italic' |             'format_line_spacing' |             'format_list_bulleted' |             'format_list_numbered' |             'format_list_numbered_rtl' |             'format_overline' |             'format_paint' |             'format_quote' |             'format_shapes' |             'format_size' |             'format_strikethrough' |             'format_textdirection_l_to_r' |             'format_textdirection_r_to_l' |             'format_underlined' |             'fort' |             'forum' |             'forward' |             'forward_10' |             'forward_30' |             'forward_5' |             'forward_to_inbox' |             'foundation' |             'free_breakfast' |             'free_cancellation' |             'front_hand' |             'fullscreen' |             'fullscreen_exit' |             'functions' |             'g_mobiledata' |             'g_translate' |             'gamepad' |             'games' |             'garage' |             'gas_meter' |             'gavel' |             'generating_tokens' |             'gesture' |             'get_app' |             'gif' |             'gif_box' |             'girl' |             'gite' |             'golf_course' |             'gpp_bad' |             'gpp_good' |             'gpp_maybe' |             'gps_fixed' |             'gps_not_fixed' |             'gps_off' |             'grade' |             'gradient' |             'grading' |             'grain' |             'graphic_eq' |             'grass' |             'grid_3x3' |             'grid_4x4' |             'grid_goldenratio' |             'grid_off' |             'grid_on' |             'grid_view' |             'group' |             'group_add' |             'group_off' |             'group_remove' |             'group_work' |             'groups' |             'groups_2' |             'groups_3' |             'h_mobiledata' |             'h_plus_mobiledata' |             'hail' |             'handshake' |             'handyman' |             'hardware' |             'hd' |             'hdr_auto' |             'hdr_auto_select' |             'hdr_enhanced_select' |             'hdr_off' |             'hdr_off_select' |             'hdr_on' |             'hdr_on_select' |             'hdr_plus' |             'hdr_strong' |             'hdr_weak' |             'headphones' |             'headphones_battery' |             'headset' |             'headset_mic' |             'headset_off' |             'healing' |             'health_and_safety' |             'hearing' |             'hearing_disabled' |             'heart_broken' |             'heat_pump' |             'height' |             'help' |             'help_center' |             'help_outline' |             'hevc' |             'hexagon' |             'hide_image' |             'hide_source' |             'high_quality' |             'highlight' |             'highlight_alt' |             'highlight_off' |             'hiking' |             'history' |             'history_edu' |             'history_toggle_off' |             'hive' |             'hls' |             'hls_off' |             'holiday_village' |             'home' |             'home_max' |             'home_mini' |             'home_repair_service' |             'home_work' |             'horizontal_distribute' |             'horizontal_rule' |             'horizontal_split' |             'hot_tub' |             'hotel' |             'hotel_class' |             'hourglass_bottom' |             'hourglass_disabled' |             'hourglass_empty' |             'hourglass_full' |             'hourglass_top' |             'house' |             'house_siding' |             'houseboat' |             'how_to_reg' |             'how_to_vote' |             'html' |             'http' |             'https' |             'hub' |             'hvac' |             'ice_skating' |             'icecream' |             'image' |             'image_aspect_ratio' |             'image_not_supported' |             'image_search' |             'imagesearch_roller' |             'import_contacts' |             'import_export' |             'important_devices' |             'inbox' |             'incomplete_circle' |             'indeterminate_check_box' |             'info' |             'input' |             'insert_chart' |             'insert_chart_outlined' |             'insert_comment' |             'insert_drive_file' |             'insert_emoticon' |             'insert_invitation' |             'insert_link' |             'insert_page_break' |             'insert_photo' |             'insights' |             'install_desktop' |             'install_mobile' |             'integration_instructions' |             'interests' |             'interpreter_mode' |             'inventory' |             'inventory_2' |             'invert_colors' |             'invert_colors_off' |             'ios_share' |             'iron' |             'iso' |             'javascript' |             'join_full' |             'join_inner' |             'join_left' |             'join_right' |             'kayaking' |             'kebab_dining' |             'key' |             'key_off' |             'keyboard' |             'keyboard_alt' |             'keyboard_arrow_down' |             'keyboard_arrow_left' |             'keyboard_arrow_right' |             'keyboard_arrow_up' |             'keyboard_backspace' |             'keyboard_capslock' |             'keyboard_command_key' |             'keyboard_control_key' |             'keyboard_double_arrow_down' |             'keyboard_double_arrow_left' |             'keyboard_double_arrow_right' |             'keyboard_double_arrow_up' |             'keyboard_hide' |             'keyboard_option_key' |             'keyboard_return' |             'keyboard_tab' |             'keyboard_voice' |             'king_bed' |             'kitchen' |             'kitesurfing' |             'label' |             'label_important' |             'label_off' |             'lan' |             'landscape' |             'landslide' |             'language' |             'laptop' |             'laptop_chromebook' |             'laptop_mac' |             'laptop_windows' |             'last_page' |             'launch' |             'layers' |             'layers_clear' |             'leaderboard' |             'leak_add' |             'leak_remove' |             'legend_toggle' |             'lens' |             'lens_blur' |             'library_add' |             'library_add_check' |             'library_books' |             'library_music' |             'light' |             'light_mode' |             'lightbulb' |             'lightbulb_circle' |             'line_axis' |             'line_style' |             'line_weight' |             'linear_scale' |             'link' |             'link_off' |             'linked_camera' |             'liquor' |             'list' |             'list_alt' |             'live_help' |             'live_tv' |             'living' |             'local_activity' |             'local_airport' |             'local_atm' |             'local_bar' |             'local_cafe' |             'local_car_wash' |             'local_convenience_store' |             'local_dining' |             'local_drink' |             'local_fire_department' |             'local_florist' |             'local_gas_station' |             'local_grocery_store' |             'local_hospital' |             'local_hotel' |             'local_laundry_service' |             'local_library' |             'local_mall' |             'local_movies' |             'local_offer' |             'local_parking' |             'local_pharmacy' |             'local_phone' |             'local_pizza' |             'local_play' |             'local_police' |             'local_post_office' |             'local_printshop' |             'local_see' |             'local_shipping' |             'local_taxi' |             'location_city' |             'location_disabled' |             'location_off' |             'location_on' |             'location_searching' |             'lock' |             'lock_clock' |             'lock_open' |             'lock_person' |             'lock_reset' |             'login' |             'logo_dev' |             'logout' |             'looks' |             'looks_3' |             'looks_4' |             'looks_5' |             'looks_6' |             'looks_one' |             'looks_two' |             'loop' |             'loupe' |             'low_priority' |             'loyalty' |             'lte_mobiledata' |             'lte_plus_mobiledata' |             'luggage' |             'lunch_dining' |             'lyrics' |             'macro_off' |             'mail' |             'mail_lock' |             'mail_outline' |             'male' |             'man' |             'man_2' |             'man_3' |             'man_4' |             'manage_accounts' |             'manage_history' |             'manage_search' |             'map' |             'maps_home_work' |             'maps_ugc' |             'margin' |             'mark_as_unread' |             'mark_chat_read' |             'mark_chat_unread' |             'mark_email_read' |             'mark_email_unread' |             'mark_unread_chat_alt' |             'markunread' |             'markunread_mailbox' |             'masks' |             'maximize' |             'media_bluetooth_off' |             'media_bluetooth_on' |             'mediation' |             'medical_information' |             'medical_services' |             'medication' |             'medication_liquid' |             'meeting_room' |             'memory' |             'menu' |             'menu_book' |             'menu_open' |             'merge' |             'merge_type' |             'message' |             'mic' |             'mic_external_off' |             'mic_external_on' |             'mic_none' |             'mic_off' |             'microwave' |             'military_tech' |             'minimize' |             'minor_crash' |             'miscellaneous_services' |             'missed_video_call' |             'mms' |             'mobile_friendly' |             'mobile_off' |             'mobile_screen_share' |             'mobiledata_off' |             'mode' |             'mode_comment' |             'mode_edit' |             'mode_edit_outline' |             'mode_fan_off' |             'mode_night' |             'mode_of_travel' |             'mode_standby' |             'model_training' |             'monetization_on' |             'money' |             'money_off' |             'money_off_csred' |             'monitor' |             'monitor_heart' |             'monitor_weight' |             'monochrome_photos' |             'mood' |             'mood_bad' |             'moped' |             'more' |             'more_horiz' |             'more_time' |             'more_vert' |             'mosque' |             'motion_photos_auto' |             'motion_photos_off' |             'motion_photos_on' |             'motion_photos_pause' |             'motion_photos_paused' |             'mouse' |             'move_down' |             'move_to_inbox' |             'move_up' |             'movie' |             'movie_creation' |             'movie_filter' |             'moving' |             'mp' |             'multiline_chart' |             'multiple_stop' |             'museum' |             'music_note' |             'music_off' |             'music_video' |             'my_location' |             'nat' |             'nature' |             'nature_people' |             'navigate_before' |             'navigate_next' |             'navigation' |             'near_me' |             'near_me_disabled' |             'nearby_error' |             'nearby_off' |             'nest_cam_wired_stand' |             'network_cell' |             'network_check' |             'network_locked' |             'network_ping' |             'network_wifi' |             'network_wifi_1_bar' |             'network_wifi_2_bar' |             'network_wifi_3_bar' |             'new_label' |             'new_releases' |             'newspaper' |             'next_plan' |             'next_week' |             'nfc' |             'night_shelter' |             'nightlife' |             'nightlight' |             'nightlight_round' |             'nights_stay' |             'no_accounts' |             'no_adult_content' |             'no_backpack' |             'no_cell' |             'no_crash' |             'no_drinks' |             'no_encryption' |             'no_encryption_gmailerrorred' |             'no_flash' |             'no_food' |             'no_luggage' |             'no_meals' |             'no_meeting_room' |             'no_photography' |             'no_sim' |             'no_stroller' |             'no_transfer' |             'noise_aware' |             'noise_control_off' |             'nordic_walking' |             'north' |             'north_east' |             'north_west' |             'not_accessible' |             'not_interested' |             'not_listed_location' |             'not_started' |             'note' |             'note_add' |             'note_alt' |             'notes' |             'notification_add' |             'notification_important' |             'notifications' |             'notifications_active' |             'notifications_none' |             'notifications_off' |             'notifications_paused' |             'numbers' |             'offline_bolt' |             'offline_pin' |             'offline_share' |             'oil_barrel' |             'on_device_training' |             'ondemand_video' |             'online_prediction' |             'opacity' |             'open_in_browser' |             'open_in_full' |             'open_in_new' |             'open_in_new_off' |             'open_with' |             'other_houses' |             'outbound' |             'outbox' |             'outdoor_grill' |             'outlet' |             'outlined_flag' |             'output' |             'padding' |             'pages' |             'pageview' |             'paid' |             'palette' |             'pan_tool' |             'pan_tool_alt' |             'panorama' |             'panorama_fish_eye' |             'panorama_horizontal' |             'panorama_horizontal_select' |             'panorama_photosphere' |             'panorama_photosphere_select' |             'panorama_vertical' |             'panorama_vertical_select' |             'panorama_wide_angle' |             'panorama_wide_angle_select' |             'paragliding' |             'park' |             'party_mode' |             'password' |             'pattern' |             'pause' |             'pause_circle' |             'pause_circle_filled' |             'pause_circle_outline' |             'pause_presentation' |             'payment' |             'payments' |             'pedal_bike' |             'pending' |             'pending_actions' |             'pentagon' |             'people' |             'people_alt' |             'people_outline' |             'percent' |             'perm_camera_mic' |             'perm_contact_calendar' |             'perm_data_setting' |             'perm_device_information' |             'perm_identity' |             'perm_media' |             'perm_phone_msg' |             'perm_scan_wifi' |             'person' |             'person_2' |             'person_3' |             'person_4' |             'person_add' |             'person_add_alt' |             'person_add_alt_1' |             'person_add_disabled' |             'person_off' |             'person_outline' |             'person_pin' |             'person_pin_circle' |             'person_remove' |             'person_remove_alt_1' |             'person_search' |             'personal_injury' |             'personal_video' |             'pest_control' |             'pest_control_rodent' |             'pets' |             'phishing' |             'phone' |             'phone_android' |             'phone_bluetooth_speaker' |             'phone_callback' |             'phone_disabled' |             'phone_enabled' |             'phone_forwarded' |             'phone_iphone' |             'phone_locked' |             'phone_missed' |             'phone_paused' |             'phonelink' |             'phonelink_erase' |             'phonelink_lock' |             'phonelink_off' |             'phonelink_ring' |             'phonelink_setup' |             'photo' |             'photo_album' |             'photo_camera' |             'photo_camera_back' |             'photo_camera_front' |             'photo_filter' |             'photo_library' |             'photo_size_select_actual' |             'photo_size_select_large' |             'photo_size_select_small' |             'php' |             'piano' |             'piano_off' |             'picture_as_pdf' |             'picture_in_picture' |             'picture_in_picture_alt' |             'pie_chart' |             'pie_chart_outline' |             'pin' |             'pin_drop' |             'pin_end' |             'pin_invoke' |             'pinch' |             'pivot_table_chart' |             'pix' |             'place' |             'plagiarism' |             'play_arrow' |             'play_circle' |             'play_circle_filled' |             'play_circle_outline' |             'play_disabled' |             'play_for_work' |             'play_lesson' |             'playlist_add' |             'playlist_add_check' |             'playlist_add_check_circle' |             'playlist_add_circle' |             'playlist_play' |             'playlist_remove' |             'plumbing' |             'plus_one' |             'podcasts' |             'point_of_sale' |             'policy' |             'poll' |             'polyline' |             'polymer' |             'pool' |             'portable_wifi_off' |             'portrait' |             'post_add' |             'power' |             'power_input' |             'power_off' |             'power_settings_new' |             'precision_manufacturing' |             'pregnant_woman' |             'present_to_all' |             'preview' |             'price_change' |             'price_check' |             'print' |             'print_disabled' |             'priority_high' |             'privacy_tip' |             'private_connectivity' |             'production_quantity_limits' |             'propane' |             'propane_tank' |             'psychology' |             'psychology_alt' |             'public' |             'public_off' |             'publish' |             'published_with_changes' |             'punch_clock' |             'push_pin' |             'qr_code' |             'qr_code_2' |             'qr_code_scanner' |             'query_builder' |             'query_stats' |             'question_answer' |             'question_mark' |             'queue' |             'queue_music' |             'queue_play_next' |             'quickreply' |             'quiz' |             'r_mobiledata' |             'radar' |             'radio' |             'radio_button_checked' |             'radio_button_unchecked' |             'railway_alert' |             'ramen_dining' |             'ramp_left' |             'ramp_right' |             'rate_review' |             'raw_off' |             'raw_on' |             'read_more' |             'real_estate_agent' |             'receipt' |             'receipt_long' |             'recent_actors' |             'recommend' |             'record_voice_over' |             'rectangle' |             'recycling' |             'redeem' |             'redo' |             'reduce_capacity' |             'refresh' |             'remember_me' |             'remove' |             'remove_circle' |             'remove_circle_outline' |             'remove_done' |             'remove_from_queue' |             'remove_moderator' |             'remove_red_eye' |             'remove_road' |             'remove_shopping_cart' |             'reorder' |             'repartition' |             'repeat' |             'repeat_on' |             'repeat_one' |             'repeat_one_on' |             'replay' |             'replay_10' |             'replay_30' |             'replay_5' |             'replay_circle_filled' |             'reply' |             'reply_all' |             'report' |             'report_gmailerrorred' |             'report_off' |             'report_problem' |             'request_page' |             'request_quote' |             'reset_tv' |             'restart_alt' |             'restaurant' |             'restaurant_menu' |             'restore' |             'restore_from_trash' |             'restore_page' |             'reviews' |             'rice_bowl' |             'ring_volume' |             'rocket' |             'rocket_launch' |             'roller_shades' |             'roller_shades_closed' |             'roller_skating' |             'roofing' |             'room' |             'room_preferences' |             'room_service' |             'rotate_90_degrees_ccw' |             'rotate_90_degrees_cw' |             'rotate_left' |             'rotate_right' |             'roundabout_left' |             'roundabout_right' |             'rounded_corner' |             'route' |             'router' |             'rowing' |             'rss_feed' |             'rsvp' |             'rtt' |             'rule' |             'rule_folder' |             'run_circle' |             'running_with_errors' |             'rv_hookup' |             'safety_check' |             'safety_divider' |             'sailing' |             'sanitizer' |             'satellite' |             'satellite_alt' |             'save' |             'save_alt' |             'save_as' |             'saved_search' |             'savings' |             'scale' |             'scanner' |             'scatter_plot' |             'schedule' |             'schedule_send' |             'schema' |             'school' |             'science' |             'score' |             'scoreboard' |             'screen_lock_landscape' |             'screen_lock_portrait' |             'screen_lock_rotation' |             'screen_rotation' |             'screen_rotation_alt' |             'screen_search_desktop' |             'screen_share' |             'screenshot' |             'screenshot_monitor' |             'scuba_diving' |             'sd' |             'sd_card' |             'sd_card_alert' |             'sd_storage' |             'search' |             'search_off' |             'security' |             'security_update' |             'security_update_good' |             'security_update_warning' |             'segment' |             'select_all' |             'self_improvement' |             'sell' |             'send' |             'send_and_archive' |             'send_time_extension' |             'send_to_mobile' |             'sensor_door' |             'sensor_occupied' |             'sensor_window' |             'sensors' |             'sensors_off' |             'sentiment_dissatisfied' |             'sentiment_neutral' |             'sentiment_satisfied' |             'sentiment_satisfied_alt' |             'sentiment_very_dissatisfied' |             'sentiment_very_satisfied' |             'set_meal' |             'settings' |             'settings_accessibility' |             'settings_applications' |             'settings_backup_restore' |             'settings_bluetooth' |             'settings_brightness' |             'settings_cell' |             'settings_ethernet' |             'settings_input_antenna' |             'settings_input_component' |             'settings_input_composite' |             'settings_input_hdmi' |             'settings_input_svideo' |             'settings_overscan' |             'settings_phone' |             'settings_power' |             'settings_remote' |             'settings_suggest' |             'settings_system_daydream' |             'settings_voice' |             'severe_cold' |             'shape_line' |             'share' |             'share_location' |             'shield' |             'shield_moon' |             'shop' |             'shop_2' |             'shop_two' |             'shopping_bag' |             'shopping_basket' |             'shopping_cart' |             'shopping_cart_checkout' |             'short_text' |             'shortcut' |             'show_chart' |             'shower' |             'shuffle' |             'shuffle_on' |             'shutter_speed' |             'sick' |             'sign_language' |             'signal_cellular_0_bar' |             'signal_cellular_4_bar' |             'signal_cellular_alt' |             'signal_cellular_alt_1_bar' |             'signal_cellular_alt_2_bar' |             'signal_cellular_connected_no_internet_0_bar' |             'signal_cellular_connected_no_internet_4_bar' |             'signal_cellular_no_sim' |             'signal_cellular_nodata' |             'signal_cellular_null' |             'signal_cellular_off' |             'signal_wifi_0_bar' |             'signal_wifi_4_bar' |             'signal_wifi_4_bar_lock' |             'signal_wifi_bad' |             'signal_wifi_connected_no_internet_4' |             'signal_wifi_off' |             'signal_wifi_statusbar_4_bar' |             'signal_wifi_statusbar_connected_no_internet_4' |             'signal_wifi_statusbar_null' |             'signpost' |             'sim_card' |             'sim_card_alert' |             'sim_card_download' |             'single_bed' |             'sip' |             'skateboarding' |             'skip_next' |             'skip_previous' |             'sledding' |             'slideshow' |             'slow_motion_video' |             'smart_button' |             'smart_display' |             'smart_screen' |             'smart_toy' |             'smartphone' |             'smoke_free' |             'smoking_rooms' |             'sms' |             'sms_failed' |             'snippet_folder' |             'snooze' |             'snowboarding' |             'snowmobile' |             'snowshoeing' |             'soap' |             'social_distance' |             'solar_power' |             'sort' |             'sort_by_alpha' |             'sos' |             'soup_kitchen' |             'source' |             'south' |             'south_america' |             'south_east' |             'south_west' |             'spa' |             'space_bar' |             'space_dashboard' |             'spatial_audio' |             'spatial_audio_off' |             'spatial_tracking' |             'speaker' |             'speaker_group' |             'speaker_notes' |             'speaker_notes_off' |             'speaker_phone' |             'speed' |             'spellcheck' |             'splitscreen' |             'spoke' |             'sports' |             'sports_bar' |             'sports_baseball' |             'sports_basketball' |             'sports_cricket' |             'sports_esports' |             'sports_football' |             'sports_golf' |             'sports_gymnastics' |             'sports_handball' |             'sports_hockey' |             'sports_kabaddi' |             'sports_martial_arts' |             'sports_mma' |             'sports_motorsports' |             'sports_rugby' |             'sports_score' |             'sports_soccer' |             'sports_tennis' |             'sports_volleyball' |             'square' |             'square_foot' |             'ssid_chart' |             'stacked_bar_chart' |             'stacked_line_chart' |             'stadium' |             'stairs' |             'star' |             'star_border' |             'star_border_purple500' |             'star_half' |             'star_outline' |             'star_purple500' |             'star_rate' |             'stars' |             'start' |             'stay_current_landscape' |             'stay_current_portrait' |             'stay_primary_landscape' |             'stay_primary_portrait' |             'sticky_note_2' |             'stop' |             'stop_circle' |             'stop_screen_share' |             'storage' |             'store' |             'store_mall_directory' |             'storefront' |             'storm' |             'straight' |             'straighten' |             'stream' |             'streetview' |             'strikethrough_s' |             'stroller' |             'style' |             'subdirectory_arrow_left' |             'subdirectory_arrow_right' |             'subject' |             'subscript' |             'subscriptions' |             'subtitles' |             'subtitles_off' |             'subway' |             'summarize' |             'superscript' |             'supervised_user_circle' |             'supervisor_account' |             'support' |             'support_agent' |             'surfing' |             'surround_sound' |             'swap_calls' |             'swap_horiz' |             'swap_horizontal_circle' |             'swap_vert' |             'swap_vertical_circle' |             'swipe' |             'swipe_down' |             'swipe_down_alt' |             'swipe_left' |             'swipe_left_alt' |             'swipe_right' |             'swipe_right_alt' |             'swipe_up' |             'swipe_up_alt' |             'swipe_vertical' |             'switch_access_shortcut' |             'switch_access_shortcut_add' |             'switch_account' |             'switch_camera' |             'switch_left' |             'switch_right' |             'switch_video' |             'synagogue' |             'sync' |             'sync_alt' |             'sync_disabled' |             'sync_lock' |             'sync_problem' |             'system_security_update' |             'system_security_update_good' |             'system_security_update_warning' |             'system_update' |             'system_update_alt' |             'tab' |             'tab_unselected' |             'table_bar' |             'table_chart' |             'table_restaurant' |             'table_rows' |             'table_view' |             'tablet' |             'tablet_android' |             'tablet_mac' |             'tag' |             'tag_faces' |             'takeout_dining' |             'tap_and_play' |             'tapas' |             'task' |             'task_alt' |             'taxi_alert' |             'temple_buddhist' |             'temple_hindu' |             'terminal' |             'terrain' |             'text_decrease' |             'text_fields' |             'text_format' |             'text_increase' |             'text_rotate_up' |             'text_rotate_vertical' |             'text_rotation_angledown' |             'text_rotation_angleup' |             'text_rotation_down' |             'text_rotation_none' |             'text_snippet' |             'textsms' |             'texture' |             'theater_comedy' |             'theaters' |             'thermostat' |             'thermostat_auto' |             'thumb_down' |             'thumb_down_alt' |             'thumb_down_off_alt' |             'thumb_up' |             'thumb_up_alt' |             'thumb_up_off_alt' |             'thumbs_up_down' |             'thunderstorm' |             'time_to_leave' |             'timelapse' |             'timeline' |             'timer' |             'timer_10' |             'timer_10_select' |             'timer_3' |             'timer_3_select' |             'timer_off' |             'tips_and_updates' |             'tire_repair' |             'title' |             'toc' |             'today' |             'toggle_off' |             'toggle_on' |             'token' |             'toll' |             'tonality' |             'topic' |             'tornado' |             'touch_app' |             'tour' |             'toys' |             'track_changes' |             'traffic' |             'train' |             'tram' |             'transcribe' |             'transfer_within_a_station' |             'transform' |             'transgender' |             'transit_enterexit' |             'translate' |             'travel_explore' |             'trending_down' |             'trending_flat' |             'trending_up' |             'trip_origin' |             'troubleshoot' |             'try' |             'tsunami' |             'tty' |             'tune' |             'tungsten' |             'turn_left' |             'turn_right' |             'turn_sharp_left' |             'turn_sharp_right' |             'turn_slight_left' |             'turn_slight_right' |             'turned_in' |             'turned_in_not' |             'tv' |             'tv_off' |             'two_wheeler' |             'type_specimen' |             'u_turn_left' |             'u_turn_right' |             'umbrella' |             'unarchive' |             'undo' |             'unfold_less' |             'unfold_less_double' |             'unfold_more' |             'unfold_more_double' |             'unpublished' |             'unsubscribe' |             'upcoming' |             'update' |             'update_disabled' |             'upgrade' |             'upload' |             'upload_file' |             'usb' |             'usb_off' |             'vaccines' |             'vape_free' |             'vaping_rooms' |             'verified' |             'verified_user' |             'vertical_align_bottom' |             'vertical_align_center' |             'vertical_align_top' |             'vertical_distribute' |             'vertical_shades' |             'vertical_shades_closed' |             'vertical_split' |             'vibration' |             'video_call' |             'video_camera_back' |             'video_camera_front' |             'video_chat' |             'video_file' |             'video_label' |             'video_library' |             'video_settings' |             'video_stable' |             'videocam' |             'videocam_off' |             'videogame_asset' |             'videogame_asset_off' |             'view_agenda' |             'view_array' |             'view_carousel' |             'view_column' |             'view_comfy' |             'view_comfy_alt' |             'view_compact' |             'view_compact_alt' |             'view_cozy' |             'view_day' |             'view_headline' |             'view_in_ar' |             'view_kanban' |             'view_list' |             'view_module' |             'view_quilt' |             'view_sidebar' |             'view_stream' |             'view_timeline' |             'view_week' |             'vignette' |             'villa' |             'visibility' |             'visibility_off' |             'voice_chat' |             'voice_over_off' |             'voicemail' |             'volcano' |             'volume_down' |             'volume_mute' |             'volume_off' |             'volume_up' |             'volunteer_activism' |             'vpn_key' |             'vpn_key_off' |             'vpn_lock' |             'vrpano' |             'wallet' |             'wallpaper' |             'warehouse' |             'warning' |             'warning_amber' |             'wash' |             'watch' |             'watch_later' |             'watch_off' |             'water' |             'water_damage' |             'water_drop' |             'waterfall_chart' |             'waves' |             'waving_hand' |             'wb_auto' |             'wb_cloudy' |             'wb_incandescent' |             'wb_iridescent' |             'wb_shade' |             'wb_sunny' |             'wb_twilight' |             'wc' |             'web' |             'web_asset' |             'web_asset_off' |             'web_stories' |             'webhook' |             'weekend' |             'west' |             'whatshot' |             'wheelchair_pickup' |             'where_to_vote' |             'widgets' |             'width_full' |             'width_normal' |             'width_wide' |             'wifi' |             'wifi_1_bar' |             'wifi_2_bar' |             'wifi_calling' |             'wifi_calling_3' |             'wifi_channel' |             'wifi_find' |             'wifi_lock' |             'wifi_off' |             'wifi_password' |             'wifi_protected_setup' |             'wifi_tethering' |             'wifi_tethering_error' |             'wifi_tethering_off' |             'wind_power' |             'window' |             'wine_bar' |             'woman' |             'woman_2' |             'work' |             'work_history' |             'work_off' |             'work_outline' |             'workspace_premium' |             'workspaces' |             'wrap_text' |             'wrong_location' |             'wysiwyg' |             'yard' |             'youtube_searched_for' |             'zoom_in' |             'zoom_in_map' |             'zoom_out' |             'zoom_out_map';    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        import { Todo } from "../../data/Todo.data.avt";        import { Task } from "../../data/Task.data.avt";        import { TodoRAM } from "../../ram/Todo.ram.avt";        &nbsp;        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props            @Attribute()            public todo_id!: number;            //#endregion        &nbsp;        &nbsp;            //#region variables            @Watch()            public todo!: Todo;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            protected async loadData() {                const todo = new Todo();                todo.name = "My todo";                this.todo = todo;                // just create an interval to see the template reloading                setInterval(() =&gt; {                    this.todo.name = "My todo " + (new Date().getSeconds());                }, 1000);        &nbsp;                const task1 = new Task();                task1.description = "Test Aventus";        &nbsp;                const task2 = new Task();                task2.description = "Add a star to Aventus github";                this.todo.tasks = [task1, task2];        &nbsp;                // let todo = await TodoRAM.getInstance().get(this.todo_id);                // &#105;f(todo) {                //     this.todo = todo;                // }                // else {                //     this.remove();                // }            }        &nbsp;            /**            * Remove the todo            */            protected async removeTodo() {                await TodoRAM.getInstance().deleteById(this.todo_id);            }        &nbsp;            protected override postCreation(): void {                this.loadData();            }            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcs.avt">    <pre>        :host {            .title {                display: flex;                align-items: center;                td-icon {                    color: red;                    margin-left: 10px;                    cursor: pointer;                }            }        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcv.avt">    <pre>        &lt;div class="title"&gt;            &lt;span&gt;&#123;&#123; this.todo.name &#125;&#125;&lt;/span&gt;            &lt;td-icon icon="delete"&gt;&lt;/td-icon&gt;        &lt;/div&gt;        &lt;ul&gt;            &#102;or(let task of this.todo.tasks) {                 &lt;li&gt;&#123;&#123; task.description &#125;&#125;&lt;/li&gt;            }        &lt;/ul&gt;    </pre></av-code></av-code><slot></slot>` }
+        blocks: { 'default':`<av-code language="typescript" filename="Demo/src/components/Icon/Icon.wcl.avt">    <pre>        import type { IconType } from "./IconType.lib.avt";        &nbsp;        export class Icon extends Aventus.WebComponent implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props            /**             * Icon from https://fonts.google.com/icons             */            @Property((target: Icon) =&gt; {                &#105;f(target.isReady)                    target.shadowRoot.innerHTML = target.icon;            })            public icon: IconType = "check_box_outline_blank";        &nbsp;            /**             * The type of the icon             */            @Property((target: Icon) =&gt; {                &#105;f(target.isReady)                    target.loadFont();            })            public type: 'sharp' | 'rounded' | 'outlined' = 'outlined';        &nbsp;        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            /**             * Add link tag into document head to load the font based on the type             */            private async loadFont() {                &#105;f(!this.type) return;        &nbsp;                let url = 'https://fonts.googleapis.com/icon?family=Material+Symbols+';                url += this.type.charAt(0).toUpperCase() + this.type.slice(1);                // check &#105;f the url exist inside head and create a link tag &#105;f not exist                await Aventus.ResourceLoader.loadInHead({                    type: "css",                    url: url                });            }            /**             * Init the icon after rendering             */            private async init() {                await this.loadFont();                this.shadowRoot.innerHTML = this.icon;            }            protected override postCreation(): void {                this.init();            }            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/components/Icon/Icon.wcs.avt">    <pre>        :host {            direction: ltr;            display: inline-block;            font-family: 'Material Symbols Outlined';            -webkit-font-feature-settings: 'liga';            font-size: 24px;            -webkit-font-smoothing: antialiased;            font-style: normal;            font-weight: normal;            letter-spacing: normal;            line-height: 1;            text-transform: none;            white-space: nowrap;            word-wrap: normal;        }        &nbsp;        :host([type="sharp"]) {            font-family: 'Material Symbols Sharp';        }        &nbsp;        :host([type="rounded"]) {            font-family: 'Material Symbols Rounded';        }        &nbsp;        :host([type="outlined"]) {            font-family: 'Material Symbols Outlined';        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/components/Icon/Icon.wcv.avt">    <pre>        &nbsp;    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/components/Icon/IconType.lib.avt">    <pre>        export type IconType =            '10k' |             '10mp' |             '11mp' |             '123' |             '12mp' |             '13mp' |             '14mp' |             '15mp' |             '16mp' |             '17mp' |             '18_up_rating' |             '18mp' |             '19mp' |             '1k' |             '1k_plus' |             '1x_mobiledata' |             '20mp' |             '21mp' |             '22mp' |             '23mp' |             '24mp' |             '2k' |             '2k_plus' |             '2mp' |             '30fps' |             '30fps_select' |             '360' |             '3d_rotation' |             '3g_mobiledata' |             '3k' |             '3k_plus' |             '3mp' |             '3p' |             '4g_mobiledata' |             '4g_plus_mobiledata' |             '4k' |             '4k_plus' |             '4mp' |             '5g' |             '5k' |             '5k_plus' |             '5mp' |             '60fps' |             '60fps_select' |             '6_ft_apart' |             '6k' |             '6k_plus' |             '6mp' |             '7k' |             '7k_plus' |             '7mp' |             '8k' |             '8k_plus' |             '8mp' |             '9k' |             '9k_plus' |             '9mp' |             'abc' |             'ac_unit' |             'access_alarm' |             'access_alarms' |             'access_time' |             'access_time_filled' |             'accessibility' |             'accessibility_new' |             'accessible' |             'accessible_forward' |             'account_balance' |             'account_balance_wallet' |             'account_box' |             'account_circle' |             'account_tree' |             'ad_units' |             'adb' |             'add' |             'add_a_photo' |             'add_alarm' |             'add_alert' |             'add_box' |             'add_business' |             'add_card' |             'add_chart' |             'add_circle' |             'add_circle_outline' |             'add_comment' |             'add_home' |             'add_home_work' |             'add_ic_call' |             'add_link' |             'add_location' |             'add_location_alt' |             'add_moderator' |             'add_photo_alternate' |             'add_reaction' |             'add_road' |             'add_shopping_cart' |             'add_task' |             'add_to_drive' |             'add_to_home_screen' |             'add_to_photos' |             'add_to_queue' |             'addchart' |             'adf_scanner' |             'adjust' |             'admin_panel_settings' |             'ads_click' |             'agriculture' |             'air' |             'airline_seat_flat' |             'airline_seat_flat_angled' |             'airline_seat_individual_suite' |             'airline_seat_legroom_extra' |             'airline_seat_legroom_normal' |             'airline_seat_legroom_reduced' |             'airline_seat_recline_extra' |             'airline_seat_recline_normal' |             'airline_stops' |             'airlines' |             'airplane_ticket' |             'airplanemode_active' |             'airplanemode_inactive' |             'airplay' |             'airport_shuttle' |             'alarm' |             'alarm_add' |             'alarm_off' |             'alarm_on' |             'album' |             'align_horizontal_center' |             'align_horizontal_left' |             'align_horizontal_right' |             'align_vertical_bottom' |             'align_vertical_center' |             'align_vertical_top' |             'all_inbox' |             'all_inclusive' |             'all_out' |             'alt_route' |             'alternate_email' |             'analytics' |             'anchor' |             'android' |             'animation' |             'announcement' |             'aod' |             'apartment' |             'api' |             'app_blocking' |             'app_registration' |             'app_settings_alt' |             'app_shortcut' |             'approval' |             'apps' |             'apps_outage' |             'architecture' |             'archive' |             'area_chart' |             'arrow_back' |             'arrow_back_ios' |             'arrow_back_ios_new' |             'arrow_circle_down' |             'arrow_circle_left' |             'arrow_circle_right' |             'arrow_circle_up' |             'arrow_downward' |             'arrow_drop_down' |             'arrow_drop_down_circle' |             'arrow_drop_up' |             'arrow_forward' |             'arrow_forward_ios' |             'arrow_left' |             'arrow_outward' |             'arrow_right' |             'arrow_right_alt' |             'arrow_upward' |             'art_track' |             'article' |             'aspect_ratio' |             'assessment' |             'assignment' |             'assignment_ind' |             'assignment_late' |             'assignment_return' |             'assignment_returned' |             'assignment_turned_in' |             'assist_walker' |             'assistant' |             'assistant_direction' |             'assistant_photo' |             'assured_workload' |             'atm' |             'attach_email' |             'attach_file' |             'attach_money' |             'attachment' |             'attractions' |             'attribution' |             'audio_file' |             'audiotrack' |             'auto_awesome' |             'auto_awesome_mosaic' |             'auto_awesome_motion' |             'auto_delete' |             'auto_fix_high' |             'auto_fix_normal' |             'auto_fix_off' |             'auto_graph' |             'auto_mode' |             'auto_stories' |             'autofps_select' |             'autorenew' |             'av_timer' |             'baby_changing_station' |             'back_hand' |             'backpack' |             'backspace' |             'backup' |             'backup_table' |             'badge' |             'bakery_dining' |             'balance' |             'balcony' |             'ballot' |             'bar_chart' |             'batch_prediction' |             'bathroom' |             'bathtub' |             'battery_0_bar' |             'battery_1_bar' |             'battery_2_bar' |             'battery_3_bar' |             'battery_4_bar' |             'battery_5_bar' |             'battery_6_bar' |             'battery_alert' |             'battery_charging_full' |             'battery_full' |             'battery_saver' |             'battery_std' |             'battery_unknown' |             'beach_access' |             'bed' |             'bedroom_baby' |             'bedroom_child' |             'bedroom_parent' |             'bedtime' |             'bedtime_off' |             'beenhere' |             'bento' |             'bike_scooter' |             'biotech' |             'blender' |             'blind' |             'blinds' |             'blinds_closed' |             'block' |             'bloodtype' |             'bluetooth' |             'bluetooth_audio' |             'bluetooth_connected' |             'bluetooth_disabled' |             'bluetooth_drive' |             'bluetooth_searching' |             'blur_circular' |             'blur_linear' |             'blur_off' |             'blur_on' |             'bolt' |             'book' |             'book_online' |             'bookmark' |             'bookmark_add' |             'bookmark_added' |             'bookmark_border' |             'bookmark_remove' |             'bookmarks' |             'border_all' |             'border_bottom' |             'border_clear' |             'border_color' |             'border_horizontal' |             'border_inner' |             'border_left' |             'border_outer' |             'border_right' |             'border_style' |             'border_top' |             'border_vertical' |             'boy' |             'branding_watermark' |             'breakfast_dining' |             'brightness_1' |             'brightness_2' |             'brightness_3' |             'brightness_4' |             'brightness_5' |             'brightness_6' |             'brightness_7' |             'brightness_auto' |             'brightness_high' |             'brightness_low' |             'brightness_medium' |             'broadcast_on_home' |             'broadcast_on_personal' |             'broken_image' |             'browse_gallery' |             'browser_not_supported' |             'browser_updated' |             'brunch_dining' |             'brush' |             'bubble_chart' |             'bug_report' |             'build' |             'build_circle' |             'bungalow' |             'burst_mode' |             'bus_alert' |             'business' |             'business_center' |             'cabin' |             'cable' |             'cached' |             'cake' |             'calculate' |             'calendar_month' |             'calendar_today' |             'calendar_view_day' |             'calendar_view_month' |             'calendar_view_week' |             'call' |             'call_end' |             'call_made' |             'call_merge' |             'call_missed' |             'call_missed_outgoing' |             'call_received' |             'call_split' |             'call_to_action' |             'camera' |             'camera_alt' |             'camera_enhance' |             'camera_front' |             'camera_indoor' |             'camera_outdoor' |             'camera_rear' |             'camera_roll' |             'cameraswitch' |             'campaign' |             'cancel' |             'cancel_presentation' |             'cancel_schedule_send' |             'candlestick_chart' |             'car_crash' |             'car_rental' |             'car_repair' |             'card_giftcard' |             'card_membership' |             'card_travel' |             'carpenter' |             'cases' |             'casino' |             'cast' |             'cast_connected' |             'cast_for_education' |             'castle' |             'catching_pokemon' |             'category' |             'celebration' |             'cell_tower' |             'cell_wifi' |             'center_focus_strong' |             'center_focus_weak' |             'chair' |             'chair_alt' |             'chalet' |             'change_circle' |             'change_history' |             'charging_station' |             'chat' |             'chat_bubble' |             'chat_bubble_outline' |             'check' |             'check_box' |             'check_box_outline_blank' |             'check_circle' |             'check_circle_outline' |             'checklist' |             'checklist_rtl' |             'checkroom' |             'chevron_left' |             'chevron_right' |             'child_care' |             'child_friendly' |             'chrome_reader_mode' |             'church' |             'circle' |             'circle_notifications' |             'class' |             'clean_hands' |             'cleaning_services' |             'clear' |             'clear_all' |             'close' |             'close_fullscreen' |             'closed_caption' |             'closed_caption_disabled' |             'closed_caption_off' |             'cloud' |             'cloud_circle' |             'cloud_done' |             'cloud_download' |             'cloud_off' |             'cloud_queue' |             'cloud_sync' |             'cloud_upload' |             'co2' |             'co_present' |             'code' |             'code_off' |             'coffee' |             'coffee_maker' |             'collections' |             'collections_bookmark' |             'color_lens' |             'colorize' |             'comment' |             'comment_bank' |             'comments_disabled' |             'commit' |             'commute' |             'compare' |             'compare_arrows' |             'compass_calibration' |             'compost' |             'compress' |             'computer' |             'confirmation_number' |             'connect_without_contact' |             'connected_tv' |             'connecting_airports' |             'construction' |             'contact_emergency' |             'contact_mail' |             'contact_page' |             'contact_phone' |             'contact_support' |             'contactless' |             'contacts' |             'content_copy' |             'content_cut' |             'content_paste' |             'content_paste_go' |             'content_paste_off' |             'content_paste_search' |             'contrast' |             'control_camera' |             'control_point' |             'control_point_duplicate' |             'cookie' |             'copy_all' |             'copyright' |             'coronavirus' |             'corporate_fare' |             'cottage' |             'countertops' |             'create' |             'create_new_folder' |             'credit_card' |             'credit_card_off' |             'credit_score' |             'crib' |             'crisis_alert' |             'crop' |             'crop_16_9' |             'crop_3_2' |             'crop_5_4' |             'crop_7_5' |             'crop_din' |             'crop_free' |             'crop_landscape' |             'crop_original' |             'crop_portrait' |             'crop_rotate' |             'crop_square' |             'cruelty_free' |             'css' |             'currency_bitcoin' |             'currency_exchange' |             'currency_franc' |             'currency_lira' |             'currency_pound' |             'currency_ruble' |             'currency_rupee' |             'currency_yen' |             'currency_yuan' |             'curtains' |             'curtains_closed' |             'cyclone' |             'dangerous' |             'dark_mode' |             'dashboard' |             'dashboard_customize' |             'data_array' |             'data_exploration' |             'data_object' |             'data_saver_off' |             'data_saver_on' |             'data_thresholding' |             'data_usage' |             'dataset' |             'dataset_linked' |             'date_range' |             'deblur' |             'deck' |             'dehaze' |             'delete' |             'delete_forever' |             'delete_outline' |             'delete_sweep' |             'delivery_dining' |             'density_large' |             'density_medium' |             'density_small' |             'departure_board' |             'description' |             'deselect' |             'design_services' |             'desk' |             'desktop_access_disabled' |             'desktop_mac' |             'desktop_windows' |             'details' |             'developer_board' |             'developer_board_off' |             'developer_mode' |             'device_hub' |             'device_thermostat' |             'device_unknown' |             'devices' |             'devices_fold' |             'devices_other' |             'dialer_sip' |             'dialpad' |             'diamond' |             'difference' |             'dining' |             'dinner_dining' |             'directions' |             'directions_bike' |             'directions_boat' |             'directions_boat_filled' |             'directions_bus' |             'directions_bus_filled' |             'directions_car' |             'directions_car_filled' |             'directions_off' |             'directions_railway' |             'directions_railway_filled' |             'directions_run' |             'directions_subway' |             'directions_subway_filled' |             'directions_transit' |             'directions_transit_filled' |             'directions_walk' |             'dirty_lens' |             'disabled_by_default' |             'disabled_visible' |             'disc_full' |             'discount' |             'display_settings' |             'diversity_1' |             'diversity_2' |             'diversity_3' |             'dns' |             'do_disturb' |             'do_disturb_alt' |             'do_disturb_off' |             'do_disturb_on' |             'do_not_disturb' |             'do_not_disturb_alt' |             'do_not_disturb_off' |             'do_not_disturb_on' |             'do_not_disturb_on_total_silence' |             'do_not_step' |             'do_not_touch' |             'dock' |             'document_scanner' |             'domain' |             'domain_add' |             'domain_disabled' |             'domain_verification' |             'done' |             'done_all' |             'done_outline' |             'donut_large' |             'donut_small' |             'door_back' |             'door_front' |             'door_sliding' |             'doorbell' |             'double_arrow' |             'downhill_skiing' |             'download' |             'download_done' |             'download_for_offline' |             'downloading' |             'drafts' |             'drag_handle' |             'drag_indicator' |             'draw' |             'drive_eta' |             'drive_file_move' |             'drive_file_move_rtl' |             'drive_file_rename_outline' |             'drive_folder_upload' |             'dry' |             'dry_cleaning' |             'duo' |             'dvr' |             'dynamic_feed' |             'dynamic_form' |             'e_mobiledata' |             'earbuds' |             'earbuds_battery' |             'east' |             'edgesensor_high' |             'edgesensor_low' |             'edit' |             'edit_attributes' |             'edit_calendar' |             'edit_location' |             'edit_location_alt' |             'edit_note' |             'edit_notifications' |             'edit_off' |             'edit_road' |             'egg' |             'egg_alt' |             'eject' |             'elderly' |             'elderly_woman' |             'electric_bike' |             'electric_bolt' |             'electric_car' |             'electric_meter' |             'electric_moped' |             'electric_rickshaw' |             'electric_scooter' |             'electrical_services' |             'elevator' |             'email' |             'emergency' |             'emergency_recording' |             'emergency_share' |             'emoji_emotions' |             'emoji_events' |             'emoji_food_beverage' |             'emoji_nature' |             'emoji_objects' |             'emoji_people' |             'emoji_symbols' |             'emoji_transportation' |             'energy_savings_leaf' |             'engineering' |             'enhanced_encryption' |             'equalizer' |             'error' |             'error_outline' |             'escalator' |             'escalator_warning' |             'euro' |             'euro_symbol' |             'ev_station' |             'event' |             'event_available' |             'event_busy' |             'event_note' |             'event_repeat' |             'event_seat' |             'exit_to_app' |             'expand' |             'expand_circle_down' |             'expand_less' |             'expand_more' |             'explicit' |             'explore' |             'explore_off' |             'exposure' |             'exposure_neg_1' |             'exposure_neg_2' |             'exposure_plus_1' |             'exposure_plus_2' |             'exposure_zero' |             'extension' |             'extension_off' |             'face' |             'face_2' |             'face_3' |             'face_4' |             'face_5' |             'face_6' |             'face_retouching_natural' |             'face_retouching_off' |             'fact_check' |             'factory' |             'family_restroom' |             'fast_forward' |             'fast_rewind' |             'fastfood' |             'favorite' |             'favorite_border' |             'fax' |             'featured_play_list' |             'featured_video' |             'feed' |             'feedback' |             'female' |             'fence' |             'festival' |             'fiber_dvr' |             'fiber_manual_record' |             'fiber_new' |             'fiber_pin' |             'fiber_smart_record' |             'file_copy' |             'file_download' |             'file_download_done' |             'file_download_off' |             'file_open' |             'file_present' |             'file_upload' |             'filter' |             'filter_1' |             'filter_2' |             'filter_3' |             'filter_4' |             'filter_5' |             'filter_6' |             'filter_7' |             'filter_8' |             'filter_9' |             'filter_9_plus' |             'filter_alt' |             'filter_alt_off' |             'filter_b_and_w' |             'filter_center_focus' |             'filter_drama' |             'filter_frames' |             'filter_hdr' |             'filter_list' |             'filter_list_off' |             'filter_none' |             'filter_tilt_shift' |             'filter_vintage' |             'find_in_page' |             'find_replace' |             'fingerprint' |             'fire_extinguisher' |             'fire_hydrant_alt' |             'fire_truck' |             'fireplace' |             'first_page' |             'fit_screen' |             'fitbit' |             'fitness_center' |             'flag' |             'flag_circle' |             'flaky' |             'flare' |             'flash_auto' |             'flash_off' |             'flash_on' |             'flashlight_off' |             'flashlight_on' |             'flatware' |             'flight' |             'flight_class' |             'flight_land' |             'flight_takeoff' |             'flip' |             'flip_camera_android' |             'flip_camera_ios' |             'flip_to_back' |             'flip_to_front' |             'flood' |             'fluorescent' |             'flutter_dash' |             'fmd_bad' |             'fmd_good' |             'folder' |             'folder_copy' |             'folder_delete' |             'folder_off' |             'folder_open' |             'folder_shared' |             'folder_special' |             'folder_zip' |             'follow_the_signs' |             'font_download' |             'font_download_off' |             'food_bank' |             'forest' |             'fork_left' |             'fork_right' |             'format_align_center' |             'format_align_justify' |             'format_align_left' |             'format_align_right' |             'format_bold' |             'format_clear' |             'format_color_fill' |             'format_color_reset' |             'format_color_text' |             'format_indent_decrease' |             'format_indent_increase' |             'format_italic' |             'format_line_spacing' |             'format_list_bulleted' |             'format_list_numbered' |             'format_list_numbered_rtl' |             'format_overline' |             'format_paint' |             'format_quote' |             'format_shapes' |             'format_size' |             'format_strikethrough' |             'format_textdirection_l_to_r' |             'format_textdirection_r_to_l' |             'format_underlined' |             'fort' |             'forum' |             'forward' |             'forward_10' |             'forward_30' |             'forward_5' |             'forward_to_inbox' |             'foundation' |             'free_breakfast' |             'free_cancellation' |             'front_hand' |             'fullscreen' |             'fullscreen_exit' |             'functions' |             'g_mobiledata' |             'g_translate' |             'gamepad' |             'games' |             'garage' |             'gas_meter' |             'gavel' |             'generating_tokens' |             'gesture' |             'get_app' |             'gif' |             'gif_box' |             'girl' |             'gite' |             'golf_course' |             'gpp_bad' |             'gpp_good' |             'gpp_maybe' |             'gps_fixed' |             'gps_not_fixed' |             'gps_off' |             'grade' |             'gradient' |             'grading' |             'grain' |             'graphic_eq' |             'grass' |             'grid_3x3' |             'grid_4x4' |             'grid_goldenratio' |             'grid_off' |             'grid_on' |             'grid_view' |             'group' |             'group_add' |             'group_off' |             'group_remove' |             'group_work' |             'groups' |             'groups_2' |             'groups_3' |             'h_mobiledata' |             'h_plus_mobiledata' |             'hail' |             'handshake' |             'handyman' |             'hardware' |             'hd' |             'hdr_auto' |             'hdr_auto_select' |             'hdr_enhanced_select' |             'hdr_off' |             'hdr_off_select' |             'hdr_on' |             'hdr_on_select' |             'hdr_plus' |             'hdr_strong' |             'hdr_weak' |             'headphones' |             'headphones_battery' |             'headset' |             'headset_mic' |             'headset_off' |             'healing' |             'health_and_safety' |             'hearing' |             'hearing_disabled' |             'heart_broken' |             'heat_pump' |             'height' |             'help' |             'help_center' |             'help_outline' |             'hevc' |             'hexagon' |             'hide_image' |             'hide_source' |             'high_quality' |             'highlight' |             'highlight_alt' |             'highlight_off' |             'hiking' |             'history' |             'history_edu' |             'history_toggle_off' |             'hive' |             'hls' |             'hls_off' |             'holiday_village' |             'home' |             'home_max' |             'home_mini' |             'home_repair_service' |             'home_work' |             'horizontal_distribute' |             'horizontal_rule' |             'horizontal_split' |             'hot_tub' |             'hotel' |             'hotel_class' |             'hourglass_bottom' |             'hourglass_disabled' |             'hourglass_empty' |             'hourglass_full' |             'hourglass_top' |             'house' |             'house_siding' |             'houseboat' |             'how_to_reg' |             'how_to_vote' |             'html' |             'http' |             'https' |             'hub' |             'hvac' |             'ice_skating' |             'icecream' |             'image' |             'image_aspect_ratio' |             'image_not_supported' |             'image_search' |             'imagesearch_roller' |             'import_contacts' |             'import_export' |             'important_devices' |             'inbox' |             'incomplete_circle' |             'indeterminate_check_box' |             'info' |             'input' |             'insert_chart' |             'insert_chart_outlined' |             'insert_comment' |             'insert_drive_file' |             'insert_emoticon' |             'insert_invitation' |             'insert_link' |             'insert_page_break' |             'insert_photo' |             'insights' |             'install_desktop' |             'install_mobile' |             'integration_instructions' |             'interests' |             'interpreter_mode' |             'inventory' |             'inventory_2' |             'invert_colors' |             'invert_colors_off' |             'ios_share' |             'iron' |             'iso' |             'javascript' |             'join_full' |             'join_inner' |             'join_left' |             'join_right' |             'kayaking' |             'kebab_dining' |             'key' |             'key_off' |             'keyboard' |             'keyboard_alt' |             'keyboard_arrow_down' |             'keyboard_arrow_left' |             'keyboard_arrow_right' |             'keyboard_arrow_up' |             'keyboard_backspace' |             'keyboard_capslock' |             'keyboard_command_key' |             'keyboard_control_key' |             'keyboard_double_arrow_down' |             'keyboard_double_arrow_left' |             'keyboard_double_arrow_right' |             'keyboard_double_arrow_up' |             'keyboard_hide' |             'keyboard_option_key' |             'keyboard_return' |             'keyboard_tab' |             'keyboard_voice' |             'king_bed' |             'kitchen' |             'kitesurfing' |             'label' |             'label_important' |             'label_off' |             'lan' |             'landscape' |             'landslide' |             'language' |             'laptop' |             'laptop_chromebook' |             'laptop_mac' |             'laptop_windows' |             'last_page' |             'launch' |             'layers' |             'layers_clear' |             'leaderboard' |             'leak_add' |             'leak_remove' |             'legend_toggle' |             'lens' |             'lens_blur' |             'library_add' |             'library_add_check' |             'library_books' |             'library_music' |             'light' |             'light_mode' |             'lightbulb' |             'lightbulb_circle' |             'line_axis' |             'line_style' |             'line_weight' |             'linear_scale' |             'link' |             'link_off' |             'linked_camera' |             'liquor' |             'list' |             'list_alt' |             'live_help' |             'live_tv' |             'living' |             'local_activity' |             'local_airport' |             'local_atm' |             'local_bar' |             'local_cafe' |             'local_car_wash' |             'local_convenience_store' |             'local_dining' |             'local_drink' |             'local_fire_department' |             'local_florist' |             'local_gas_station' |             'local_grocery_store' |             'local_hospital' |             'local_hotel' |             'local_laundry_service' |             'local_library' |             'local_mall' |             'local_movies' |             'local_offer' |             'local_parking' |             'local_pharmacy' |             'local_phone' |             'local_pizza' |             'local_play' |             'local_police' |             'local_post_office' |             'local_printshop' |             'local_see' |             'local_shipping' |             'local_taxi' |             'location_city' |             'location_disabled' |             'location_off' |             'location_on' |             'location_searching' |             'lock' |             'lock_clock' |             'lock_open' |             'lock_person' |             'lock_reset' |             'login' |             'logo_dev' |             'logout' |             'looks' |             'looks_3' |             'looks_4' |             'looks_5' |             'looks_6' |             'looks_one' |             'looks_two' |             'loop' |             'loupe' |             'low_priority' |             'loyalty' |             'lte_mobiledata' |             'lte_plus_mobiledata' |             'luggage' |             'lunch_dining' |             'lyrics' |             'macro_off' |             'mail' |             'mail_lock' |             'mail_outline' |             'male' |             'man' |             'man_2' |             'man_3' |             'man_4' |             'manage_accounts' |             'manage_history' |             'manage_search' |             'map' |             'maps_home_work' |             'maps_ugc' |             'margin' |             'mark_as_unread' |             'mark_chat_read' |             'mark_chat_unread' |             'mark_email_read' |             'mark_email_unread' |             'mark_unread_chat_alt' |             'markunread' |             'markunread_mailbox' |             'masks' |             'maximize' |             'media_bluetooth_off' |             'media_bluetooth_on' |             'mediation' |             'medical_information' |             'medical_services' |             'medication' |             'medication_liquid' |             'meeting_room' |             'memory' |             'menu' |             'menu_book' |             'menu_open' |             'merge' |             'merge_type' |             'message' |             'mic' |             'mic_external_off' |             'mic_external_on' |             'mic_none' |             'mic_off' |             'microwave' |             'military_tech' |             'minimize' |             'minor_crash' |             'miscellaneous_services' |             'missed_video_call' |             'mms' |             'mobile_friendly' |             'mobile_off' |             'mobile_screen_share' |             'mobiledata_off' |             'mode' |             'mode_comment' |             'mode_edit' |             'mode_edit_outline' |             'mode_fan_off' |             'mode_night' |             'mode_of_travel' |             'mode_standby' |             'model_training' |             'monetization_on' |             'money' |             'money_off' |             'money_off_csred' |             'monitor' |             'monitor_heart' |             'monitor_weight' |             'monochrome_photos' |             'mood' |             'mood_bad' |             'moped' |             'more' |             'more_horiz' |             'more_time' |             'more_vert' |             'mosque' |             'motion_photos_auto' |             'motion_photos_off' |             'motion_photos_on' |             'motion_photos_pause' |             'motion_photos_paused' |             'mouse' |             'move_down' |             'move_to_inbox' |             'move_up' |             'movie' |             'movie_creation' |             'movie_filter' |             'moving' |             'mp' |             'multiline_chart' |             'multiple_stop' |             'museum' |             'music_note' |             'music_off' |             'music_video' |             'my_location' |             'nat' |             'nature' |             'nature_people' |             'navigate_before' |             'navigate_next' |             'navigation' |             'near_me' |             'near_me_disabled' |             'nearby_error' |             'nearby_off' |             'nest_cam_wired_stand' |             'network_cell' |             'network_check' |             'network_locked' |             'network_ping' |             'network_wifi' |             'network_wifi_1_bar' |             'network_wifi_2_bar' |             'network_wifi_3_bar' |             'new_label' |             'new_releases' |             'newspaper' |             'next_plan' |             'next_week' |             'nfc' |             'night_shelter' |             'nightlife' |             'nightlight' |             'nightlight_round' |             'nights_stay' |             'no_accounts' |             'no_adult_content' |             'no_backpack' |             'no_cell' |             'no_crash' |             'no_drinks' |             'no_encryption' |             'no_encryption_gmailerrorred' |             'no_flash' |             'no_food' |             'no_luggage' |             'no_meals' |             'no_meeting_room' |             'no_photography' |             'no_sim' |             'no_stroller' |             'no_transfer' |             'noise_aware' |             'noise_control_off' |             'nordic_walking' |             'north' |             'north_east' |             'north_west' |             'not_accessible' |             'not_interested' |             'not_listed_location' |             'not_started' |             'note' |             'note_add' |             'note_alt' |             'notes' |             'notification_add' |             'notification_important' |             'notifications' |             'notifications_active' |             'notifications_none' |             'notifications_off' |             'notifications_paused' |             'numbers' |             'offline_bolt' |             'offline_pin' |             'offline_share' |             'oil_barrel' |             'on_device_training' |             'ondemand_video' |             'online_prediction' |             'opacity' |             'open_in_browser' |             'open_in_full' |             'open_in_new' |             'open_in_new_off' |             'open_with' |             'other_houses' |             'outbound' |             'outbox' |             'outdoor_grill' |             'outlet' |             'outlined_flag' |             'output' |             'padding' |             'pages' |             'pageview' |             'paid' |             'palette' |             'pan_tool' |             'pan_tool_alt' |             'panorama' |             'panorama_fish_eye' |             'panorama_horizontal' |             'panorama_horizontal_select' |             'panorama_photosphere' |             'panorama_photosphere_select' |             'panorama_vertical' |             'panorama_vertical_select' |             'panorama_wide_angle' |             'panorama_wide_angle_select' |             'paragliding' |             'park' |             'party_mode' |             'password' |             'pattern' |             'pause' |             'pause_circle' |             'pause_circle_filled' |             'pause_circle_outline' |             'pause_presentation' |             'payment' |             'payments' |             'pedal_bike' |             'pending' |             'pending_actions' |             'pentagon' |             'people' |             'people_alt' |             'people_outline' |             'percent' |             'perm_camera_mic' |             'perm_contact_calendar' |             'perm_data_setting' |             'perm_device_information' |             'perm_identity' |             'perm_media' |             'perm_phone_msg' |             'perm_scan_wifi' |             'person' |             'person_2' |             'person_3' |             'person_4' |             'person_add' |             'person_add_alt' |             'person_add_alt_1' |             'person_add_disabled' |             'person_off' |             'person_outline' |             'person_pin' |             'person_pin_circle' |             'person_remove' |             'person_remove_alt_1' |             'person_search' |             'personal_injury' |             'personal_video' |             'pest_control' |             'pest_control_rodent' |             'pets' |             'phishing' |             'phone' |             'phone_android' |             'phone_bluetooth_speaker' |             'phone_callback' |             'phone_disabled' |             'phone_enabled' |             'phone_forwarded' |             'phone_iphone' |             'phone_locked' |             'phone_missed' |             'phone_paused' |             'phonelink' |             'phonelink_erase' |             'phonelink_lock' |             'phonelink_off' |             'phonelink_ring' |             'phonelink_setup' |             'photo' |             'photo_album' |             'photo_camera' |             'photo_camera_back' |             'photo_camera_front' |             'photo_filter' |             'photo_library' |             'photo_size_select_actual' |             'photo_size_select_large' |             'photo_size_select_small' |             'php' |             'piano' |             'piano_off' |             'picture_as_pdf' |             'picture_in_picture' |             'picture_in_picture_alt' |             'pie_chart' |             'pie_chart_outline' |             'pin' |             'pin_drop' |             'pin_end' |             'pin_invoke' |             'pinch' |             'pivot_table_chart' |             'pix' |             'place' |             'plagiarism' |             'play_arrow' |             'play_circle' |             'play_circle_filled' |             'play_circle_outline' |             'play_disabled' |             'play_for_work' |             'play_lesson' |             'playlist_add' |             'playlist_add_check' |             'playlist_add_check_circle' |             'playlist_add_circle' |             'playlist_play' |             'playlist_remove' |             'plumbing' |             'plus_one' |             'podcasts' |             'point_of_sale' |             'policy' |             'poll' |             'polyline' |             'polymer' |             'pool' |             'portable_wifi_off' |             'portrait' |             'post_add' |             'power' |             'power_input' |             'power_off' |             'power_settings_new' |             'precision_manufacturing' |             'pregnant_woman' |             'present_to_all' |             'preview' |             'price_change' |             'price_check' |             'print' |             'print_disabled' |             'priority_high' |             'privacy_tip' |             'private_connectivity' |             'production_quantity_limits' |             'propane' |             'propane_tank' |             'psychology' |             'psychology_alt' |             'public' |             'public_off' |             'publish' |             'published_with_changes' |             'punch_clock' |             'push_pin' |             'qr_code' |             'qr_code_2' |             'qr_code_scanner' |             'query_builder' |             'query_stats' |             'question_answer' |             'question_mark' |             'queue' |             'queue_music' |             'queue_play_next' |             'quickreply' |             'quiz' |             'r_mobiledata' |             'radar' |             'radio' |             'radio_button_checked' |             'radio_button_unchecked' |             'railway_alert' |             'ramen_dining' |             'ramp_left' |             'ramp_right' |             'rate_review' |             'raw_off' |             'raw_on' |             'read_more' |             'real_estate_agent' |             'receipt' |             'receipt_long' |             'recent_actors' |             'recommend' |             'record_voice_over' |             'rectangle' |             'recycling' |             'redeem' |             'redo' |             'reduce_capacity' |             'refresh' |             'remember_me' |             'remove' |             'remove_circle' |             'remove_circle_outline' |             'remove_done' |             'remove_from_queue' |             'remove_moderator' |             'remove_red_eye' |             'remove_road' |             'remove_shopping_cart' |             'reorder' |             'repartition' |             'repeat' |             'repeat_on' |             'repeat_one' |             'repeat_one_on' |             'replay' |             'replay_10' |             'replay_30' |             'replay_5' |             'replay_circle_filled' |             'reply' |             'reply_all' |             'report' |             'report_gmailerrorred' |             'report_off' |             'report_problem' |             'request_page' |             'request_quote' |             'reset_tv' |             'restart_alt' |             'restaurant' |             'restaurant_menu' |             'restore' |             'restore_from_trash' |             'restore_page' |             'reviews' |             'rice_bowl' |             'ring_volume' |             'rocket' |             'rocket_launch' |             'roller_shades' |             'roller_shades_closed' |             'roller_skating' |             'roofing' |             'room' |             'room_preferences' |             'room_service' |             'rotate_90_degrees_ccw' |             'rotate_90_degrees_cw' |             'rotate_left' |             'rotate_right' |             'roundabout_left' |             'roundabout_right' |             'rounded_corner' |             'route' |             'router' |             'rowing' |             'rss_feed' |             'rsvp' |             'rtt' |             'rule' |             'rule_folder' |             'run_circle' |             'running_with_errors' |             'rv_hookup' |             'safety_check' |             'safety_divider' |             'sailing' |             'sanitizer' |             'satellite' |             'satellite_alt' |             'save' |             'save_alt' |             'save_as' |             'saved_search' |             'savings' |             'scale' |             'scanner' |             'scatter_plot' |             'schedule' |             'schedule_send' |             'schema' |             'school' |             'science' |             'score' |             'scoreboard' |             'screen_lock_landscape' |             'screen_lock_portrait' |             'screen_lock_rotation' |             'screen_rotation' |             'screen_rotation_alt' |             'screen_search_desktop' |             'screen_share' |             'screenshot' |             'screenshot_monitor' |             'scuba_diving' |             'sd' |             'sd_card' |             'sd_card_alert' |             'sd_storage' |             'search' |             'search_off' |             'security' |             'security_update' |             'security_update_good' |             'security_update_warning' |             'segment' |             'select_all' |             'self_improvement' |             'sell' |             'send' |             'send_and_archive' |             'send_time_extension' |             'send_to_mobile' |             'sensor_door' |             'sensor_occupied' |             'sensor_window' |             'sensors' |             'sensors_off' |             'sentiment_dissatisfied' |             'sentiment_neutral' |             'sentiment_satisfied' |             'sentiment_satisfied_alt' |             'sentiment_very_dissatisfied' |             'sentiment_very_satisfied' |             'set_meal' |             'settings' |             'settings_accessibility' |             'settings_applications' |             'settings_backup_restore' |             'settings_bluetooth' |             'settings_brightness' |             'settings_cell' |             'settings_ethernet' |             'settings_input_antenna' |             'settings_input_component' |             'settings_input_composite' |             'settings_input_hdmi' |             'settings_input_svideo' |             'settings_overscan' |             'settings_phone' |             'settings_power' |             'settings_remote' |             'settings_suggest' |             'settings_system_daydream' |             'settings_voice' |             'severe_cold' |             'shape_line' |             'share' |             'share_location' |             'shield' |             'shield_moon' |             'shop' |             'shop_2' |             'shop_two' |             'shopping_bag' |             'shopping_basket' |             'shopping_cart' |             'shopping_cart_checkout' |             'short_text' |             'shortcut' |             'show_chart' |             'shower' |             'shuffle' |             'shuffle_on' |             'shutter_speed' |             'sick' |             'sign_language' |             'signal_cellular_0_bar' |             'signal_cellular_4_bar' |             'signal_cellular_alt' |             'signal_cellular_alt_1_bar' |             'signal_cellular_alt_2_bar' |             'signal_cellular_connected_no_internet_0_bar' |             'signal_cellular_connected_no_internet_4_bar' |             'signal_cellular_no_sim' |             'signal_cellular_nodata' |             'signal_cellular_null' |             'signal_cellular_off' |             'signal_wifi_0_bar' |             'signal_wifi_4_bar' |             'signal_wifi_4_bar_lock' |             'signal_wifi_bad' |             'signal_wifi_connected_no_internet_4' |             'signal_wifi_off' |             'signal_wifi_statusbar_4_bar' |             'signal_wifi_statusbar_connected_no_internet_4' |             'signal_wifi_statusbar_null' |             'signpost' |             'sim_card' |             'sim_card_alert' |             'sim_card_download' |             'single_bed' |             'sip' |             'skateboarding' |             'skip_next' |             'skip_previous' |             'sledding' |             'slideshow' |             'slow_motion_video' |             'smart_button' |             'smart_display' |             'smart_screen' |             'smart_toy' |             'smartphone' |             'smoke_free' |             'smoking_rooms' |             'sms' |             'sms_failed' |             'snippet_folder' |             'snooze' |             'snowboarding' |             'snowmobile' |             'snowshoeing' |             'soap' |             'social_distance' |             'solar_power' |             'sort' |             'sort_by_alpha' |             'sos' |             'soup_kitchen' |             'source' |             'south' |             'south_america' |             'south_east' |             'south_west' |             'spa' |             'space_bar' |             'space_dashboard' |             'spatial_audio' |             'spatial_audio_off' |             'spatial_tracking' |             'speaker' |             'speaker_group' |             'speaker_notes' |             'speaker_notes_off' |             'speaker_phone' |             'speed' |             'spellcheck' |             'splitscreen' |             'spoke' |             'sports' |             'sports_bar' |             'sports_baseball' |             'sports_basketball' |             'sports_cricket' |             'sports_esports' |             'sports_football' |             'sports_golf' |             'sports_gymnastics' |             'sports_handball' |             'sports_hockey' |             'sports_kabaddi' |             'sports_martial_arts' |             'sports_mma' |             'sports_motorsports' |             'sports_rugby' |             'sports_score' |             'sports_soccer' |             'sports_tennis' |             'sports_volleyball' |             'square' |             'square_foot' |             'ssid_chart' |             'stacked_bar_chart' |             'stacked_line_chart' |             'stadium' |             'stairs' |             'star' |             'star_border' |             'star_border_purple500' |             'star_half' |             'star_outline' |             'star_purple500' |             'star_rate' |             'stars' |             'start' |             'stay_current_landscape' |             'stay_current_portrait' |             'stay_primary_landscape' |             'stay_primary_portrait' |             'sticky_note_2' |             'stop' |             'stop_circle' |             'stop_screen_share' |             'storage' |             'store' |             'store_mall_directory' |             'storefront' |             'storm' |             'straight' |             'straighten' |             'stream' |             'streetview' |             'strikethrough_s' |             'stroller' |             'style' |             'subdirectory_arrow_left' |             'subdirectory_arrow_right' |             'subject' |             'subscript' |             'subscriptions' |             'subtitles' |             'subtitles_off' |             'subway' |             'summarize' |             'superscript' |             'supervised_user_circle' |             'supervisor_account' |             'support' |             'support_agent' |             'surfing' |             'surround_sound' |             'swap_calls' |             'swap_horiz' |             'swap_horizontal_circle' |             'swap_vert' |             'swap_vertical_circle' |             'swipe' |             'swipe_down' |             'swipe_down_alt' |             'swipe_left' |             'swipe_left_alt' |             'swipe_right' |             'swipe_right_alt' |             'swipe_up' |             'swipe_up_alt' |             'swipe_vertical' |             'switch_access_shortcut' |             'switch_access_shortcut_add' |             'switch_account' |             'switch_camera' |             'switch_left' |             'switch_right' |             'switch_video' |             'synagogue' |             'sync' |             'sync_alt' |             'sync_disabled' |             'sync_lock' |             'sync_problem' |             'system_security_update' |             'system_security_update_good' |             'system_security_update_warning' |             'system_update' |             'system_update_alt' |             'tab' |             'tab_unselected' |             'table_bar' |             'table_chart' |             'table_restaurant' |             'table_rows' |             'table_view' |             'tablet' |             'tablet_android' |             'tablet_mac' |             'tag' |             'tag_faces' |             'takeout_dining' |             'tap_and_play' |             'tapas' |             'task' |             'task_alt' |             'taxi_alert' |             'temple_buddhist' |             'temple_hindu' |             'terminal' |             'terrain' |             'text_decrease' |             'text_fields' |             'text_format' |             'text_increase' |             'text_rotate_up' |             'text_rotate_vertical' |             'text_rotation_angledown' |             'text_rotation_angleup' |             'text_rotation_down' |             'text_rotation_none' |             'text_snippet' |             'textsms' |             'texture' |             'theater_comedy' |             'theaters' |             'thermostat' |             'thermostat_auto' |             'thumb_down' |             'thumb_down_alt' |             'thumb_down_off_alt' |             'thumb_up' |             'thumb_up_alt' |             'thumb_up_off_alt' |             'thumbs_up_down' |             'thunderstorm' |             'time_to_leave' |             'timelapse' |             'timeline' |             'timer' |             'timer_10' |             'timer_10_select' |             'timer_3' |             'timer_3_select' |             'timer_off' |             'tips_and_updates' |             'tire_repair' |             'title' |             'toc' |             'today' |             'toggle_off' |             'toggle_on' |             'token' |             'toll' |             'tonality' |             'topic' |             'tornado' |             'touch_app' |             'tour' |             'toys' |             'track_changes' |             'traffic' |             'train' |             'tram' |             'transcribe' |             'transfer_within_a_station' |             'transform' |             'transgender' |             'transit_enterexit' |             'translate' |             'travel_explore' |             'trending_down' |             'trending_flat' |             'trending_up' |             'trip_origin' |             'troubleshoot' |             'try' |             'tsunami' |             'tty' |             'tune' |             'tungsten' |             'turn_left' |             'turn_right' |             'turn_sharp_left' |             'turn_sharp_right' |             'turn_slight_left' |             'turn_slight_right' |             'turned_in' |             'turned_in_not' |             'tv' |             'tv_off' |             'two_wheeler' |             'type_specimen' |             'u_turn_left' |             'u_turn_right' |             'umbrella' |             'unarchive' |             'undo' |             'unfold_less' |             'unfold_less_double' |             'unfold_more' |             'unfold_more_double' |             'unpublished' |             'unsubscribe' |             'upcoming' |             'update' |             'update_disabled' |             'upgrade' |             'upload' |             'upload_file' |             'usb' |             'usb_off' |             'vaccines' |             'vape_free' |             'vaping_rooms' |             'verified' |             'verified_user' |             'vertical_align_bottom' |             'vertical_align_center' |             'vertical_align_top' |             'vertical_distribute' |             'vertical_shades' |             'vertical_shades_closed' |             'vertical_split' |             'vibration' |             'video_call' |             'video_camera_back' |             'video_camera_front' |             'video_chat' |             'video_file' |             'video_label' |             'video_library' |             'video_settings' |             'video_stable' |             'videocam' |             'videocam_off' |             'videogame_asset' |             'videogame_asset_off' |             'view_agenda' |             'view_array' |             'view_carousel' |             'view_column' |             'view_comfy' |             'view_comfy_alt' |             'view_compact' |             'view_compact_alt' |             'view_cozy' |             'view_day' |             'view_headline' |             'view_in_ar' |             'view_kanban' |             'view_list' |             'view_module' |             'view_quilt' |             'view_sidebar' |             'view_stream' |             'view_timeline' |             'view_week' |             'vignette' |             'villa' |             'visibility' |             'visibility_off' |             'voice_chat' |             'voice_over_off' |             'voicemail' |             'volcano' |             'volume_down' |             'volume_mute' |             'volume_off' |             'volume_up' |             'volunteer_activism' |             'vpn_key' |             'vpn_key_off' |             'vpn_lock' |             'vrpano' |             'wallet' |             'wallpaper' |             'warehouse' |             'warning' |             'warning_amber' |             'wash' |             'watch' |             'watch_later' |             'watch_off' |             'water' |             'water_damage' |             'water_drop' |             'waterfall_chart' |             'waves' |             'waving_hand' |             'wb_auto' |             'wb_cloudy' |             'wb_incandescent' |             'wb_iridescent' |             'wb_shade' |             'wb_sunny' |             'wb_twilight' |             'wc' |             'web' |             'web_asset' |             'web_asset_off' |             'web_stories' |             'webhook' |             'weekend' |             'west' |             'whatshot' |             'wheelchair_pickup' |             'where_to_vote' |             'widgets' |             'width_full' |             'width_normal' |             'width_wide' |             'wifi' |             'wifi_1_bar' |             'wifi_2_bar' |             'wifi_calling' |             'wifi_calling_3' |             'wifi_channel' |             'wifi_find' |             'wifi_lock' |             'wifi_off' |             'wifi_password' |             'wifi_protected_setup' |             'wifi_tethering' |             'wifi_tethering_error' |             'wifi_tethering_off' |             'wind_power' |             'window' |             'wine_bar' |             'woman' |             'woman_2' |             'work' |             'work_history' |             'work_off' |             'work_outline' |             'workspace_premium' |             'workspaces' |             'wrap_text' |             'wrong_location' |             'wysiwyg' |             'yard' |             'youtube_searched_for' |             'zoom_in' |             'zoom_in_map' |             'zoom_out' |             'zoom_out_map';    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        import { Todo } from "../../data/Todo.data.avt";        import { Task } from "../../data/Task.data.avt";        import { TodoRAM } from "../../ram/Todo.ram.avt";        &nbsp;        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props            @Attribute()            public todo_id!: number;            //#endregion        &nbsp;        &nbsp;            //#region variables            @Watch()            public todo!: Todo;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            protected async loadData() {                const todo = new Todo();                todo.name = "My todo";                this.todo = todo;                // just create an interval to see the template reloading                setInterval(() =&gt; {                    this.todo.name = "My todo " + (new Date().getSeconds());                }, 1000);        &nbsp;                const task1 = new Task();                task1.description = "Test Aventus";        &nbsp;                const task2 = new Task();                task2.description = "Add a star to Aventus github";                this.todo.tasks = [task1, task2];        &nbsp;                // let todo = await TodoRAM.getInstance().get(this.todo_id);                // &#105;f(todo) {                //     this.todo = todo;                // }                // else {                //     this.remove();                // }            }        &nbsp;            /**            * Remove the todo            */            protected async removeTodo() {                await TodoRAM.getInstance().deleteById(this.todo_id);            }        &nbsp;            protected override postCreation(): void {                this.loadData();            }            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcs.avt">    <pre>        :host {            .title {                display: flex;                align-items: center;                td-icon {                    color: red;                    margin-left: 10px;                    cursor: pointer;                }            }        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcv.avt">    <pre>        &lt;div class="title"&gt;            &lt;span&gt;&#123;&#123; this.todo.name &#125;&#125;&lt;/span&gt;            &lt;td-icon icon="delete" @press="removeTodo"&gt;&lt;/td-icon&gt;        &lt;/div&gt;        &lt;ul&gt;            &#102;or(let task of this.todo.tasks) {                 &lt;li&gt;&#123;&#123; task.description &#125;&#125;&lt;/li&gt;            }        &lt;/ul&gt;    </pre></av-code></av-code><slot></slot>` }
     });
 }
     getClassName() {
@@ -16067,6 +16656,30 @@ TutorialIconEditor1.Namespace=`${moduleName}`;
 TutorialIconEditor1.Tag=`av-tutorial-icon-editor-1`;
 _.TutorialIconEditor1=TutorialIconEditor1;
 if(!window.customElements.get('av-tutorial-icon-editor-1')){window.customElements.define('av-tutorial-icon-editor-1', TutorialIconEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialIconEditor1);}
+
+const TutorialIcon = class TutorialIcon extends TutorialGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return TutorialIcon;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TutorialIcon.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Using Icon</h1><p>The Icon component offers several key benefits. Firstly, it automatically loads the necessary font files, simplifying    the process of integrating icons. This eliminates the need for manual font setup, saving time and reducing the    likelihood of configuration errors.</p><p>Secondly, the Icon component enhances the user experience by providing a seamless and intuitive interface. Users can    effortlessly select and incorporate icons into their interactions with the application, thanks to the comprehensive    list of available icons and icons type accessible through autocompletion. This feature improves usability and    accessibility for    users.</p><p>In summary, integrating the Icon component into our application streamlines the process of incorporating icons,    enhances the user experience, and maintains a cohesive design aesthetic. This component provides a convenient and    efficient solution for integrating icons, empowering us to create visually appealing and user-friendly applications    without the hassle of manual setup.</p><h2>Code it</h2><h3>Logic</h3><p>First of all we need a to create a new component named <span class="cn">Icon : </span></p><ul>    <li>        Over the folder <span class="cn">components</span> you can right click and select <span class="cn">Aventus :            Create...</span>.    </li>    <li>You can select <span class="cn">Component</span></li>    <li>You can fill the input with <span class="cn">Icon</span></li>    <li>You can select <span class="cn">Multiple</span></li></ul><p>We need two attributes:</p><ul>    <li><span class="cn">icon</span> a list of available icons</li>    <li><span class="cn">type</span> a list of types provided by google font (sharp, rounded or outlined)</li></ul><p>This time, the tag attribute must trigger a change event when its value is altered to refresh the icon displayed. We    are going to use <span class="cn">Property</span> (<av-router-link state="/docs/wc/property">More        info</av-router-link>).</p><p>You can set your cursor inside the region <span class="cn">props</span> and <span class="cn">right        click > Aventus: Create property</span> or use the shortcut <span class="cn">ctrl + k ctrl + numpad2</span>.    You can fill the input with <span class="cn">type</span>, select the type <span class="cn">Custom</span> and we need    a callback. We will use the literal type in typescript to define the type of <span class="cn">type</span>.</p><av-code language="typescript" filename="Demo/src/components/Icon/Icon.wcl.avt">    <pre>        &nbsp;        export class Icon extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            //#region props            /**            * The type of the icon            */            @Property((target: Icon) =&gt; {                // trigger when the type value changed            })            public type: 'sharp' | 'rounded' | 'outlined' = 'outlined'; // default value is outlined            &nbsp;            //#endregion            ...        }    </pre></av-code></av-code><p>You can perform the same operation for the <span class="cn">icon</span> property. Additionally, you have the option    to utilize the <span class="cn">Custom</span>    type, although it requires defining a comprehensive list of all Material Icons. To maintain code cleanliness,    consider creating a new file called <span class="cn">IconType.lib.avt</span>.</p><av-code language="typescript" filename="Demo/src/components/Icon/IconType.lib.avt">    <pre>        /** IconType is the list of all icons from material icon. This file is generated by a script */        export type IconType =            '10k' |             '10mp' |             '11mp' |             '123' |             '12mp' |             '13mp' |             ...;    </pre></av-code></av-code><p>You can import this type to use it for your property. In addition, we can define a callback to update the content of    our icon component.</p><av-code language="typescript" filename="Demo/src/components/Icon/Icon.wcl.avt">    <pre>        import type { IconType } from "./IconType.lib.avt";        &nbsp;        export class Icon extends Aventus.WebComponent implements Aventus.DefaultComponent {        &nbsp;            //#region props            /**             * Icon from https://fonts.google.com/icons             */            @Property((target: Icon) =&gt; {                // if the component is rendered                &#105;f(target.isReady)                    // we set the icon as shadowroot content                    target.shadowRoot.innerHTML = target.icon;            })            public icon: IconType = "check_box_outline_blank";            ...        }    </pre></av-code></av-code><p>Regarding the logic, a function to load the font once based on the type is currently absent. You can code it : </p><av-code language="typescript" filename="Demo/src/components/Icon/Icon.wcl.avt">    <pre>        export class Icon extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            //#region methods            /**             * Add link tag into document head to load the font based on the type             */            private async loadFont() {                &#105;f(!this.type) return;        &nbsp;                let url = 'https://fonts.googleapis.com/icon?family=Material+Symbols+';                url += this.type.charAt(0).toUpperCase() + this.type.slice(1);                // check &#105;f the url exist inside head and create a link tag &#105;f not exist                await Aventus.ResourceLoader.loadInHead({                    type: "css",                    url: url                });            }            /**             * Init the icon after rendering             */            private async init() {                await this.loadFont();                // set the icon as component content                this.shadowRoot.innerHTML = this.icon;            }            protected override postCreation(): void {                this.init();            }            //#endregion        }    </pre></av-code></av-code><p>The final step is to ensure that the function <span class="cn">loadFont</span> is triggered whenever the property    <span class="cn">type</span>    changes.</p><av-code language="typescript" filename="Demo/src/components/Icon/Icon.wcl.avt">    <pre>        export class Icon extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            /**            * The type of the icon            */            @Property((target: Icon) =&gt; {                &#105;f(target.isReady)                    target.loadFont();            })            public type: 'sharp' | 'rounded' | 'outlined' = 'outlined';            ...        }    </pre></av-code></av-code><h3>View</h3><p>To prevent users from inputting content into our icon, we need to remove the <span class="cn">&lt;slot&gt;</span> tag    inside <span class="cn">Icon.wcv.avt</span>.</p><av-code language="html" filename="Demo/src/components/Icon/Icon.wcv.avt">    <pre>        &lt;!-- No content to prevent input --&gt;    </pre></av-code></av-code><h3>Style</h3><p>To ensure the correct styling for the icon, we can access the URL    <a href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" target="_blank">https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined</a> and examine the CSS    content provided. We then    apply this CSS content directly to the component using the <span class="cn">:host</span> selector.</p><av-code language="css" filename="Demo/src/components/Icon/Icon.wcs.avt">    <pre>        /* Come from https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined */        :host {            direction: ltr;            display: inline-block;            font-family: 'Material Symbols Outlined';            -webkit-font-feature-settings: 'liga';            font-size: 24px;            -webkit-font-smoothing: antialiased;            font-style: normal;            font-weight: normal;            letter-spacing: normal;            line-height: 1;            text-transform: none;            white-space: nowrap;            word-wrap: normal;        }    </pre></av-code></av-code><p>Now, depending on the value of the type property, we need to apply the appropriate font-family.</p><av-code language="css" filename="Demo/src/components/Icon/Icon.wcs.avt">    <pre>        ...        &nbsp;        :host([type="sharp"]) {            font-family: 'Material Symbols Sharp';        }        &nbsp;        :host([type="rounded"]) {            font-family: 'Material Symbols Rounded';        }        &nbsp;        :host([type="outlined"]) {            font-family: 'Material Symbols Outlined';        }        &nbsp;    </pre></av-code></av-code><h3>Result</h3><p>With the <span class="cn">Icon</span> component now created, we're ready to utilize it within <span class="cn">td-display-todo</span> to showcase a trash icon    alongside the name of the todo. If everything is set up correctly, you should have autocomplete functionality    available within the <span class="cn">icon property</span>.</p><av-code language="html" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcv.avt">    <pre>        &lt;div class="title"&gt;            &lt;span&gt;&#123;&#123; this.todo.name &#125;&#125;&lt;/span&gt;            &lt;td-icon icon="delete" @press="removeTodo"&gt;&lt;/td-icon&gt;        &lt;/div&gt;        &lt;ul&gt;            &#102;or(let task of this.todo.tasks) {                 &lt;li&gt;&#123;&#123; task.description &#125;&#125;&lt;/li&gt;            }        &lt;/ul&gt;    </pre></av-code></av-code><p>Next, we need to implement the function responsible for removing a todo from the RAM.</p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        &nbsp;        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            /**            * Remove the todo            */            protected async removeTodo() {                await TodoRAM.getInstance().deleteById(this.todo_id);            }            ...        }    </pre></av-code></av-code><p>Lastly, we can apply additional styling to customize the appearance of the trash icon according to our preferences.</p><av-code language="css" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcs.avt">    <pre>        :host {            .title {                display: flex;                align-items: center;                td-icon {                    color: red;                    margin-left: 10px;                    cursor: pointer;                }            }        }        &nbsp;    </pre></av-code></av-code><p>The final result is the following : </p><av-tutorial-icon-editor-1></av-tutorial-icon-editor-1>` }
+    });
+}
+    getClassName() {
+        return "TutorialIcon";
+    }
+}
+TutorialIcon.Namespace=`${moduleName}`;
+TutorialIcon.Tag=`av-tutorial-icon`;
+_.TutorialIcon=TutorialIcon;
+if(!window.customElements.get('av-tutorial-icon')){window.customElements.define('av-tutorial-icon', TutorialIcon);Aventus.WebComponentInstance.registerDefinition(TutorialIcon);}
 
 const TutorialCreateTodoEditor1 = class TutorialCreateTodoEditor1 extends TutorialIconEditor1 {
     static __style = ``;
@@ -16126,7 +16739,7 @@ const TutorialCreateTodoEditor2 = class TutorialCreateTodoEditor2 extends Tutori
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code language="css" filename="Demo/src/apps/@default.wcs.avt">    <pre>        // this is the default style &#102;or all components        :host {            box-sizing: border-box;            display: inline-block;        }        &nbsp;        :host * {            box-sizing: border-box;        }        &nbsp;        .card {            background-color: var(--color-surface-mixed-200);            border-radius: 10px;            display: flex;            flex-direction: column;            gap: 10px;            margin: auto;            max-width: 500px;            padding: 15px;        }        &nbsp;    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt">    <pre>        import { MainApp } from "../../MainApp.wcl.avt";        import type { Todo } from "../../../../data/Todo.data.avt";        import { TodoCreateState } from "../../../../states/TodoCreateState.state.avt";        import { GenericPage } from "../GenericPage/GenericPage.wcl.avt";        &nbsp;        /**         * The page to create new todo         */        export class TodoCreatePage extends GenericPage implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables            @Watch()            public todo!: Todo;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            /**             * @inheritdoc             */            public override definePageTitle(): string {                return "Create todo";            }        &nbsp;            public override onShow(): void {                &#105;f(this.currentState instanceof TodoCreateState && this.currentState.newTodo) {                    this.todo = this.currentState.newTodo;                }                &#101;lse {                    MainApp.instance.navigate("/");                }            }            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt">    <pre>        &lt;div class="card"&gt;            &nbsp;        &lt;/div&gt;    </pre></av-code></av-code><slot></slot>` }
+        blocks: { 'default':`<av-code language="css" filename="Demo/src/apps/@default.wcs.avt">    <pre>        // this is the default style &#102;or all components        :host {            box-sizing: border-box;            display: inline-block;        }        &nbsp;        :host * {            box-sizing: border-box;        }        &nbsp;        .card {            background-color: var(--color-surface-mixed-200);            border-radius: 10px;            display: flex;            flex-direction: column;            gap: 10px;            margin: auto;            max-width: 500px;            padding: 15px;        }        &nbsp;    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">    <pre>        import { TodoCreateState } from "../../states/TodoCreateState.state.avt";        import { TodoCreatePage } from "./pages/TodoCreatePage/TodoCreatePage.wcl.avt";        import { TodoListPage } from "./pages/TodoListPage/TodoListPage.wcl.avt";        &nbsp;        /**         * The MainApp &#102;or the Demo.         * The parent Aventus.Navigation.Router is a component that allows routing management         */        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {        &nbsp;            //#region static            private static _instance: MainApp;            public static get instance(): MainApp {                return this._instance;            }            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables        &nbsp;            //#endregions        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            /**             * @inheritdoc             */            protected override defineRoutes(): void {                // define the routing here                this.addRoute("/", TodoListPage);                this.addRoute("/create", TodoCreatePage);            }        &nbsp;            /**             * Set the create state             */            protected setCreateState() {                this.stateManager.setState(new TodoCreateState());            }        &nbsp;            protected override postCreation(): void {                super.postCreation();                MainApp._instance = this;            }        &nbsp;            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt">    <pre>        import { MainApp } from "../../MainApp.wcl.avt";        import type { Todo } from "../../../../data/Todo.data.avt";        import { TodoCreateState } from "../../../../states/TodoCreateState.state.avt";        import { GenericPage } from "../GenericPage/GenericPage.wcl.avt";        &nbsp;        /**         * The page to create new todo         */        export class TodoCreatePage extends GenericPage implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables            @Watch()            public todo!: Todo;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            /**             * @inheritdoc             */            public override definePageTitle(): string {                return "Create todo";            }        &nbsp;            public override onShow(): void {                &#105;f(this.currentState instanceof TodoCreateState && this.currentState.newTodo) {                    this.todo = this.currentState.newTodo;                }                &#101;lse {                    MainApp.instance.navigate("/");                }            }            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt">    <pre>        &lt;div class="card"&gt;            &nbsp;        &lt;/div&gt;    </pre></av-code></av-code><slot></slot>` }
     });
 }
     getClassName() {
@@ -16138,6 +16751,7 @@ const TutorialCreateTodoEditor2 = class TutorialCreateTodoEditor2 extends Tutori
     hightlightFiles() {
         return [
             'Demo/src/apps/@default.wcs.avt',
+            'Demo/src/apps/MainApp/MainApp.wcl.avt',
             'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt',
             'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt',
         ];
@@ -16216,7 +16830,7 @@ const TutorialCreateTodoEditor4 = class TutorialCreateTodoEditor4 extends Tutori
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt">    <pre>        import { MainApp } from "../../MainApp.wcl.avt";        import type { Todo } from "../../../../data/Todo.data.avt";        import { Task } from "../../../../data/Task.data.avt";        import { TodoCreateState } from "../../../../states/TodoCreateState.state.avt";        import { GenericPage } from "../GenericPage/GenericPage.wcl.avt";        import type { Input } from "../../../../components/Input/Input.wcl.avt";        import { TodoRAM } from "../../../../ram/Todo.ram.avt";        &nbsp;        /**         * The page to create new todo         */        export class TodoCreatePage extends GenericPage implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables            @Watch()            public todo!: Todo;        &nbsp;            /**             * The input to create a description &#102;or the todo             */            @ViewElement()            protected taskDescEl!: Input;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            /**             * @inheritdoc             */            public override definePageTitle(): string {                return "Create todo";            }        &nbsp;            public override onShow(): void {                &#105;f(this.currentState instanceof TodoCreateState && this.currentState.newTodo) {                    this.todo = this.currentState.newTodo;                }                else {                    MainApp.instance.navigate("/");                }            }        &nbsp;            /**            * Add a new task into the todo            * The view will be refreshed because the todo is a @Watch()            */            protected addTask() {                &#105;f(this.taskDescEl.value) {                    let newTask = new Task();                    newTask.description = this.taskDescEl.value;                    this.todo.tasks.push(newTask);                    this.taskDescEl.value = "";                }            }        &nbsp;            /**             * Save the todo into the RAM             */            protected async save() {                &#105;f(this.todo.name) {                    await TodoRAM.getInstance().create(this.todo);                    // clear the name to avoid confirmation popup                    this.todo.name = "";                    // navigate to the list page                    MainApp.instance.navigate("/");                }        &nbsp;            }            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcs.avt">    <pre>        :host {            .tasks {                display: flex;                flex-direction: column;                gap: 10px;                padding: 0 15px;                width: 100%;        &nbsp;                .sub-title {                    font-size: 20px;                }        &nbsp;                .new-task {                    align-items: center;                    display: flex;                    gap: 10px;        &nbsp;                    td-input {                        flex-grow: 1;                    }        &nbsp;                    td-icon {                        cursor: pointer;                        flex-shrink: 0;                    }                }            }        &nbsp;            .create-container {                display: flex;                flex-direction: row;                justify-content: flex-end;                margin-top: 15px;                width: 100%;        &nbsp;                button {                    align-items: center;                    background-color: var(--color-primary-300);                    border: none;                    border-radius: 500px;                    color: var(--font-color);                    cursor: pointer;                    display: flex;                    justify-content: center;                    min-width: 100px;                    padding: 10px;                    transition: background-color 0.2s linear;                    width: fit-content;                }            }        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt">    <pre>        &lt;div class="card"&gt;            &lt;td-input label="Todo name" @bind="this.todo.name"&gt;&lt;/td-input&gt;            &lt;div class="tasks"&gt;                &lt;div class="sub-title"&gt;Tasks&lt;/div&gt;                &lt;ul class="list"&gt;                    &#102;or(let task of this.todo.tasks) {                        &lt;li&gt;&#123;&#123; task.description &#125;&#125;&lt;/li&gt;                    }                &lt;/ul&gt;                &lt;div class="new-task"&gt;                    &lt;td-input label="Task name" @element="taskDescEl"&gt;&lt;/td-input&gt;                    &lt;td-icon icon="add_circle" @press="addTask"&gt;&lt;/td-icon&gt;                &lt;/div&gt;            &lt;/div&gt;            &lt;div class="create-container"&gt;                &lt;button class="create-btn" @press="save"&gt;Create&lt;/button&gt;            &lt;/div&gt;        &lt;/div&gt;    </pre></av-code></av-code><slot></slot>` }
+        blocks: { 'default':`<av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt">    <pre>        import { MainApp } from "../../MainApp.wcl.avt";        import type { Todo } from "../../../../data/Todo.data.avt";        import { Task } from "../../../../data/Task.data.avt";        import { TodoCreateState } from "../../../../states/TodoCreateState.state.avt";        import { GenericPage } from "../GenericPage/GenericPage.wcl.avt";        import type { Input } from "../../../../components/Input/Input.wcl.avt";        import { TodoRAM } from "../../../../ram/Todo.ram.avt";        &nbsp;        /**         * The page to create new todo         */        export class TodoCreatePage extends GenericPage implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables            @Watch()            public todo!: Todo;        &nbsp;            /**             * The input to create a description &#102;or the todo             */            @ViewElement()            protected taskDescEl!: Input;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            /**             * @inheritdoc             */            public override definePageTitle(): string {                return "Create todo";            }        &nbsp;            public override onShow(): void {                &#105;f(this.currentState instanceof TodoCreateState && this.currentState.newTodo) {                    this.todo = this.currentState.newTodo;                }                else {                    MainApp.instance.navigate("/");                }            }        &nbsp;            /**            * Add a new task into the todo            * The view will be refreshed because the todo is a @Watch()            */            protected addTask() {                &#105;f(this.taskDescEl.value) {                    let newTask = new Task();                    newTask.description = this.taskDescEl.value;                    this.todo.tasks.push(newTask);                    this.taskDescEl.value = "";                }            }        &nbsp;            /**             * Save the todo into the RAM             */            protected async save() {                &#105;f(this.todo.name) {                    await TodoRAM.getInstance().create(this.todo);                    // clear the name to avoid confirmation popup                    this.todo.name = "";                    // navigate to the list page                    MainApp.instance.navigate("/");                }        &nbsp;            }            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcs.avt">    <pre>        :host {            .tasks {                display: flex;                flex-direction: column;                gap: 10px;                padding: 0 15px;                width: 100%;        &nbsp;                .sub-title {                    font-size: 20px;                }        &nbsp;                .new-task {                    align-items: center;                    display: flex;                    gap: 10px;        &nbsp;                    td-input {                        flex-grow: 1;                    }        &nbsp;                    td-icon {                        cursor: pointer;                        flex-shrink: 0;                    }                }            }        &nbsp;            .create-container {                display: flex;                flex-direction: row;                justify-content: flex-end;                margin-top: 15px;                width: 100%;        &nbsp;                button {                    align-items: center;                    background-color: var(--color-primary-300);                    border: none;                    border-radius: 500px;                    color: var(--font-color);                    cursor: pointer;                    display: flex;                    justify-content: center;                    min-width: 100px;                    padding: 10px;                    transition: background-color 0.2s linear;                    width: fit-content;                }            }        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt">    <pre>        &lt;div class="card"&gt;            &lt;td-input label="Todo name" @bind="this.todo.name"&gt;&lt;/td-input&gt;            &lt;div class="tasks"&gt;                &lt;div class="sub-title"&gt;Tasks&lt;/div&gt;                &lt;ul class="list"&gt;                    &#102;or(let task of this.todo.tasks) {                        &lt;li&gt;&#123;&#123; task.description &#125;&#125;&lt;/li&gt;                    }                &lt;/ul&gt;                &lt;div class="new-task"&gt;                    &lt;td-input label="Task name" @element="taskDescEl"&gt;&lt;/td-input&gt;                    &lt;td-icon icon="add_circle" @press="addTask"&gt;&lt;/td-icon&gt;                &lt;/div&gt;            &lt;/div&gt;            &lt;div class="create-container"&gt;                &lt;button class="create-btn" @press="save"&gt;Create&lt;/button&gt;            &lt;/div&gt;        &lt;/div&gt;    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">    <pre>        import { Todo } from "../data/Todo.data.avt";        &nbsp;        export class TodoCreateState extends Aventus.State implements Aventus.IState {        &nbsp;            /**             * This is the Todo that is currently created             */            public newTodo?: Todo;        &nbsp;            /**             * @inheritdoc             */            public override get name(): string {                // we must define what will be the state name                // in our example we will use '/create' because it's the url of the page TodoCreatePage                return '/create';            }        &nbsp;            /**             * This function is called when the current state is activated             */            public override onActivate(): void {                // You can init custom value for you todo here                this.newTodo = new Todo();            }        &nbsp;            /**            * This function is called when the state will change            */            public override async askChange(state: Aventus.State, nextState: Aventus.State): Promise&lt;boolean&gt; {                &#105;f(this.newTodo?.name) {                    // ask the question                    return confirm("Changes are currently in progress. Are you sure you want to leave this page?")                }                // no change we can leave                return true;            }        }    </pre></av-code></av-code><slot></slot>` }
     });
 }
     getClassName() {
@@ -16230,10 +16844,13 @@ const TutorialCreateTodoEditor4 = class TutorialCreateTodoEditor4 extends Tutori
             'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt',
             'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcs.avt',
             'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt',
+            'Demo/src/states/TodoCreateState.state.avt',
         ];
     }
     open_folder() {
-        return [];
+        return [
+            'Demo/src/states'
+        ];
     }
     defineResult() {
         let iframe = document.createElement("iframe");
@@ -16245,6 +16862,30 @@ TutorialCreateTodoEditor4.Namespace=`${moduleName}`;
 TutorialCreateTodoEditor4.Tag=`av-tutorial-create-todo-editor-4`;
 _.TutorialCreateTodoEditor4=TutorialCreateTodoEditor4;
 if(!window.customElements.get('av-tutorial-create-todo-editor-4')){window.customElements.define('av-tutorial-create-todo-editor-4', TutorialCreateTodoEditor4);Aventus.WebComponentInstance.registerDefinition(TutorialCreateTodoEditor4);}
+
+const TutorialCreateTodo = class TutorialCreateTodo extends TutorialGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return TutorialCreateTodo;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TutorialCreateTodo.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Create Todo</h1><p>To create a todo, we'll utilize a new concept within Aventus called <span class="cn">state</span>. If you've been    using the router, you've    already encountered this concept, even if you don't know it. Using states within your application offers several    advantages.</p><p> Firstly, states help manage the various states of your application at different moments. This includes    managing data, UI components, user interactions, and more. By encapsulating the state within a state manager like    Aventus, you can efficiently manage and transition between different states of your application.</p><p>Additionally,    states ensure data consistency across your application, promote modularity and reusability, enable separation of    concerns, and manage the lifecycle of your application.</p><p>In summary, leveraging states within your application    architecture contributes to a more organized, maintainable, and predictable development process.</p><h2>Code it</h2><p>First of all we need a to create a new state named <span class="cn">TodoDisplay</span> : </p><ul>    <li>        Over the folder <span class="cn">states</span> you can right click and select <span class="cn">Aventus :            Create...</span>.    </li>    <li>You can select <span class="cn">State</span></li>    <li>You can fill the input with <span class="cn">TodoCreateState</span></li></ul><av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">    <pre>        export class TodoCreateState extends Aventus.State implements Aventus.IState {            /**             * @inheritdoc             */            public override get name(): string {                return ;            }        }    </pre></av-code></av-code><p>Now, we must enhance the <span class="cn">TodoCreateState</span> class by incorporating functionality to identify the    state's name and    initialize a new todo each time the state is activated. This ensures that the state is properly configured to manage    the    creation of new todo items within the application.</p><av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">    <pre>        import { Todo } from "../data/Todo.data.avt";        &nbsp;        export class TodoCreateState extends Aventus.State implements Aventus.IState {        &nbsp;            /**            * This is the Todo that is currently created            */            public newTodo?: Todo;        &nbsp;            /**            * @inheritdoc            */            public override get name(): string {                // we must define what will be the state name                // in our example we will use '/create' because it's the url of the page TodoCreatePage                return '/create';            }        &nbsp;            /**            * This function is called when the current state is activated            */            public override onActivate(): void {                // You can init custom value for you todo here                this.newTodo = new Todo();            }        }    </pre></av-code></av-code><p>    In the <span class="cn">MainApp.wcv.avt</span> file, we need to replace the navigation button responsible for    setting the state to <span class="cn">"/create"</span> with a function that will activate our new <span class="cn">TodoCreateState</span>. Additionally, we must ensure that the <span class="cn">active_state</span>    property is set to maintain the <span class="cn">"active"</span> class on the <span class="cn">av-router-link</span>    element when the URL is <span class="cn">"/create"</span>.</p><av-code language="html" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">    <pre>        &lt;!-- The router has a slot name "before": we use it to define the sidenav --&gt;        &lt;block name="before"&gt;            &lt;div class="nav"&gt;                &lt;av-router-link class="nav-item" state="/"&gt;                    &lt;span class="name"&gt;Todo list&lt;/span&gt;                &lt;/av-router-link&gt;                &lt;av-router-link class="nav-item" @press="setCreateState" active_state="/create"&gt;                     &lt;span class="name"&gt;Create todo&lt;/span&gt;                &lt;/av-router-link&gt;            &lt;/div&gt;        &lt;/block&gt;        &lt;slot&gt;&lt;/slot&gt;    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">    <pre>        import { TodoCreateState } from "../../states/TodoCreateState.state.avt";        ...        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {            ...            /**             * Set the create state             */            protected setCreateState() {                this.stateManager.setState(new TodoCreateState());            }            ...        }    </pre></av-code></av-code><p>At this point, nothing changed for the navigation process.</p><av-tutorial-create-todo-editor-1></av-tutorial-create-todo-editor-1><p>    To retrieve the state within the <span class="cn">TodoCreatePage</span>, we can override the <span class="cn">onShow</span> method, which is triggered each time the page is displayed. Since we are utilizing    <span class="cn">Aventus.Navigation.Router</span>, the URL corresponds to the state. This implies that the state    <span class="cn">"/create"</span> can be triggered without necessarily being a <span class="cn">TodoCreateState</span>. In such instances, we need to redirect the user to the home page.</p><av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt">    <pre>        import { MainApp } from "../../MainApp.wcl.avt";        import type { Todo } from "../../../../data/Todo.data.avt";        import { TodoCreateState } from "../../../../states/TodoCreateState.state.avt";        ...        &nbsp;        export class TodoCreatePage extends GenericPage implements Aventus.DefaultComponent {            ...            //#region variables            @Watch()            public todo!: Todo; // create a watch variable for later            //#endregion            ...            &nbsp;            public override onShow(): void {                // check if the state if the TodoCreateState                &#105;f(this.currentState instanceof TodoCreateState && this.currentState.newTodo) {                    this.todo = this.currentState.newTodo;                }                &#101;lse {                    // else redirect to the Home page                    // MainApp.instance don't exist yet, don't worry                    MainApp.instance.navigate("/");                }            }            ...        }    </pre></av-code></av-code><p>We're currently utilizing a property, <span class="cn">MainApp.instance</span>, which doesn't exist yet. However,    since we're aware that only one instance of <span class="cn">MainApp</span> exists within the app, we can define a    static instance property on the <span class="cn">MainApp</span> class.</p><av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">    <pre>        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {            //#region static            private static _instance: MainApp;            public static get instance(): MainApp {                return this._instance;            }            //#endregion            ...            protected override postCreation(): void {                super.postCreation();                MainApp._instance = this;            }            ...        }    </pre></av-code></av-code><p>Let's initiate the design of our form. As an example, we'll create a <span class="cn">.card</span> class that will be    accessible within each web component. To accomplish this, we'll need to create a file named <span class="cn">@default.wcs.avt</span> to override the default style for all web components. Within this file, we    can define the new class <span class="cn">.card</span>. <av-router-link state="/docs/wc/style">More        info</av-router-link></p><av-code language="css" filename="Demo/src/apps/@default.wcs.avt">    <pre>        // this is the default style &#102;or all components        :host {            box-sizing: border-box;            display: inline-block;        }        &nbsp;        :host * {            box-sizing: border-box;        }        &nbsp;        .card {            background-color: var(--color-surface-mixed-200);            border-radius: 10px;            display: flex;            flex-direction: column;            gap: 10px;            margin: auto;            max-width: 500px;            padding: 15px;        }        &nbsp;    </pre></av-code></av-code><p>Inside your page <span class="cn">TodoCreatePage.wcv.avt</span> you can add a <span class="cn">div.card</span></p><av-tutorial-create-todo-editor-2></av-tutorial-create-todo-editor-2><p>Before proceeding with the creation of our form, we require a component capable of managing user input, such as    filling in the todo name. Let's create this component. The input consists of a label and an input field with a    value. Additionally, it should emit an event whenever the input value changes.</p><p>You can create a new <span class="cn">Input</span> inside the folder <span class="cn">components</span>.</p><av-code language="typescript" filename="Demo/src/components/Input/Input.wcl.avt">    <pre>        export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {            //#region props            /**             * Label &#102;or the input             */            @Property()            public label?: string;            /**             * Current value of the input             */            @Property((target: Input) =&gt; {                // When something change the td-input value property, we must update the input element value                target.inputEl.value = target.value;            })            public value: string = "";            //#endregion        &nbsp;            //#region variables            private _onChange: Aventus.Callback&lt;(value: string) =&gt; void&gt; = new Aventus.Callback();            /**             * A function trigger when the input value change             * Only trigger when a manual input change the vaue             */            public get onChange(): Aventus.Callback&lt;(value: string) =&gt; void&gt; {                return this._onChange;            }            /**             * A reference to the input element             */            @ViewElement()            protected inputEl!: HTMLInputElement;            //#endregion        &nbsp;            //#region methods            /**             * A function to emit refresh value and emit event when the value changed             */            protected updateValue() {                this.value = this.inputEl.value;                this.onChange.trigger([this.value]);            }            //#endregion        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/components/Input/Input.wcs.avt">    <pre>        :host {            background-color: var(--color-surface-mixed-600);            border-radius: 10px;            display: flex;            flex-direction: column;            height: fit-content;            overflow: hidden;            width: 100%;        &nbsp;            label {                background-color: var(--color-surface-mixed-500);                padding: 5px 15px;                width: 100%;            }        &nbsp;            input {                background-color: transparent;                border: none;                box-shadow: none;                color: var(--font-color);                height: 100%;                margin: 0;                outline: none;                padding: 15px 25px;                width: 100%;            }        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/components/Input/Input.wcv.avt">    <pre>        &lt;label &#102;or="input"&gt;&#123;&#123; this.label &#125;&#125;&lt;/label&gt;        &lt;input id="input" type="text" @element="inputEl" @input="updateValue"&gt;    </pre></av-code></av-code><p>By now, you should have a comprehensive understanding of each component within the provided source code. However,    we'll focus on two key aspects:</p><ul>    <li><span class="cn">@ViewElement()</span>: This decorator marks a property as a reference to an element found        within the component's view. It establishes a connection between the view and the component's logic, enabling        seamless interaction between the two. <av-router-link state="/docs/wc/element">More info</av-router-link></li>    <li><span class="cn">onChange: Aventus.Callback void></span>: This property represents a callback        mechanism that facilitates subscription from external sources. It allows other parts of the application to        subscribe to value changes within the component. Additionally, it can be triggered, passing along a value of a        specified generic type, ensuring efficient communication between different components or modules within the        application. <av-router-link state="/docs/wc/event">More info</av-router-link></li></ul><p>We can now using this <span class="cn">Input</span> with a <span class="cn">@bind</span> to create a bidrectional    interaction between the name of the todo and the input.</p><av-tutorial-create-todo-editor-3></av-tutorial-create-todo-editor-3><p>When performing the following sequence of actions: navigating to the "Create todo" page, filling in the input field,    then navigating to the "Todo list" page, and finally returning to the "Create todo" page, you may observe that the    input field is cleared. This behavior is expected because a new todo is created each time you visit the "Create    todo" page.</p><p>To mitigate the risk of data loss due to inadvertent actions, we can implement a confirmation prompt when the user    attempts to navigate to the "Todo list" page. This can be achieved by overriding the askChange method within the    TodoCreateState state and checking the value of todo name.</p><av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">    <pre>        export class TodoCreateState extends Aventus.State implements Aventus.IState {            ...            /**            * This function is called when the state will change            */            public override async askChange(state: Aventus.State, nextState: Aventus.State): Promise&lt;boolean&gt; {                &#105;f(this.newTodo?.name) {                    // ask the question                    return confirm("Changes are currently in progress. Are you sure you want to leave this page?")                }                // no change we can leave                return true;            }        }    </pre></av-code></av-code><p>Ultimately, we can enhance the functionality of the TodoCreatePage by introducing features to add tasks and save the todo within the RAM.</p><av-tutorial-create-todo-editor-4></av-tutorial-create-todo-editor-4>` }
+    });
+}
+    getClassName() {
+        return "TutorialCreateTodo";
+    }
+}
+TutorialCreateTodo.Namespace=`${moduleName}`;
+TutorialCreateTodo.Tag=`av-tutorial-create-todo`;
+_.TutorialCreateTodo=TutorialCreateTodo;
+if(!window.customElements.get('av-tutorial-create-todo')){window.customElements.define('av-tutorial-create-todo', TutorialCreateTodo);Aventus.WebComponentInstance.registerDefinition(TutorialCreateTodo);}
 
 const TutorialListTodoEditor1 = class TutorialListTodoEditor1 extends TutorialCreateTodoEditor4 {
     static __style = ``;
@@ -16291,31 +16932,31 @@ TutorialListTodoEditor1.Tag=`av-tutorial-list-todo-editor-1`;
 _.TutorialListTodoEditor1=TutorialListTodoEditor1;
 if(!window.customElements.get('av-tutorial-list-todo-editor-1')){window.customElements.define('av-tutorial-list-todo-editor-1', TutorialListTodoEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialListTodoEditor1);}
 
-const TutorialDisplayTodo = class TutorialDisplayTodo extends TutorialGenericPage {
+const TutorialListTodo = class TutorialListTodo extends DocGenericPage {
     static __style = ``;
     __getStatic() {
-        return TutorialDisplayTodo;
+        return TutorialListTodo;
     }
     __getStyle() {
         let arrStyle = super.__getStyle();
-        arrStyle.push(TutorialDisplayTodo.__style);
+        arrStyle.push(TutorialListTodo.__style);
         return arrStyle;
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Display Todo</h1><p>Now that we've set up the foundation for managing todo data within our Aventus application using the TodoRAM class,    let's move on to creating a user interface component to display individual todo items.</p><p>In this next step of the tutorial, we'll design and implement a component responsible for rendering a single todo    item. This component will provide a visually appealing and intuitive interface for users to view and interact with    their todo entries.</p><p>By creating a dedicated component for todo display, we'll ensure modularity and reusability within our application's    architecture. This component will encapsulate the presentation logic related to individual todo items, allowing us    to easily integrate it into different parts of our application as needed.</p><p>Throughout this process, we'll leverage Aventus's component-based architecture to design a cohesive and responsive    user interface that enhances the overall user experience. We'll also explore how to bind the data from our TodoRAM    instance to the component.</p><h2>Code it</h2><p>First of all we need a to create a new component named <span class="cn">TodoDisplay : </span></p><ul>    <li>        Over the folder <span class="cn">components</span> you can right click and select <span class="cn">Aventus :            Create...</span>.    </li>    <li>You can select <span class="cn">Component</span></li>    <li>You can fill the input with <span class="cn">TodoDisplay</span></li>    <li>You can select <span class="cn">Multiple</span></li></ul><p>The component logic flow is the following : </p><ol>    <li><span class="cn">Attribute todo_id</span>: It expects a todo_id attribute to identify the todo item.</li>    <li><span class="cn">Load Todo from RAM</span>: Using the todo_id, it fetches the corresponding todo item from        TodoRAM.</li>    <li><span class="cn">Check Todo Existence</span>: If the todo item doesn't exist, the component removes itself from        the DOM.</li></ol><p>First of all, you can set your cursor inside the region <span class="cn">props</span> and <span class="cn">right        click > Aventus: Create attribute</span> or use the shortcut <span class="cn">ctrl + k ctrl + numpad1</span>.    You can fill the input with <span class="cn">todo_id</span> and select the type <span class="cn">Number</span>.</p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            //#region props            @Attribute()            public todo_id!: number; // this represents an attribute on you component &lt;td-todo-display todo_id="2"&gt;            // The ! inform typescript that the value of todo_id won't be null (default number value is 0)            //#endregion            ...        }    </pre></av-code></av-code><p>Now, you can write a function to load data from the <span class="cn">TodoRAM</span>.</p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        import { TodoRAM } from "../../ram/Todo.ram.avt";        &nbsp;        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            //#region methods            protected async loadData() {                let todo = await TodoRAM.getInstance().get(this.todo_id);            }            //#endregion            ...        }    </pre></av-code></av-code><p>For the view, we will only display the todo name right now. Inside your view file, you can write some code when you    are inside <span class="cn">&#123;&#123;&#125;&#125;</span>.</p><av-code language="html" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcv.avt">    <pre>        &lt;div class="title"&gt;            &lt;span&gt;&#123;&#123; this.todo.name &#125;&#125;&lt;/span&gt;        &lt;/div&gt;        &nbsp;    </pre></av-code></av-code><p>This will trigger an error because our component don't have a variable <span class="cn">todo</span>. So you can edit    your logical file to add this variable. Because it's inside the view, we want a variable that will refresh the view    when a change occured. This kind of variable is called <span class="cn">Watch</span> <av-router-link state="/docs/wc/watch">(more info)</av-router-link>.</p><p>To create this variable, you can set your cursor inside the region <span class="cn">variables</span> and <span class="cn">right        click > Aventus: Create watch</span> or use the shortcut <span class="cn">ctrl + k ctrl + numpad3</span>.    You can fill the name with <span class="cn">todo</span>, fill the type with <span class="cn">Todo</span> and we    don't need a callback.</p><p>Don't forget to import your <span class="cn">Todo class</span> from file <span class="cn">Todo.data.avt</span>.</p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        import type { Todo } from "../../data/Todo.data.avt";        ...        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            //#region variables            @Watch()            public todo?: Todo;            //#endregion            ...        }    </pre></av-code></av-code><p>You must still have an error inside you view telling : <span class="cn">Object is possibly 'undefined'</span>. This    is because by default a watch can be undefined. But in our flow, we know that if the todo didn't exist we won't    display the element.</p><p>You can edit the logical file to tell Aventus that your todo will exist and assign you todo from the Ram to the    variable.</p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        import type { Todo } from "../../data/Todo.data.avt";        import { TodoRAM } from "../../ram/Todo.ram.avt";        &nbsp;        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            //#region variables            @Watch()            public todo!: Todo;            //#endregion            ...            //#region methods            protected async loadData() {                const todo = await TodoRAM.getInstance().get(this.todo_id);                &#105;f(todo) {                    this.todo = todo; // assign the todo. This will trigger a view refresh                }                &#101;lse {                    this.remove(); // remove the component if the todo don't exist                }            }            //#endregion        &nbsp;        }    </pre></av-code></av-code><p>Now we can add the logic to load data on display.</p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        ...        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            protected override postCreation(): void {                this.loadData();            }            ...        }    </pre></av-code></av-code><p>Now to show the component we must apply 2 changes</p><ul>    <li>Edit the file <span class="cn">TodoListPage.wcv.avt</span> to add the tag <span class="cn">td-todo-display</span></li>    <li>Emulate the data loading inside the file <span class="cn">TodoDisplay.wcl.avt</span></li></ul><av-tutorial-display-todo-editor-1></av-tutorial-display-todo-editor-1><p>Now you can add a display to render all tasks inside the todo. We are going to use a <span class="cn">for loop</span>    to list though the tasks of a todo.</p><av-code language="html" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcv.avt">    <pre>        &lt;div class="title"&gt;            &lt;span&gt;&#123;&#123; this.todo.name &#125;&#125;&lt;/span&gt;        &lt;/div&gt;        &lt;ul&gt;            &#102;or(let task of this.todo.tasks) {                 &lt;li&gt;&#123;&#123; task.description &#125;&#125;&lt;/li&gt;            }        &lt;/ul&gt;    </pre></av-code></av-code><p>The code <span class="cn">&#123;&#123; task.description &#125;&#125;</span> will trigger an error telling :    <span class="cn">Cannot find name 'Task'.</span></p><p>To correct this error we must import the <span class="cn">Task</span> class inside <span class="cn">TodoDisplay.wcl.avt</span></p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        import { Todo } from "../../data/Todo.data.avt";        import { Task } from "../../data/Task.data.avt";        import { TodoRAM } from "../../ram/Todo.ram.avt";        &nbsp;        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...        }    </pre></av-code></av-code><p>Now we can change the function that is loading data to add tasks inside the todo.</p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            //#region methods            protected async loadData() {                const todo = new Todo();                todo.name = "My todo";                this.todo = todo;                // just create an interval to see the template reloading                setInterval(() =&gt; {                    this.todo.name = "My todo " + (new Date().getSeconds());                }, 1000);        &nbsp;                const task1 = new Task();                task1.description = "Test Aventus";        &nbsp;                const task2 = new Task();                task2.description = "Add a star to Aventus github";                this.todo.tasks = [task1, task2];        &nbsp;                // let todo = await TodoRAM.getInstance().get(this.todo_id);                // &#105;f(todo) {                //     this.todo = todo;                // }                // else {                //     this.remove();                // }            }            //#endregion        }    </pre></av-code></av-code><p>The final result is the following : </p><av-tutorial-display-todo-editor-2></av-tutorial-display-todo-editor-2><p>Although we've successfully created a component to display a todo, we've yet to implement any interaction with it. To    enhance user functionality, we require a trash button to enable users to delete todos effortlessly.</p><p>In the upcoming section, we'll introduce a new component called Icon. This component will be responsible for    rendering material icons, including the trash icon for deleting todos. By incorporating the Icon component into our    todo display component, we'll enable users to interact with todos by providing a convenient delete option.</p>` }
+        blocks: { 'default':`<h1>List Todos</h1><p>Our application is nearing completion, with the final step being to synchronize the <span class="cn">Todo</span> from    the <span class="cn">RAM</span> into the <span class="cn">TodoListPage</span>. To accomplish this, you'll need to    create a <span class="cn">Watch variable todos</span> within the page.</p><av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt">    <pre>        import type { Todo } from "../../../../data/Todo.data.avt";        ...        export class TodoListPage extends GenericPage implements Aventus.DefaultComponent {            ...            //#region variables            @Watch()            public todos: Todo[] = [];            //#endregion            ...        }    </pre></av-code></av-code><p>We can enhance the view by incorporating a message display if no todos exist, or alternatively, iterate through the    todos to display them using the <span class="cn">TodoDisplay</span> component. In this instance, we'll utilize a    <span class="cn">for(i;length;i++)</span> loop to introduce the    final concept: <span class="cn">@Context</span>. With <span class="cn">@Context</span>, you can register a variable    for later use within your template.</p><av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt">    <pre>        &lt;div class="card"&gt;            &#105;f(this.todos.length == 0) {                &lt;p&gt;No todo&lt;/p&gt;            }            &#101;lse {                &#102;or(let i = 0; i &lt; this.todos.length; i++) {                     @Context('todo', this.todos[i])                    &lt;td-todo-display todo_id="&#123;&#123; todo.id &#125;&#125;"&gt;&lt;/td-todo-display&gt;                }            }        &lt;/div&gt;    </pre></av-code></av-code><p>Next, we can implement a function to bind the RAM event to the <span class="cn">TodoListPage</span>.</p><av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt">    <pre>        import { TodoRAM } from "../../../../ram/Todo.ram.avt";        ...        export class TodoListPage extends GenericPage implements Aventus.DefaultComponent {            ...            protected async bindRAMData() {                // Load the todos from the RAM                this.todos = await TodoRAM.getInstance().getList();                // Callback when a new todo is created                TodoRAM.getInstance().onCreated((todo) =&gt; {                    this.todos.push(todo);                });                // Callback when a new todo is updated                TodoRAM.getInstance().onUpdated((todo) =&gt; {                    let index = this.todos.findIndex(t =&gt; t.id == todo.id);                    &#105;f(index == -1) {                        this.todos.push(todo);                    }                    else {                        this.todos.splice(index, 1, todo);                    }                });                // Callback when a new todo is deleted                TodoRAM.getInstance().onDeleted((todo) =&gt; {                    let index = this.todos.findIndex(t =&gt; t.id == todo.id);                    this.todos.splice(index, 1);                });            }        &nbsp;            protected override postCreation(): void {                super.postCreation();                this.bindRAMData();            }            ...        }    </pre></av-code></av-code><p>Ultimately, we can eliminate the manual todo creation process implemented within the <span class="cn">TodoDisplay</span> component.</p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            //#region methods            protected async loadData() {                const todo = await TodoRAM.getInstance().get(this.todo_id);                &#105;f(todo) {                    this.todo = todo;                }                &#101;lse {                    this.remove();                }            }        }    </pre></av-code></av-code><av-tutorial-list-todo-editor-1></av-tutorial-list-todo-editor-1>` }
     });
 }
     getClassName() {
-        return "TutorialDisplayTodo";
+        return "TutorialListTodo";
     }
 }
-TutorialDisplayTodo.Namespace=`${moduleName}`;
-TutorialDisplayTodo.Tag=`av-tutorial-display-todo`;
-_.TutorialDisplayTodo=TutorialDisplayTodo;
-if(!window.customElements.get('av-tutorial-display-todo')){window.customElements.define('av-tutorial-display-todo', TutorialDisplayTodo);Aventus.WebComponentInstance.registerDefinition(TutorialDisplayTodo);}
+TutorialListTodo.Namespace=`${moduleName}`;
+TutorialListTodo.Tag=`av-tutorial-list-todo`;
+_.TutorialListTodo=TutorialListTodo;
+if(!window.customElements.get('av-tutorial-list-todo')){window.customElements.define('av-tutorial-list-todo', TutorialListTodo);Aventus.WebComponentInstance.registerDefinition(TutorialListTodo);}
 
-const TutorialIntroductionEditor1 = class TutorialIntroductionEditor1 extends TutorialDisplayTodoEditor2 {
+const TutorialIntroductionEditor1 = class TutorialIntroductionEditor1 extends TutorialListTodoEditor1 {
     static __style = `:host iframe{height:600px}`;
     __getStatic() {
         return TutorialIntroductionEditor1;
@@ -16345,7 +16986,7 @@ const TutorialIntroductionEditor1 = class TutorialIntroductionEditor1 extends Tu
     }
     defineResult() {
         let iframe = document.createElement("iframe");
-        iframe.src = "/tutorial/finalresult/index.html";
+        iframe.src = "/tutorial/final/index.html";
         return iframe;
     }
 }
@@ -16401,78 +17042,6 @@ TutorialInit.Namespace=`${moduleName}`;
 TutorialInit.Tag=`av-tutorial-init`;
 _.TutorialInit=TutorialInit;
 if(!window.customElements.get('av-tutorial-init')){window.customElements.define('av-tutorial-init', TutorialInit);Aventus.WebComponentInstance.registerDefinition(TutorialInit);}
-
-const TutorialIcon = class TutorialIcon extends TutorialGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return TutorialIcon;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(TutorialIcon.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Using Icon</h1><p>The Icon component offers several key benefits. Firstly, it automatically loads the necessary font files, simplifying    the process of integrating icons. This eliminates the need for manual font setup, saving time and reducing the    likelihood of configuration errors.</p><p>Secondly, the Icon component enhances the user experience by providing a seamless and intuitive interface. Users can    effortlessly select and incorporate icons into their interactions with the application, thanks to the comprehensive    list of available icons and icons type accessible through autocompletion. This feature improves usability and    accessibility for    users.</p><p>In summary, integrating the Icon component into our application streamlines the process of incorporating icons,    enhances the user experience, and maintains a cohesive design aesthetic. This component provides a convenient and    efficient solution for integrating icons, empowering us to create visually appealing and user-friendly applications    without the hassle of manual setup.</p><h2>Code it</h2><h3>Logic</h3><p>First of all we need a to create a new component named <span class="cn">Icon : </span></p><ul>    <li>        Over the folder <span class="cn">components</span> you can right click and select <span class="cn">Aventus :            Create...</span>.    </li>    <li>You can select <span class="cn">Component</span></li>    <li>You can fill the input with <span class="cn">Icon</span></li>    <li>You can select <span class="cn">Multiple</span></li></ul><p>We need two attributes:</p><ul>    <li><span class="cn">icon</span> a list of available icons</li>    <li><span class="cn">type</span> a list of types provided by google font (sharp, rounded or outlined)</li></ul><p>This time, the tag attribute must trigger a change event when its value is altered to refresh the icon displayed. We    are going to use <span class="cn">Property</span> (<av-router-link state="/docs/wc/property">More        info</av-router-link>).</p><p>You can set your cursor inside the region <span class="cn">props</span> and <span class="cn">right        click > Aventus: Create property</span> or use the shortcut <span class="cn">ctrl + k ctrl + numpad2</span>.    You can fill the input with <span class="cn">type</span>, select the type <span class="cn">Custom</span> and we need    a callback. We will use the literal type in typescript to define the type of <span class="cn">type</span>.</p><av-code language="typescript" filename="Demo/src/components/Icon/Icon.wcl.avt">    <pre>        &nbsp;        export class Icon extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            //#region props            /**            * The type of the icon            */            @Property((target: Icon) =&gt; {                // trigger when the type value changed            })            public type: 'sharp' | 'rounded' | 'outlined' = 'outlined'; // default value is outlined            &nbsp;            //#endregion            ...        }    </pre></av-code></av-code><p>You can perform the same operation for the <span class="cn">icon</span> property. Additionally, you have the option    to utilize the <span class="cn">Custom</span>    type, although it requires defining a comprehensive list of all Material Icons. To maintain code cleanliness,    consider creating a new file called <span class="cn">IconType.lib.avt</span>.</p><av-code language="typescript" filename="Demo/src/components/Icon/IconType.lib.avt">    <pre>        /** IconType is the list of all icons from material icon. This file is generated by a script */        export type IconType =            '10k' |             '10mp' |             '11mp' |             '123' |             '12mp' |             '13mp' |             ...;    </pre></av-code></av-code><p>You can import this type to use it for your property. In addition, we can define a callback to update the content of    our icon component.</p><av-code language="typescript" filename="Demo/src/components/Icon/Icon.wcl.avt">    <pre>        import type { IconType } from "./IconType.lib.avt";        &nbsp;        export class Icon extends Aventus.WebComponent implements Aventus.DefaultComponent {        &nbsp;            //#region props            /**             * Icon from https://fonts.google.com/icons             */            @Property((target: Icon) =&gt; {                // if the component is rendered                &#105;f(target.isReady)                    // we set the icon as shadowroot content                    target.shadowRoot.innerHTML = target.icon;            })            public icon: IconType = "check_box_outline_blank";            ...        }    </pre></av-code></av-code><p>Regarding the logic, a function to load the font once based on the type is currently absent. You can code it : </p><av-code language="typescript" filename="Demo/src/components/Icon/Icon.wcl.avt">    <pre>        export class Icon extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            //#region methods            /**             * Add link tag into document head to load the font based on the type             */            private async loadFont() {                &#105;f(!this.type) return;        &nbsp;                let url = 'https://fonts.googleapis.com/icon?family=Material+Symbols+';                url += this.type.charAt(0).toUpperCase() + this.type.slice(1);                // check &#105;f the url exist inside head and create a link tag &#105;f not exist                await Aventus.ResourceLoader.loadInHead({                    type: "css",                    url: url                });            }            /**             * Init the icon after rendering             */            private async init() {                await this.loadFont();                // set the icon as component content                this.shadowRoot.innerHTML = this.icon;            }            protected override postCreation(): void {                this.init();            }            //#endregion        }    </pre></av-code></av-code><p>The final step is to ensure that the function <span class="cn">loadFont</span> is triggered whenever the property    <span class="cn">type</span>    changes.</p><av-code language="typescript" filename="Demo/src/components/Icon/Icon.wcl.avt">    <pre>        export class Icon extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            /**            * The type of the icon            */            @Property((target: Icon) =&gt; {                &#105;f(target.isReady)                    target.loadFont();            })            public type: 'sharp' | 'rounded' | 'outlined' = 'outlined';            ...        }    </pre></av-code></av-code><h3>View</h3><p>To prevent users from inputting content into our icon, we need to remove the <span class="cn">&lt;slot&gt;</span> tag    inside <span class="cn">Icon.wcv.avt</span>.</p><av-code language="html" filename="Demo/src/components/Icon/Icon.wcv.avt">    <pre>        &lt;!-- No content to prevent input --&gt;    </pre></av-code></av-code><h3>Style</h3><p>To ensure the correct styling for the icon, we can access the URL    <a href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" target="_blank">https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined</a> and examine the CSS    content provided. We then    apply this CSS content directly to the component using the <span class="cn">:host</span> selector.</p><av-code language="css" filename="Demo/src/components/Icon/Icon.wcs.avt">    <pre>        /* Come from https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined */        :host {            direction: ltr;            display: inline-block;            font-family: 'Material Symbols Outlined';            -webkit-font-feature-settings: 'liga';            font-size: 24px;            -webkit-font-smoothing: antialiased;            font-style: normal;            font-weight: normal;            letter-spacing: normal;            line-height: 1;            text-transform: none;            white-space: nowrap;            word-wrap: normal;        }    </pre></av-code></av-code><p>Now, depending on the value of the type property, we need to apply the appropriate font-family.</p><av-code language="css" filename="Demo/src/components/Icon/Icon.wcs.avt">    <pre>        ...        &nbsp;        :host([type="sharp"]) {            font-family: 'Material Symbols Sharp';        }        &nbsp;        :host([type="rounded"]) {            font-family: 'Material Symbols Rounded';        }        &nbsp;        :host([type="outlined"]) {            font-family: 'Material Symbols Outlined';        }        &nbsp;    </pre></av-code></av-code><h3>Result</h3><p>With the <span class="cn">Icon</span> component now created, we're ready to utilize it within <span class="cn">td-display-todo</span> to showcase a trash icon    alongside the name of the todo. If everything is set up correctly, you should have autocomplete functionality    available within the <span class="cn">icon property</span>.</p><av-code language="html" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcv.avt">    <pre>        &lt;div class="title"&gt;            &lt;span&gt;&#123;&#123; this.todo.name &#125;&#125;&lt;/span&gt;            &lt;td-icon icon="delete" @press="removeTodo"&gt;&lt;/td-icon&gt;        &lt;/div&gt;        &lt;ul&gt;            &#102;or(let task of this.todo.tasks) {                 &lt;li&gt;&#123;&#123; task.description &#125;&#125;&lt;/li&gt;            }        &lt;/ul&gt;    </pre></av-code></av-code><p>Next, we need to implement the function responsible for removing a todo from the RAM.</p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        &nbsp;        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            ...            /**            * Remove the todo            */            protected async removeTodo() {                await TodoRAM.getInstance().deleteById(this.todo_id);            }            ...        }    </pre></av-code></av-code><p>Lastly, we can apply additional styling to customize the appearance of the trash icon according to our preferences.</p><av-code language="css" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcs.avt">    <pre>        :host {            .title {                display: flex;                align-items: center;                td-icon {                    color: red;                    margin-left: 10px;                    cursor: pointer;                }            }        }        &nbsp;    </pre></av-code></av-code><p>The final result is the following : </p><av-tutorial-icon-editor-1></av-tutorial-icon-editor-1>` }
-    });
-}
-    getClassName() {
-        return "TutorialIcon";
-    }
-}
-TutorialIcon.Namespace=`${moduleName}`;
-TutorialIcon.Tag=`av-tutorial-icon`;
-_.TutorialIcon=TutorialIcon;
-if(!window.customElements.get('av-tutorial-icon')){window.customElements.define('av-tutorial-icon', TutorialIcon);Aventus.WebComponentInstance.registerDefinition(TutorialIcon);}
-
-const TutorialCreateTodo = class TutorialCreateTodo extends TutorialGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return TutorialCreateTodo;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(TutorialCreateTodo.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Create Todo</h1><p>To create a todo, we'll utilize a new concept within Aventus called <span class="cn">state</span>. If you've been    using the router, you've    already encountered this concept, even if you don't know it. Using states within your application offers several    advantages.</p><p> Firstly, states help manage the various states of your application at different moments. This includes    managing data, UI components, user interactions, and more. By encapsulating the state within a state manager like    Aventus, you can efficiently manage and transition between different states of your application.</p><p>Additionally,    states ensure data consistency across your application, promote modularity and reusability, enable separation of    concerns, and manage the lifecycle of your application.</p><p>In summary, leveraging states within your application    architecture contributes to a more organized, maintainable, and predictable development process.</p><h2>Code it</h2><p>First of all we need a to create a new state named <span class="cn">TodoDisplay</span> : </p><ul>    <li>        Over the folder <span class="cn">states</span> you can right click and select <span class="cn">Aventus :            Create...</span>.    </li>    <li>You can select <span class="cn">State</span></li>    <li>You can fill the input with <span class="cn">TodoCreateState</span></li></ul><av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">    <pre>        export class TodoCreateState extends Aventus.State implements Aventus.IState {            /**             * @inheritdoc             */            public override get name(): string {                return ;            }        }    </pre></av-code></av-code><p>Now, we must enhance the <span class="cn">TodoCreateState</span> class by incorporating functionality to identify the    state's name and    initialize a new todo each time the state is activated. This ensures that the state is properly configured to manage    the    creation of new todo items within the application.</p><av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">    <pre>        import { Todo } from "../data/Todo.data.avt";        &nbsp;        export class TodoCreateState extends Aventus.State implements Aventus.IState {        &nbsp;            /**            * This is the Todo that is currently created            */            public newTodo?: Todo;        &nbsp;            /**            * @inheritdoc            */            public override get name(): string {                // we must define what will be the state name                // in our example we will use '/create' because it's the url of the page TodoCreatePage                return '/create';            }        &nbsp;            /**            * This function is called when the current state is activated            */            public override onActivate(): void {                // You can init custom value for you todo here                this.newTodo = new Todo();            }        }    </pre></av-code></av-code><p>    In the <span class="cn">MainApp.wcv.avt</span> file, we need to replace the navigation button responsible for    setting the state to <span class="cn">"/create"</span> with a function that will activate our new <span class="cn">TodoCreateState</span>. Additionally, we must ensure that the <span class="cn">active_state</span>    property is set to maintain the <span class="cn">"active"</span> class on the <span class="cn">av-router-link</span>    element when the URL is <span class="cn">"/create"</span>.</p><av-code language="html" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">    <pre>        &lt;!-- The router has a slot name "before": we use it to define the sidenav --&gt;        &lt;block name="before"&gt;            &lt;div class="nav"&gt;                &lt;av-router-link class="nav-item" state="/"&gt;                    &lt;span class="name"&gt;Todo list&lt;/span&gt;                &lt;/av-router-link&gt;                &lt;av-router-link class="nav-item" @press="setCreateState" active_state="/create"&gt;                     &lt;span class="name"&gt;Create todo&lt;/span&gt;                &lt;/av-router-link&gt;            &lt;/div&gt;        &lt;/block&gt;        &lt;slot&gt;&lt;/slot&gt;    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">    <pre>        import { TodoCreateState } from "../../states/TodoCreateState.state.avt";        ...        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {            ...            /**             * Set the create state             */            protected setCreateState() {                this.stateManager.setState(new TodoCreateState());            }            ...        }    </pre></av-code></av-code><p>At this point, nothing changed for the navigation process.</p><av-tutorial-create-todo-editor-1></av-tutorial-create-todo-editor-1><p>    To retrieve the state within the <span class="cn">TodoCreatePage</span>, we can override the <span class="cn">onShow</span> method, which is triggered each time the page is displayed. Since we are utilizing    <span class="cn">Aventus.Navigation.Router</span>, the URL corresponds to the state. This implies that the state    <span class="cn">"/create"</span> can be triggered without necessarily being a <span class="cn">TodoCreateState</span>. In such instances, we need to redirect the user to the home page.</p><av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt">    <pre>        import { MainApp } from "../../MainApp.wcl.avt";        import type { Todo } from "../../../../data/Todo.data.avt";        import { TodoCreateState } from "../../../../states/TodoCreateState.state.avt";        ...        &nbsp;        export class TodoCreatePage extends GenericPage implements Aventus.DefaultComponent {            ...            //#region variables            @Watch()            public todo!: Todo; // create a watch variable for later            //#endregion            ...            &nbsp;            public override onShow(): void {                // check if the state if the TodoCreateState                &#105;f(this.currentState instanceof TodoCreateState && this.currentState.newTodo) {                    this.todo = this.currentState.newTodo;                }                &#101;lse {                    // else redirect to the Home page                    // MainApp.instance don't exist yet, don't worry                    MainApp.instance.navigate("/");                }            }            ...        }    </pre></av-code></av-code><p>We're currently utilizing a property, <span class="cn">MainApp.instance</span>, which doesn't exist yet. However,    since we're aware that only one instance of <span class="cn">MainApp</span> exists within the app, we can define a    static instance property on the <span class="cn">MainApp</span> class.</p><av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">    <pre>        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {            //#region static            private static _instance: MainApp;            public static get instance(): MainApp {                return this._instance;            }            //#endregion            ...            protected override postCreation(): void {                super.postCreation();                MainApp._instance = this;            }            ...        }    </pre></av-code></av-code><p>Let's initiate the design of our form. As an example, we'll create a <span class="cn">.card</span> class that will be    accessible within each web component. To accomplish this, we'll need to create a file named <span class="cn">@default.wcs.avt</span> to override the default style for all web components. Within this file, we    can define the new class <span class="cn">.card</span>. <av-router-link state="/docs/wc/style">More        info</av-router-link></p><av-code language="css" filename="Demo/src/apps/@default.wcs.avt">    <pre>        // this is the default style &#102;or all components        :host {            box-sizing: border-box;            display: inline-block;        }        &nbsp;        :host * {            box-sizing: border-box;        }        &nbsp;        .card {            background-color: var(--color-surface-mixed-200);            border-radius: 10px;            display: flex;            flex-direction: column;            gap: 10px;            margin: auto;            max-width: 500px;            padding: 15px;        }        &nbsp;    </pre></av-code></av-code><p>Inside your page <span class="cn">TodoCreatePage.wcv.avt</span> you can add a <span class="cn">div.card</span></p><av-tutorial-create-todo-editor-2></av-tutorial-create-todo-editor-2><p>Before proceeding with the creation of our form, we require a component capable of managing user input, such as    filling in the todo name. Let's create this component. The input consists of a label and an input field with a    value. Additionally, it should emit an event whenever the input value changes.</p><p>You can create a new <span class="cn">Input</span> inside the folder <span class="cn">components</span>.</p><av-code language="typescript" filename="Demo/src/components/Input/Input.wcl.avt">    <pre>        export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {            //#region props            /**             * Label &#102;or the input             */            @Property()            public label?: string;            /**             * Current value of the input             */            @Property((target: Input) =&gt; {                // When something change the td-input value property, we must update the input element value                target.inputEl.value = target.value;            })            public value: string = "";            //#endregion        &nbsp;            //#region variables            private _onChange: Aventus.Callback&lt;(value: string) =&gt; void&gt; = new Aventus.Callback();            /**             * A function trigger when the input value change             * Only trigger when a manual input change the vaue             */            public get onChange(): Aventus.Callback&lt;(value: string) =&gt; void&gt; {                return this._onChange;            }            /**             * A reference to the input element             */            @ViewElement()            protected inputEl!: HTMLInputElement;            //#endregion        &nbsp;            //#region methods            /**             * A function to emit refresh value and emit event when the value changed             */            protected updateValue() {                this.value = this.inputEl.value;                this.onChange.trigger([this.value]);            }            //#endregion        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/components/Input/Input.wcs.avt">    <pre>        :host {            background-color: var(--color-surface-mixed-600);            border-radius: 10px;            display: flex;            flex-direction: column;            height: fit-content;            overflow: hidden;            width: 100%;        &nbsp;            label {                background-color: var(--color-surface-mixed-500);                padding: 5px 15px;                width: 100%;            }        &nbsp;            input {                background-color: transparent;                border: none;                box-shadow: none;                color: var(--font-color);                height: 100%;                margin: 0;                outline: none;                padding: 15px 25px;                width: 100%;            }        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/components/Input/Input.wcv.avt">    <pre>        &lt;label &#102;or="input"&gt;&#123;&#123; this.label &#125;&#125;&lt;/label&gt;        &lt;input id="input" type="text" @element="inputEl" @input="updateValue"&gt;    </pre></av-code></av-code><p>By now, you should have a comprehensive understanding of each component within the provided source code. However,    we'll focus on two key aspects:</p><ul>    <li><span class="cn">@ViewElement()</span>: This decorator marks a property as a reference to an element found        within the component's view. It establishes a connection between the view and the component's logic, enabling        seamless interaction between the two. <av-router-link state="/docs/wc/element">More info</av-router-link></li>    <li><span class="cn">onChange: Aventus.Callback void></span>: This property represents a callback        mechanism that facilitates subscription from external sources. It allows other parts of the application to        subscribe to value changes within the component. Additionally, it can be triggered, passing along a value of a        specified generic type, ensuring efficient communication between different components or modules within the        application. <av-router-link state="/docs/wc/event">More info</av-router-link></li></ul><p>We can now using this <span class="cn">Input</span> with a <span class="cn">@bind</span> to create a bidrectional    interaction between the name of the todo and the input.</p><av-tutorial-create-todo-editor-3></av-tutorial-create-todo-editor-3><p>When performing the following sequence of actions: navigating to the "Create todo" page, filling in the input field,    then navigating to the "Todo list" page, and finally returning to the "Create todo" page, you may observe that the    input field is cleared. This behavior is expected because a new todo is created each time you visit the "Create    todo" page.</p><p>To mitigate the risk of data loss due to inadvertent actions, we can implement a confirmation prompt when the user    attempts to navigate to the "Todo list" page. This can be achieved by overriding the askChange method within the    TodoCreateState state and checking the value of todo name.</p><av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">    <pre>        export class TodoCreateState extends Aventus.State implements Aventus.IState {            ...            /**                * This function is called when the state will change                */            public override async askChange(state: Aventus.State, nextState: Aventus.State): Promise&lt;boolean&gt; {                &#105;f(this.newTodo?.name) {                    // ask the question                    return confirm("Changes are currently in progress. Are you sure you want to leave this page?")                }                // no change we can leave                return true;            }        }    </pre></av-code></av-code><p>Ultimately, we can enhance the functionality of the TodoCreatePage by introducing features to add tasks and save the todo within the RAM.</p><av-tutorial-create-todo-editor-4></av-tutorial-create-todo-editor-4>` }
-    });
-}
-    getClassName() {
-        return "TutorialCreateTodo";
-    }
-}
-TutorialCreateTodo.Namespace=`${moduleName}`;
-TutorialCreateTodo.Tag=`av-tutorial-create-todo`;
-_.TutorialCreateTodo=TutorialCreateTodo;
-if(!window.customElements.get('av-tutorial-create-todo')){window.customElements.define('av-tutorial-create-todo', TutorialCreateTodo);Aventus.WebComponentInstance.registerDefinition(TutorialCreateTodo);}
-
-const TutorialListTodo = class TutorialListTodo extends DocGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return TutorialListTodo;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(TutorialListTodo.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>List Todos</h1><p>Our application is nearing completion, with the final step being to synchronize the <span class="cn">Todo</span> from    the <span class="cn">RAM</span> into the <span class="cn">TodoListPage</span>. To accomplish this, you'll need to    create a <span class="cn">Watch variable todos</span> within the page.</p><av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt">    <pre>        import type { Todo } from "../../../../data/Todo.data.avt";        ...        export class TodoListPage extends GenericPage implements Aventus.DefaultComponent {            ...            //#region variables            @Watch()            public todos: Todo[] = [];            //#endregion            ...        }    </pre></av-code></av-code><p>We can enhance the view by incorporating a message display if no todos exist, or alternatively, iterate through the    todos to display them using the <span class="cn">TodoDisplay</span> component. In this instance, we'll utilize a    <span class="cn">for(i;length;i++)</span> loop to introduce the    final concept: <span class="cn">@Context</span>. With <span class="cn">@Context</span>, you can register a variable    for later use within your template.</p><av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcv.avt">    <pre>        &lt;div class="card"&gt;            &#105;f(this.todos.length == 0) {                &lt;p&gt;No todo&lt;/p&gt;            }            &#101;lse {                &#102;or(let i = 0; i &lt; this.todos.length; i++) {                     @Context('todo', this.todos[i])                    &lt;td-todo-display todo_id="&#123;&#123; todo.id &#125;&#125;"&gt;&lt;/td-todo-display&gt;                }            }        &lt;/div&gt;    </pre></av-code></av-code><p>Next, we can implement a function to bind the RAM event to the <span class="cn">TodoListPage</span>.</p><av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoListPage/TodoListPage.wcl.avt">    <pre>        import { TodoRAM } from "../../../../ram/Todo.ram.avt";        ...        export class TodoListPage extends GenericPage implements Aventus.DefaultComponent {            ...            protected async bindRAMData() {                // Load the todos from the RAM                this.todos = await TodoRAM.getInstance().getList();                // Callback when a new todo is created                TodoRAM.getInstance().onCreated((todo) =&gt; {                    this.todos.push(todo);                });                // Callback when a new todo is updated                TodoRAM.getInstance().onUpdated((todo) =&gt; {                    let index = this.todos.findIndex(t =&gt; t.id == todo.id);                    &#105;f(index == -1) {                        this.todos.push(todo);                    }                    else {                        this.todos.splice(index, 1, todo);                    }                });                // Callback when a new todo is deleted                TodoRAM.getInstance().onDeleted((todo) =&gt; {                    let index = this.todos.findIndex(t =&gt; t.id == todo.id);                    this.todos.splice(index, 1);                });            }        &nbsp;            protected override postCreation(): void {                super.postCreation();                this.bindRAMData();            }            ...        }    </pre></av-code></av-code><p>Ultimately, we can eliminate the manual todo creation process implemented within the <span class="cn">TodoDisplay</span> component.</p><av-code language="typescript" filename="Demo/src/components/TodoDisplay/TodoDisplay.wcl.avt">    <pre>        export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {            //#region methods            protected async loadData() {                const todo = await TodoRAM.getInstance().get(this.todo_id);                &#105;f(todo) {                    this.todo = todo;                }                &#101;lse {                    this.remove();                }            }        }    </pre></av-code></av-code><av-tutorial-list-todo-editor-1></av-tutorial-list-todo-editor-1>` }
-    });
-}
-    getClassName() {
-        return "TutorialListTodo";
-    }
-}
-TutorialListTodo.Namespace=`${moduleName}`;
-TutorialListTodo.Tag=`av-tutorial-list-todo`;
-_.TutorialListTodo=TutorialListTodo;
-if(!window.customElements.get('av-tutorial-list-todo')){window.customElements.define('av-tutorial-list-todo', TutorialListTodo);Aventus.WebComponentInstance.registerDefinition(TutorialListTodo);}
 
 const TutorialApp = class TutorialApp extends Aventus.Navigation.Router {
     tutorialPage;

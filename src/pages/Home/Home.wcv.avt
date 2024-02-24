@@ -62,8 +62,7 @@
                 downloaded via npm and then compiled via a module bundler.</p>
             <p>The tool must not be complicated to install, and projects must be able to be created quickly. It's
                 important for users to be able to access and create their own templates to save time. That's why Aventus
-                is only available as a VSCode extension, making it easy to use.</p>
-            <p>In short, Aventus is : <span class="important">One tech to rule them all</span>.</p>
+                is only available as a VSCode extension right now, making it easy to use.</p>
         </div>
     </div>
 

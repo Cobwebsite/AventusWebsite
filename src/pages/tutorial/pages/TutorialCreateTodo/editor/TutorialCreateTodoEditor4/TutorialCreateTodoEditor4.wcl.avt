@@ -31,11 +31,13 @@ export class TutorialCreateTodoEditor4 extends TutorialCreateTodoEditor3 impleme
 			'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt',
 			'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcs.avt',
 			'Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt',
+			'Demo/src/states/TodoCreateState.state.avt',
 		]
 	}
 
 	public override open_folder(): string | string[] | undefined {
 		return [
+			'Demo/src/states'
 		]
 	}
 

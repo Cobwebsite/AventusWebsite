@@ -23,6 +23,68 @@
         &nbsp;
     </pre>
 </av-code>
+<av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">
+    <pre>
+        import { TodoCreateState } from "../../states/TodoCreateState.state.avt";
+        import { TodoCreatePage } from "./pages/TodoCreatePage/TodoCreatePage.wcl.avt";
+        import { TodoListPage } from "./pages/TodoListPage/TodoListPage.wcl.avt";
+        &nbsp;
+        /**
+         * The MainApp \for the Demo.
+         * The parent Aventus.Navigation.Router is a component that allows routing management
+         */
+        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region static
+            private static _instance: MainApp;
+            public static get instance(): MainApp {
+                return this._instance;
+            }
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region props
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region variables
+        &nbsp;
+            //#endregions
+        &nbsp;
+        &nbsp;
+            //#region constructor
+        &nbsp;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region methods
+            /**
+             * @inheritdoc
+             */
+            protected override defineRoutes(): void {
+                // define the routing here
+                this.addRoute("/", TodoListPage);
+                this.addRoute("/create", TodoCreatePage);
+            }
+        &nbsp;
+            /**
+             * Set the create state
+             */
+            protected setCreateState() {
+                this.stateManager.setState(new TodoCreateState());
+            }
+        &nbsp;
+            protected override postCreation(): void {
+                super.postCreation();
+                MainApp._instance = this;
+            }
+        &nbsp;
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
 <av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt">
     <pre>
         import { MainApp } from "../../MainApp.wcl.avt";

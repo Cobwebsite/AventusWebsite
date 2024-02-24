@@ -1,0 +1,10 @@
+<h1>Todos</h1>
+for(let i = 0; i < this.todos.length; i++) { 
+    <div class="name">{{ this.todos[i].name }}</div>
+    <ul>
+        for(let j = 0; j < this.todos[i].tasks.length; j++) { 
+            <li>{{ i + 1 }}-{{ j + 1 }}. {{ this.todos[i].tasks[j] }}</li>
+        }
+    </ul>
+}
+<button @click="addTodo">Add</button>

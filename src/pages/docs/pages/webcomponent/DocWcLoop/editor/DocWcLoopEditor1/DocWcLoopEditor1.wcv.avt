@@ -1,0 +1,120 @@
+<av-code-editor name="For">
+    <av-code language="typescript" filename="For/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "For",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [
+            				{
+            					"output": "./dist/demo.js"
+            				}
+            			]
+            		}
+            	],
+            	"static": [
+            		{
+            			"name": "Static",
+            			"input": "./static/*",
+            			"output": "./dist/"
+            		}
+            	]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="For/src/Todo.data.avt">
+        <pre>
+            export class Todo extends Aventus.Data implements Aventus.IData {
+            	public id: number = 0;
+            	public name: string = "";
+            	public tasks: string[] = [];
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="For/src/TodoList/TodoList.wcl.avt">
+        <pre>
+            import { Todo } from "../Todo.data.avt";
+            &nbsp;
+            export class TodoList extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+                @Watch()
+                public todos: Todo[] = [];
+            &nbsp;
+                private todoId: number = 0;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+                protected addTodo() {
+                    this.todoId++;
+                    let todo = new Todo();
+                    todo.name = "My todo " + this.todoId;
+                    todo.tasks = ["task1", "task2"];
+                    this.todos.push(todo);
+                }
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="For/src/TodoList/TodoList.wcs.avt">
+        <pre>
+            :host {
+            	
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="For/src/TodoList/TodoList.wcv.avt">
+        <pre>
+            &lt;h1&gt;Todos&lt;/h1&gt;
+            \for(let i = 0; i &lt; this.todos.length; i++) { 
+                &lt;div class="name"&gt;\{{ this.todos[i].name }}&lt;/div&gt;
+                &lt;ul&gt;
+                    \for(let j = 0; j &lt; this.todos[i].tasks.length; j++) { 
+                        &lt;li&gt;\{{ i + 1 }}-\{{ j + 1 }}. \{{ this.todos[i].tasks[j] }}&lt;/li&gt;
+                    }
+                &lt;/ul&gt;
+            }
+            &lt;button @click="addTodo"&gt;Add&lt;/button&gt;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="For/static/index.html">
+        <pre>
+            &lt;!DOCTYPE html&gt;
+            &lt;html lang="en"&gt;
+            &lt;head&gt;
+                &lt;meta charset="UTF-8"&gt;
+                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+                &lt;title&gt;For&lt;/title&gt;
+                &lt;script src="/demo.js"&gt;&lt;/script&gt;
+            &lt;/head&gt;
+            &lt;body&gt;
+                &lt;av-todo-list&gt;&lt;/av-todo-list&gt;
+            &lt;/body&gt;
+            &lt;/html&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

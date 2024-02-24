@@ -1,0 +1,16 @@
+<av-code language="html" filename="For/src/TodoList/TodoList.wcv.avt">
+    <pre>
+        &lt;h1&gt;Todos&lt;/h1&gt;
+        \for(let todo of this.todos) { 
+            &lt;div class="name"&gt;\{{ todo.name }}&lt;/div&gt;
+            &lt;ul&gt;
+                \for(let task of todo.tasks) { 
+                    &lt;li&gt;\{{ task }}&lt;/li&gt;
+                }
+            &lt;/ul&gt;
+        }
+        &lt;button @click="addTodo"&gt;Add&lt;/button&gt;
+    </pre>
+</av-code>
+
+<slot></slot>

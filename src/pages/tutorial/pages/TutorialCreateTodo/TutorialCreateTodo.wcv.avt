@@ -346,8 +346,8 @@
         export class TodoCreateState extends Aventus.State implements Aventus.IState {
             ...
             /**
-                * This function is called when the state will change
-                */
+            * This function is called when the state will change
+            */
             public override async askChange(state: Aventus.State, nextState: Aventus.State): Promise&lt;boolean&gt; {
                 \if(this.newTodo?.name) {
                     // ask the question

@@ -1,0 +1,11 @@
+<h1>Todos</h1>
+for(let index in this.todos) { 
+    @Context('todo', this.todos[index])
+    <div class="name">{{ todo.name }}</div>
+    <ul>
+        for(let index2 in todo.tasks) { 
+            <li>{{ index + 1 }}-{{ index2 + 1 }}. {{ todo.tasks[index2] }}</li>
+        }
+    </ul>
+}
+<button @click="addTodo">Add</button>

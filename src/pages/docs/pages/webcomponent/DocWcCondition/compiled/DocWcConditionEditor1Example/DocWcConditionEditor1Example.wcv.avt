@@ -1,0 +1,9 @@
+<p>The current number is {{ this.number }}</p>
+
+if (this.number % 2 === 0) {
+    <p style="background:blue">{{ this.number }} is even.</p>
+} else {
+    <p style="background:red">{{ this.number }} is odd.</p>
+}
+
+<button @click="increment">Increment</button>

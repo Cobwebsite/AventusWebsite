@@ -166,4 +166,46 @@
         &lt;/div&gt;
     </pre>
 </av-code>
+<av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">
+    <pre>
+        import { Todo } from "../data/Todo.data.avt";
+        &nbsp;
+        export class TodoCreateState extends Aventus.State implements Aventus.IState {
+        &nbsp;
+            /**
+             * This is the Todo that is currently created
+             */
+            public newTodo?: Todo;
+        &nbsp;
+            /**
+             * @inheritdoc
+             */
+            public override get name(): string {
+                // we must define what will be the state name
+                // in our example we will use '/create' because it's the url of the page TodoCreatePage
+                return '/create';
+            }
+        &nbsp;
+            /**
+             * This function is called when the current state is activated
+             */
+            public override onActivate(): void {
+                // You can init custom value for you todo here
+                this.newTodo = new Todo();
+            }
+        &nbsp;
+            /**
+            * This function is called when the state will change
+            */
+            public override async askChange(state: Aventus.State, nextState: Aventus.State): Promise&lt;boolean&gt; {
+                \if(this.newTodo?.name) {
+                    // ask the question
+                    return confirm("Changes are currently in progress. Are you sure you want to leave this page?")
+                }
+                // no change we can leave
+                return true;
+            }
+        }
+    </pre>
+</av-code>
 <slot></slot>
