@@ -2646,7 +2646,6 @@ const TemplateInstance=class TemplateInstance {
                 return change.fct(this.context);
             }
             catch (e) {
-                debugger;
             }
             return "";
         });
@@ -3936,7 +3935,8 @@ _.RouterStateManager=RouterStateManager;
 Navigation.Page = class Page extends Aventus.WebComponent {
     static get observedAttributes() {return ["visible"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
     get 'visible'() { return this.getBoolProp('visible') }
-    set 'visible'(val) { this.setBoolAttr('visible', val) }    currentRouter;
+    set 'visible'(val) { this.setBoolAttr('visible', val) }
+    currentRouter;
     currentState;
     __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("visible", ((target) => {
     if (target.visible) {
@@ -3945,7 +3945,8 @@ Navigation.Page = class Page extends Aventus.WebComponent {
     else {
         target.onHide();
     }
-})); }
+}));
+ }
     static __style = `:host{display:none}:host([visible]){display:block}`;
     constructor() { super(); if (this.constructor == Page) { throw "can't instanciate an abstract class"; } }
     __getStatic() {
@@ -3965,8 +3966,10 @@ Navigation.Page = class Page extends Aventus.WebComponent {
     getClassName() {
         return "Page";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('visible')) { this.attributeChangedCallback('visible', false, false); } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('visible'); }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('visible')) { this.attributeChangedCallback('visible', false, false); }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('visible');
+ }
     __listBoolProps() { return ["visible"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
     pageTitle() {
         return undefined;
@@ -3999,7 +4002,12 @@ Navigation.Router = class Router extends Aventus.WebComponent {
     }
     page404;
     static __style = `:host{display:block}`;
-    constructor() {            super();            this.validError404 = this.validError404.bind(this);            this.canChangeState = this.canChangeState.bind(this);            this.stateManager.canChangeState(this.canChangeState);if (this.constructor == Router) { throw "can't instanciate an abstract class"; } }
+    constructor() {
+            super();
+            this.validError404 = this.validError404.bind(this);
+            this.canChangeState = this.canChangeState.bind(this);
+            this.stateManager.canChangeState(this.canChangeState);
+if (this.constructor == Router) { throw "can't instanciate an abstract class"; } }
     __getStatic() {
         return Router;
     }
@@ -4014,7 +4022,8 @@ Navigation.Router = class Router extends Aventus.WebComponent {
         blocks: { 'default':`<slot name="before"></slot><div class="content" _id="router_0"></div><slot name="after"></slot>` }
     });
 }
-    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
   "elements": [
     {
       "name": "contentEl",
@@ -4023,7 +4032,8 @@ Navigation.Router = class Router extends Aventus.WebComponent {
       ]
     }
   ]
-}); }
+});
+ }
     getClassName() {
         return "Router";
     }
@@ -4179,7 +4189,8 @@ const TodoCreatePage = class TodoCreatePage extends Aventus.Navigation.Page {
         arrStyle.push(TodoCreatePage.__style);
         return arrStyle;
     }
-    __getHtml() {super.__getHtml();
+    __getHtml() {
+super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
         blocks: { 'default':`<slot></slot>` }
@@ -4204,7 +4215,8 @@ const TodoListPage = class TodoListPage extends Aventus.Navigation.Page {
         arrStyle.push(TodoListPage.__style);
         return arrStyle;
     }
-    __getHtml() {super.__getHtml();
+    __getHtml() {
+super.__getHtml();
     this.__getStatic().__template.setHTML({
         blocks: { 'default':`<div class="page-title">List todos</div>` }
     });
@@ -4228,10 +4240,14 @@ const MainApp = class MainApp extends Aventus.Navigation.Router {
         arrStyle.push(MainApp.__style);
         return arrStyle;
     }
-    __getHtml() {super.__getHtml();
+    __getHtml() {
+super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'before':`    <div class="nav">    </div>`,'default':`<slot></slot>` }
+        blocks: { 'before':`
+    <div class="nav">
+    </div>
+`,'default':`<slot></slot>` }
     });
 }
     getClassName() {

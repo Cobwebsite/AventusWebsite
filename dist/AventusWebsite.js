@@ -1752,7 +1752,7 @@ const Watcher=class Watcher {
                     }
                     catch (e) {
                         if (e != 'impossible')
-                            console.log(e);
+                            console.error(e);
                     }
                 }
                 for (let [key, infos] of aliases) {
@@ -2709,8 +2709,7 @@ const TemplateInstance=class TemplateInstance {
                     }
                 }
                 else {
-                    console.log(e);
-                    debugger;
+                    console.error(e);
                 }
             }
             return "";
@@ -2745,8 +2744,7 @@ const TemplateInstance=class TemplateInstance {
                     }
                 }
                 else {
-                    console.log(e);
-                    debugger;
+                    console.error(e);
                 }
             }
         });
@@ -2776,8 +2774,7 @@ const TemplateInstance=class TemplateInstance {
                     }
                 }
                 else {
-                    console.log(e);
-                    debugger;
+                    console.error(e);
                 }
             }
         });
@@ -5427,7 +5424,7 @@ Navigation.Router = class Router extends Aventus.WebComponent {
             }
         }
         catch (e) {
-            console.log(e);
+            console.error(e);
         }
     }
     initRoute(path) {

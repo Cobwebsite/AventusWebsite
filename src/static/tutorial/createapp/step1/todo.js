@@ -2646,7 +2646,6 @@ const TemplateInstance=class TemplateInstance {
                 return change.fct(this.context);
             }
             catch (e) {
-                debugger;
             }
             return "";
         });

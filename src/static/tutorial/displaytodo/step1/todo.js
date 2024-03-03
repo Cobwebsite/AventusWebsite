@@ -2720,7 +2720,6 @@ const TemplateInstance=class TemplateInstance {
                 if (computed instanceof ComputedNoRecomputed) {
                     computed.isInit = false;
                 }
-                debugger;
             }
             return "";
         });
@@ -5738,8 +5737,10 @@ RouterStateManager.Namespace=`${moduleName}`;
 _.RouterStateManager=RouterStateManager;
 Navigation.RouterLink = class RouterLink extends Aventus.WebComponent {
     get 'state'() { return this.getStringAttr('state') }
-    set 'state'(val) { this.setStringAttr('state', val) }get 'active_state'() { return this.getStringAttr('active_state') }
-    set 'active_state'(val) { this.setStringAttr('active_state', val) }    onActiveChange = new Aventus.Callback();
+    set 'state'(val) { this.setStringAttr('state', val) }
+get 'active_state'() { return this.getStringAttr('active_state') }
+    set 'active_state'(val) { this.setStringAttr('active_state', val) }
+    onActiveChange = new Aventus.Callback();
     static __style = ``;
     __getStatic() {
         return RouterLink;
@@ -5758,8 +5759,12 @@ Navigation.RouterLink = class RouterLink extends Aventus.WebComponent {
     getClassName() {
         return "RouterLink";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('state')){ this['state'] = undefined; }if(!this.hasAttribute('active_state')){ this['active_state'] = undefined; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('state');this.__upgradeProperty('active_state'); }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('state')){ this['state'] = undefined; }
+if(!this.hasAttribute('active_state')){ this['active_state'] = undefined; }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('state');
+this.__upgradeProperty('active_state');
+ }
     addClickEvent() {
         new Aventus.PressManager({
             element: this,
@@ -5810,7 +5815,8 @@ if(!window.customElements.get('av-router-link')){window.customElements.define('a
 Navigation.Page = class Page extends Aventus.WebComponent {
     static get observedAttributes() {return ["visible"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
     get 'visible'() { return this.getBoolProp('visible') }
-    set 'visible'(val) { this.setBoolAttr('visible', val) }    currentRouter;
+    set 'visible'(val) { this.setBoolAttr('visible', val) }
+    currentRouter;
     currentState;
     __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("visible", ((target) => {
     if (target.visible) {
@@ -5819,7 +5825,8 @@ Navigation.Page = class Page extends Aventus.WebComponent {
     else {
         target.onHide();
     }
-})); }
+}));
+ }
     static __style = `:host{display:none}:host([visible]){display:block}`;
     constructor() { super(); if (this.constructor == Page) { throw "can't instanciate an abstract class"; } }
     __getStatic() {
@@ -5839,8 +5846,10 @@ Navigation.Page = class Page extends Aventus.WebComponent {
     getClassName() {
         return "Page";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('visible')) { this.attributeChangedCallback('visible', false, false); } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('visible'); }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('visible')) { this.attributeChangedCallback('visible', false, false); }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('visible');
+ }
     __listBoolProps() { return ["visible"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
     pageTitle() {
         return undefined;
@@ -5873,7 +5882,12 @@ Navigation.Router = class Router extends Aventus.WebComponent {
     }
     page404;
     static __style = `:host{display:block}`;
-    constructor() {            super();            this.validError404 = this.validError404.bind(this);            this.canChangeState = this.canChangeState.bind(this);            this.stateManager.canChangeState(this.canChangeState);if (this.constructor == Router) { throw "can't instanciate an abstract class"; } }
+    constructor() {
+            super();
+            this.validError404 = this.validError404.bind(this);
+            this.canChangeState = this.canChangeState.bind(this);
+            this.stateManager.canChangeState(this.canChangeState);
+if (this.constructor == Router) { throw "can't instanciate an abstract class"; } }
     __getStatic() {
         return Router;
     }
@@ -5888,7 +5902,8 @@ Navigation.Router = class Router extends Aventus.WebComponent {
         blocks: { 'default':`<slot name="before"></slot><div class="content" _id="router_0"></div><slot name="after"></slot>` }
     });
 }
-    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
   "elements": [
     {
       "name": "contentEl",
@@ -5897,7 +5912,8 @@ Navigation.Router = class Router extends Aventus.WebComponent {
       ]
     }
   ]
-}); }
+});
+ }
     getClassName() {
         return "Router";
     }
@@ -6127,16 +6143,26 @@ _.TouchRecord=TouchRecord;
 Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
     static get observedAttributes() {return ["zoom"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
     get 'y_scroll_visible'() { return this.getBoolAttr('y_scroll_visible') }
-    set 'y_scroll_visible'(val) { this.setBoolAttr('y_scroll_visible', val) }get 'x_scroll_visible'() { return this.getBoolAttr('x_scroll_visible') }
-    set 'x_scroll_visible'(val) { this.setBoolAttr('x_scroll_visible', val) }get 'floating_scroll'() { return this.getBoolAttr('floating_scroll') }
-    set 'floating_scroll'(val) { this.setBoolAttr('floating_scroll', val) }get 'x_scroll'() { return this.getBoolAttr('x_scroll') }
-    set 'x_scroll'(val) { this.setBoolAttr('x_scroll', val) }get 'y_scroll'() { return this.getBoolAttr('y_scroll') }
-    set 'y_scroll'(val) { this.setBoolAttr('y_scroll', val) }get 'auto_hide'() { return this.getBoolAttr('auto_hide') }
-    set 'auto_hide'(val) { this.setBoolAttr('auto_hide', val) }get 'break'() { return this.getNumberAttr('break') }
-    set 'break'(val) { this.setNumberAttr('break', val) }get 'disable'() { return this.getBoolAttr('disable') }
-    set 'disable'(val) { this.setBoolAttr('disable', val) }get 'no_user_select'() { return this.getBoolAttr('no_user_select') }
-    set 'no_user_select'(val) { this.setBoolAttr('no_user_select', val) }    get 'zoom'() { return this.getNumberProp('zoom') }
-    set 'zoom'(val) { this.setNumberAttr('zoom', val) }    observer;
+    set 'y_scroll_visible'(val) { this.setBoolAttr('y_scroll_visible', val) }
+get 'x_scroll_visible'() { return this.getBoolAttr('x_scroll_visible') }
+    set 'x_scroll_visible'(val) { this.setBoolAttr('x_scroll_visible', val) }
+get 'floating_scroll'() { return this.getBoolAttr('floating_scroll') }
+    set 'floating_scroll'(val) { this.setBoolAttr('floating_scroll', val) }
+get 'x_scroll'() { return this.getBoolAttr('x_scroll') }
+    set 'x_scroll'(val) { this.setBoolAttr('x_scroll', val) }
+get 'y_scroll'() { return this.getBoolAttr('y_scroll') }
+    set 'y_scroll'(val) { this.setBoolAttr('y_scroll', val) }
+get 'auto_hide'() { return this.getBoolAttr('auto_hide') }
+    set 'auto_hide'(val) { this.setBoolAttr('auto_hide', val) }
+get 'break'() { return this.getNumberAttr('break') }
+    set 'break'(val) { this.setNumberAttr('break', val) }
+get 'disable'() { return this.getBoolAttr('disable') }
+    set 'disable'(val) { this.setBoolAttr('disable', val) }
+get 'no_user_select'() { return this.getBoolAttr('no_user_select') }
+    set 'no_user_select'(val) { this.setBoolAttr('no_user_select', val) }
+    get 'zoom'() { return this.getNumberProp('zoom') }
+    set 'zoom'(val) { this.setNumberAttr('zoom', val) }
+    observer;
     display = { x: 0, y: 0 };
     max = {
         x: 0,
@@ -6194,9 +6220,18 @@ Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
     renderAnimation;
     __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("zoom", ((target) => {
     target.changeZoom();
-})); }
+}));
+ }
     static __style = `:host{--internal-scrollbar-container-color: var(--scrollbar-container-color, transparent);--internal-scrollbar-color: var(--scrollbar-color, #757575);--internal-scrollbar-active-color: var(--scrollbar-active-color, #858585);--internal-scroller-width: var(--scroller-width, 6px);--internal-scroller-top: var(--scroller-top, 3px);--internal-scroller-bottom: var(--scroller-bottom, 3px);--internal-scroller-right: var(--scroller-right, 3px);--internal-scroller-left: var(--scroller-left, 3px);--_scrollbar-content-padding: var(--scrollbar-content-padding, 0);--_scrollbar-container-display: var(--scrollbar-container-display, inline-block)}:host{display:block;height:100%;min-height:inherit;min-width:inherit;overflow:hidden;position:relative;-webkit-user-drag:none;-khtml-user-drag:none;-moz-user-drag:none;-o-user-drag:none;width:100%}:host .scroll-main-container{display:block;height:100%;min-height:inherit;min-width:inherit;position:relative;width:100%}:host .scroll-main-container .content-zoom{display:block;height:100%;min-height:inherit;min-width:inherit;position:relative;transform-origin:0 0;width:100%;z-index:4}:host .scroll-main-container .content-zoom .content-hidder{display:block;height:100%;min-height:inherit;min-width:inherit;overflow:hidden;position:relative;width:100%}:host .scroll-main-container .content-zoom .content-hidder .content-wrapper{display:var(--_scrollbar-container-display);height:100%;min-height:inherit;min-width:inherit;padding:var(--_scrollbar-content-padding);position:relative;width:100%}:host .scroll-main-container .scroller-wrapper .container-scroller{display:none;overflow:hidden;position:absolute;transition:transform .2s linear;z-index:5}:host .scroll-main-container .scroller-wrapper .container-scroller .shadow-scroller{background-color:var(--internal-scrollbar-container-color);border-radius:5px}:host .scroll-main-container .scroller-wrapper .container-scroller .shadow-scroller .scroller{background-color:var(--internal-scrollbar-color);border-radius:5px;cursor:pointer;position:absolute;-webkit-tap-highlight-color:rgba(0,0,0,0);touch-action:none;z-index:5}:host .scroll-main-container .scroller-wrapper .container-scroller .scroller.active{background-color:var(--internal-scrollbar-active-color)}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical{height:calc(100% - var(--internal-scroller-bottom)*2 - var(--internal-scroller-width));padding-left:var(--internal-scroller-left);right:var(--internal-scroller-right);top:var(--internal-scroller-bottom);transform:0;width:calc(var(--internal-scroller-width) + var(--internal-scroller-left))}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical.hide{transform:translateX(calc(var(--internal-scroller-width) + var(--internal-scroller-left)))}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical .shadow-scroller{height:100%}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical .shadow-scroller .scroller{width:calc(100% - var(--internal-scroller-left))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal{bottom:var(--internal-scroller-bottom);height:calc(var(--internal-scroller-width) + var(--internal-scroller-top));left:var(--internal-scroller-right);padding-top:var(--internal-scroller-top);transform:0;width:calc(100% - var(--internal-scroller-right)*2 - var(--internal-scroller-width))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal.hide{transform:translateY(calc(var(--internal-scroller-width) + var(--internal-scroller-top)))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal .shadow-scroller{height:100%}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal .shadow-scroller .scroller{height:calc(100% - var(--internal-scroller-top))}:host([y_scroll]) .scroll-main-container .content-zoom .content-hidder .content-wrapper{height:auto}:host([x_scroll]) .scroll-main-container .content-zoom .content-hidder .content-wrapper{width:auto}:host([y_scroll_visible]) .scroll-main-container .scroller-wrapper .container-scroller.vertical{display:block}:host([x_scroll_visible]) .scroll-main-container .scroller-wrapper .container-scroller.horizontal{display:block}:host([no_user_select]) .content-wrapper *{user-select:none}:host([no_user_select]) ::slotted{user-select:none}`;
-    constructor() {            super();            this.renderAnimation = this.createAnimation();            this.onWheel = this.onWheel.bind(this);            this.onTouchStart = this.onTouchStart.bind(this);            this.onTouchMove = this.onTouchMove.bind(this);            this.onTouchEnd = this.onTouchEnd.bind(this);            this.touchRecord = new TouchRecord();        }
+    constructor() {
+            super();
+            this.renderAnimation = this.createAnimation();
+            this.onWheel = this.onWheel.bind(this);
+            this.onTouchStart = this.onTouchStart.bind(this);
+            this.onTouchMove = this.onTouchMove.bind(this);
+            this.onTouchEnd = this.onTouchEnd.bind(this);
+            this.touchRecord = new TouchRecord();
+        }
     __getStatic() {
         return Scrollable;
     }
@@ -6208,10 +6243,31 @@ Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
     __getHtml() {
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<div class="scroll-main-container" _id="scrollable_0">    <div class="content-zoom" _id="scrollable_1">        <div class="content-hidder" _id="scrollable_2">            <div class="content-wrapper" part="content-wrapper" _id="scrollable_3">                <slot></slot>            </div>        </div>    </div>    <div class="scroller-wrapper">        <div class="container-scroller vertical" _id="scrollable_4">            <div class="shadow-scroller">                <div class="scroller" _id="scrollable_5"></div>            </div>        </div>        <div class="container-scroller horizontal" _id="scrollable_6">            <div class="shadow-scroller">                <div class="scroller" _id="scrollable_7"></div>            </div>        </div>    </div></div>` }
+        blocks: { 'default':`<div class="scroll-main-container" _id="scrollable_0">
+    <div class="content-zoom" _id="scrollable_1">
+        <div class="content-hidder" _id="scrollable_2">
+            <div class="content-wrapper" part="content-wrapper" _id="scrollable_3">
+                <slot></slot>
+            </div>
+        </div>
+    </div>
+    <div class="scroller-wrapper">
+        <div class="container-scroller vertical" _id="scrollable_4">
+            <div class="shadow-scroller">
+                <div class="scroller" _id="scrollable_5"></div>
+            </div>
+        </div>
+        <div class="container-scroller horizontal" _id="scrollable_6">
+            <div class="shadow-scroller">
+                <div class="scroller" _id="scrollable_7"></div>
+            </div>
+        </div>
+    </div>
+</div>` }
     });
 }
-    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
   "elements": [
     {
       "name": "mainContainer",
@@ -6262,12 +6318,33 @@ Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
       ]
     }
   ]
-}); }
+});
+ }
     getClassName() {
         return "Scrollable";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('y_scroll_visible')) { this.attributeChangedCallback('y_scroll_visible', false, false); }if(!this.hasAttribute('x_scroll_visible')) { this.attributeChangedCallback('x_scroll_visible', false, false); }if(!this.hasAttribute('floating_scroll')) { this.attributeChangedCallback('floating_scroll', false, false); }if(!this.hasAttribute('x_scroll')) { this.attributeChangedCallback('x_scroll', false, false); }if(!this.hasAttribute('y_scroll')) {this.setAttribute('y_scroll' ,'true'); }if(!this.hasAttribute('auto_hide')) { this.attributeChangedCallback('auto_hide', false, false); }if(!this.hasAttribute('break')){ this['break'] = 0.1; }if(!this.hasAttribute('disable')) { this.attributeChangedCallback('disable', false, false); }if(!this.hasAttribute('no_user_select')) { this.attributeChangedCallback('no_user_select', false, false); }if(!this.hasAttribute('zoom')){ this['zoom'] = 1; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('y_scroll_visible');this.__upgradeProperty('x_scroll_visible');this.__upgradeProperty('floating_scroll');this.__upgradeProperty('x_scroll');this.__upgradeProperty('y_scroll');this.__upgradeProperty('auto_hide');this.__upgradeProperty('break');this.__upgradeProperty('disable');this.__upgradeProperty('no_user_select');this.__upgradeProperty('zoom'); }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('y_scroll_visible')) { this.attributeChangedCallback('y_scroll_visible', false, false); }
+if(!this.hasAttribute('x_scroll_visible')) { this.attributeChangedCallback('x_scroll_visible', false, false); }
+if(!this.hasAttribute('floating_scroll')) { this.attributeChangedCallback('floating_scroll', false, false); }
+if(!this.hasAttribute('x_scroll')) { this.attributeChangedCallback('x_scroll', false, false); }
+if(!this.hasAttribute('y_scroll')) {this.setAttribute('y_scroll' ,'true'); }
+if(!this.hasAttribute('auto_hide')) { this.attributeChangedCallback('auto_hide', false, false); }
+if(!this.hasAttribute('break')){ this['break'] = 0.1; }
+if(!this.hasAttribute('disable')) { this.attributeChangedCallback('disable', false, false); }
+if(!this.hasAttribute('no_user_select')) { this.attributeChangedCallback('no_user_select', false, false); }
+if(!this.hasAttribute('zoom')){ this['zoom'] = 1; }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('y_scroll_visible');
+this.__upgradeProperty('x_scroll_visible');
+this.__upgradeProperty('floating_scroll');
+this.__upgradeProperty('x_scroll');
+this.__upgradeProperty('y_scroll');
+this.__upgradeProperty('auto_hide');
+this.__upgradeProperty('break');
+this.__upgradeProperty('disable');
+this.__upgradeProperty('no_user_select');
+this.__upgradeProperty('zoom');
+ }
     __listBoolProps() { return ["y_scroll_visible","x_scroll_visible","floating_scroll","x_scroll","y_scroll","auto_hide","disable","no_user_select"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
     createAnimation() {
         return new Aventus.Animation({
@@ -6619,20 +6696,26 @@ const GenericPage = class GenericPage extends Aventus.Navigation.Page {
         arrStyle.push(GenericPage.__style);
         return arrStyle;
     }
-    __getHtml() {super.__getHtml();
+    __getHtml() {
+super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-scrollable>    <div class="page-title" _id="genericpage_0"></div>    <slot></slot></av-scrollable>` }
+        blocks: { 'default':`<av-scrollable>
+    <div class="page-title" _id="genericpage_0"></div>
+    <slot></slot>
+</av-scrollable>` }
     });
 }
-    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
   "content": {
     "genericpage_0°@HTML": {
       "fct": (c) => `${c.print(c.comp.__a9579f75aa8381a3bcefb3bce28ea454method0())}`,
       "once": true
     }
   }
-}); }
+});
+ }
     getClassName() {
         return "GenericPage";
     }
@@ -6653,7 +6736,8 @@ const TodoCreatePage = class TodoCreatePage extends GenericPage {
         arrStyle.push(TodoCreatePage.__style);
         return arrStyle;
     }
-    __getHtml() {super.__getHtml();
+    __getHtml() {
+super.__getHtml();
     this.__getStatic().__template.setHTML({
         blocks: { 'default':`` }
     });
@@ -6752,13 +6836,16 @@ TodoRAM.Namespace=`${moduleName}`;
 _.TodoRAM=TodoRAM;
 const TodoDisplay = class TodoDisplay extends Aventus.WebComponent {
     get 'todo_id'() { return this.getNumberAttr('todo_id') }
-    set 'todo_id'(val) { this.setNumberAttr('todo_id', val) }    get 'todo'() {
+    set 'todo_id'(val) { this.setNumberAttr('todo_id', val) }
+    get 'todo'() {
 						return this.__watch["todo"];
 					}
 					set 'todo'(val) {
 						this.__watch["todo"] = val;
-					}    __registerWatchesActions() {
-    this.__addWatchesActions("todo");    super.__registerWatchesActions();
+					}
+    __registerWatchesActions() {
+    this.__addWatchesActions("todo");
+    super.__registerWatchesActions();
 }
     static __style = ``;
     __getStatic() {
@@ -6771,23 +6858,30 @@ const TodoDisplay = class TodoDisplay extends Aventus.WebComponent {
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<div class="title">    <span _id="tododisplay_0"></span></div>` }
+        blocks: { 'default':`<div class="title">
+    <span _id="tododisplay_0"></span>
+</div>` }
     });
 }
-    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
   "content": {
     "tododisplay_0°@HTML": {
       "fct": (c) => `${c.print(c.comp.__b5cbb9d176523cd778887bc7334789f0method0())}`,
       "once": true
     }
   }
-}); }
+});
+ }
     getClassName() {
         return "TodoDisplay";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('todo_id')){ this['todo_id'] = undefined; } }
-    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["todo"] = undefined; }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('todo_id'); }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('todo_id')){ this['todo_id'] = undefined; }
+ }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["todo"] = undefined;
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('todo_id');
+ }
     async loadData() {
         let todo = new Todo();
         todo.name = "My todo";
@@ -6826,7 +6920,8 @@ const TodoListPage = class TodoListPage extends GenericPage {
         arrStyle.push(TodoListPage.__style);
         return arrStyle;
     }
-    __getHtml() {super.__getHtml();
+    __getHtml() {
+super.__getHtml();
     this.__getStatic().__template.setHTML({
         blocks: { 'default':`<td-todo-display todo_id="2"></td-todo-display>` }
     });
@@ -6853,10 +6948,20 @@ const MainApp = class MainApp extends Aventus.Navigation.Router {
         arrStyle.push(MainApp.__style);
         return arrStyle;
     }
-    __getHtml() {super.__getHtml();
+    __getHtml() {
+super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'before':`    <div class="nav">        <av-router-link class="nav-item" state="/">            <span class="name">Todo list</span>        </av-router-link>        <av-router-link class="nav-item" state="/create">             <span class="name">Create todo</span>        </av-router-link>    </div>`,'default':`<slot></slot>` }
+        blocks: { 'before':`
+    <div class="nav">
+        <av-router-link class="nav-item" state="/">
+            <span class="name">Todo list</span>
+        </av-router-link>
+        <av-router-link class="nav-item" state="/create"> 
+            <span class="name">Create todo</span>
+        </av-router-link>
+    </div>
+`,'default':`<slot></slot>` }
     });
 }
     getClassName() {
