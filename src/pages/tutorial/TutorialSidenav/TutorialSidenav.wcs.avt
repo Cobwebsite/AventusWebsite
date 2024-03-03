@@ -39,6 +39,7 @@
 					-webkit-tap-highlight-color: transparent;
 
 					av-router-link {
+						user-select: none;
 						transition: opacity 0.3s var(--bezier-curve);
 					}
 
