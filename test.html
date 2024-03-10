@@ -16,18 +16,40 @@
     <link rel="shortcut icon" href="/img/icon.png" type="image/x-icon">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aventus Website</title>
-    <!-- <script>
-        window.onerror = function (error, url, line) {
-            alert(JSON.stringify({ acc: 'error', data: 'ERR:' + error + ' URL:' + url + ' L:' + line }));
-        };
-    </script> -->
-    <script src="/libs/cssstylesheet.js?1_2_0"></script>
-    <link rel="stylesheet" href="/css/theme.css?1_2_0">
-    <script src="/AventusWebsite.js?1_2_0"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        .container {
+            padding: 10px;
+            background-color: red;
+            width: 200px;
+            min-height: 100px;
+            max-height: 200px;
+            height: 200px;
+        }
+
+        .scroll {
+            width: 100%;
+            background-color: green;
+            padding: 10px;
+            overflow: scroll;
+            max-height: 100%;
+        }
+        .content {
+            width: 100%;
+            height: 2000px;
+            background-color: purple;
+        }
+    </style>
 </head>
 
 <body>
-    <av-app></av-app>
+    <div class="container">
+        <div class="scroll">
+            <div class="content"></div>
+        </div>
+    </div>
 </body>
 
 </html>

@@ -277,36 +277,43 @@ const ElementExtension=class ElementExtension {
      * Get element inside slot
      */
     static getElementsInSlot(element, slotName) {
+        let result = [];
         if (element.shadowRoot) {
             let slotEl;
             if (slotName) {
                 slotEl = element.shadowRoot.querySelector('slot[name="' + slotName + '"]');
             }
             else {
-                slotEl = element.shadowRoot.querySelector("slot");
+                slotEl = element.shadowRoot.querySelector("slot:not([name])");
+                if (!slotEl) {
+                    slotEl = element.shadowRoot.querySelector("slot");
+                }
             }
             while (true) {
                 if (!slotEl) {
-                    return [];
+                    return result;
                 }
                 var listChild = Array.from(slotEl.assignedElements());
                 if (!listChild) {
-                    return [];
+                    return result;
                 }
                 let slotFound = false;
                 for (let i = 0; i < listChild.length; i++) {
+                    let child = listChild[i];
                     if (listChild[i].nodeName == "SLOT") {
                         slotEl = listChild[i];
                         slotFound = true;
-                        break;
+                    }
+                    else if (child instanceof HTMLElement) {
+                        result.push(child);
                     }
                 }
                 if (!slotFound) {
-                    return listChild;
+                    return result;
                 }
             }
         }
-        return [];
+        return result;
     }
     /**
      * Get deeper element inside dom at the position X and Y
@@ -362,7 +369,7 @@ const Style=class Style {
     static instance;
     static noAnimation;
     static defaultStyleSheets = {
-        "@general": `:host{display:inline-block;box-sizing:border-box}:host *{box-sizing:border-box}`,
+        "@default": `:host{display:inline-block;box-sizing:border-box}:host *{box-sizing:border-box}`,
     };
     static store(name, content) {
         this.getInstance().store(name, content);
@@ -459,11 +466,20 @@ const Callback=class Callback {
 Callback.Namespace=`${moduleName}`;
 _.Callback=Callback;
 const Mutex=class Mutex {
+    /**
+     * Array to store functions waiting for the mutex to become available.
+     * @type {((run: boolean) => void)[]}
+     */
     waitingList = [];
+    /**
+    * Indicates whether the mutex is currently locked or not.
+    * @type {boolean}
+    */
     isLocked = false;
     /**
-     * Wait the mutex to be free then get it
-     */
+    * Waits for the mutex to become available and then acquires it.
+    * @returns {Promise<boolean>} A Promise that resolves to true if the mutex was acquired successfully.
+    */
     waitOne() {
         return new Promise((resolve) => {
             if (this.isLocked) {
@@ -490,7 +506,7 @@ const Mutex=class Mutex {
         }
     }
     /**
-     * Release the mutex
+     * Releases the mutex, allowing only the last function in the waiting list to acquire it.
      */
     releaseOnlyLast() {
         if (this.waitingList.length > 0) {
@@ -508,12 +524,18 @@ const Mutex=class Mutex {
         }
     }
     /**
-     * Clear mutex
+     * Clears the mutex, removing all waiting functions and releasing the lock.
      */
     dispose() {
         this.waitingList = [];
         this.isLocked = false;
     }
+    /**
+     * Executes a callback function safely within the mutex lock and releases the lock afterward.
+     * @template T - The type of the return value of the callback function.
+     * @param {() => T} cb - The callback function to execute.
+     * @returns {Promise<T | null>} A Promise that resolves to the result of the callback function or null if an error occurs.
+     */
     async safeRun(cb) {
         let result = null;
         await this.waitOne();
@@ -525,6 +547,12 @@ const Mutex=class Mutex {
         await this.release();
         return result;
     }
+    /**
+     * Executes an asynchronous callback function safely within the mutex lock and releases the lock afterward.
+     * @template T - The type of the return value of the asynchronous callback function.
+     * @param {() => Promise<T>} cb - The asynchronous callback function to execute.
+     * @returns {Promise<T | null>} A Promise that resolves to the result of the asynchronous callback function or null if an error occurs.
+     */
     async safeRunAsync(cb) {
         let result = null;
         await this.waitOne();
@@ -536,6 +564,12 @@ const Mutex=class Mutex {
         await this.release();
         return result;
     }
+    /**
+     * Executes a callback function safely within the mutex lock, allowing only the last function in the waiting list to acquire the lock, and releases the lock afterward.
+     * @template T - The type of the return value of the callback function.
+     * @param {() => T} cb - The callback function to execute.
+     * @returns {Promise<T | null>} A Promise that resolves to the result of the callback function or null if an error occurs.
+     */
     async safeRunLast(cb) {
         let result = null;
         if (await this.waitOne()) {
@@ -548,6 +582,12 @@ const Mutex=class Mutex {
         }
         return result;
     }
+    /**
+     * Executes an asynchronous callback function safely within the mutex lock, allowing only the last function in the waiting list to acquire the lock, and releases the lock afterward.
+     * @template T - The type of the return value of the asynchronous callback function.
+     * @param {() => Promise<T>} cb - The asynchronous callback function to execute.
+     * @returns {Promise<T | undefined>} A Promise that resolves to the result of the asynchronous callback function or undefined if an error occurs.
+     */
     async safeRunLastAsync(cb) {
         let result;
         if (await this.waitOne()) {
@@ -1231,6 +1271,9 @@ const Watcher=class Watcher {
                         if (element instanceof Computed) {
                             return element;
                         }
+                        if (element instanceof HTMLElement) {
+                            return element;
+                        }
                         if (element instanceof Object) {
                             newProxy = new Proxy(element, this);
                         }
@@ -1322,6 +1365,12 @@ const Watcher=class Watcher {
                 else if (prop == "disableHistory") {
                     return () => {
                         this.useHistory = false;
+                    };
+                }
+                else if (prop == "getTarget") {
+                    return () => {
+                        clearReservedNames(target);
+                        return target;
                     };
                 }
                 else if (prop == "toJSON") {
@@ -1641,9 +1690,17 @@ const Watcher=class Watcher {
                 if (name !== "") {
                     let regex = new RegExp("^" + name.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + "(\\.|(\\[)|$)");
                     if (!regex.test(rootPath)) {
-                        continue;
+                        let regex2 = new RegExp("^" + rootPath.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + "(\\.|(\\[)|$)");
+                        if (!regex2.test(name)) {
+                            continue;
+                        }
+                        else {
+                            pathToSend = "";
+                        }
                     }
-                    pathToSend = rootPath.replace(regex, "$2");
+                    else {
+                        pathToSend = rootPath.replace(regex, "$2");
+                    }
                 }
                 if (name === "" && proxyData.useHistory) {
                     proxyData.history.push({
@@ -1764,6 +1821,24 @@ const Uri=class Uri {
         }
         return from.regex.test(current);
     }
+    static normalize(path) {
+        const isAbsolute = path.startsWith('/');
+        const parts = path.split('/');
+        const normalizedParts = [];
+        for (let i = 0; i < parts.length; i++) {
+            if (parts[i] === '..') {
+                normalizedParts.pop();
+            }
+            else if (parts[i] !== '.' && parts[i] !== '') {
+                normalizedParts.push(parts[i]);
+            }
+        }
+        let normalizedPath = normalizedParts.join('/');
+        if (isAbsolute) {
+            normalizedPath = '/' + normalizedPath;
+        }
+        return normalizedPath;
+    }
 }
 Uri.Namespace=`${moduleName}`;
 _.Uri=Uri;
@@ -1814,6 +1889,7 @@ const StateManager=class StateManager {
     }
     activeState;
     changeStateMutex = new Mutex();
+    canChangeStateCbs = [];
     afterStateChanged = new Callback();
     /**
      * Subscribe actions for a state or a state list
@@ -1936,6 +2012,9 @@ const StateManager=class StateManager {
     assignDefaultState(stateName) {
         return new EmptyState(stateName);
     }
+    canChangeState(cb) {
+        this.canChangeStateCbs.push(cb);
+    }
     /**
      * Activate a current state
      */
@@ -1952,6 +2031,11 @@ const StateManager=class StateManager {
                 this._log("state is undefined", "error");
                 this.changeStateMutex.release();
                 return false;
+            }
+            for (let cb of this.canChangeStateCbs) {
+                if (!(await cb(stateToUse))) {
+                    return false;
+                }
             }
             let canChange = true;
             if (this.activeState) {
@@ -2137,8 +2221,11 @@ const TemplateContext=class TemplateContext {
     comp;
     computeds = [];
     watch;
-    constructor(component, data = {}, parentContext) {
+    registry;
+    isDestroyed = false;
+    constructor(component, data = {}, parentContext, registry) {
         this.comp = component;
+        this.registry = registry;
         this.watch = Watcher.get({});
         let that = this;
         for (let key in data) {
@@ -2214,7 +2301,21 @@ const TemplateContext=class TemplateContext {
                 throw 'impossible';
             let keys = Object.keys(items);
             let index = keys[_getIndex.value];
-            return items[index];
+            let element = items[index];
+            if (element === undefined && (Array.isArray(items) || !items)) {
+                debugger;
+                if (this.registry) {
+                    let indexNb = Number(_getIndex.value);
+                    if (!isNaN(indexNb)) {
+                        this.registry.templates[indexNb].destructor();
+                        this.registry.templates.splice(indexNb, 1);
+                        for (let i = indexNb; i < this.registry.templates.length; i++) {
+                            this.registry.templates[i].context.decreaseIndex(_indexName);
+                        }
+                    }
+                }
+            }
+            return element;
         });
         let _getIndex = new ComputedNoRecomputed(() => {
             return this.watch[_indexName];
@@ -2265,6 +2366,7 @@ const TemplateContext=class TemplateContext {
         this.updateIndex(this.watch[_indexName] - 1, _indexName);
     }
     destructor() {
+        this.isDestroyed = true;
         for (let computed of this.computeds) {
             computed.destroy();
         }
@@ -2314,6 +2416,7 @@ const TemplateInstance=class TemplateInstance {
     loopRegisteries = {};
     loops = [];
     ifs = [];
+    isDestroyed = false;
     constructor(component, content, actions, loops, ifs, context) {
         this.component = component;
         this.content = content;
@@ -2338,6 +2441,7 @@ const TemplateInstance=class TemplateInstance {
         this.renderSubTemplate();
     }
     destructor() {
+        this.isDestroyed = true;
         for (let name in this.loopRegisteries) {
             for (let item of this.loopRegisteries[name].templates) {
                 item.destructor();
@@ -2414,7 +2518,12 @@ const TemplateInstance=class TemplateInstance {
     renderContextEdit(edit) {
         let _class = edit.once ? ComputedNoRecomputed : Computed;
         let computed = new _class(() => {
-            return edit.fct(this.context);
+            try {
+                return edit.fct(this.context);
+            }
+            catch (e) {
+            }
+            return {};
         });
         computed.subscribe((action, path, value) => {
             for (let key in computed.value) {
@@ -2447,13 +2556,25 @@ const TemplateInstance=class TemplateInstance {
             for (let el of this._components[event.id]) {
                 let cb = getValueFromObject(event.eventName, el);
                 cb?.add((...args) => {
-                    event.fct(this.context, args);
+                    try {
+                        event.fct(this.context, args);
+                    }
+                    catch (e) {
+                        console.error(e);
+                    }
                 });
             }
         }
         else {
             for (let el of this._components[event.id]) {
-                el.addEventListener(event.eventName, (e) => { event.fct(e, this.context); });
+                el.addEventListener(event.eventName, (e) => {
+                    try {
+                        event.fct(e, this.context);
+                    }
+                    catch (e) {
+                        console.error(e);
+                    }
+                });
             }
         }
     }
@@ -2521,13 +2642,20 @@ const TemplateInstance=class TemplateInstance {
         }
         let _class = change.once ? ComputedNoRecomputed : Computed;
         let computed = new _class(() => {
-            return change.fct(this.context);
+            try {
+                return change.fct(this.context);
+            }
+            catch (e) {
+            }
+            return "";
         });
         let timeout;
         computed.subscribe((action, path, value) => {
             clearTimeout(timeout);
             // add timeout to group change that append on the same frame (for example index update)
             timeout = setTimeout(() => {
+                if (computed.isDestroy)
+                    return;
                 apply();
             });
         });
@@ -2676,7 +2804,7 @@ const TemplateInstance=class TemplateInstance {
         }
         let anchor = this._components[loop.anchorId][0];
         for (let i = 0; i < result.length; i++) {
-            let context = new TemplateContext(this.component, result[i], this.context);
+            let context = new TemplateContext(this.component, result[i], this.context, this.loopRegisteries[loop.anchorId]);
             let content = loop.template.template?.content.cloneNode(true);
             let actions = loop.template.actions;
             let instance = new TemplateInstance(this.component, content, actions, loop.template.loops, loop.template.ifs, context);
@@ -2727,7 +2855,7 @@ const TemplateInstance=class TemplateInstance {
                 if (index !== undefined) {
                     let registry = this.loopRegisteries[loop.anchorId];
                     if (action == WatchAction.CREATED) {
-                        let context = new TemplateContext(this.component, {}, this.context);
+                        let context = new TemplateContext(this.component, {}, this.context, registry);
                         context.registerLoop(simple.data, index, indexName, simple.index, simple.item);
                         let content = loop.template.template?.content.cloneNode(true);
                         let actions = loop.template.actions;
@@ -2755,11 +2883,12 @@ const TemplateInstance=class TemplateInstance {
                     }
                 }
             };
+            this.loopRegisteries[loop.anchorId].sub = sub;
             elements.subscribe(sub);
         }
         let anchor = this._components[loop.anchorId][0];
         for (let i = 0; i < keys.length; i++) {
-            let context = new TemplateContext(this.component, {}, this.context);
+            let context = new TemplateContext(this.component, {}, this.context, this.loopRegisteries[loop.anchorId]);
             context.registerLoop(simple.data, i, indexName, simple.index, simple.item);
             let content = loop.template.template?.content.cloneNode(true);
             let actions = loop.template.actions;
@@ -3120,7 +3249,7 @@ const WebComponent=class WebComponent extends HTMLElement {
     static __template;
     __templateInstance;
     styleBefore(addStyle) {
-        addStyle("@general");
+        addStyle("@default");
     }
     styleAfter(addStyle) {
     }
@@ -3614,133 +3743,6 @@ const WebComponentInstance=class WebComponentInstance {
 }
 WebComponentInstance.Namespace=`${moduleName}`;
 _.WebComponentInstance=WebComponentInstance;
-const ResizeObserver=class ResizeObserver {
-    callback;
-    targets;
-    fpsInterval = -1;
-    nextFrame;
-    entriesChangedEvent;
-    willTrigger;
-    static resizeObserverClassByObject = {};
-    static uniqueInstance;
-    static getUniqueInstance() {
-        if (!ResizeObserver.uniqueInstance) {
-            ResizeObserver.uniqueInstance = new window.ResizeObserver(entries => {
-                let allClasses = [];
-                for (let j = 0; j < entries.length; j++) {
-                    let entry = entries[j];
-                    let index = entry.target['sourceIndex'];
-                    if (ResizeObserver.resizeObserverClassByObject[index]) {
-                        for (let i = 0; i < ResizeObserver.resizeObserverClassByObject[index].length; i++) {
-                            let classTemp = ResizeObserver.resizeObserverClassByObject[index][i];
-                            classTemp.entryChanged(entry);
-                            if (allClasses.indexOf(classTemp) == -1) {
-                                allClasses.push(classTemp);
-                            }
-                        }
-                    }
-                }
-                for (let i = 0; i < allClasses.length; i++) {
-                    allClasses[i].triggerCb();
-                }
-            });
-        }
-        return ResizeObserver.uniqueInstance;
-    }
-    constructor(options) {
-        let realOption;
-        if (options instanceof Function) {
-            realOption = {
-                callback: options,
-            };
-        }
-        else {
-            realOption = options;
-        }
-        this.callback = realOption.callback;
-        this.targets = [];
-        if (!realOption.fps) {
-            realOption.fps = 60;
-        }
-        if (realOption.fps != -1) {
-            this.fpsInterval = 1000 / realOption.fps;
-        }
-        this.nextFrame = 0;
-        this.entriesChangedEvent = {};
-        this.willTrigger = false;
-    }
-    /**
-     * Observe size changing for the element
-     */
-    observe(target) {
-        if (!target["sourceIndex"]) {
-            target["sourceIndex"] = Math.random().toString(36);
-            this.targets.push(target);
-            ResizeObserver.resizeObserverClassByObject[target["sourceIndex"]] = [];
-            ResizeObserver.getUniqueInstance().observe(target);
-        }
-        if (ResizeObserver.resizeObserverClassByObject[target["sourceIndex"]].indexOf(this) == -1) {
-            ResizeObserver.resizeObserverClassByObject[target["sourceIndex"]].push(this);
-        }
-    }
-    /**
-     * Stop observing size changing for the element
-     */
-    unobserve(target) {
-        for (let i = 0; this.targets.length; i++) {
-            let tempTarget = this.targets[i];
-            if (tempTarget == target) {
-                let position = ResizeObserver.resizeObserverClassByObject[target['sourceIndex']].indexOf(this);
-                if (position != -1) {
-                    ResizeObserver.resizeObserverClassByObject[target['sourceIndex']].splice(position, 1);
-                }
-                if (ResizeObserver.resizeObserverClassByObject[target['sourceIndex']].length == 0) {
-                    delete ResizeObserver.resizeObserverClassByObject[target['sourceIndex']];
-                }
-                ResizeObserver.getUniqueInstance().unobserve(target);
-                this.targets.splice(i, 1);
-                return;
-            }
-        }
-    }
-    /**
-     * Destroy the resize observer
-     */
-    disconnect() {
-        for (let i = 0; this.targets.length; i++) {
-            this.unobserve(this.targets[i]);
-        }
-    }
-    entryChanged(entry) {
-        let index = entry.target.sourceIndex;
-        this.entriesChangedEvent[index] = entry;
-    }
-    triggerCb() {
-        if (!this.willTrigger) {
-            this.willTrigger = true;
-            this._triggerCb();
-        }
-    }
-    _triggerCb() {
-        let now = window.performance.now();
-        let elapsed = now - this.nextFrame;
-        if (this.fpsInterval != -1 && elapsed <= this.fpsInterval) {
-            requestAnimationFrame(() => {
-                this._triggerCb();
-            });
-            return;
-        }
-        this.nextFrame = now - (elapsed % this.fpsInterval);
-        let changed = Object.values(this.entriesChangedEvent);
-        this.entriesChangedEvent = {};
-        this.willTrigger = false;
-        setTimeout(() => {
-            this.callback(changed);
-        }, 0);
-    }
-}
-ResizeObserver.Namespace=`${moduleName}`;
-_.ResizeObserver=ResizeObserver;
 const ResourceLoader=class ResourceLoader {
     static headerLoaded = {};
     static headerWaiting = {};
@@ -3910,6 +3912,491 @@ const ResourceLoader=class ResourceLoader {
 }
 ResourceLoader.Namespace=`${moduleName}`;
 _.ResourceLoader=ResourceLoader;
+const ResizeObserver=class ResizeObserver {
+    callback;
+    targets;
+    fpsInterval = -1;
+    nextFrame;
+    entriesChangedEvent;
+    willTrigger;
+    static resizeObserverClassByObject = {};
+    static uniqueInstance;
+    static getUniqueInstance() {
+        if (!ResizeObserver.uniqueInstance) {
+            ResizeObserver.uniqueInstance = new window.ResizeObserver(entries => {
+                let allClasses = [];
+                for (let j = 0; j < entries.length; j++) {
+                    let entry = entries[j];
+                    let index = entry.target['sourceIndex'];
+                    if (ResizeObserver.resizeObserverClassByObject[index]) {
+                        for (let i = 0; i < ResizeObserver.resizeObserverClassByObject[index].length; i++) {
+                            let classTemp = ResizeObserver.resizeObserverClassByObject[index][i];
+                            classTemp.entryChanged(entry);
+                            if (allClasses.indexOf(classTemp) == -1) {
+                                allClasses.push(classTemp);
+                            }
+                        }
+                    }
+                }
+                for (let i = 0; i < allClasses.length; i++) {
+                    allClasses[i].triggerCb();
+                }
+            });
+        }
+        return ResizeObserver.uniqueInstance;
+    }
+    constructor(options) {
+        let realOption;
+        if (options instanceof Function) {
+            realOption = {
+                callback: options,
+            };
+        }
+        else {
+            realOption = options;
+        }
+        this.callback = realOption.callback;
+        this.targets = [];
+        if (!realOption.fps) {
+            realOption.fps = 60;
+        }
+        if (realOption.fps != -1) {
+            this.fpsInterval = 1000 / realOption.fps;
+        }
+        this.nextFrame = 0;
+        this.entriesChangedEvent = {};
+        this.willTrigger = false;
+    }
+    /**
+     * Observe size changing for the element
+     */
+    observe(target) {
+        if (!target["sourceIndex"]) {
+            target["sourceIndex"] = Math.random().toString(36);
+            this.targets.push(target);
+            ResizeObserver.resizeObserverClassByObject[target["sourceIndex"]] = [];
+            ResizeObserver.getUniqueInstance().observe(target);
+        }
+        if (ResizeObserver.resizeObserverClassByObject[target["sourceIndex"]].indexOf(this) == -1) {
+            ResizeObserver.resizeObserverClassByObject[target["sourceIndex"]].push(this);
+        }
+    }
+    /**
+     * Stop observing size changing for the element
+     */
+    unobserve(target) {
+        for (let i = 0; this.targets.length; i++) {
+            let tempTarget = this.targets[i];
+            if (tempTarget == target) {
+                let position = ResizeObserver.resizeObserverClassByObject[target['sourceIndex']].indexOf(this);
+                if (position != -1) {
+                    ResizeObserver.resizeObserverClassByObject[target['sourceIndex']].splice(position, 1);
+                }
+                if (ResizeObserver.resizeObserverClassByObject[target['sourceIndex']].length == 0) {
+                    delete ResizeObserver.resizeObserverClassByObject[target['sourceIndex']];
+                }
+                ResizeObserver.getUniqueInstance().unobserve(target);
+                this.targets.splice(i, 1);
+                return;
+            }
+        }
+    }
+    /**
+     * Destroy the resize observer
+     */
+    disconnect() {
+        for (let i = 0; this.targets.length; i++) {
+            this.unobserve(this.targets[i]);
+        }
+    }
+    entryChanged(entry) {
+        let index = entry.target.sourceIndex;
+        this.entriesChangedEvent[index] = entry;
+    }
+    triggerCb() {
+        if (!this.willTrigger) {
+            this.willTrigger = true;
+            this._triggerCb();
+        }
+    }
+    _triggerCb() {
+        let now = window.performance.now();
+        let elapsed = now - this.nextFrame;
+        if (this.fpsInterval != -1 && elapsed <= this.fpsInterval) {
+            requestAnimationFrame(() => {
+                this._triggerCb();
+            });
+            return;
+        }
+        this.nextFrame = now - (elapsed % this.fpsInterval);
+        let changed = Object.values(this.entriesChangedEvent);
+        this.entriesChangedEvent = {};
+        this.willTrigger = false;
+        setTimeout(() => {
+            this.callback(changed);
+        }, 0);
+    }
+}
+ResizeObserver.Namespace=`${moduleName}`;
+_.ResizeObserver=ResizeObserver;
+const Animation=class Animation {
+    /**
+     * Default FPS for all Animation if not set inside options
+     */
+    static FPS_DEFAULT = 60;
+    options;
+    nextFrame = 0;
+    fpsInterval;
+    continueAnimation = false;
+    frame_id = 0;
+    constructor(options) {
+        if (!options.animate) {
+            options.animate = () => { };
+        }
+        if (!options.stopped) {
+            options.stopped = () => { };
+        }
+        if (!options.fps) {
+            options.fps = Animation.FPS_DEFAULT;
+        }
+        this.options = options;
+        this.fpsInterval = 1000 / options.fps;
+    }
+    animate() {
+        let now = window.performance.now();
+        let elapsed = now - this.nextFrame;
+        if (elapsed <= this.fpsInterval) {
+            this.frame_id = requestAnimationFrame(() => this.animate());
+            return;
+        }
+        this.nextFrame = now - (elapsed % this.fpsInterval);
+        setTimeout(() => {
+            this.options.animate();
+        }, 0);
+        if (this.continueAnimation) {
+            this.frame_id = requestAnimationFrame(() => this.animate());
+        }
+        else {
+            this.options.stopped();
+        }
+    }
+    /**
+     * Start the of animation
+     */
+    start() {
+        if (this.continueAnimation == false) {
+            this.continueAnimation = true;
+            this.nextFrame = window.performance.now();
+            this.animate();
+        }
+    }
+    /**
+     * Stop the animation
+     */
+    stop() {
+        this.continueAnimation = false;
+    }
+    /**
+     * Stop the animation
+     */
+    immediateStop() {
+        cancelAnimationFrame(this.frame_id);
+        this.continueAnimation = false;
+        this.options.stopped();
+    }
+    /**
+     * Get the FPS
+     */
+    getFPS() {
+        return this.options.fps;
+    }
+    /**
+     * Set the FPS
+     */
+    setFPS(fps) {
+        this.options.fps = fps;
+        this.fpsInterval = 1000 / this.options.fps;
+    }
+    /**
+     * Get the animation status (true if animation is running)
+     */
+    isStarted() {
+        return this.continueAnimation;
+    }
+}
+Animation.Namespace=`${moduleName}`;
+_.Animation=Animation;
+const DragAndDrop=class DragAndDrop {
+    /**
+     * Default offset before drag element
+     */
+    static defaultOffsetDrag = 20;
+    pressManager;
+    options;
+    startCursorPosition = { x: 0, y: 0 };
+    startElementPosition = { x: 0, y: 0 };
+    isEnable = true;
+    draggableElement;
+    constructor(options) {
+        this.options = this.getDefaultOptions(options.element);
+        this.mergeProperties(options);
+        this.mergeFunctions(options);
+        this.options.elementTrigger.style.touchAction = 'none';
+        this.pressManager = new PressManager({
+            element: this.options.elementTrigger,
+            onPressStart: this.onPressStart.bind(this),
+            onPressEnd: this.onPressEnd.bind(this),
+            onDragStart: this.onDragStart.bind(this),
+            onDrag: this.onDrag.bind(this),
+            onDragEnd: this.onDragEnd.bind(this),
+            offsetDrag: this.options.offsetDrag,
+            stopPropagation: this.options.stopPropagation
+        });
+    }
+    getDefaultOptions(element) {
+        return {
+            applyDrag: true,
+            element: element,
+            elementTrigger: element,
+            offsetDrag: DragAndDrop.defaultOffsetDrag,
+            shadow: {
+                enable: false,
+                container: document.body,
+                removeOnStop: true,
+                transform: () => { }
+            },
+            strict: false,
+            targets: [],
+            usePercent: false,
+            stopPropagation: true,
+            isDragEnable: () => true,
+            getZoom: () => 1,
+            getOffsetX: () => 0,
+            getOffsetY: () => 0,
+            onPointerDown: (e) => { },
+            onPointerUp: (e) => { },
+            onStart: (e) => { },
+            onMove: (e) => { },
+            onStop: (e) => { },
+            onDrop: (element, targets) => { },
+            correctPosition: (position) => position
+        };
+    }
+    mergeProperties(options) {
+        if (options.element === void 0) {
+            throw "You must define the element for the drag&drop";
+        }
+        this.options.element = options.element;
+        if (options.elementTrigger === void 0) {
+            this.options.elementTrigger = this.options.element;
+        }
+        else {
+            this.options.elementTrigger = options.elementTrigger;
+        }
+        this.defaultMerge(options, "applyDrag");
+        this.defaultMerge(options, "offsetDrag");
+        this.defaultMerge(options, "strict");
+        this.defaultMerge(options, "targets");
+        this.defaultMerge(options, "usePercent");
+        this.defaultMerge(options, "stopPropagation");
+        if (options.shadow !== void 0) {
+            this.options.shadow.enable = options.shadow.enable;
+            if (options.shadow.container !== void 0) {
+                this.options.shadow.container = options.shadow.container;
+            }
+            else {
+                this.options.shadow.container = document.body;
+            }
+            if (options.shadow.removeOnStop !== void 0) {
+                this.options.shadow.removeOnStop = options.shadow.removeOnStop;
+            }
+            if (options.shadow.transform !== void 0) {
+                this.options.shadow.transform = options.shadow.transform;
+            }
+        }
+    }
+    mergeFunctions(options) {
+        this.defaultMerge(options, "isDragEnable");
+        this.defaultMerge(options, "getZoom");
+        this.defaultMerge(options, "getOffsetX");
+        this.defaultMerge(options, "getOffsetY");
+        this.defaultMerge(options, "onPointerDown");
+        this.defaultMerge(options, "onPointerUp");
+        this.defaultMerge(options, "onStart");
+        this.defaultMerge(options, "onMove");
+        this.defaultMerge(options, "onStop");
+        this.defaultMerge(options, "onDrop");
+        this.defaultMerge(options, "correctPosition");
+    }
+    defaultMerge(options, name) {
+        if (options[name] !== void 0) {
+            this.options[name] = options[name];
+        }
+    }
+    positionShadowRelativeToElement = { x: 0, y: 0 };
+    onPressStart(e) {
+        this.options.onPointerDown(e);
+    }
+    onPressEnd(e) {
+        this.options.onPointerUp(e);
+    }
+    onDragStart(e) {
+        this.isEnable = this.options.isDragEnable();
+        if (!this.isEnable) {
+            return;
+        }
+        let draggableElement = this.options.element;
+        this.startCursorPosition = {
+            x: e.pageX,
+            y: e.pageY
+        };
+        this.startElementPosition = {
+            x: draggableElement.offsetLeft,
+            y: draggableElement.offsetTop
+        };
+        if (this.options.shadow.enable) {
+            draggableElement = this.options.element.cloneNode(true);
+            let elBox = this.options.element.getBoundingClientRect();
+            let containerBox = this.options.shadow.container.getBoundingClientRect();
+            this.positionShadowRelativeToElement = {
+                x: elBox.x - containerBox.x,
+                y: elBox.y - containerBox.y
+            };
+            if (this.options.applyDrag) {
+                draggableElement.style.position = "absolute";
+                draggableElement.style.top = this.positionShadowRelativeToElement.y + this.options.getOffsetY() + 'px';
+                draggableElement.style.left = this.positionShadowRelativeToElement.x + this.options.getOffsetX() + 'px';
+            }
+            this.options.shadow.transform(draggableElement);
+            this.options.shadow.container.appendChild(draggableElement);
+        }
+        this.draggableElement = draggableElement;
+        this.options.onStart(e);
+    }
+    onDrag(e) {
+        if (!this.isEnable) {
+            return;
+        }
+        let zoom = this.options.getZoom();
+        let diff = {
+            x: 0,
+            y: 0
+        };
+        if (this.options.shadow.enable) {
+            diff = {
+                x: (e.pageX - this.startCursorPosition.x) + this.positionShadowRelativeToElement.x + this.options.getOffsetX(),
+                y: (e.pageY - this.startCursorPosition.y) + this.positionShadowRelativeToElement.y + this.options.getOffsetY(),
+            };
+        }
+        else {
+            diff = {
+                x: (e.pageX - this.startCursorPosition.x) / zoom + this.startElementPosition.x + this.options.getOffsetX(),
+                y: (e.pageY - this.startCursorPosition.y) / zoom + this.startElementPosition.y + this.options.getOffsetY()
+            };
+        }
+        let newPos = this.setPosition(diff);
+        this.options.onMove(e, newPos);
+    }
+    onDragEnd(e) {
+        if (!this.isEnable) {
+            return;
+        }
+        let targets = this.getMatchingTargets();
+        let draggableElement = this.draggableElement;
+        if (this.options.shadow.enable && this.options.shadow.removeOnStop) {
+            draggableElement.parentNode?.removeChild(draggableElement);
+        }
+        if (targets.length > 0) {
+            this.options.onDrop(this.options.element, targets);
+        }
+        this.options.onStop(e);
+    }
+    setPosition(position) {
+        let draggableElement = this.draggableElement;
+        if (this.options.usePercent) {
+            let elementParent = draggableElement.offsetParent;
+            let percentPosition = {
+                x: (position.x / elementParent.offsetWidth) * 100,
+                y: (position.y / elementParent.offsetHeight) * 100
+            };
+            percentPosition = this.options.correctPosition(percentPosition);
+            if (this.options.applyDrag) {
+                draggableElement.style.left = percentPosition.x + '%';
+                draggableElement.style.top = percentPosition.y + '%';
+            }
+            return percentPosition;
+        }
+        else {
+            position = this.options.correctPosition(position);
+            if (this.options.applyDrag) {
+                draggableElement.style.left = position.x + 'px';
+                draggableElement.style.top = position.y + 'px';
+            }
+        }
+        return position;
+    }
+    /**
+     * Get targets within the current element position is matching
+     */
+    getMatchingTargets() {
+        let draggableElement = this.draggableElement;
+        let matchingTargets = [];
+        for (let target of this.options.targets) {
+            const elementCoordinates = draggableElement.getBoundingClientRect();
+            const targetCoordinates = target.getBoundingClientRect();
+            let offsetX = this.options.getOffsetX();
+            let offsetY = this.options.getOffsetY();
+            let zoom = this.options.getZoom();
+            targetCoordinates.x += offsetX;
+            targetCoordinates.y += offsetY;
+            targetCoordinates.width *= zoom;
+            targetCoordinates.height *= zoom;
+            if (this.options.strict) {
+                if ((elementCoordinates.x >= targetCoordinates.x && elementCoordinates.x + elementCoordinates.width <= targetCoordinates.x + targetCoordinates.width) &&
+                    (elementCoordinates.y >= targetCoordinates.y && elementCoordinates.y + elementCoordinates.height <= targetCoordinates.y + targetCoordinates.height)) {
+                    matchingTargets.push(target);
+                }
+            }
+            else {
+                let elementLeft = elementCoordinates.x;
+                let elementRight = elementCoordinates.x + elementCoordinates.width;
+                let elementTop = elementCoordinates.y;
+                let elementBottom = elementCoordinates.y + elementCoordinates.height;
+                let targetLeft = targetCoordinates.x;
+                let targetRight = targetCoordinates.x + targetCoordinates.width;
+                let targetTop = targetCoordinates.y;
+                let targetBottom = targetCoordinates.y + targetCoordinates.height;
+                if (!(elementRight < targetLeft ||
+                    elementLeft > targetRight ||
+                    elementBottom < targetTop ||
+                    elementTop > targetBottom)) {
+                    matchingTargets.push(target);
+                }
+            }
+        }
+        return matchingTargets;
+    }
+    /**
+     * Get element currently dragging
+     */
+    getElementDrag() {
+        return this.options.element;
+    }
+    /**
+     * Set targets where to drop
+     */
+    setTargets(targets) {
+        this.options.targets = targets;
+    }
+    /**
+     * Destroy the current drag&drop instance
+     */
+    destroy() {
+        this.pressManager.destroy();
+    }
+}
+DragAndDrop.Namespace=`${moduleName}`;
+_.DragAndDrop=DragAndDrop;
 
 for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
@@ -3920,289 +4407,1149 @@ var Aventus;
 const moduleName = `Aventus`;
 const _ = {};
 
-
+const Navigation = {};
+_.Navigation = {};
+const Layout = {};
+_.Layout = {};
 let _n;
-const Img = class Img extends Aventus.WebComponent {
-    static get observedAttributes() {return ["src", "mode"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
-    get 'cache'() { return this.getBoolAttr('cache') }
-    set 'cache'(val) { this.setBoolAttr('cache', val) }    get 'src'() { return this.getStringProp('src') }
-    set 'src'(val) { this.setStringAttr('src', val) }get 'mode'() { return this.getStringProp('mode') }
-    set 'mode'(val) { this.setStringAttr('mode', val) }    isCalculing;
-    maxCalculateSize = 10;
-    ratio = 1;
-    resizeObserver;
-    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("src", ((target) => {
-    target.onSrcChanged();
-}));this.__addPropertyActions("mode", ((target) => {
-    if (target.src != "") {
-        target.calculateSize();
+const Tracker=class Tracker {
+    velocityMultiplier = window.devicePixelRatio;
+    updateTime = Date.now();
+    delta = { x: 0, y: 0 };
+    velocity = { x: 0, y: 0 };
+    lastPosition = { x: 0, y: 0 };
+    constructor(touch) {
+        this.lastPosition = this.getPosition(touch);
     }
-})); }
-    static __style = `:host{--internal-img-color: var(--img-color);--internal-img-stroke-color: var(--img-stroke-color, var(--internal-img-color));--internal-img-fill-color: var(--img-fill-color, var(--internal-img-color));--internal-img-color-transition: var(--img-color-transition, none)}:host{display:inline-block;overflow:hidden;font-size:0}:host *{box-sizing:border-box}:host img{opacity:0;transition:filter .3s linear}:host .svg{display:none;height:100%;width:100%}:host .svg svg{height:100%;width:100%}:host([src$=".svg"]) img{display:none}:host([src$=".svg"]) .svg{display:flex}:host([src$=".svg"]) .svg svg{transition:var(--internal-img-color-transition);stroke:var(--internal-img-stroke-color);fill:var(--internal-img-fill-color)}:host([display_bigger]) img{cursor:pointer}:host([display_bigger]) img:hover{filter:brightness(50%)}`;
+    update(touch) {
+        const { velocity, updateTime, lastPosition, } = this;
+        const now = Date.now();
+        const position = this.getPosition(touch);
+        const delta = {
+            x: -(position.x - lastPosition.x),
+            y: -(position.y - lastPosition.y),
+        };
+        const duration = (now - updateTime) || 16.7;
+        const vx = delta.x / duration * 16.7;
+        const vy = delta.y / duration * 16.7;
+        velocity.x = vx * this.velocityMultiplier;
+        velocity.y = vy * this.velocityMultiplier;
+        this.delta = delta;
+        this.updateTime = now;
+        this.lastPosition = position;
+    }
+    getPointerData(evt) {
+        return evt.touches ? evt.touches[evt.touches.length - 1] : evt;
+    }
+    getPosition(evt) {
+        const data = this.getPointerData(evt);
+        return {
+            x: data.clientX,
+            y: data.clientY,
+        };
+    }
+}
+Tracker.Namespace=`${moduleName}`;
+_.Tracker=Tracker;
+const RouterStateManager=class RouterStateManager extends Aventus.StateManager {
+    static getInstance() {
+        return Aventus.Instance.get(RouterStateManager);
+    }
+}
+RouterStateManager.Namespace=`${moduleName}`;
+_.RouterStateManager=RouterStateManager;
+Navigation.RouterLink = class RouterLink extends Aventus.WebComponent {
+    get 'state'() { return this.getStringAttr('state') }
+    set 'state'(val) { this.setStringAttr('state', val) }
+get 'active_state'() { return this.getStringAttr('active_state') }
+    set 'active_state'(val) { this.setStringAttr('active_state', val) }
+    onActiveChange = new Aventus.Callback();
+    static __style = ``;
     __getStatic() {
-        return Img;
+        return RouterLink;
     }
     __getStyle() {
         let arrStyle = super.__getStyle();
-        arrStyle.push(Img.__style);
+        arrStyle.push(RouterLink.__style);
         return arrStyle;
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<img _id="img_0" /><div class="svg" _id="img_1"></div>` }
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
     });
 }
-    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+    getClassName() {
+        return "RouterLink";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('state')){ this['state'] = undefined; }
+if(!this.hasAttribute('active_state')){ this['active_state'] = undefined; }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('state');
+this.__upgradeProperty('active_state');
+ }
+    addClickEvent() {
+        new Aventus.PressManager({
+            element: this,
+            onPress: () => {
+                if (this.state === undefined)
+                    return;
+                let state = this.state;
+                if (this.state.startsWith(".")) {
+                    state = Aventus.Instance.get(RouterStateManager).getState()?.name ?? "";
+                    if (!state.endsWith("/")) {
+                        state += "/";
+                    }
+                    state += this.state;
+                    state = Aventus.Uri.normalize(state);
+                }
+                Aventus.State.activate(state, Aventus.Instance.get(RouterStateManager));
+            }
+        });
+    }
+    registerActiveStateListener() {
+        let activeState = this.state;
+        if (this.active_state) {
+            activeState = this.active_state;
+        }
+        if (activeState === undefined)
+            return;
+        Aventus.Instance.get(RouterStateManager).subscribe(activeState, {
+            active: () => {
+                this.classList.add("active");
+                this.onActiveChange.trigger([true]);
+            },
+            inactive: () => {
+                this.classList.remove("active");
+                this.onActiveChange.trigger([false]);
+            }
+        });
+    }
+    postCreation() {
+        this.registerActiveStateListener();
+        this.addClickEvent();
+    }
+}
+Navigation.RouterLink.Namespace=`${moduleName}.Navigation`;
+Navigation.RouterLink.Tag=`av-router-link`;
+_.Navigation.RouterLink=Navigation.RouterLink;
+if(!window.customElements.get('av-router-link')){window.customElements.define('av-router-link', Navigation.RouterLink);Aventus.WebComponentInstance.registerDefinition(Navigation.RouterLink);}
+
+Navigation.Page = class Page extends Aventus.WebComponent {
+    static get observedAttributes() {return ["visible"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'visible'() { return this.getBoolProp('visible') }
+    set 'visible'(val) { this.setBoolAttr('visible', val) }
+    currentRouter;
+    currentState;
+    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("visible", ((target) => {
+    if (target.visible) {
+        target.onShow();
+    }
+    else {
+        target.onHide();
+    }
+}));
+ }
+    static __style = `:host{display:none}:host([visible]){display:block}`;
+    constructor() { super(); if (this.constructor == Page) { throw "can't instanciate an abstract class"; } }
+    __getStatic() {
+        return Page;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Page.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "Page";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('visible')) { this.attributeChangedCallback('visible', false, false); }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('visible');
+ }
+    __listBoolProps() { return ["visible"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    pageTitle() {
+        return undefined;
+    }
+    async show(state) {
+        this.currentState = state;
+        this.visible = true;
+    }
+    async hide() {
+        this.visible = false;
+        this.currentState = undefined;
+    }
+    onShow() {
+    }
+    onHide() {
+    }
+}
+Navigation.Page.Namespace=`${moduleName}.Navigation`;
+_.Navigation.Page=Navigation.Page;
+
+Navigation.Router = class Router extends Aventus.WebComponent {
+    oldPage;
+    allRoutes = {};
+    activePath = "";
+    activeState;
+    oneStateActive = false;
+    showPageMutex = new Aventus.Mutex();
+    get stateManager() {
+        return Aventus.Instance.get(RouterStateManager);
+    }
+    page404;
+    static __style = `:host{display:block}`;
+    constructor() {
+            super();
+            this.validError404 = this.validError404.bind(this);
+            this.canChangeState = this.canChangeState.bind(this);
+            this.stateManager.canChangeState(this.canChangeState);
+if (this.constructor == Router) { throw "can't instanciate an abstract class"; } }
+    __getStatic() {
+        return Router;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Router.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'before':`<slot name="before"></slot>`,'after':`<slot name="after"></slot>` }, 
+        blocks: { 'default':`<slot name="before"></slot><div class="content" _id="router_0"></div><slot name="after"></slot>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
   "elements": [
     {
-      "name": "imgEl",
+      "name": "contentEl",
       "ids": [
-        "img_0"
-      ]
-    },
-    {
-      "name": "svgEl",
-      "ids": [
-        "img_1"
+        "router_0"
       ]
     }
   ]
-}); }
+});
+ }
     getClassName() {
-        return "Img";
+        return "Router";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('cache')) { this.attributeChangedCallback('cache', false, false); }if(!this.hasAttribute('src')){ this['src'] = undefined; }if(!this.hasAttribute('mode')){ this['mode'] = "contains"; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('cache');this.__upgradeProperty('src');this.__upgradeProperty('mode'); }
-    __listBoolProps() { return ["cache"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-    calculateSize(attempt = 0) {
-        if (this.isCalculing || !this.imgEl || !this.svgEl) {
-            return;
-        }
-        if (this.src == "") {
-            return;
-        }
-        this.isCalculing = true;
-        if (getComputedStyle(this).display == 'none') {
-            return;
-        }
-        if (attempt == this.maxCalculateSize) {
-            this.isCalculing = false;
-            return;
-        }
-        let element = this.imgEl;
-        if (this.src?.endsWith(".svg")) {
-            element = this.svgEl;
-        }
-        this.style.width = '';
-        this.style.height = '';
-        element.style.width = '';
-        element.style.height = '';
-        if (element.offsetWidth == 0 && element.offsetHeight == 0) {
-            setTimeout(() => {
-                this.isCalculing = false;
-                this.calculateSize(attempt + 1);
-            }, 100);
-            return;
-        }
-        let style = getComputedStyle(this);
-        let addedY = Number(style.paddingTop.replace("px", "")) + Number(style.paddingBottom.replace("px", "")) + Number(style.borderTopWidth.replace("px", "")) + Number(style.borderBottomWidth.replace("px", ""));
-        let addedX = Number(style.paddingLeft.replace("px", "")) + Number(style.paddingRight.replace("px", "")) + Number(style.borderLeftWidth.replace("px", "")) + Number(style.borderRightWidth.replace("px", ""));
-        let availableHeight = this.offsetHeight - addedY;
-        let availableWidth = this.offsetWidth - addedX;
-        let sameWidth = (element.offsetWidth == availableWidth);
-        let sameHeight = (element.offsetHeight == availableHeight);
-        this.ratio = element.offsetWidth / element.offsetHeight;
-        if (sameWidth && !sameHeight) {
-            // height is set
-            element.style.width = (availableHeight * this.ratio) + 'px';
-            element.style.height = availableHeight + 'px';
-        }
-        else if (!sameWidth && sameHeight) {
-            // width is set
-            element.style.width = availableWidth + 'px';
-            element.style.height = (availableWidth / this.ratio) + 'px';
-        }
-        else if (!sameWidth && !sameHeight) {
-            if (this.mode == "stretch") {
-                element.style.width = '100%';
-                element.style.height = '100%';
-            }
-            else if (this.mode == "contains") {
-                // suppose this height is max
-                let newWidth = (availableHeight * this.ratio);
-                if (newWidth <= availableWidth) {
-                    //we can apply this value
-                    element.style.width = newWidth + 'px';
-                    element.style.height = availableHeight + 'px';
-                }
-                else {
-                    element.style.width = availableWidth + 'px';
-                    element.style.height = (availableWidth / this.ratio) + 'px';
-                }
-            }
-            else if (this.mode == "cover") {
-                // suppose this height is min
-                let newWidth = (availableHeight * this.ratio);
-                if (newWidth >= availableWidth) {
-                    //we can apply this value
-                    element.style.width = newWidth + 'px';
-                    element.style.height = availableHeight + 'px';
-                }
-                else {
-                    element.style.width = availableWidth + 'px';
-                    element.style.height = (availableWidth / this.ratio) + 'px';
-                }
+    addRouteAsync(options) {
+        this.allRoutes[options.route] = options;
+    }
+    addRoute(route, elementCtr) {
+        this.allRoutes[route] = {
+            route: route,
+            scriptUrl: '',
+            render: () => elementCtr
+        };
+    }
+    register() {
+        try {
+            this.defineRoutes();
+            this.stateManager.onAfterStateChanged(this.validError404);
+            for (let key in this.allRoutes) {
+                this.initRoute(key);
             }
         }
-        //center img
-        let diffTop = (this.offsetHeight - element.offsetHeight - addedY) / 2;
-        let diffLeft = (this.offsetWidth - element.offsetWidth - addedX) / 2;
-        element.style.transform = "translate(" + diffLeft + "px, " + diffTop + "px)";
-        element.style.opacity = '1';
-        this.isCalculing = false;
-    }
-    async onSrcChanged() {
-        if (!this.src || !this.svgEl || !this.imgEl) {
-            return;
-        }
-        if (this.src.endsWith(".svg")) {
-            let svgContent = await Aventus.ResourceLoader.load(this.src);
-            this.svgEl.innerHTML = svgContent;
-            this.calculateSize();
-        }
-        else if (this.cache) {
-            let base64 = await Aventus.ResourceLoader.load({
-                url: this.src,
-                type: 'img'
-            });
-            this.imgEl.setAttribute("src", base64);
-            this.calculateSize();
-        }
-        else {
-            this.imgEl.setAttribute("src", this.src);
-            this.calculateSize();
+        catch (e) {
+            console.log(e);
         }
     }
-    postDestruction() {
-        this.resizeObserver?.disconnect();
-        this.resizeObserver = undefined;
-    }
-    postCreation() {
-        this.resizeObserver = new Aventus.ResizeObserver({
-            fps: 10,
-            callback: () => {
-                this.calculateSize();
+    initRoute(path) {
+        let element = undefined;
+        let allRoutes = this.allRoutes;
+        this.stateManager.subscribe(path, {
+            active: (currentState) => {
+                this.oneStateActive = true;
+                this.showPageMutex.safeRunLastAsync(async () => {
+                    if (!element) {
+                        let options = allRoutes[path];
+                        if (options.scriptUrl != "") {
+                            await Aventus.ResourceLoader.loadInHead(options.scriptUrl);
+                        }
+                        let cst = options.render();
+                        element = new cst;
+                        element.currentRouter = this;
+                        this.contentEl.appendChild(element);
+                    }
+                    if (this.oldPage && this.oldPage != element) {
+                        await this.oldPage.hide();
+                    }
+                    let oldPage = this.oldPage;
+                    let oldUrl = this.activePath;
+                    this.oldPage = element;
+                    this.activePath = path;
+                    this.activeState = currentState;
+                    await element.show(currentState);
+                    let title = element.pageTitle();
+                    if (title !== undefined)
+                        document.title = title;
+                    if (this.bindToUrl() && window.location.pathname != currentState.name) {
+                        let newUrl = window.location.origin + currentState.name;
+                        window.history.pushState({}, title ?? "", newUrl);
+                    }
+                    this.onNewPage(oldUrl, oldPage, path, element);
+                });
+            },
+            inactive: () => {
+                this.oneStateActive = false;
             }
         });
-        this.resizeObserver.observe(this);
+    }
+    async validError404() {
+        if (!this.oneStateActive) {
+            let Page404 = this.error404(this.stateManager.getState());
+            if (Page404) {
+                if (!this.page404) {
+                    this.page404 = new Page404();
+                    this.page404.currentRouter = this;
+                    this.contentEl.appendChild(this.page404);
+                }
+                if (this.oldPage && this.oldPage != this.page404) {
+                    await this.oldPage.hide();
+                }
+                this.activeState = undefined;
+                this.oldPage = this.page404;
+                this.activePath = '';
+                await this.page404.show(this.activeState);
+            }
+        }
+    }
+    error404(state) {
+        return null;
+    }
+    onNewPage(oldUrl, oldPage, newUrl, newPage) {
+    }
+    getSlugs() {
+        return this.stateManager.getStateSlugs(this.activePath);
+    }
+    async canChangeState(newState) {
+        return true;
+    }
+    navigate(state) {
+        return this.stateManager.setState(state);
+    }
+    bindToUrl() {
+        return true;
+    }
+    defaultUrl() {
+        return "/";
+    }
+    postCreation() {
+        this.register();
+        let oldUrl = window.localStorage.getItem("navigation_url");
+        if (oldUrl !== null) {
+            Aventus.State.activate(oldUrl, this.stateManager);
+            window.localStorage.removeItem("navigation_url");
+        }
+        else if (this.bindToUrl()) {
+            Aventus.State.activate(window.location.pathname, this.stateManager);
+        }
+        else {
+            let defaultUrl = this.defaultUrl();
+            if (defaultUrl) {
+                Aventus.State.activate(defaultUrl, this.stateManager);
+            }
+        }
+        if (this.bindToUrl()) {
+            window.onpopstate = (e) => {
+                if (window.location.pathname != this.stateManager.getState()?.name) {
+                    Aventus.State.activate(window.location.pathname, this.stateManager);
+                }
+            };
+        }
     }
 }
-Img.Namespace=`${moduleName}`;
-Img.Tag=`av-img`;
-_.Img=Img;
-if(!window.customElements.get('av-img')){window.customElements.define('av-img', Img);Aventus.WebComponentInstance.registerDefinition(Img);}
+Navigation.Router.Namespace=`${moduleName}.Navigation`;
+_.Navigation.Router=Navigation.Router;
+
+const TouchRecord=class TouchRecord {
+    _activeTouchID;
+    _touchList = {};
+    get _primitiveValue() {
+        return { x: 0, y: 0 };
+    }
+    isActive() {
+        return this._activeTouchID !== undefined;
+    }
+    getDelta() {
+        const tracker = this._getActiveTracker();
+        if (!tracker) {
+            return this._primitiveValue;
+        }
+        return { ...tracker.delta };
+    }
+    getVelocity() {
+        const tracker = this._getActiveTracker();
+        if (!tracker) {
+            return this._primitiveValue;
+        }
+        return { ...tracker.velocity };
+    }
+    getEasingDistance(damping) {
+        const deAcceleration = 1 - damping;
+        let distance = {
+            x: 0,
+            y: 0,
+        };
+        const vel = this.getVelocity();
+        Object.keys(vel).forEach(dir => {
+            let v = Math.abs(vel[dir]) <= 10 ? 0 : vel[dir];
+            while (v !== 0) {
+                distance[dir] += v;
+                v = (v * deAcceleration) | 0;
+            }
+        });
+        return distance;
+    }
+    track(evt) {
+        const { targetTouches, } = evt;
+        Array.from(targetTouches).forEach(touch => {
+            this._add(touch);
+        });
+        return this._touchList;
+    }
+    update(evt) {
+        const { touches, changedTouches, } = evt;
+        Array.from(touches).forEach(touch => {
+            this._renew(touch);
+        });
+        this._setActiveID(changedTouches);
+        return this._touchList;
+    }
+    release(evt) {
+        delete this._activeTouchID;
+        Array.from(evt.changedTouches).forEach(touch => {
+            this._delete(touch);
+        });
+    }
+    _add(touch) {
+        if (this._has(touch)) {
+            this._delete(touch);
+        }
+        const tracker = new Tracker(touch);
+        this._touchList[touch.identifier] = tracker;
+    }
+    _renew(touch) {
+        if (!this._has(touch)) {
+            return;
+        }
+        const tracker = this._touchList[touch.identifier];
+        tracker.update(touch);
+    }
+    _delete(touch) {
+        delete this._touchList[touch.identifier];
+    }
+    _has(touch) {
+        return this._touchList.hasOwnProperty(touch.identifier);
+    }
+    _setActiveID(touches) {
+        this._activeTouchID = touches[touches.length - 1].identifier;
+    }
+    _getActiveTracker() {
+        const { _touchList, _activeTouchID, } = this;
+        if (_activeTouchID !== undefined) {
+            return _touchList[_activeTouchID];
+        }
+        return undefined;
+    }
+}
+TouchRecord.Namespace=`${moduleName}`;
+_.TouchRecord=TouchRecord;
+Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
+    static get observedAttributes() {return ["zoom"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'y_scroll_visible'() { return this.getBoolAttr('y_scroll_visible') }
+    set 'y_scroll_visible'(val) { this.setBoolAttr('y_scroll_visible', val) }
+get 'x_scroll_visible'() { return this.getBoolAttr('x_scroll_visible') }
+    set 'x_scroll_visible'(val) { this.setBoolAttr('x_scroll_visible', val) }
+get 'floating_scroll'() { return this.getBoolAttr('floating_scroll') }
+    set 'floating_scroll'(val) { this.setBoolAttr('floating_scroll', val) }
+get 'x_scroll'() { return this.getBoolAttr('x_scroll') }
+    set 'x_scroll'(val) { this.setBoolAttr('x_scroll', val) }
+get 'y_scroll'() { return this.getBoolAttr('y_scroll') }
+    set 'y_scroll'(val) { this.setBoolAttr('y_scroll', val) }
+get 'auto_hide'() { return this.getBoolAttr('auto_hide') }
+    set 'auto_hide'(val) { this.setBoolAttr('auto_hide', val) }
+get 'break'() { return this.getNumberAttr('break') }
+    set 'break'(val) { this.setNumberAttr('break', val) }
+get 'disable'() { return this.getBoolAttr('disable') }
+    set 'disable'(val) { this.setBoolAttr('disable', val) }
+get 'no_user_select'() { return this.getBoolAttr('no_user_select') }
+    set 'no_user_select'(val) { this.setBoolAttr('no_user_select', val) }
+    get 'zoom'() { return this.getNumberProp('zoom') }
+    set 'zoom'(val) { this.setNumberAttr('zoom', val) }
+    observer;
+    display = { x: 0, y: 0 };
+    max = {
+        x: 0,
+        y: 0
+    };
+    margin = {
+        x: 0,
+        y: 0
+    };
+    position = {
+        x: 0,
+        y: 0
+    };
+    momentum = { x: 0, y: 0 };
+    contentWrapperSize = { x: 0, y: 0 };
+    scroller = {
+        x: () => {
+            if (!this.horizontalScroller) {
+                throw 'can\'t find the horizontalScroller';
+            }
+            return this.horizontalScroller;
+        },
+        y: () => {
+            if (!this.verticalScroller) {
+                throw 'can\'t find the verticalScroller';
+            }
+            return this.verticalScroller;
+        }
+    };
+    scrollerContainer = {
+        x: () => {
+            if (!this.horizontalScrollerContainer) {
+                throw 'can\'t find the horizontalScrollerContainer';
+            }
+            return this.horizontalScrollerContainer;
+        },
+        y: () => {
+            if (!this.verticalScrollerContainer) {
+                throw 'can\'t find the verticalScrollerContainer';
+            }
+            return this.verticalScrollerContainer;
+        }
+    };
+    hideDelay = { x: 0, y: 0 };
+    touchRecord;
+    pointerCount = 0;
+    savedBreak = 1;
+    get x() {
+        return this.position.x;
+    }
+    get y() {
+        return this.position.y;
+    }
+    onScrollChange = new Aventus.Callback();
+    renderAnimation;
+    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("zoom", ((target) => {
+    target.changeZoom();
+}));
+ }
+    static __style = `:host{--internal-scrollbar-container-color: var(--scrollbar-container-color, transparent);--internal-scrollbar-color: var(--scrollbar-color, #757575);--internal-scrollbar-active-color: var(--scrollbar-active-color, #858585);--internal-scroller-width: var(--scroller-width, 6px);--internal-scroller-top: var(--scroller-top, 3px);--internal-scroller-bottom: var(--scroller-bottom, 3px);--internal-scroller-right: var(--scroller-right, 3px);--internal-scroller-left: var(--scroller-left, 3px);--_scrollbar-content-padding: var(--scrollbar-content-padding, 0);--_scrollbar-container-display: var(--scrollbar-container-display, inline-block)}:host{display:block;height:100%;min-height:inherit;min-width:inherit;overflow:hidden;position:relative;-webkit-user-drag:none;-khtml-user-drag:none;-moz-user-drag:none;-o-user-drag:none;width:100%}:host .scroll-main-container{display:block;height:100%;min-height:inherit;min-width:inherit;position:relative;width:100%}:host .scroll-main-container .content-zoom{display:block;height:100%;min-height:inherit;min-width:inherit;position:relative;transform-origin:0 0;width:100%;z-index:4}:host .scroll-main-container .content-zoom .content-hidder{display:block;height:100%;min-height:inherit;min-width:inherit;overflow:hidden;position:relative;width:100%}:host .scroll-main-container .content-zoom .content-hidder .content-wrapper{display:var(--_scrollbar-container-display);height:100%;min-height:inherit;min-width:inherit;padding:var(--_scrollbar-content-padding);position:relative;width:100%}:host .scroll-main-container .scroller-wrapper .container-scroller{display:none;overflow:hidden;position:absolute;transition:transform .2s linear;z-index:5}:host .scroll-main-container .scroller-wrapper .container-scroller .shadow-scroller{background-color:var(--internal-scrollbar-container-color);border-radius:5px}:host .scroll-main-container .scroller-wrapper .container-scroller .shadow-scroller .scroller{background-color:var(--internal-scrollbar-color);border-radius:5px;cursor:pointer;position:absolute;-webkit-tap-highlight-color:rgba(0,0,0,0);touch-action:none;z-index:5}:host .scroll-main-container .scroller-wrapper .container-scroller .scroller.active{background-color:var(--internal-scrollbar-active-color)}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical{height:calc(100% - var(--internal-scroller-bottom)*2 - var(--internal-scroller-width));padding-left:var(--internal-scroller-left);right:var(--internal-scroller-right);top:var(--internal-scroller-bottom);transform:0;width:calc(var(--internal-scroller-width) + var(--internal-scroller-left))}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical.hide{transform:translateX(calc(var(--internal-scroller-width) + var(--internal-scroller-left)))}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical .shadow-scroller{height:100%}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical .shadow-scroller .scroller{width:calc(100% - var(--internal-scroller-left))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal{bottom:var(--internal-scroller-bottom);height:calc(var(--internal-scroller-width) + var(--internal-scroller-top));left:var(--internal-scroller-right);padding-top:var(--internal-scroller-top);transform:0;width:calc(100% - var(--internal-scroller-right)*2 - var(--internal-scroller-width))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal.hide{transform:translateY(calc(var(--internal-scroller-width) + var(--internal-scroller-top)))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal .shadow-scroller{height:100%}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal .shadow-scroller .scroller{height:calc(100% - var(--internal-scroller-top))}:host([y_scroll]) .scroll-main-container .content-zoom .content-hidder .content-wrapper{height:auto}:host([x_scroll]) .scroll-main-container .content-zoom .content-hidder .content-wrapper{width:auto}:host([y_scroll_visible]) .scroll-main-container .scroller-wrapper .container-scroller.vertical{display:block}:host([x_scroll_visible]) .scroll-main-container .scroller-wrapper .container-scroller.horizontal{display:block}:host([no_user_select]) .content-wrapper *{user-select:none}:host([no_user_select]) ::slotted{user-select:none}`;
+    constructor() {
+            super();
+            this.renderAnimation = this.createAnimation();
+            this.onWheel = this.onWheel.bind(this);
+            this.onTouchStart = this.onTouchStart.bind(this);
+            this.onTouchMove = this.onTouchMove.bind(this);
+            this.onTouchEnd = this.onTouchEnd.bind(this);
+            this.touchRecord = new TouchRecord();
+        }
+    __getStatic() {
+        return Scrollable;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Scrollable.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<div class="scroll-main-container" _id="scrollable_0">
+    <div class="content-zoom" _id="scrollable_1">
+        <div class="content-hidder" _id="scrollable_2">
+            <div class="content-wrapper" part="content-wrapper" _id="scrollable_3">
+                <slot></slot>
+            </div>
+        </div>
+    </div>
+    <div class="scroller-wrapper">
+        <div class="container-scroller vertical" _id="scrollable_4">
+            <div class="shadow-scroller">
+                <div class="scroller" _id="scrollable_5"></div>
+            </div>
+        </div>
+        <div class="container-scroller horizontal" _id="scrollable_6">
+            <div class="shadow-scroller">
+                <div class="scroller" _id="scrollable_7"></div>
+            </div>
+        </div>
+    </div>
+</div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "mainContainer",
+      "ids": [
+        "scrollable_0"
+      ]
+    },
+    {
+      "name": "contentZoom",
+      "ids": [
+        "scrollable_1"
+      ]
+    },
+    {
+      "name": "contentHidder",
+      "ids": [
+        "scrollable_2"
+      ]
+    },
+    {
+      "name": "contentWrapper",
+      "ids": [
+        "scrollable_3"
+      ]
+    },
+    {
+      "name": "verticalScrollerContainer",
+      "ids": [
+        "scrollable_4"
+      ]
+    },
+    {
+      "name": "verticalScroller",
+      "ids": [
+        "scrollable_5"
+      ]
+    },
+    {
+      "name": "horizontalScrollerContainer",
+      "ids": [
+        "scrollable_6"
+      ]
+    },
+    {
+      "name": "horizontalScroller",
+      "ids": [
+        "scrollable_7"
+      ]
+    }
+  ]
+});
+ }
+    getClassName() {
+        return "Scrollable";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('y_scroll_visible')) { this.attributeChangedCallback('y_scroll_visible', false, false); }
+if(!this.hasAttribute('x_scroll_visible')) { this.attributeChangedCallback('x_scroll_visible', false, false); }
+if(!this.hasAttribute('floating_scroll')) { this.attributeChangedCallback('floating_scroll', false, false); }
+if(!this.hasAttribute('x_scroll')) { this.attributeChangedCallback('x_scroll', false, false); }
+if(!this.hasAttribute('y_scroll')) {this.setAttribute('y_scroll' ,'true'); }
+if(!this.hasAttribute('auto_hide')) { this.attributeChangedCallback('auto_hide', false, false); }
+if(!this.hasAttribute('break')){ this['break'] = 0.1; }
+if(!this.hasAttribute('disable')) { this.attributeChangedCallback('disable', false, false); }
+if(!this.hasAttribute('no_user_select')) { this.attributeChangedCallback('no_user_select', false, false); }
+if(!this.hasAttribute('zoom')){ this['zoom'] = 1; }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('y_scroll_visible');
+this.__upgradeProperty('x_scroll_visible');
+this.__upgradeProperty('floating_scroll');
+this.__upgradeProperty('x_scroll');
+this.__upgradeProperty('y_scroll');
+this.__upgradeProperty('auto_hide');
+this.__upgradeProperty('break');
+this.__upgradeProperty('disable');
+this.__upgradeProperty('no_user_select');
+this.__upgradeProperty('zoom');
+ }
+    __listBoolProps() { return ["y_scroll_visible","x_scroll_visible","floating_scroll","x_scroll","y_scroll","auto_hide","disable","no_user_select"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    createAnimation() {
+        return new Aventus.Animation({
+            fps: 60,
+            animate: () => {
+                const nextX = this.nextPosition('x');
+                const nextY = this.nextPosition('y');
+                this.momentum.x = nextX.momentum;
+                this.momentum.y = nextY.momentum;
+                this.scrollDirection('x', nextX.position);
+                this.scrollDirection('y', nextY.position);
+                if (!this.momentum.x && !this.momentum.y) {
+                    this.renderAnimation.stop();
+                }
+            },
+            stopped: () => {
+                if (this.momentum.x || this.momentum.y) {
+                    this.renderAnimation.start();
+                }
+            }
+        });
+    }
+    nextPosition(direction) {
+        const current = this.position[direction];
+        const remain = this.momentum[direction];
+        let result = {
+            momentum: 0,
+            position: 0,
+        };
+        if (Math.abs(remain) <= 0.1) {
+            result.position = current + remain;
+        }
+        else {
+            let nextMomentum = remain * (1 - this.break);
+            nextMomentum |= 0;
+            result.momentum = nextMomentum;
+            result.position = current + remain - nextMomentum;
+        }
+        let correctPosition = this.correctScrollValue(result.position, direction);
+        if (correctPosition != result.position) {
+            result.position = correctPosition;
+            result.momentum = 0;
+        }
+        return result;
+    }
+    scrollDirection(direction, value) {
+        const max = this.max[direction];
+        if (max != 0) {
+            this.position[direction] = this.correctScrollValue(value, direction);
+        }
+        else {
+            this.position[direction] = 0;
+        }
+        let container = this.scrollerContainer[direction]();
+        let scroller = this.scroller[direction]();
+        if (this.auto_hide) {
+            container.classList.remove("hide");
+            clearTimeout(this.hideDelay[direction]);
+            this.hideDelay[direction] = setTimeout(() => {
+                container.classList.add("hide");
+            }, 1000);
+        }
+        let containerSize = direction == 'y' ? container.offsetHeight : container.offsetWidth;
+        if (this.contentWrapperSize[direction] != 0) {
+            let scrollPosition = this.position[direction] / this.contentWrapperSize[direction] * containerSize;
+            scroller.style.transform = `translate${direction.toUpperCase()}(${scrollPosition}px)`;
+            this.contentWrapper.style.transform = `translate3d(${-1 * this.x}px, ${-1 * this.y}px, 0)`;
+        }
+        this.triggerScrollChange();
+    }
+    correctScrollValue(value, direction) {
+        if (value < 0) {
+            value = 0;
+        }
+        else if (value > this.max[direction]) {
+            value = this.max[direction];
+        }
+        return value;
+    }
+    triggerScrollChange() {
+        this.onScrollChange.trigger([this.x, this.y]);
+    }
+    scrollToPosition(x, y) {
+        this.scrollDirection('x', x);
+        this.scrollDirection('y', y);
+    }
+    scrollX(x) {
+        this.scrollDirection('x', x);
+    }
+    scrollY(y) {
+        this.scrollDirection('y', y);
+    }
+    addAction() {
+        this.addEventListener("wheel", this.onWheel);
+        this.addEventListener("touchstart", this.onTouchStart);
+        this.addEventListener("touchmove", this.onTouchMove);
+        this.addEventListener("touchcancel", this.onTouchEnd);
+        this.addEventListener("touchend", this.onTouchEnd);
+        this.addScrollDrag('x');
+        this.addScrollDrag('y');
+    }
+    addScrollDrag(direction) {
+        let scroller = this.scroller[direction]();
+        scroller.addEventListener("touchstart", (e) => {
+            e.stopPropagation();
+        });
+        let startPosition = 0;
+        new Aventus.DragAndDrop({
+            element: scroller,
+            applyDrag: false,
+            usePercent: true,
+            offsetDrag: 0,
+            isDragEnable: () => !this.disable,
+            onStart: (e) => {
+                this.no_user_select = true;
+                scroller.classList.add("active");
+                startPosition = this.position[direction];
+            },
+            onMove: (e, position) => {
+                let delta = position[direction] / 100 * this.contentWrapperSize[direction];
+                let value = startPosition + delta;
+                this.scrollDirection(direction, value);
+            },
+            onStop: () => {
+                this.no_user_select = false;
+                scroller.classList.remove("active");
+            }
+        });
+    }
+    addDelta(delta) {
+        if (this.disable) {
+            return;
+        }
+        this.momentum.x += delta.x;
+        this.momentum.y += delta.y;
+        this.renderAnimation?.start();
+    }
+    onWheel(e) {
+        const DELTA_MODE = [1.0, 28.0, 500.0];
+        const mode = DELTA_MODE[e.deltaMode] || DELTA_MODE[0];
+        let newValue = {
+            x: 0,
+            y: e.deltaY * mode,
+        };
+        if (!this.y_scroll && this.x_scroll) {
+            newValue = {
+                x: e.deltaY * mode,
+                y: 0,
+            };
+            if ((newValue.x > 0 && this.x != this.max.x) ||
+                (newValue.x <= 0 && this.x != 0)) {
+                e.stopPropagation();
+            }
+        }
+        else {
+            if ((newValue.y > 0 && this.y != this.max.y) ||
+                (newValue.y <= 0 && this.y != 0)) {
+                e.stopPropagation();
+            }
+        }
+        this.addDelta(newValue);
+    }
+    onTouchStart(e) {
+        this.touchRecord.track(e);
+        this.momentum = {
+            x: 0,
+            y: 0
+        };
+        if (this.pointerCount === 0) {
+            this.savedBreak = this.break;
+            this.break = Math.max(this.break, 0.5); // less frames on touchmove
+        }
+        this.pointerCount++;
+    }
+    onTouchMove(e) {
+        this.touchRecord.update(e);
+        const delta = this.touchRecord.getDelta();
+        this.addDelta(delta);
+    }
+    onTouchEnd(e) {
+        const delta = this.touchRecord.getEasingDistance(this.savedBreak);
+        this.addDelta(delta);
+        this.pointerCount--;
+        if (this.pointerCount === 0) {
+            this.break = this.savedBreak;
+        }
+        this.touchRecord.release(e);
+    }
+    calculateRealSize() {
+        if (!this.contentZoom || !this.mainContainer || !this.contentWrapper) {
+            return;
+        }
+        const currentOffsetWidth = this.contentZoom.offsetWidth;
+        const currentOffsetHeight = this.contentZoom.offsetHeight;
+        this.contentWrapperSize.x = this.contentWrapper.offsetWidth;
+        this.contentWrapperSize.y = this.contentWrapper.offsetHeight;
+        if (this.zoom < 1) {
+            // scale the container for zoom
+            this.contentZoom.style.width = this.mainContainer.offsetWidth / this.zoom + 'px';
+            this.contentZoom.style.height = this.mainContainer.offsetHeight / this.zoom + 'px';
+            this.display.y = currentOffsetHeight;
+            this.display.x = currentOffsetWidth;
+        }
+        else {
+            this.display.y = currentOffsetHeight / this.zoom;
+            this.display.x = currentOffsetWidth / this.zoom;
+        }
+    }
+    calculatePositionScrollerContainer(direction) {
+        if (direction == 'y') {
+            this.calculatePositionScrollerContainerY();
+        }
+        else {
+            this.calculatePositionScrollerContainerX();
+        }
+    }
+    calculatePositionScrollerContainerY() {
+        const leftMissing = this.mainContainer.offsetWidth - this.verticalScrollerContainer.offsetLeft;
+        if (leftMissing > 0 && this.y_scroll_visible && !this.floating_scroll) {
+            this.contentHidder.style.width = 'calc(100% - ' + leftMissing + 'px)';
+            this.contentHidder.style.marginRight = leftMissing + 'px';
+            this.margin.x = leftMissing;
+        }
+        else {
+            this.contentHidder.style.width = '';
+            this.contentHidder.style.marginRight = '';
+            this.margin.x = 0;
+        }
+    }
+    calculatePositionScrollerContainerX() {
+        const topMissing = this.mainContainer.offsetHeight - this.horizontalScrollerContainer.offsetTop;
+        if (topMissing > 0 && this.x_scroll_visible && !this.floating_scroll) {
+            this.contentHidder.style.height = 'calc(100% - ' + topMissing + 'px)';
+            this.contentHidder.style.marginBottom = topMissing + 'px';
+            this.margin.y = topMissing;
+        }
+        else {
+            this.contentHidder.style.height = '';
+            this.contentHidder.style.marginBottom = '';
+            this.margin.y = 0;
+        }
+    }
+    calculateSizeScroller(direction) {
+        const scrollerSize = ((this.display[direction] - this.margin[direction]) / this.contentWrapperSize[direction] * 100);
+        if (direction == "y") {
+            this.scroller[direction]().style.height = scrollerSize + '%';
+        }
+        else {
+            this.scroller[direction]().style.width = scrollerSize + '%';
+        }
+        let maxScrollContent = this.contentWrapperSize[direction] - this.display[direction];
+        if (maxScrollContent < 0) {
+            maxScrollContent = 0;
+        }
+        this.max[direction] = maxScrollContent + this.margin[direction];
+    }
+    changeZoom() {
+        this.contentZoom.style.transform = 'scale(' + this.zoom + ')';
+        this.dimensionRefreshed();
+    }
+    dimensionRefreshed() {
+        this.calculateRealSize();
+        if (this.contentWrapperSize.y - this.display.y > 0) {
+            if (!this.y_scroll_visible) {
+                this.y_scroll_visible = true;
+                this.calculatePositionScrollerContainer('y');
+            }
+            this.calculateSizeScroller('y');
+            this.scrollDirection('y', this.y);
+        }
+        else if (this.y_scroll_visible) {
+            this.y_scroll_visible = false;
+            this.calculatePositionScrollerContainer('y');
+            this.calculateSizeScroller('y');
+            this.scrollDirection('y', 0);
+        }
+        if (this.contentWrapperSize.x - this.display.x > 0) {
+            if (!this.x_scroll_visible) {
+                this.x_scroll_visible = true;
+                this.calculatePositionScrollerContainer('x');
+            }
+            this.calculateSizeScroller('x');
+            this.scrollDirection('x', this.x);
+        }
+        else if (this.x_scroll_visible) {
+            this.x_scroll_visible = false;
+            this.calculatePositionScrollerContainer('x');
+            this.calculateSizeScroller('x');
+            this.scrollDirection('x', 0);
+        }
+    }
+    createResizeObserver() {
+        let inProgress = false;
+        return new Aventus.ResizeObserver({
+            callback: entries => {
+                if (inProgress) {
+                    return;
+                }
+                inProgress = true;
+                this.dimensionRefreshed();
+                inProgress = false;
+            },
+            fps: 30
+        });
+    }
+    addResizeObserver() {
+        if (this.observer == undefined) {
+            this.observer = this.createResizeObserver();
+        }
+        this.observer.observe(this.contentWrapper);
+        this.observer.observe(this);
+    }
+    postCreation() {
+        this.addResizeObserver();
+        this.addAction();
+    }
+}
+Layout.Scrollable.Namespace=`${moduleName}.Layout`;
+Layout.Scrollable.Tag=`av-scrollable`;
+_.Layout.Scrollable=Layout.Scrollable;
+if(!window.customElements.get('av-scrollable')){window.customElements.define('av-scrollable', Layout.Scrollable);Aventus.WebComponentInstance.registerDefinition(Layout.Scrollable);}
 
 
 for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
 
-var AventusWebsite;
-(AventusWebsite||(AventusWebsite = {}));
-(function (AventusWebsite) {
-const moduleName = `AventusWebsite`;
+var TodoDemo;
+(TodoDemo||(TodoDemo = {}));
+(function (TodoDemo) {
+const moduleName = `TodoDemo`;
 const _ = {};
 
 
 let _n;
-const Countdown = class Countdown extends Aventus.WebComponent {
-    static get observedAttributes() {return ["nb_days", "nb_hours", "nb_minutes", "nb_seconds"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
-    get 'nb_days'() { return this.getNumberProp('nb_days') }
-    set 'nb_days'(val) { this.setNumberAttr('nb_days', val) }get 'nb_hours'() { return this.getNumberProp('nb_hours') }
-    set 'nb_hours'(val) { this.setNumberAttr('nb_hours', val) }get 'nb_minutes'() { return this.getNumberProp('nb_minutes') }
-    set 'nb_minutes'(val) { this.setNumberAttr('nb_minutes', val) }get 'nb_seconds'() { return this.getNumberProp('nb_seconds') }
-    set 'nb_seconds'(val) { this.setNumberAttr('nb_seconds', val) }    rDate = new Date('2023-06-16T10:00:00.000Z');
-    static __style = `:host{height:100%;overflow:hidden;position:relative;width:100%}:host .info{align-items:center;background-color:var(--primary-color);display:flex;flex-direction:column;font-size:25px;height:100%;justify-content:center;padding:16px;width:100%;z-index:9999}:host h1{color:var(--aventus-color);z-index:9999;text-align:center}:host .row{align-items:center;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;z-index:9999}:host .row .row-split{display:flex;gap:10px}:host .row .row-split .square{align-items:center;background-color:var(--light-primary-color);color:var(--aventus-color);display:flex;font-size:25px;font-weight:bold;height:100px;justify-content:center;width:100px}:host av-img{--img-color: rgb(200, 200, 200);height:150%;left:-200px;opacity:.1;pointer-events:none;position:absolute;top:-25px;z-index:1}:host av-img:last-child{left:auto;right:-200px;top:30px;transform:rotate(180deg)}@media screen and (max-width: 1100px){:host av-img{left:-50%;top:25%}:host av-img:last-child{right:-50%;top:-75%}}`;
+const GenericPage = class GenericPage extends Aventus.Navigation.Page {
+    static __style = `:host{height:100%;overflow:hidden;width:100%}:host av-scrollable{height:100%;width:100%;--scrollbar-content-padding: 15px}:host av-scrollable .page-title{height:50px;width:100%;display:flex;align-items:center;justify-content:center;font-size:30px;margin:30px 0}`;
+    constructor() { super(); if (this.constructor == GenericPage) { throw "can't instanciate an abstract class"; } }
     __getStatic() {
-        return Countdown;
+        return GenericPage;
     }
     __getStyle() {
         let arrStyle = super.__getStyle();
-        arrStyle.push(Countdown.__style);
+        arrStyle.push(GenericPage.__style);
         return arrStyle;
     }
     __getHtml() {
+super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<div class="info">    <h1>Beta release on 16th June</h1>    <div class="row">        <div class="row-split">            <div class="square" _id="countdown_0"></div>            <div class="square" _id="countdown_1"></div>        </div>        <div class="row-split">            <div class="square" _id="countdown_2"></div>            <div class="square" _id="countdown_3"></div>        </div>    </div></div><av-img src="/img/logo.svg"></av-img><av-img src="/img/logo.svg"></av-img>` }
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-scrollable>
+    <div class="page-title" _id="genericpage_0"></div>
+    <slot></slot>
+</av-scrollable>` }
     });
 }
-    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
   "content": {
-    "countdown_0°@HTML": {
-      "fct": (c) => `${c.print(c.comp.__e519e6757436770b6e63f3b55b73a93bmethod0())}d`,
-      "once": true
-    },
-    "countdown_1°@HTML": {
-      "fct": (c) => `${c.print(c.comp.__e519e6757436770b6e63f3b55b73a93bmethod1())}h`,
-      "once": true
-    },
-    "countdown_2°@HTML": {
-      "fct": (c) => `${c.print(c.comp.__e519e6757436770b6e63f3b55b73a93bmethod2())}m`,
-      "once": true
-    },
-    "countdown_3°@HTML": {
-      "fct": (c) => `${c.print(c.comp.__e519e6757436770b6e63f3b55b73a93bmethod3())}s`,
+    "genericpage_0°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__a9579f75aa8381a3bcefb3bce28ea454method0())}`,
       "once": true
     }
   }
-}); }
+});
+ }
     getClassName() {
-        return "Countdown";
+        return "GenericPage";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('nb_days')){ this['nb_days'] = undefined; }if(!this.hasAttribute('nb_hours')){ this['nb_hours'] = undefined; }if(!this.hasAttribute('nb_minutes')){ this['nb_minutes'] = undefined; }if(!this.hasAttribute('nb_seconds')){ this['nb_seconds'] = undefined; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('nb_days');this.__upgradeProperty('nb_hours');this.__upgradeProperty('nb_minutes');this.__upgradeProperty('nb_seconds'); }
-    change() {
-        let now = new Date();
-        var delta = Math.abs(this.rDate.getTime() - now.getTime()) / 1000;
-        // calculate (and subtract) whole days
-        var days = Math.floor(delta / 86400);
-        delta -= days * 86400;
-        // calculate (and subtract) whole hours
-        var hours = Math.floor(delta / 3600) % 24;
-        delta -= hours * 3600;
-        // calculate (and subtract) whole minutes
-        var minutes = Math.floor(delta / 60) % 60;
-        delta -= minutes * 60;
-        // what's left is seconds
-        var seconds = Math.floor(delta % 60);
-        this.nb_days = days;
-        this.nb_hours = hours;
-        this.nb_minutes = minutes;
-        this.nb_seconds = seconds;
-    }
-    postCreation() {
-        this.change();
-        setInterval(() => {
-            this.change();
-        }, 1000);
-    }
-    __e519e6757436770b6e63f3b55b73a93bmethod0() {
-        return this.nb_days;
-    }
-    __e519e6757436770b6e63f3b55b73a93bmethod1() {
-        return this.nb_hours;
-    }
-    __e519e6757436770b6e63f3b55b73a93bmethod2() {
-        return this.nb_minutes;
-    }
-    __e519e6757436770b6e63f3b55b73a93bmethod3() {
-        return this.nb_seconds;
+    __a9579f75aa8381a3bcefb3bce28ea454method0() {
+        return this.definePageTitle();
     }
 }
-Countdown.Namespace=`${moduleName}`;
-Countdown.Tag=`av-countdown`;
-_.Countdown=Countdown;
-if(!window.customElements.get('av-countdown')){window.customElements.define('av-countdown', Countdown);Aventus.WebComponentInstance.registerDefinition(Countdown);}
+GenericPage.Namespace=`${moduleName}`;
+_.GenericPage=GenericPage;
+
+const TodoCreatePage = class TodoCreatePage extends GenericPage {
+    static __style = ``;
+    __getStatic() {
+        return TodoCreatePage;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TodoCreatePage.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`` }
+    });
+}
+    getClassName() {
+        return "TodoCreatePage";
+    }
+    definePageTitle() {
+        return "Create todo";
+    }
+}
+TodoCreatePage.Namespace=`${moduleName}`;
+TodoCreatePage.Tag=`td-todo-create-page`;
+_.TodoCreatePage=TodoCreatePage;
+if(!window.customElements.get('td-todo-create-page')){window.customElements.define('td-todo-create-page', TodoCreatePage);Aventus.WebComponentInstance.registerDefinition(TodoCreatePage);}
+
+const TodoListPage = class TodoListPage extends GenericPage {
+    static __style = ``;
+    __getStatic() {
+        return TodoListPage;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TodoListPage.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<div style="height:800px;width:40px;background:red"></div>` }
+    });
+}
+    getClassName() {
+        return "TodoListPage";
+    }
+    definePageTitle() {
+        return "List todos";
+    }
+}
+TodoListPage.Namespace=`${moduleName}`;
+TodoListPage.Tag=`td-todo-list-page`;
+_.TodoListPage=TodoListPage;
+if(!window.customElements.get('td-todo-list-page')){window.customElements.define('td-todo-list-page', TodoListPage);Aventus.WebComponentInstance.registerDefinition(TodoListPage);}
+
+const MainApp = class MainApp extends Aventus.Navigation.Router {
+    static __style = `:host{display:flex;flex-direction:row;height:100%;overflow:hidden;width:100%}:host .nav{background-color:var(--color-surface-mixed-300);height:100%;padding-top:30px;width:200px}:host .nav .nav-item{align-items:center;cursor:pointer;display:flex;margin:5px 0;padding:5px 15px;width:100%;transition:background-color .2s linear}:host .nav .nav-item.active{background-color:var(--color-surface-mixed-600)}:host .nav .nav-item:not(.active):hover{background-color:var(--color-surface-mixed-500)}:host .content{width:calc(100% - 200px);height:100%}`;
+    __getStatic() {
+        return MainApp;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(MainApp.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'before':`
+    <div class="nav">
+        <av-router-link class="nav-item" state="/">
+            <span class="name">Todo list</span>
+        </av-router-link>
+        <av-router-link class="nav-item" state="/create"> 
+            <span class="name">Create todo</span>
+        </av-router-link>
+    </div>
+`,'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "MainApp";
+    }
+    defineRoutes() {
+        // define the routing here
+        this.addRoute("/", TodoListPage);
+        this.addRoute("/create", TodoCreatePage);
+    }
+    inIframe() {
+        try {
+            return window.self !== window.top;
+        }
+        catch (e) {
+            return true;
+        }
+    }
+    bindToUrl() {
+        return !this.inIframe();
+    }
+}
+MainApp.Namespace=`${moduleName}`;
+MainApp.Tag=`td-main-app`;
+_.MainApp=MainApp;
+if(!window.customElements.get('td-main-app')){window.customElements.define('td-main-app', MainApp);Aventus.WebComponentInstance.registerDefinition(MainApp);}
 
 
-for(let key in _) { AventusWebsite[key] = _[key] }
-})(AventusWebsite);
+for(let key in _) { TodoDemo[key] = _[key] }
+})(TodoDemo);
