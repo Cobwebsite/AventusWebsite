@@ -1,0 +1,89 @@
+<av-code-editor name="test">
+    <av-code language="typescript" filename="test/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "test",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [{
+            				"output": "./dist/test.js"
+            			}]
+            		}
+            	]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="test/src/Button/Button.wcl.avt">
+        <pre>
+            export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region events
+                &nbsp;
+                //#endregion
+            &nbsp;
+                //#region methods
+                &nbsp;
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="test/src/Button/Button.wcs.avt">
+        <pre>
+            :host {
+            	/*
+            	* description2
+            	* @type color
+            	*/
+            	--_button-background-color: var(--button-background-color, var(--primary-color, #3c95d0));
+            }
+            &nbsp;
+            &nbsp;
+            :host {
+            	background-color: var(--_button-background-color);
+            	border: 1px solid transparent;
+            	border-radius: 10px;
+            	padding: 5px 15px;
+            }
+            &nbsp;
+            &nbsp;
+            :host([outline]) {
+            	background-color: #ffffff;
+            	border-color: var(--_button-background-color);
+            	color: var(--_button-background-color);
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="test/src/Button/Button.wcv.avt">
+        <pre>
+            &lt;slot&gt;test&lt;/slot&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

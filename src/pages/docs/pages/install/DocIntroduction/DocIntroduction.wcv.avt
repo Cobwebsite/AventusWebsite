@@ -36,5 +36,5 @@
     <li><span class="cn">Webcomponent</span></li>
     <li><span class="cn">Data / Storage</span></li>
     <li><span class="cn">States</span></li>
-    <li><span class="cn">Websocket</span></li>
+    <li><span class="cn">Http Request</span></li>
 </ul>

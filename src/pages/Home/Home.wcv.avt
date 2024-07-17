@@ -66,12 +66,12 @@
 
         <div class="why">
             <h2>The Aventus mindset</h2>
-            <p>Aventus strives to streamline web development by harnessing modern native technologies, with web
+            <p>AventusJs strives to streamline web development by harnessing modern native technologies, with web
                 components serving as a prime illustration of this approach. In today's landscape, developers can
                 construct robust applications without the need for an extensive array of libraries obtained via npm and
                 subsequently processed through a module bundler.</p>
             <p>Ease of installation and rapid project setup are paramount considerations. Users should have the ability
-                to swiftly access and generate templates to expedite development workflows. Presently, Aventus is
+                to swiftly access and generate templates to expedite development workflows. Presently, AventusJs is
                 exclusively offered as a VSCode extension, ensuring user-friendly accessibility and simplicity of
                 utilization. This decision simplifies the onboarding process, making the tool readily accessible to
                 developers, thereby enhancing overall productivity and efficiency in web development efforts.</p>

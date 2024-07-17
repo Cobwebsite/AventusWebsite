@@ -1,0 +1,21 @@
+<h1>Advanced - Npm Export</h1>
+
+<p>Exporting your AventusJs code to npm (Node Package Manager) is a powerful way to share and reuse your code across multiple projects. By publishing your code as an npm package, you can easily integrate it into any JavaScript project, streamline updates, and collaborate with others.</p>
+
+<h2>Setup for the example</h2>
+
+<p>First of all you need to create a new empty project <span class="cn">test</span> with a component named <span class="cn">Button</span></p>
+
+<av-doc-advanced-npm-export-editor-1></av-doc-advanced-npm-export-editor-1>
+
+<p>Now, add the section <span class="cn">build.compile.outputNpm</span> with the path <span class="cn">./npm</span>.</p>
+
+<av-doc-advanced-npm-export-editor-2></av-doc-advanced-npm-export-editor-2>
+
+<p>On save, this will create a new folder <span class="cn">npm</span> with all files ready for the deployment</p>
+
+<av-doc-advanced-npm-export-editor-3></av-doc-advanced-npm-export-editor-3>
+
+<p>Now run the command <span class="cn">npm publish --access public</span> to publish your script to npm so that you can use it everywhere.</p>
+
+

@@ -16,7 +16,7 @@
                 </div>
                 <div class="body">
                     <div class="tab active" name="map">
-                        <h2>Aventus Roadmap</h2>
+                        <h2>AventusJs Roadmap</h2>
                         <p>The road map will depend of the community feedbacks, but the team has already agreed on the
                             following points.</p>
                         <div class="road-map">
@@ -31,7 +31,7 @@
                                     i18n
                                     logic.</av-road-map-item>
                                 <av-road-map-item name="AventusSharp">End the AventusSharp library to write fullstack
-                                    application with Aventus.</av-road-map-item>
+                                    application with AventusJs.</av-road-map-item>
 
                                 <av-road-map-item name="Data">Auto manage data link inside the RAM to get a perfect data
                                     sync.</av-road-map-item>

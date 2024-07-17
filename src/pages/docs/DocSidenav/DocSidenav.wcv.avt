@@ -85,6 +85,8 @@
         <div class="title" slot="header">advanced</div>
         <ul>
             <li><av-router-link state="/docs/advanced/template">Template</av-router-link></li>
+            <li><av-router-link state="/docs/advanced/npm_export">Npm Export</av-router-link></li>
+            <li><av-router-link state="/docs/advanced/storybook">Storybook</av-router-link></li>
         </ul>
     </av-collapse>
 </av-scrollable>

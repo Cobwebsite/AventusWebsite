@@ -1,0 +1,249 @@
+<h1>Advanced - Storybook</h1>
+
+<p>Exporting your AventusJs code to Storybook is a powerful way to visualize and document your UI components and your
+    code. Storybook provides an interactive environment for developing, testing, and showcasing components in isolation,
+    making it an invaluable tool for both development and collaboration.</p>
+
+<h2>Setup for the example</h2>
+
+<p>First of all you need to create a new empty project <span class="cn">test</span> with a component named <span
+        class="cn">Button</span></p>
+
+
+<av-doc-advanced-storybook-editor-1></av-doc-advanced-storybook-editor-1>
+
+<p>Now, add the section <span class="cn">build.compile.outputNpm</span> with the path <span class="cn">./npm</span>.</p>
+
+<av-doc-advanced-storybook-editor-2></av-doc-advanced-storybook-editor-2>
+
+<p>On save, nothing happen. It's because by default stories don't compile on live. You can change the behaviour by
+    adding the property <span class="cn">live: true</span> inside the <span class="cn">stories</span> section. For this
+    example, you will keep live: false.</p>
+
+<p>To export stories, you can press <span class="cn">ctrl + shift + p</span> to open the command launcher and search for
+    <span class="cn">Aventus : Build storybook</span>. When you hit enter, a new folder named <span
+        class="cn">storybook</span> is created.
+</p>
+
+<p>This folder contains a storybook projet with the following structure.</p>
+
+<ul>
+    <li><span class="cn">.storybook</span> : contains the configuration files for storybook. You can find more <a
+            href="https://storybook.js.org/docs/configure" target="_blank">here</a>.</li>
+    <li><span class="cn">assets</span> : contains assets for your stories.</li>
+    <li><span class="cn">auto</span> : contains stories exported from Aventus. You shouldn't write inside the folder.
+    </li>
+    <li><span class="cn">generated</span> : contains your aventus project exported as npm package. You shouldn't write
+        inside the folder.</li>
+    <li><span class="cn">static</span> : static folder mounted by storybook</li>
+</ul>
+
+<p>You can now write custom documentation with <span class="cn">.mdx</span> files or custom stories.</p>
+
+<p>First of all, run the command <span class="cn">npm i</span> inside the folder <span class="cn">storybook</span> to
+    install node_modules then run <span class="cn">npm run storybook</span> to start storybook. A new page will open
+    inside your default browser with the storybook project.</p>
+
+<av-img src="/img/doc/advanced/storybook/first-storybook.png" style="max-height:500px"></av-img>
+
+<p>The meta for each story is build based on the documentation you provide inside your code. There is custom
+    documentation you can add to improve your story content.</p>
+
+
+<h2>Document slots</h2>
+
+<p>To document slots, you can add a comment over you component class with the tag <span class="cn">@slot (slotName)? -
+        description</span>. The default value for slotName is <span class="cn">default</span>.</p>
+
+<av-code language="typescript" filename="test/src/Button/Button.wcl.avt">
+    <pre>
+        /**
+         * This is an aventus button
+         * @slot default - Content for your button
+         */
+        export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {
+        }
+    </pre>
+</av-code>
+
+<av-img src="/img/doc/advanced/storybook/slots.png" style="max-height:500px"></av-img>
+
+<p>As you can see, the component has now a description and the slot default has also a description.</p>
+
+
+<h2>Style variables</h2>
+
+<p>To add documentation to your style variables, you can add a comment over the variable. Two tags are available to extends your documentation</p>
+
+<ul>
+    <li><span class="cn">@type</span> : to define the type of your variable. Actually only <span class="cn">color</span> will apply change to the docuementation.</li>
+    <li><span class="cn">@default</span> : to define the default value of your css variable. By default the value is the last static value inside the var chain</li>
+</ul>
+
+<av-code language="css" filename="test/src/Button/Button.wcs.avt">
+    <pre>
+        :host {
+            /**
+            * Background color for the button
+            * @type color
+            */
+            --_button-background-color: var(--button-background-color, var(--primary-color, #3c95d0));
+        }
+        &nbsp;
+        &nbsp;
+        :host {
+            background-color: var(--_button-background-color);
+            border: 1px solid transparent;
+            border-radius: 10px;
+            padding: 5px 15px;
+        }
+        &nbsp;
+        &nbsp;
+        :host([outline]) {
+            background-color: #ffffff;
+            border-color: var(--_button-background-color);
+            color: var(--_button-background-color);
+        }
+        &nbsp;
+    </pre>
+</av-code>
+
+<av-img src="/img/doc/advanced/storybook/css-vars.png" style="max-height:500px"></av-img>
+
+<p>As you can see, the variable has now a type and a description. Furthermore, inside the <span class="cn">Live section</span>, you can see that the control change to be a color picker.</p>
+
+<h2>Write custom stories</h2>
+
+<p>If you need to write custom stories, you can add the decorator <span class="cn">@Storybook</span> with the configuration <span class="cn">onlyMeta: true</span>. Now only the meta is created. No more documentation is created for your button</p>
+
+<av-code language="typescript" filename="test/src/Button/Button.wcl.avt">
+    <pre>
+        /**
+         * This is an aventus button
+         * @slot default - Content for your button
+         */
+        @Storybook({
+            onlyMeta: true
+        })
+        export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {
+        }
+    </pre>
+</av-code>
+
+<p>To write custom story, you can create a new file named <span class="cn">Button.stories.ts</span> inside the folder <span class="cn">storybook</span></p>
+
+<av-code language="typescript" filename="test/storybook/Button.stories.ts">
+    <pre>
+        import { type Meta, type Story } from '@aventusjs/storybook';
+        &nbsp;
+        import ButtonMeta from './auto/Button.stories';
+        &nbsp;
+        const meta: Meta = { ...ButtonMeta }
+        &nbsp;
+        export default meta;
+        &nbsp;
+        &nbsp;
+        export const MyCustomStory: Story = {}
+    </pre>
+</av-code>
+
+<p>In this file, you can write custom stories. You can read the <a href="https://storybook.js.org/docs" target="_blank">storybook documentation</a> to learn how stories are working.</p>
+
+<p>If you use custom stories, you need to redefine the title inside the meta constant. Otherwhise the file name will be used as title. </p>
+
+<av-code language="typescript" filename="test/storybook/Button.stories.ts">
+    <pre>
+        import { type Meta, type Story } from '@aventusjs/storybook';
+        &nbsp;
+        import ButtonMeta from './auto/Button.stories';
+        &nbsp;
+        const meta: Meta = { 
+            ...ButtonMeta,
+            title: "Button" // if you want a custom name or group
+        }
+        &nbsp;
+        export default meta;
+        &nbsp;
+        &nbsp;
+        export const MyCustomStory: Story = {}
+    </pre>
+</av-code>
+
+
+<h2>Write custom documentation pages</h2>
+
+<p>If you want to write custom document page, you can create a <span class="cn">.mdx file</span>. Most of the time, you will need diagram to explain how things are working togther. By default, the tag <span class="cn">av-diagram</span> is available to create mermaid diagram. You can read the mermaid documentation <a href="https://mermaid.js.org/intro/getting-started.html" target="_blank">here</a>.</p>
+
+<av-code language="js" filename="test/storybook/MyPage.mdx">
+    <pre>
+        import { Meta } from "@storybook/blocks";
+        &nbsp;
+        &lt;Meta title="My Page" /&gt;
+        &nbsp;
+        &lt;av-diagram&gt;
+        {&#96;---
+        title: Node
+        ---
+        flowchart LR
+            id
+        &#96;}
+        &lt;/av-diagram&gt;
+    </pre>
+</av-code>
+
+
+<p>We also suggest to download the extension <span class="cn">Draw.io Integration</span> inside your vscode. With this extension you can create asset file named <span class="cn">MyPage.drawio.svg</span> inside the <span class="cn">asset</span> folder and edit it live inside vscode. Then you can import this file inside your mdx to render the svg.</p>
+
+<av-img src="/img/doc/advanced/storybook/drawio.png" style="max-height:500px"></av-img>
+
+<av-code language="js" filename="test/storybook/MyPage.mdx">
+    <pre>
+        import { Meta } from "@storybook/blocks";
+        import DrawIO from "./assets/MyPage.drawio.svg";
+        &nbsp;
+        &lt;Meta title="My Page" /&gt;
+        &nbsp;
+        &lt;av-diagram&gt;
+        {&#96;---
+        title: Node
+        ---
+        flowchart LR
+            id
+        &#96;}
+        &lt;/av-diagram&gt;
+        &nbsp;
+        &lt;img src={DrawIO} /&gt;
+    </pre>
+</av-code>
+
+<av-img src="/img/doc/advanced/storybook/custom.png" style="max-height:500px"></av-img>
+
+<h2>Configure export</h2>
+
+<p>You can configure how stories must be exported from Aventus. If you want a public documentation maybe you don't want that private and protected methods / properties are displayed inside your storybook. You can add the property <span class="cn">format</span> inside the <span class="cn">stories section</span> of your <span class="cn">aventus.conf.avt</span> with one of this value :</p>
+
+<ul>
+    <li><span class="cn">all</span> : export all elements</li>
+    <li><span class="cn">public</span> : only public elements will be exported</li>
+    <li><span class="cn">manual</span> : only elements with tag Storybook will be exported</li>
+</ul>
+
+<p>You can always override the default behaviour by using the decorator <span class="cn">@Storybook</span>.</p>
+
+<p>You can also prefix your stories in the aventus.conf.avt or with the decorator @Storybook to group your stories.</p>
+
+<av-code language="typescript" filename="test/src/Button/Button.wcl.avt">
+    <pre>
+        /**
+         * This is an aventus button
+         * @slot default - Content for your button
+         */
+        @Storybook({
+            prefix: "UI"
+        })
+        export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {
+        }
+    </pre>
+</av-code>
+
+<av-img src="/img/doc/advanced/storybook/group.png" style="max-height:500px"></av-img>
