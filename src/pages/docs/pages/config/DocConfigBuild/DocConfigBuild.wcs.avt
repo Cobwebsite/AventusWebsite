@@ -1,19 +1,48 @@
 :host {
 	.table {
-        av-dynamic-row:not(.header) {
+		av-dynamic-row:not(.header) {
+
+			av-dynamic-col {
+				text-align: left;
+			}
 
 			av-dynamic-col:nth-child(2) {
 				text-align: justify;
 			}
 
-			av-router-link, b, i {
+			av-router-link,
+			b,
+			i {
 				display: contents;
 			}
 		}
+
 		.constraint {
 			display: block;
 			font-size: 14px;
 			margin-top: 5px;
 		}
-    }
+
+		.darker {
+			background-color: rgba(0, 0, 0, 0.1);
+		}
+
+		.lvl-1 {
+			av-dynamic-col:first-child {
+				padding-left: 30px;
+			}
+		}
+
+		.lvl-2 {
+			av-dynamic-col:first-child {
+				padding-left: 40px;
+			}
+		}
+
+		.lvl-3 {
+			av-dynamic-col:first-child {
+				padding-left: 50px;
+			}
+		}
+	}
 }

@@ -1,0 +1,21 @@
+<av-code language="typescript" filename="test/aventus.conf.avt">
+    <pre>
+        {
+            "module": "test",
+            "componentPrefix": "av",
+            "build": [
+                {
+                    "name": "Main",
+                    "src": [
+                        "./src/*"
+                    ],
+                    "compile": [{
+                        "output": "./dist/test.js",
+                        "outputNpm": "./npm"
+                    }]
+                }
+            ]
+        }
+    </pre>
+</av-code>
+<slot></slot>

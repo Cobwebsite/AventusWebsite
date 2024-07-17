@@ -18,7 +18,7 @@
                 will be <span class="cn">$module</span>@<span class="cn">$name</span></div>
         </av-dynamic-col>
     </av-dynamic-row>
-    <av-dynamic-row>
+    <av-dynamic-row class="darker">
         <av-dynamic-col size="4" center>src</av-dynamic-col>
         <av-dynamic-col size="8" center>This is an array of string to define which folders Aventus will watch. For
             example, if you set "./src/*", all files inside the folder "src" will be compiled.
@@ -30,29 +30,82 @@
             <span class="constraint">Must satisfy: <span class="cn">true|false</span></span>
         </av-dynamic-col>
     </av-dynamic-row>
-    <av-dynamic-row>
+    <av-dynamic-row class="darker">
         <av-dynamic-col size="4" center>compile</av-dynamic-col>
         <av-dynamic-col size="8" center>This is an array to define how to compile your build.
         </av-dynamic-col>
     </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>compile.input</av-dynamic-col>
+    <av-dynamic-row class="darker lvl-1">
+        <av-dynamic-col size="4" center>input</av-dynamic-col>
         <av-dynamic-col size="8" center>This is string or an array to define the entries points of your program. If not set, all the files matching the build.src will be compiled. Otherwise, only the needed file by your entries points will be compiled
         </av-dynamic-col>
     </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>compile.output</av-dynamic-col>
+    <av-dynamic-row class="darker lvl-1">
+        <av-dynamic-col size="4" center>output</av-dynamic-col>
         <av-dynamic-col size="8" center>This is string to define where the compiled JavaScript file must be written.
             <span class="constraint">Must satisfy: ^\\S+\\.js</span>
         </av-dynamic-col>
     </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>compile.package</av-dynamic-col>
+    <av-dynamic-row class="darker lvl-1">
+        <av-dynamic-col size="4" center>outputNpm</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is a string or an array to define where to export your project to npm project. It can also be a object to customize settings.
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row class="darker lvl-2">
+        <av-dynamic-col size="4" center>path</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is a string or an array to define where to export your project to npm project
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row  class="darker lvl-2">
+        <av-dynamic-col size="4" center>packageJson</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is a boolean to define if you need a package.json when you are exporting
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row  class="darker lvl-1">
+        <av-dynamic-col size="4" center>package</av-dynamic-col>
         <av-dynamic-col size="8" center>This is string to define where the .package.avt file must be written.
             <span class="constraint">Must satisfy: ^\\S+\\.package\\.avt</span>
         </av-dynamic-col>
     </av-dynamic-row>
     <av-dynamic-row>
+        <av-dynamic-col size="4" center>stories</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is an object to configure how to export storybook for your package.
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row class="lvl-1">
+        <av-dynamic-col size="4" center>output</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is a string to define where to export storybook
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row class="lvl-1">
+        <av-dynamic-col size="4" center>workspace</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is a string to define where to add the .storybook folder
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row class="lvl-1">
+        <av-dynamic-col size="4" center>live</av-dynamic-col>
+        <av-dynamic-col size="8" center>
+            <span>This is a boolean to define if the story content must be recompiled on change or only with the command</span>
+            <span class="cn" style="width: fit-content">Aventus : Build storybook</span>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row class="lvl-1">
+        <av-dynamic-col size="4" center>prefix</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is a string to prefix all your stories to group stories
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row class="lvl-1">
+        <av-dynamic-col size="4" center>format</av-dynamic-col>
+        <av-dynamic-col size="8" center>
+            <span>This is a string to define how Aventus must deal with elements to export to storybook.</span>
+            <ul>
+                <li>all: export all elements</li>
+                <li>public: only public elements will be exported</li>
+                <li>manual: only elements with tag Storybook will be exported</li>
+            </ul>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row class="darker">
         <av-dynamic-col size="4" center>outsideModule</av-dynamic-col>
         <av-dynamic-col size="8" center>
             <div>This is an array of string to define which folders Aventus will watch. The
@@ -74,7 +127,7 @@
             </ul>
         </av-dynamic-col>
     </av-dynamic-row>
-    <av-dynamic-row>
+    <av-dynamic-row class="darker">
         <av-dynamic-col size="4" center>namespaceRoot</av-dynamic-col>
         <av-dynamic-col size="8" center>
             <span>This is a string to define what is the namespace root folder (only for followFolders strategy)</span>
@@ -97,7 +150,7 @@
             </av-code>
         </av-dynamic-col>
     </av-dynamic-row>
-    <av-dynamic-row>
+    <av-dynamic-row class="darker">
         <av-dynamic-col size="4" center>dependances</av-dynamic-col>
         <av-dynamic-col size="8" center>
             <span>This is an array of <av-router-link state="/docs/config/lib">dependance options</av-router-link> to
@@ -109,7 +162,7 @@
         <av-dynamic-col size="8" center>The path where the node_modules are installed. By default the value is ./node_modules
         </av-dynamic-col>
     </av-dynamic-row>
-    <av-dynamic-row>
+    <av-dynamic-row class="darker">
         <av-dynamic-col size="4" center>module</av-dynamic-col>
         <av-dynamic-col size="8" center>This will override the module value of the <av-router-link
                 state="/docs/config/basic_prop">basic config</av-router-link>.
@@ -121,7 +174,7 @@
                 state="/docs/config/basic_prop">basic config</av-router-link>.
         </av-dynamic-col>
     </av-dynamic-row>
-    <av-dynamic-row>
+    <av-dynamic-row class="darker">
         <av-dynamic-col size="4" center>componentPrefix</av-dynamic-col>
         <av-dynamic-col size="8" center>This will override the componentPrefix value of the <av-router-link
                 state="/docs/config/basic_prop">basic config</av-router-link>.
@@ -133,7 +186,7 @@
                 state="/docs/config/basic_prop">basic config</av-router-link>.
         </av-dynamic-col>
     </av-dynamic-row>
-    <av-dynamic-row>
+    <av-dynamic-row class="darker">
         <av-dynamic-col size="4" center>avoidParsingInsideTags</av-dynamic-col>
         <av-dynamic-col size="8" center>This will override the avoidParsingInsideTags value of the <av-router-link
                 state="/docs/config/basic_prop">basic config</av-router-link>.

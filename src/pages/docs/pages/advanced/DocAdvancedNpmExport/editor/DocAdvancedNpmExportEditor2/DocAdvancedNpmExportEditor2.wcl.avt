@@ -1,0 +1,29 @@
+import { DocAdvancedNpmExportEditor1 } from "../DocAdvancedNpmExportEditor1/DocAdvancedNpmExportEditor1.wcl.avt";
+
+export class DocAdvancedNpmExportEditor2 extends DocAdvancedNpmExportEditor1 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	
+	//#endregion
+	
+}

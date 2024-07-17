@@ -29,26 +29,26 @@ export class About extends Page implements Aventus.DefaultComponent {
      * 
      */
     protected changeTab(e: Event, instance: Aventus.PressManager) {
-		let element = instance.getElement();
-		if(element.classList.contains("active")){
-			return;
-		}
+        let element = instance.getElement();
+        if(element.classList.contains("active")) {
+            return;
+        }
 
-		let tabHeaderActive = this.shadowRoot.querySelector(".tabs .header .tab.active");
-		if(tabHeaderActive) {
-			tabHeaderActive.classList.remove("active");
-		}
-		let tabActive = this.shadowRoot.querySelector(".tabs .body .tab.active");
-		if(tabActive) {
-			tabActive.classList.remove("active");
-		}
+        let tabHeaderActive = this.shadowRoot.querySelector(".tabs .header .tab.active");
+        if(tabHeaderActive) {
+            tabHeaderActive.classList.remove("active");
+        }
+        let tabActive = this.shadowRoot.querySelector(".tabs .body .tab.active");
+        if(tabActive) {
+            tabActive.classList.remove("active");
+        }
 
-		let tabName = element.getAttribute("tab-name");
-		element.classList.add("active");
-		let newTabActive = this.shadowRoot.querySelector('.tabs .body .tab[name="'+tabName+'"]');
-		if(newTabActive){
-			newTabActive.classList.add("active");
-		}
+        let tabName = element.getAttribute("tab-name");
+        element.classList.add("active");
+        let newTabActive = this.shadowRoot.querySelector('.tabs .body .tab[name="' + tabName + '"]');
+        if(newTabActive) {
+            newTabActive.classList.add("active");
+        }
 
     }
 

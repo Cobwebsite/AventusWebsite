@@ -1,0 +1,81 @@
+<av-code language="typescript" filename="test/npm/index.d.ts">
+    <pre>
+        import * as test from "./test";
+        &nbsp;
+        &nbsp;
+        export { test };
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="javascript" filename="test/npm/index.js">
+    <pre>
+        import * as test from "./test/index.js";
+        export { test };
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="json" filename="test/npm/package.json">
+    <pre>
+        {
+          "name": "@test/main",
+          "displayName": "test Main",
+          "description": "Aventus build \for @test/Main",
+          "version": "1.0.0",
+          "author": {
+            "name": "Cobwebsite",
+            "email": "info@cobwebsite.ch",
+            "url": "https://cobwesbite.ch"
+          },
+          "main": "index.js",
+          "types": "index.d.ts",
+          "dependencies": {}
+        }
+    </pre>
+</av-code>
+<av-code language="typescript" filename="test/npm/test/index.d.ts">
+    <pre>
+        import { WebComponent, DefaultComponent, WebComponentInstance } from "@aventusjs/main/Aventus";
+        &nbsp;
+        export class Button extends WebComponent implements DefaultComponent {
+        }
+        &nbsp;
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="javascript" filename="test/npm/test/index.js">
+    <pre>
+        export { Button } from "../__src/src/Button/Button.wcl.js"
+        &nbsp;
+    </pre>
+</av-code>
+<av-code language="javascript" filename="test/npm/__src/src/Button/Button.wcl.js">
+    <pre>
+        import { WebComponent, WebComponentInstance } from "@aventusjs/main/Aventus/index.js";
+        &nbsp;
+        export const Button = class Button extends WebComponent {
+            static __style = &#96;:host{--_button-background-color: var(--button-background-color, var(--primary-color, #3c95d0))}:host{background-color:var(--_button-background-color);border:1px solid rgba(0,0,0,0);border-radius:10px;padding:5px 15px}:host([outline]){background-color:#fff;border-color:var(--_button-background-color);color:var(--_button-background-color)}&#96;;
+            __getStatic() {
+                return Button;
+            }
+            __getStyle() {
+                let arrStyle = super.__getStyle();
+                arrStyle.push(Button.__style);
+                return arrStyle;
+            }
+            __getHtml() {
+            this.__getStatic().__template.setHTML({
+                slots: { 'default':&#96;&lt;slot&gt;test&lt;/slot&gt;&#96; }, 
+                blocks: { 'default':&#96;&lt;slot&gt;test&lt;/slot&gt;&#96; }
+            });
+        }
+            getClassName() {
+                return "Button";
+            }
+        }
+        Button.Namespace=&#96;test&#96;;
+        Button.Tag=&#96;av-button&#96;;
+        \if(!window.customElements.get('av-button')){window.customElements.define('av-button', Button);WebComponentInstance.registerDefinition(Button);}
+        &nbsp;
+    </pre>
+</av-code>
+<slot></slot>

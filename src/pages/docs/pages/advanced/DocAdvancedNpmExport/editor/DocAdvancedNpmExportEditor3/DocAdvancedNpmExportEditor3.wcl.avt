@@ -1,0 +1,36 @@
+import { DocAdvancedNpmExportEditor2 } from "../DocAdvancedNpmExportEditor2/DocAdvancedNpmExportEditor2.wcl.avt";
+
+export class DocAdvancedNpmExportEditor3 extends DocAdvancedNpmExportEditor2 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override open_folder(): string | string[] | undefined {
+		return ['test/npm/test', 'test/npm/__src/src/Button']
+	}
+
+	public override all_open(): boolean {
+		return false;
+	}
+	
+	//#endregion
+	
+}

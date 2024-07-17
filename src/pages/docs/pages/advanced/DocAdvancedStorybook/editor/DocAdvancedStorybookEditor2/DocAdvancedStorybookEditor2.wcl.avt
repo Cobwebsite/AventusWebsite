@@ -1,0 +1,29 @@
+import { DocAdvancedStorybookEditor1 } from "../DocAdvancedStorybookEditor1/DocAdvancedStorybookEditor1.wcl.avt";
+
+export class DocAdvancedStorybookEditor2 extends DocAdvancedStorybookEditor1 implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	
+	//#endregion
+	
+}

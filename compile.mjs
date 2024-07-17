@@ -56,6 +56,7 @@ const read = (path) => {
 
             txt = txt.replace(/</g, "&lt;").replace(/>/g, "&gt;")
             txt = txt.replace(/^( +)$/gm, "$1&nbsp;");
+            txt = txt.replace(/`/gm, "&#96;");
             txt = txt.replace(/(^| )for/gm, "$1\\for");
             txt = txt.replace(/(^| )if/gm, "$1\\if");
             txt = txt.replace(/\{\{/gm, "\\{{");

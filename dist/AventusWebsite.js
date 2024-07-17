@@ -27,7 +27,33 @@ npmCompilation['c940c285ff5c6f70f9e3538ac79e1aec']['saveAs'] = _['saveAs'];
 })(npmCompilation);
 Object.defineProperty(window, "AvInstance", {
 	get() {return Aventus.Instance;}
-})
+});
+
+(() => {
+	Map.prototype._defaultHas = Map.prototype.has;
+	Map.prototype._defaultSet = Map.prototype.set;
+	Map.prototype._defaultGet = Map.prototype.get;
+	Map.prototype.has = function(key) {
+		if(Aventus.Watcher?.is(key)) {
+			return Map.prototype._defaultHas.call(this,key.getTarget())
+		}
+		return Map.prototype._defaultHas.call(this,key);
+	}
+
+	Map.prototype.set = function(key, value) {
+		if(Aventus.Watcher?.is(key)) {
+			return Map.prototype._defaultSet.call(this, key.getTarget(), value)
+		}
+		return Map.prototype._defaultSet.call(this, key, value);
+	}
+	Map.prototype.get = function(key) {
+		if(Aventus.Watcher?.is(key)) {
+			return Map.prototype._defaultGet.call(this, key.getTarget())
+		}
+		return Map.prototype._defaultGet.call(this, key);
+	}
+})()
+
 var Aventus;
 (Aventus||(Aventus = {}));
 (function (Aventus) {
@@ -41,98 +67,6 @@ const sleep=function sleep(ms) {
 }
 
 _.sleep=sleep;
-var WatchAction;
-(function (WatchAction) {
-    WatchAction[WatchAction["CREATED"] = 0] = "CREATED";
-    WatchAction[WatchAction["UPDATED"] = 1] = "UPDATED";
-    WatchAction[WatchAction["DELETED"] = 2] = "DELETED";
-})(WatchAction || (WatchAction = {}));
-
-_.WatchAction=WatchAction;
-const compareObject=function compareObject(obj1, obj2) {
-    if (Array.isArray(obj1)) {
-        if (!Array.isArray(obj2)) {
-            return false;
-        }
-        obj2 = obj2.slice();
-        if (obj1.length !== obj2.length) {
-            return false;
-        }
-        for (let i = 0; i < obj1.length; i++) {
-            let foundElement = false;
-            for (let j = 0; j < obj2.length; j++) {
-                if (compareObject(obj1[i], obj2[j])) {
-                    obj2.splice(j, 1);
-                    foundElement = true;
-                    break;
-                }
-            }
-            if (!foundElement) {
-                return false;
-            }
-        }
-        return true;
-    }
-    else if (obj1 instanceof Date) {
-        return obj1.toString() === obj2.toString();
-    }
-    else if (typeof obj1 === 'object' && obj1 !== undefined && obj1 !== null) {
-        if (typeof obj2 !== 'object' || obj2 === undefined || obj2 === null) {
-            return false;
-        }
-        if (Object.keys(obj1).length !== Object.keys(obj2).length) {
-            return false;
-        }
-        for (let key in obj1) {
-            if (!(key in obj2)) {
-                return false;
-            }
-            if (!compareObject(obj1[key], obj2[key])) {
-                return false;
-            }
-        }
-        return true;
-    }
-    else {
-        return obj1 === obj2;
-    }
-}
-
-_.compareObject=compareObject;
-const setValueToObject=function setValueToObject(path, obj, value) {
-    path = path.replace(/\[(.*?)\]/g, '.$1');
-    let splitted = path.split(".");
-    for (let i = 0; i < splitted.length - 1; i++) {
-        let split = splitted[i];
-        if (!obj[split]) {
-            obj[split] = {};
-        }
-        obj = obj[split];
-    }
-    obj[splitted[splitted.length - 1]] = value;
-}
-
-_.setValueToObject=setValueToObject;
-const getValueFromObject=function getValueFromObject(path, obj) {
-    path = path.replace(/\[(.*?)\]/g, '.$1');
-    if (path == "") {
-        return obj;
-    }
-    let splitted = path.split(".");
-    for (let i = 0; i < splitted.length - 1; i++) {
-        let split = splitted[i];
-        if (!obj[split] || typeof obj[split] !== 'object') {
-            return undefined;
-        }
-        obj = obj[split];
-    }
-    if (!obj || typeof obj !== 'object') {
-        return undefined;
-    }
-    return obj[splitted[splitted.length - 1]];
-}
-
-_.getValueFromObject=getValueFromObject;
 const ElementExtension=class ElementExtension {
     /**
      * Find a parent by tagname if exist Static.findParentByTag(this, "av-img")
@@ -369,7 +303,8 @@ const ElementExtension=class ElementExtension {
         return _realTarget(startFrom);
     }
 }
-ElementExtension.Namespace=`${moduleName}`;
+ElementExtension.Namespace=`Aventus`;
+
 _.ElementExtension=ElementExtension;
 const Instance=class Instance {
     static elements = new Map();
@@ -395,7 +330,8 @@ const Instance=class Instance {
         return this.elements.delete(cst);
     }
 }
-Instance.Namespace=`${moduleName}`;
+Instance.Namespace=`Aventus`;
+
 _.Instance=Instance;
 const Style=class Style {
     static instance;
@@ -408,6 +344,12 @@ const Style=class Style {
     }
     static get(name) {
         return this.getInstance().get(name);
+    }
+    static getAsString(name) {
+        return this.getInstance().getAsString(name);
+    }
+    static sheetToString(stylesheet) {
+        return this.getInstance().sheetToString(stylesheet);
     }
     static load(name, url) {
         return this.getInstance().load(name, url);
@@ -457,31 +399,68 @@ const Style=class Style {
         }
         return style;
     }
+    getAsString(name) {
+        return this.sheetToString(this.get(name));
+    }
+    sheetToString(stylesheet) {
+        return stylesheet.cssRules
+            ? Array.from(stylesheet.cssRules)
+                .map(rule => rule.cssText || '')
+                .join('\n')
+            : '';
+    }
 }
-Style.Namespace=`${moduleName}`;
+Style.Namespace=`Aventus`;
+
 _.Style=Style;
+const setValueToObject=function setValueToObject(path, obj, value) {
+    path = path.replace(/\[(.*?)\]/g, '.$1');
+    const val = (key) => {
+        if (obj instanceof Map) {
+            return obj.get(key);
+        }
+        return obj[key];
+    };
+    let splitted = path.split(".");
+    for (let i = 0; i < splitted.length - 1; i++) {
+        let split = splitted[i];
+        let value = val(split);
+        if (!value) {
+            obj[split] = {};
+            value = obj[split];
+        }
+        obj = value;
+    }
+    if (obj instanceof Map) {
+        obj.set(splitted[splitted.length - 1], value);
+    }
+    else {
+        obj[splitted[splitted.length - 1]] = value;
+    }
+}
+
+_.setValueToObject=setValueToObject;
 const Callback=class Callback {
-    callbacks = [];
+    callbacks = new Map();
     /**
      * Clear all callbacks
      */
     clear() {
-        this.callbacks = [];
+        this.callbacks.clear();
     }
     /**
      * Add a callback
      */
-    add(cb) {
-        this.callbacks.push(cb);
+    add(cb, scope = null) {
+        if (!this.callbacks.has(cb)) {
+            this.callbacks.set(cb, scope);
+        }
     }
     /**
      * Remove a callback
      */
     remove(cb) {
-        let index = this.callbacks.indexOf(cb);
-        if (index != -1) {
-            this.callbacks.splice(index, 1);
-        }
+        this.callbacks.delete(cb);
     }
     /**
      * Trigger all callbacks
@@ -489,13 +468,14 @@ const Callback=class Callback {
     trigger(args) {
         let result = [];
         let cbs = [...this.callbacks];
-        for (let cb of cbs) {
-            result.push(cb.apply(null, args));
+        for (let [cb, scope] of cbs) {
+            result.push(cb.apply(scope, args));
         }
         return result;
     }
 }
-Callback.Namespace=`${moduleName}`;
+Callback.Namespace=`Aventus`;
+
 _.Callback=Callback;
 const Mutex=class Mutex {
     /**
@@ -633,8 +613,1072 @@ const Mutex=class Mutex {
         return result;
     }
 }
-Mutex.Namespace=`${moduleName}`;
+Mutex.Namespace=`Aventus`;
+
 _.Mutex=Mutex;
+const compareObject=function compareObject(obj1, obj2) {
+    if (Array.isArray(obj1)) {
+        if (!Array.isArray(obj2)) {
+            return false;
+        }
+        obj2 = obj2.slice();
+        if (obj1.length !== obj2.length) {
+            return false;
+        }
+        for (let i = 0; i < obj1.length; i++) {
+            let foundElement = false;
+            for (let j = 0; j < obj2.length; j++) {
+                if (compareObject(obj1[i], obj2[j])) {
+                    obj2.splice(j, 1);
+                    foundElement = true;
+                    break;
+                }
+            }
+            if (!foundElement) {
+                return false;
+            }
+        }
+        return true;
+    }
+    else if (typeof obj1 === 'object' && obj1 !== undefined && obj1 !== null) {
+        if (typeof obj2 !== 'object' || obj2 === undefined || obj2 === null) {
+            return false;
+        }
+        if (obj1 instanceof HTMLElement || obj2 instanceof HTMLElement) {
+            return obj1 == obj2;
+        }
+        if (obj1 instanceof Date || obj2 instanceof Date) {
+            return obj1.toString() === obj2.toString();
+        }
+        obj1 = Watcher.extract(obj1);
+        obj2 = Watcher.extract(obj2);
+        if (obj1 instanceof Map && obj2 instanceof Map) {
+            if (obj1.size != obj2.size) {
+                return false;
+            }
+            const keys = obj1.keys();
+            for (let key in keys) {
+                if (!obj2.has(key)) {
+                    return false;
+                }
+                if (!compareObject(obj1.get(key), obj2.get(key))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        else {
+            if (Object.keys(obj1).length !== Object.keys(obj2).length) {
+                return false;
+            }
+            for (let key in obj1) {
+                if (!(key in obj2)) {
+                    return false;
+                }
+                if (!compareObject(obj1[key], obj2[key])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+    else {
+        return obj1 === obj2;
+    }
+}
+
+_.compareObject=compareObject;
+const getValueFromObject=function getValueFromObject(path, obj) {
+    path = path.replace(/\[(.*?)\]/g, '.$1');
+    if (path == "") {
+        return obj;
+    }
+    const val = (key) => {
+        if (obj instanceof Map) {
+            return obj.get(key);
+        }
+        return obj[key];
+    };
+    let splitted = path.split(".");
+    for (let i = 0; i < splitted.length - 1; i++) {
+        let split = splitted[i];
+        let value = val(split);
+        if (!value || typeof value !== 'object') {
+            return undefined;
+        }
+        obj = value;
+    }
+    if (!obj || typeof obj !== 'object') {
+        return undefined;
+    }
+    return val(splitted[splitted.length - 1]);
+}
+
+_.getValueFromObject=getValueFromObject;
+var WatchAction;
+(function (WatchAction) {
+    WatchAction[WatchAction["CREATED"] = 0] = "CREATED";
+    WatchAction[WatchAction["UPDATED"] = 1] = "UPDATED";
+    WatchAction[WatchAction["DELETED"] = 2] = "DELETED";
+})(WatchAction || (WatchAction = {}));
+
+_.WatchAction=WatchAction;
+const Effect=class Effect {
+    callbacks = [];
+    isInit = false;
+    isDestroy = false;
+    __subscribes = [];
+    __allowChanged = [];
+    version = 0;
+    fct;
+    constructor(fct) {
+        this.fct = fct;
+        if (this.autoInit()) {
+            this.init();
+        }
+    }
+    autoInit() {
+        return true;
+    }
+    init() {
+        this.isInit = true;
+        this.run();
+    }
+    run() {
+        this.version++;
+        Watcher._registering.push(this);
+        let result = this.fct();
+        Watcher._registering.splice(Watcher._registering.length - 1, 1);
+        for (let i = 0; i < this.callbacks.length; i++) {
+            if (this.callbacks[i].version != this.version) {
+                this.callbacks[i].receiver.unsubscribe(this.callbacks[i].cb);
+                this.callbacks.splice(i, 1);
+                i--;
+            }
+        }
+        return result;
+    }
+    register(receiver, path, version, fullPath) {
+        for (let info of this.callbacks) {
+            if (info.receiver == receiver && info.path == path && receiver.__path == info.registerPath) {
+                info.version = version;
+                info.fullPath = fullPath;
+                return;
+            }
+        }
+        let cb;
+        if (path == "*") {
+            cb = (action, changePath, value, dones) => { this.onChange(action, changePath, value, dones); };
+        }
+        else {
+            cb = (action, changePath, value, dones) => {
+                let full = fullPath;
+                if (changePath == path) {
+                    this.onChange(action, changePath, value, dones);
+                }
+            };
+        }
+        this.callbacks.push({
+            receiver,
+            path,
+            registerPath: receiver.__path,
+            cb,
+            version,
+            fullPath
+        });
+        receiver.subscribe(cb);
+    }
+    canChange(fct) {
+        this.__allowChanged.push(fct);
+    }
+    checkCanChange(action, changePath, value, dones) {
+        if (this.isDestroy) {
+            return false;
+        }
+        for (let fct of this.__allowChanged) {
+            if (!fct(action, changePath, value, dones)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    onChange(action, changePath, value, dones) {
+        if (!this.checkCanChange(action, changePath, value, dones)) {
+            return;
+        }
+        this.run();
+        for (let fct of this.__subscribes) {
+            fct(action, changePath, value, dones);
+        }
+    }
+    destroy() {
+        this.isDestroy = true;
+        this.clearCallbacks();
+        this.isInit = false;
+    }
+    clearCallbacks() {
+        for (let pair of this.callbacks) {
+            pair.receiver.unsubscribe(pair.cb);
+        }
+        this.callbacks = [];
+    }
+    subscribe(fct) {
+        let index = this.__subscribes.indexOf(fct);
+        if (index == -1) {
+            this.__subscribes.push(fct);
+        }
+    }
+    unsubscribe(fct) {
+        let index = this.__subscribes.indexOf(fct);
+        if (index > -1) {
+            this.__subscribes.splice(index, 1);
+        }
+    }
+}
+Effect.Namespace=`Aventus`;
+
+_.Effect=Effect;
+const Watcher=class Watcher {
+    static __reservedName = {
+        __path: '__path',
+    };
+    static _registering = [];
+    static get _register() {
+        return this._registering[this._registering.length - 1];
+    }
+    /**
+     * Transform object into a watcher
+     */
+    static get(obj, onDataChanged) {
+        if (obj == undefined) {
+            console.error("You must define an objet / array for your proxy");
+            return;
+        }
+        if (obj.__isProxy) {
+            if (onDataChanged)
+                obj.subscribe(onDataChanged);
+            return obj;
+        }
+        const reservedName = this.__reservedName;
+        const clearReservedNames = (data) => {
+            if (data instanceof Object && !data.__isProxy) {
+                for (let key in reservedName) {
+                    delete data[key];
+                }
+            }
+        };
+        const setProxyPath = (newProxy, newPath) => {
+            if (newProxy instanceof Object && newProxy.__isProxy) {
+                newProxy.__path = newPath;
+            }
+        };
+        const jsonReplacer = (key, value) => {
+            if (reservedName[key])
+                return undefined;
+            return value;
+        };
+        const addAlias = (otherBaseData, name, cb) => {
+            let cbs = aliases.get(otherBaseData);
+            if (!cbs) {
+                cbs = [];
+                aliases.set(otherBaseData, cbs);
+            }
+            cbs.push({
+                name: name,
+                fct: cb
+            });
+        };
+        const deleteAlias = (otherBaseData, name) => {
+            let cbs = aliases.get(otherBaseData);
+            if (!cbs)
+                return;
+            for (let i = 0; i < cbs.length; i++) {
+                if (cbs[i].name == name) {
+                    cbs.splice(i, 1);
+                    if (cbs.length == 0) {
+                        aliases.delete(otherBaseData);
+                    }
+                    return;
+                }
+            }
+        };
+        const replaceByAlias = (target, element, prop, receiver) => {
+            let fullInternalPath = "";
+            if (Array.isArray(target)) {
+                if (prop != "length") {
+                    if (target.__path) {
+                        fullInternalPath = target.__path;
+                    }
+                    fullInternalPath += "[" + prop + "]";
+                }
+            }
+            else {
+                if (target.__path) {
+                    fullInternalPath = target.__path + '.';
+                }
+                fullInternalPath += prop;
+            }
+            if (receiver && internalAliases[fullInternalPath]) {
+                internalAliases[fullInternalPath].unbind();
+            }
+            if (element instanceof Object && element.__isProxy) {
+                let root = element.__root;
+                if (root != proxyData.baseData) {
+                    element.__validatePath();
+                    let oldPath = element.__path;
+                    let unbindElement = getValueFromObject(oldPath, root);
+                    if (receiver == null) {
+                        receiver = getValueFromObject(target.__path, realProxy);
+                        if (internalAliases[fullInternalPath]) {
+                            internalAliases[fullInternalPath].unbind();
+                        }
+                    }
+                    let result = Reflect.set(target, prop, unbindElement, receiver);
+                    element.__addAlias(proxyData.baseData, oldPath, (type, target, receiver2, value, prop2, dones) => {
+                        let triggerPath;
+                        if (prop2.startsWith("[") || fullInternalPath == "" || prop2 == "") {
+                            triggerPath = fullInternalPath + prop2;
+                        }
+                        else {
+                            triggerPath = fullInternalPath + "." + prop2;
+                        }
+                        triggerPath = triggerPath.replace(/\[(.*?)\]/g, '.$1');
+                        if (type == 'DELETED' && internalAliases[triggerPath]) {
+                            internalAliases[triggerPath].unbind();
+                        }
+                        let splitted = triggerPath.split(".");
+                        let newProp = splitted.pop();
+                        let newReceiver = getValueFromObject(splitted.join("."), realProxy);
+                        trigger(type, target, newReceiver, value, newProp, dones);
+                    });
+                    internalAliases[fullInternalPath] = {
+                        unbind: () => {
+                            delete internalAliases[fullInternalPath];
+                            element.__deleteAlias(proxyData.baseData, oldPath);
+                            deleteAlias(root, prop);
+                        }
+                    };
+                    addAlias(root, prop, (type, target, receiver2, value, prop2, dones) => {
+                        const pathSave = element.__path;
+                        let proxy = element.__getProxy;
+                        let triggerPath;
+                        if (prop2.startsWith("[") || oldPath == "" || prop2 == "") {
+                            triggerPath = oldPath + prop2;
+                        }
+                        else {
+                            triggerPath = oldPath + "." + prop2;
+                        }
+                        triggerPath = triggerPath.replace(/\[(.*?)\]/g, '.$1');
+                        let splitted = triggerPath.split(".");
+                        let newProp = splitted.pop();
+                        let newReceiver = getValueFromObject(splitted.join("."), proxy);
+                        element.__trigger(type, target, newReceiver, value, newProp, dones);
+                        element.__path = pathSave;
+                    });
+                    return unbindElement;
+                }
+            }
+            return element;
+        };
+        let currentTrace = new Error().stack?.split("\n") ?? [];
+        currentTrace.shift();
+        currentTrace.shift();
+        const aliases = new Map();
+        const internalAliases = {};
+        let proxyData = {
+            baseData: {},
+            callbacks: {},
+            callbacksReverse: new Map(),
+            avoidUpdate: [],
+            pathToRemove: [],
+            injectedDones: null,
+            history: [{
+                    object: JSON.parse(JSON.stringify(obj, jsonReplacer)),
+                    trace: currentTrace,
+                    action: 'init',
+                    path: ''
+                }],
+            useHistory: false,
+            getProxyObject(target, element, prop) {
+                let newProxy;
+                element = replaceByAlias(target, element, prop, null);
+                if (element instanceof Object && element.__isProxy) {
+                    newProxy = element;
+                }
+                else {
+                    try {
+                        if (element instanceof Computed) {
+                            return element;
+                        }
+                        if (element instanceof HTMLElement) {
+                            return element;
+                        }
+                        if (element instanceof Object) {
+                            newProxy = new Proxy(element, this);
+                        }
+                        else {
+                            return element;
+                        }
+                    }
+                    catch {
+                        return element;
+                    }
+                }
+                let newPath = '';
+                if (Array.isArray(target)) {
+                    if (/^[0-9]*$/g.exec(prop)) {
+                        if (target.__path) {
+                            newPath = target.__path;
+                        }
+                        newPath += "[" + prop + "]";
+                        setProxyPath(newProxy, newPath);
+                    }
+                    else {
+                        newPath += "." + prop;
+                        setProxyPath(newProxy, newPath);
+                    }
+                }
+                else if (element instanceof Date) {
+                    return element;
+                }
+                else {
+                    if (target.__path) {
+                        newPath = target.__path + '.';
+                    }
+                    newPath += prop;
+                    setProxyPath(newProxy, newPath);
+                }
+                return newProxy;
+            },
+            tryCustomFunction(target, prop, receiver) {
+                if (prop == "__isProxy") {
+                    return true;
+                }
+                else if (prop == "__getProxy") {
+                    return realProxy;
+                }
+                else if (prop == "__root") {
+                    return this.baseData;
+                }
+                else if (prop == "__validatePath") {
+                    return () => {
+                        if (this.baseData == target) {
+                            target.__path = "";
+                        }
+                    };
+                }
+                else if (prop == "__callbacks") {
+                    return this.callbacks;
+                }
+                else if (prop == "subscribe") {
+                    let path = receiver.__path;
+                    return (cb) => {
+                        if (!this.callbacks[path]) {
+                            this.callbacks[path] = [];
+                        }
+                        this.callbacks[path].push(cb);
+                        this.callbacksReverse.set(cb, path);
+                    };
+                }
+                else if (prop == "unsubscribe") {
+                    return (cb) => {
+                        let oldPath = this.callbacksReverse.get(cb);
+                        if (oldPath === undefined)
+                            return;
+                        if (!this.callbacks[oldPath]) {
+                            return;
+                        }
+                        let index = this.callbacks[oldPath].indexOf(cb);
+                        if (index > -1) {
+                            this.callbacks[oldPath].splice(index, 1);
+                        }
+                        this.callbacksReverse.delete(cb);
+                    };
+                }
+                else if (prop == "getHistory") {
+                    return () => {
+                        return this.history;
+                    };
+                }
+                else if (prop == "clearHistory") {
+                    this.history = [];
+                }
+                else if (prop == "enableHistory") {
+                    return () => {
+                        this.useHistory = true;
+                    };
+                }
+                else if (prop == "disableHistory") {
+                    return () => {
+                        this.useHistory = false;
+                    };
+                }
+                else if (prop == "getTarget") {
+                    return () => {
+                        clearReservedNames(target);
+                        return target;
+                    };
+                }
+                else if (prop == "toJSON") {
+                    if (Array.isArray(target)) {
+                        return () => {
+                            let result = [];
+                            for (let element of target) {
+                                result.push(element);
+                            }
+                            return result;
+                        };
+                    }
+                    return () => {
+                        let result = {};
+                        for (let key of Object.keys(target)) {
+                            if (reservedName[key]) {
+                                continue;
+                            }
+                            result[key] = target[key];
+                        }
+                        return result;
+                    };
+                }
+                else if (prop == "__addAlias") {
+                    return addAlias;
+                }
+                else if (prop == "__deleteAlias") {
+                    return deleteAlias;
+                }
+                else if (prop == "__injectedDones") {
+                    return (dones) => {
+                        this.injectedDones = dones;
+                    };
+                }
+                else if (prop == "__trigger") {
+                    return trigger;
+                }
+                else if (prop == "__static_trigger") {
+                    return (type) => {
+                        trigger(type, target, receiver, target, '');
+                    };
+                }
+                return undefined;
+            },
+            get(target, prop, receiver) {
+                if (reservedName[prop]) {
+                    return target[prop];
+                }
+                let customResult = this.tryCustomFunction(target, prop, receiver);
+                if (customResult !== undefined) {
+                    return customResult;
+                }
+                let element = target[prop];
+                if (typeof (element) == 'function') {
+                    if (Array.isArray(target)) {
+                        let result;
+                        if (prop == 'push') {
+                            if (target.__isProxy) {
+                                result = (el) => {
+                                    let index = target.push(el);
+                                    return index;
+                                };
+                            }
+                            else {
+                                result = (el) => {
+                                    let index = target.push(el);
+                                    target.splice(target.length - 1, 1, el);
+                                    trigger('CREATED', target, receiver, receiver[index - 1], "[" + (index - 1) + "]");
+                                    trigger('UPDATED', target, receiver, target.length, "length");
+                                    return index;
+                                };
+                            }
+                        }
+                        else if (prop == 'splice') {
+                            if (target.__isProxy) {
+                                result = (index, nbRemove, ...insert) => {
+                                    let res = target.splice(index, nbRemove, ...insert);
+                                    return res;
+                                };
+                            }
+                            else {
+                                result = (index, nbRemove, ...insert) => {
+                                    let oldValues = [];
+                                    for (let i = index; i < index + nbRemove; i++) {
+                                        oldValues.push(receiver[i]);
+                                    }
+                                    let updateLength = nbRemove != insert.length;
+                                    let res = target.splice(index, nbRemove, ...insert);
+                                    for (let i = 0; i < oldValues.length; i++) {
+                                        trigger('DELETED', target, receiver, oldValues[i], "[" + index + "]");
+                                    }
+                                    for (let i = 0; i < insert.length; i++) {
+                                        target.splice((index + i), 1, insert[i]);
+                                        trigger('CREATED', target, receiver, receiver[(index + i)], "[" + (index + i) + "]");
+                                    }
+                                    // for(let i = fromIndex, j = 0; i < target.length; i++, j++) {
+                                    //     let proxyEl = this.getProxyObject(target, target[i], i);
+                                    //     let recuUpdate = (childEl) => {
+                                    //         if(Array.isArray(childEl)) {
+                                    //             for(let i = 0; i < childEl.length; i++) {
+                                    //                 if(childEl[i] instanceof Object && childEl[i].__path) {
+                                    //                     let newProxyEl = this.getProxyObject(childEl, childEl[i], i);
+                                    //                     recuUpdate(newProxyEl);
+                                    //         else if(childEl instanceof Object && !(childEl instanceof Date)) {
+                                    //             for(let key in childEl) {
+                                    //                 if(childEl[key] instanceof Object && childEl[key].__path) {
+                                    //                     let newProxyEl = this.getProxyObject(childEl, childEl[key], key);
+                                    //                     recuUpdate(newProxyEl);
+                                    //     recuUpdate(proxyEl);
+                                    if (updateLength)
+                                        trigger('UPDATED', target, receiver, target.length, "length");
+                                    return res;
+                                };
+                            }
+                        }
+                        else if (prop == 'pop') {
+                            if (target.__isProxy) {
+                                result = () => {
+                                    let res = target.pop();
+                                    return res;
+                                };
+                            }
+                            else {
+                                result = () => {
+                                    let index = target.length - 1;
+                                    let oldValue = receiver.length ? receiver[receiver.length] : undefined;
+                                    let res = target.pop();
+                                    trigger('DELETED', target, receiver, oldValue, "[" + index + "]");
+                                    trigger('UPDATED', target, receiver, target.length, "length");
+                                    return res;
+                                };
+                            }
+                        }
+                        else {
+                            result = element.bind(target);
+                        }
+                        return result;
+                    }
+                    else if (target instanceof Map) {
+                        let result;
+                        if (prop == "set") {
+                            if (target.__isProxy) {
+                                result = (key, value) => {
+                                    return target.set(key, value);
+                                };
+                            }
+                            else {
+                                result = (key, value) => {
+                                    let result = target.set(key, value);
+                                    trigger('CREATED', target, receiver, receiver.get(key), key);
+                                    trigger('UPDATED', target, receiver, target.size, "size");
+                                    return result;
+                                };
+                            }
+                        }
+                        else if (prop == "clear") {
+                            if (target.__isProxy) {
+                                result = () => {
+                                    return target.clear();
+                                };
+                            }
+                            else {
+                                result = () => {
+                                    let keys = target.keys();
+                                    for (let key of keys) {
+                                        let oldValue = receiver.get(key);
+                                        target.delete(key);
+                                        trigger('DELETED', target, receiver, oldValue, key);
+                                        trigger('UPDATED', target, receiver, target.size, "size");
+                                    }
+                                };
+                            }
+                        }
+                        else if (prop == "delete") {
+                            if (target.__isProxy) {
+                                result = (key) => {
+                                    return target.delete(key);
+                                };
+                            }
+                            else {
+                                result = (key) => {
+                                    let oldValue = receiver.get(key);
+                                    let res = target.delete(key);
+                                    trigger('DELETED', target, receiver, oldValue, key);
+                                    trigger('UPDATED', target, receiver, target.size, "size");
+                                    return res;
+                                };
+                            }
+                        }
+                        else {
+                            result = element.bind(target);
+                        }
+                        return result;
+                    }
+                    return element.bind(target);
+                }
+                if (element instanceof Computed) {
+                    return element.value;
+                }
+                if (Watcher._registering.length > 0) {
+                    let currentPath;
+                    let fullPath;
+                    let isArray = Array.isArray(receiver);
+                    if (isArray && /^[0-9]*$/g.exec(prop)) {
+                        fullPath = receiver.__path + "[" + prop + "]";
+                        currentPath = "[" + prop + "]";
+                    }
+                    else {
+                        fullPath = receiver.__path ? receiver.__path + '.' + prop : prop;
+                        currentPath = prop;
+                    }
+                    Watcher._register?.register(receiver, currentPath, Watcher._register.version, fullPath);
+                }
+                if (typeof (element) == 'object') {
+                    return this.getProxyObject(target, element, prop);
+                }
+                return Reflect.get(target, prop, receiver);
+            },
+            set(target, prop, value, receiver) {
+                let oldValue = Reflect.get(target, prop, receiver);
+                value = replaceByAlias(target, value, prop, receiver);
+                let triggerChange = false;
+                if (!reservedName[prop]) {
+                    if (Array.isArray(target)) {
+                        if (prop != "length") {
+                            triggerChange = true;
+                        }
+                    }
+                    else {
+                        if (!compareObject(value, oldValue)) {
+                            triggerChange = true;
+                        }
+                    }
+                }
+                let result = Reflect.set(target, prop, value, receiver);
+                if (triggerChange) {
+                    let index = this.avoidUpdate.indexOf(prop);
+                    if (index == -1) {
+                        let dones = this.injectedDones ?? [];
+                        this.injectedDones = null;
+                        trigger('UPDATED', target, receiver, value, prop, dones);
+                    }
+                    else {
+                        this.avoidUpdate.splice(index, 1);
+                    }
+                }
+                return result;
+            },
+            deleteProperty(target, prop) {
+                let triggerChange = false;
+                let pathToDelete = '';
+                if (!reservedName[prop]) {
+                    if (Array.isArray(target)) {
+                        if (prop != "length") {
+                            if (target.__path) {
+                                pathToDelete = target.__path;
+                            }
+                            pathToDelete += "[" + prop + "]";
+                            triggerChange = true;
+                        }
+                    }
+                    else {
+                        if (target.__path) {
+                            pathToDelete = target.__path + '.';
+                        }
+                        pathToDelete += prop;
+                        triggerChange = true;
+                    }
+                }
+                if (internalAliases[pathToDelete]) {
+                    internalAliases[pathToDelete].unbind();
+                }
+                if (target.hasOwnProperty(prop)) {
+                    let oldValue = target[prop];
+                    if (oldValue instanceof Effect) {
+                        oldValue.destroy();
+                    }
+                    delete target[prop];
+                    if (triggerChange) {
+                        clearReservedNames(oldValue);
+                        trigger('DELETED', target, null, oldValue, prop);
+                    }
+                    return true;
+                }
+                return false;
+            },
+            defineProperty(target, prop, descriptor) {
+                let triggerChange = false;
+                let newPath = '';
+                if (!reservedName[prop]) {
+                    if (Array.isArray(target)) {
+                        if (prop != "length") {
+                            if (target.__path) {
+                                newPath = target.__path;
+                            }
+                            newPath += "[" + prop + "]";
+                            if (!target.hasOwnProperty(prop)) {
+                                triggerChange = true;
+                            }
+                        }
+                    }
+                    else {
+                        if (target.__path) {
+                            newPath = target.__path + '.';
+                        }
+                        newPath += prop;
+                        if (!target.hasOwnProperty(prop)) {
+                            triggerChange = true;
+                        }
+                    }
+                }
+                let result = Reflect.defineProperty(target, prop, descriptor);
+                if (triggerChange) {
+                    this.avoidUpdate.push(prop);
+                    let proxyEl = this.getProxyObject(target, descriptor.value, prop);
+                    target[prop] = proxyEl;
+                    trigger('CREATED', target, null, proxyEl, prop);
+                }
+                return result;
+            },
+            ownKeys(target) {
+                let result = Reflect.ownKeys(target);
+                for (let i = 0; i < result.length; i++) {
+                    let key = result[i];
+                    if (typeof key == 'string') {
+                        if (reservedName[key]) {
+                            result.splice(i, 1);
+                            i--;
+                        }
+                    }
+                }
+                return result;
+            },
+        };
+        if (onDataChanged) {
+            proxyData.callbacks[''] = [onDataChanged];
+        }
+        const trigger = (type, target, receiver, value, prop, dones = []) => {
+            if (dones.includes(proxyData.baseData)) {
+                return;
+            }
+            if (target.__isProxy) {
+                return;
+            }
+            let rootPath;
+            if (receiver == null) {
+                rootPath = target.__path;
+            }
+            else {
+                rootPath = receiver.__path;
+            }
+            if (rootPath != "") {
+                if (Array.isArray(target)) {
+                    if (prop && !prop.startsWith("[")) {
+                        if (/^[0-9]*$/g.exec(prop)) {
+                            rootPath += "[" + prop + "]";
+                        }
+                        else {
+                            rootPath += "." + prop;
+                        }
+                    }
+                    else {
+                        rootPath += prop;
+                    }
+                }
+                else {
+                    if (prop && !prop.startsWith("[")) {
+                        rootPath += ".";
+                    }
+                    rootPath += prop;
+                }
+            }
+            else {
+                rootPath = prop;
+            }
+            let stacks = [];
+            if (proxyData.useHistory) {
+                let allStacks = new Error().stack?.split("\n") ?? [];
+                for (let i = allStacks.length - 1; i >= 0; i--) {
+                    let current = allStacks[i].trim().replace("at ", "");
+                    if (current.startsWith("Object.set") || current.startsWith("Proxy.result")) {
+                        break;
+                    }
+                    stacks.push(current);
+                }
+            }
+            dones.push(proxyData.baseData);
+            let aliasesDone = [];
+            for (let name in proxyData.callbacks) {
+                let pathToSend = rootPath;
+                if (name !== "") {
+                    let regex = new RegExp("^" + name.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + "(\\.|(\\[)|$)");
+                    if (!regex.test(rootPath)) {
+                        let regex2 = new RegExp("^" + rootPath.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + "(\\.|(\\[)|$)");
+                        if (!regex2.test(name)) {
+                            continue;
+                        }
+                        else {
+                            pathToSend = "";
+                        }
+                    }
+                    else {
+                        pathToSend = rootPath.replace(regex, "$2");
+                    }
+                }
+                if (name === "" && proxyData.useHistory) {
+                    proxyData.history.push({
+                        object: JSON.parse(JSON.stringify(proxyData.baseData, jsonReplacer)),
+                        trace: stacks.reverse(),
+                        action: WatchAction[type],
+                        path: pathToSend
+                    });
+                }
+                let cbs = [...proxyData.callbacks[name]];
+                for (let cb of cbs) {
+                    try {
+                        cb(WatchAction[type], pathToSend, value, dones);
+                    }
+                    catch (e) {
+                        if (e != 'impossible')
+                            console.error(e);
+                    }
+                }
+                for (let [key, infos] of aliases) {
+                    if (!dones.includes(key)) {
+                        for (let info of infos) {
+                            if (info.name == name) {
+                                aliasesDone.push(key);
+                                if (target.__path) {
+                                    let oldPath = target.__path;
+                                    info.fct(type, target, receiver, value, prop, dones);
+                                    target.__path = oldPath;
+                                }
+                                else {
+                                    info.fct(type, target, receiver, value, prop, dones);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            for (let [key, infos] of aliases) {
+                if (!dones.includes(key) && !aliasesDone.includes(key)) {
+                    for (let info of infos) {
+                        let regex = new RegExp("^" + info.name.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + "(\\.|(\\[)|$)");
+                        if (!regex.test(rootPath)) {
+                            continue;
+                        }
+                        if (target.__path) {
+                            let oldPath = target.__path;
+                            info.fct(type, target, receiver, value, prop, dones);
+                            target.__path = oldPath;
+                        }
+                        else {
+                            info.fct(type, target, receiver, value, prop, dones);
+                        }
+                    }
+                }
+            }
+        };
+        var realProxy = new Proxy(obj, proxyData);
+        proxyData.baseData = obj;
+        setProxyPath(realProxy, '');
+        return realProxy;
+    }
+    static is(obj) {
+        return typeof obj == 'object' && obj.__isProxy;
+    }
+    static extract(obj) {
+        if (this.is(obj)) {
+            return obj.getTarget();
+        }
+        else {
+            if (obj instanceof Object) {
+                for (let key in this.__reservedName) {
+                    delete obj[key];
+                }
+            }
+        }
+        return obj;
+    }
+    static trigger(type, target) {
+        if (this.is(target)) {
+            target.__static_trigger(type);
+        }
+    }
+    /**
+     * Create a computed variable that will watch any changes
+     */
+    static computed(fct) {
+        const comp = new Computed(fct);
+        return comp;
+    }
+    /**
+     * Create an effect variable that will watch any changes
+     */
+    static effect(fct) {
+        const comp = new Effect(fct);
+        return comp;
+    }
+}
+Watcher.Namespace=`Aventus`;
+
+_.Watcher=Watcher;
+const Computed=class Computed extends Effect {
+    _value;
+    __path = "*";
+    get value() {
+        if (!this.isInit) {
+            this.init();
+        }
+        Watcher._register?.register(this, "*", Watcher._register.version, "*");
+        return this._value;
+    }
+    autoInit() {
+        return false;
+    }
+    constructor(fct) {
+        super(fct);
+    }
+    init() {
+        this.isInit = true;
+        this.computedValue();
+    }
+    computedValue() {
+        this._value = this.run();
+    }
+    onChange(action, changePath, value, dones) {
+        if (!this.checkCanChange(action, changePath, value, dones)) {
+            return;
+        }
+        let oldValue = this._value;
+        this.computedValue();
+        if (oldValue === this._value) {
+            return;
+        }
+        for (let fct of this.__subscribes) {
+            fct(action, changePath, value, dones);
+        }
+    }
+}
+Computed.Namespace=`Aventus`;
+
+_.Computed=Computed;
+const ComputedNoRecomputed=class ComputedNoRecomputed extends Computed {
+    init() {
+        this.isInit = true;
+        Watcher._registering.push(this);
+        this._value = this.fct();
+        Watcher._registering.splice(Watcher._registering.length - 1, 1);
+    }
+    computedValue() {
+        if (this.isInit)
+            this._value = this.fct();
+        else
+            this.init();
+    }
+    run() { }
+}
+ComputedNoRecomputed.Namespace=`Aventus`;
+
+_.ComputedNoRecomputed=ComputedNoRecomputed;
 const PressManager=class PressManager {
     static globalConfig = {
         delayDblPress: 150,
@@ -824,6 +1868,7 @@ const PressManager=class PressManager {
         }
         this.startPosition = { x: e.pageX, y: e.pageY };
         document.addEventListener("pointerup", this.functionsBinded.upAction);
+        document.addEventListener("pointercancel", this.functionsBinded.upAction);
         document.addEventListener("pointermove", this.functionsBinded.moveAction);
         this.timeoutLongPress = setTimeout(() => {
             if (!this.state.oneActionTriggered) {
@@ -853,6 +1898,7 @@ const PressManager=class PressManager {
             e.stopImmediatePropagation();
         }
         document.removeEventListener("pointerup", this.functionsBinded.upAction);
+        document.removeEventListener("pointercancel", this.functionsBinded.upAction);
         document.removeEventListener("pointermove", this.functionsBinded.moveAction);
         clearTimeout(this.timeoutLongPress);
         if (this.state.isMoving) {
@@ -1059,787 +2105,15 @@ const PressManager=class PressManager {
             this.element.removeEventListener("trigger_pointer_dblpress", this.functionsBinded.childDblPress);
             this.element.removeEventListener("trigger_pointer_longpress", this.functionsBinded.childLongPress);
             this.element.removeEventListener("trigger_pointer_dragstart", this.functionsBinded.childDragStart);
+            document.removeEventListener("pointerup", this.functionsBinded.upAction);
+            document.removeEventListener("pointercancel", this.functionsBinded.upAction);
+            document.removeEventListener("pointermove", this.functionsBinded.moveAction);
         }
     }
 }
-PressManager.Namespace=`${moduleName}`;
+PressManager.Namespace=`Aventus`;
+
 _.PressManager=PressManager;
-const Effect=class Effect {
-    callbacks = [];
-    isInit = false;
-    isDestroy = false;
-    __subscribes = [];
-    __allowChanged = [];
-    version = 0;
-    fct;
-    constructor(fct) {
-        this.fct = fct;
-        if (this.autoInit()) {
-            this.init();
-        }
-    }
-    autoInit() {
-        return true;
-    }
-    init() {
-        this.isInit = true;
-        this.run();
-    }
-    run() {
-        this.version++;
-        Watcher._registering.push(this);
-        let result = this.fct();
-        Watcher._registering.splice(Watcher._registering.length - 1, 1);
-        for (let i = 0; i < this.callbacks.length; i++) {
-            if (this.callbacks[i].version != this.version) {
-                this.callbacks[i].receiver.unsubscribe(this.callbacks[i].cb);
-                this.callbacks.splice(i, 1);
-                i--;
-            }
-        }
-        return result;
-    }
-    register(receiver, path, version, fullPath) {
-        for (let info of this.callbacks) {
-            if (info.receiver == receiver && info.path == path && receiver.__path == info.registerPath) {
-                info.version = version;
-                info.fullPath = fullPath;
-                return;
-            }
-        }
-        let cb;
-        if (path == "*") {
-            cb = (action, changePath, value) => { this.onChange(action, changePath, value); };
-        }
-        else {
-            cb = (action, changePath, value) => {
-                let full = fullPath;
-                if (changePath == path) {
-                    this.onChange(action, changePath, value);
-                }
-            };
-        }
-        this.callbacks.push({
-            receiver,
-            path,
-            registerPath: receiver.__path,
-            cb,
-            version,
-            fullPath
-        });
-        receiver.subscribe(cb);
-    }
-    canChange(fct) {
-        this.__allowChanged.push(fct);
-    }
-    checkCanChange(action, changePath, value) {
-        if (this.isDestroy) {
-            return false;
-        }
-        for (let fct of this.__allowChanged) {
-            if (!fct(action, changePath, value)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    onChange(action, changePath, value) {
-        if (!this.checkCanChange(action, changePath, value)) {
-            return;
-        }
-        this.run();
-        for (let fct of this.__subscribes) {
-            fct(action, changePath, value);
-        }
-    }
-    destroy() {
-        this.isDestroy = true;
-        this.clearCallbacks();
-        this.isInit = false;
-    }
-    clearCallbacks() {
-        for (let pair of this.callbacks) {
-            pair.receiver.unsubscribe(pair.cb);
-        }
-        this.callbacks = [];
-    }
-    subscribe(fct) {
-        let index = this.__subscribes.indexOf(fct);
-        if (index == -1) {
-            this.__subscribes.push(fct);
-        }
-    }
-    unsubscribe(fct) {
-        let index = this.__subscribes.indexOf(fct);
-        if (index > -1) {
-            this.__subscribes.splice(index, 1);
-        }
-    }
-}
-Effect.Namespace=`${moduleName}`;
-_.Effect=Effect;
-const Watcher=class Watcher {
-    static _registering = [];
-    static get _register() {
-        return this._registering[this._registering.length - 1];
-    }
-    /**
-     * Transform object into a watcher
-     */
-    static get(obj, onDataChanged) {
-        if (obj == undefined) {
-            console.error("You must define an objet / array for your proxy");
-            return;
-        }
-        if (obj.__isProxy) {
-            if (onDataChanged)
-                obj.subscribe(onDataChanged);
-            return obj;
-        }
-        const reservedName = {
-            __path: '__path',
-        };
-        const clearReservedNames = (data) => {
-            if (data instanceof Object && !data.__isProxy) {
-                for (let key in reservedName) {
-                    delete data[key];
-                }
-            }
-        };
-        const setProxyPath = (newProxy, newPath) => {
-            if (newProxy instanceof Object && newProxy.__isProxy) {
-                newProxy.__path = newPath;
-            }
-        };
-        const jsonReplacer = (key, value) => {
-            if (reservedName[key])
-                return undefined;
-            return value;
-        };
-        const addAlias = (otherBaseData, name, cb) => {
-            let cbs = aliases.get(otherBaseData);
-            if (!cbs) {
-                cbs = [];
-                aliases.set(otherBaseData, cbs);
-            }
-            cbs.push({
-                name: name,
-                fct: cb
-            });
-        };
-        const deleteAlias = (otherBaseData, name) => {
-            let cbs = aliases.get(otherBaseData);
-            if (!cbs)
-                return;
-            for (let i = 0; i < cbs.length; i++) {
-                if (cbs[i].name == name) {
-                    cbs.splice(i, 1);
-                    if (cbs.length == 0) {
-                        aliases.delete(otherBaseData);
-                    }
-                    return;
-                }
-            }
-        };
-        const replaceByAlias = (target, element, prop, receiver) => {
-            let fullInternalPath = "";
-            if (Array.isArray(target)) {
-                if (prop != "length") {
-                    if (target.__path) {
-                        fullInternalPath = target.__path;
-                    }
-                    fullInternalPath += "[" + prop + "]";
-                }
-            }
-            else {
-                if (target.__path) {
-                    fullInternalPath = target.__path + '.';
-                }
-                fullInternalPath += prop;
-            }
-            if (receiver && internalAliases[fullInternalPath]) {
-                internalAliases[fullInternalPath].unbind();
-            }
-            if (element instanceof Object && element.__isProxy) {
-                let root = element.__root;
-                if (root != proxyData.baseData) {
-                    let oldPath = element.__path;
-                    let unbindElement = getValueFromObject(oldPath, root);
-                    if (receiver == null) {
-                        receiver = getValueFromObject(target.__path, realProxy);
-                        if (internalAliases[fullInternalPath]) {
-                            internalAliases[fullInternalPath].unbind();
-                        }
-                    }
-                    let result = Reflect.set(target, prop, unbindElement, receiver);
-                    element.__addAlias(proxyData.baseData, oldPath, (type, target, receiver2, value, prop2, dones) => {
-                        let triggerPath;
-                        if (prop2.startsWith("[") || fullInternalPath == "" || prop2 == "") {
-                            triggerPath = fullInternalPath + prop2;
-                        }
-                        else {
-                            triggerPath = fullInternalPath + "." + prop2;
-                        }
-                        triggerPath = triggerPath.replace(/\[(.*?)\]/g, '.$1');
-                        if (type == 'DELETED' && internalAliases[triggerPath]) {
-                            internalAliases[triggerPath].unbind();
-                        }
-                        let splitted = triggerPath.split(".");
-                        let newProp = splitted.pop();
-                        let newReceiver = getValueFromObject(splitted.join("."), realProxy);
-                        trigger(type, target, newReceiver, value, newProp, dones);
-                    });
-                    internalAliases[fullInternalPath] = {
-                        unbind: () => {
-                            delete internalAliases[fullInternalPath];
-                            element.__deleteAlias(proxyData.baseData, oldPath);
-                            deleteAlias(root, prop);
-                        }
-                    };
-                    addAlias(root, prop, (type, target, receiver2, value, prop2, dones) => {
-                        let proxy = element.__getProxy;
-                        let triggerPath;
-                        if (prop2.startsWith("[") || oldPath == "" || prop2 == "") {
-                            triggerPath = oldPath + prop2;
-                        }
-                        else {
-                            triggerPath = oldPath + "." + prop2;
-                        }
-                        triggerPath = triggerPath.replace(/\[(.*?)\]/g, '.$1');
-                        let splitted = triggerPath.split(".");
-                        let newProp = splitted.pop();
-                        let newReceiver = getValueFromObject(splitted.join("."), proxy);
-                        element.__trigger(type, target, newReceiver, value, newProp, dones);
-                    });
-                    return unbindElement;
-                }
-            }
-            return element;
-        };
-        let currentTrace = new Error().stack?.split("\n") ?? [];
-        currentTrace.shift();
-        currentTrace.shift();
-        const aliases = new Map();
-        const internalAliases = {};
-        let proxyData = {
-            baseData: {},
-            callbacks: {},
-            callbacksReverse: new Map(),
-            avoidUpdate: [],
-            pathToRemove: [],
-            history: [{
-                    object: JSON.parse(JSON.stringify(obj, jsonReplacer)),
-                    trace: currentTrace,
-                    action: 'init',
-                    path: ''
-                }],
-            useHistory: false,
-            getProxyObject(target, element, prop) {
-                let newProxy;
-                element = replaceByAlias(target, element, prop, null);
-                if (element instanceof Object && element.__isProxy) {
-                    newProxy = element;
-                }
-                else {
-                    try {
-                        if (element instanceof Computed) {
-                            return element;
-                        }
-                        if (element instanceof HTMLElement) {
-                            return element;
-                        }
-                        if (element instanceof Object) {
-                            newProxy = new Proxy(element, this);
-                        }
-                        else {
-                            return element;
-                        }
-                    }
-                    catch {
-                        return element;
-                    }
-                }
-                let newPath = '';
-                if (Array.isArray(target)) {
-                    if (/^[0-9]*$/g.exec(prop)) {
-                        if (target.__path) {
-                            newPath = target.__path;
-                        }
-                        newPath += "[" + prop + "]";
-                        setProxyPath(newProxy, newPath);
-                    }
-                    else {
-                        newPath += "." + prop;
-                        setProxyPath(newProxy, newPath);
-                    }
-                }
-                else if (element instanceof Date) {
-                    return element;
-                }
-                else {
-                    if (target.__path) {
-                        newPath = target.__path + '.';
-                    }
-                    newPath += prop;
-                    setProxyPath(newProxy, newPath);
-                }
-                return newProxy;
-            },
-            tryCustomFunction(target, prop, receiver) {
-                if (prop == "__isProxy") {
-                    return true;
-                }
-                else if (prop == "__getProxy") {
-                    return realProxy;
-                }
-                else if (prop == "__root") {
-                    return this.baseData;
-                }
-                else if (prop == "__callbacks") {
-                    return this.callbacks;
-                }
-                else if (prop == "subscribe") {
-                    let path = receiver.__path;
-                    return (cb) => {
-                        if (!this.callbacks[path]) {
-                            this.callbacks[path] = [];
-                        }
-                        this.callbacks[path].push(cb);
-                        this.callbacksReverse.set(cb, path);
-                    };
-                }
-                else if (prop == "unsubscribe") {
-                    return (cb) => {
-                        let oldPath = this.callbacksReverse.get(cb);
-                        if (oldPath === undefined)
-                            return;
-                        if (!this.callbacks[oldPath]) {
-                            return;
-                        }
-                        let index = this.callbacks[oldPath].indexOf(cb);
-                        if (index > -1) {
-                            this.callbacks[oldPath].splice(index, 1);
-                        }
-                        this.callbacksReverse.delete(cb);
-                    };
-                }
-                else if (prop == "getHistory") {
-                    return () => {
-                        return this.history;
-                    };
-                }
-                else if (prop == "clearHistory") {
-                    this.history = [];
-                }
-                else if (prop == "enableHistory") {
-                    return () => {
-                        this.useHistory = true;
-                    };
-                }
-                else if (prop == "disableHistory") {
-                    return () => {
-                        this.useHistory = false;
-                    };
-                }
-                else if (prop == "getTarget") {
-                    return () => {
-                        clearReservedNames(target);
-                        return target;
-                    };
-                }
-                else if (prop == "toJSON") {
-                    if (Array.isArray(target)) {
-                        return () => {
-                            let result = [];
-                            for (let element of target) {
-                                result.push(element);
-                            }
-                            return result;
-                        };
-                    }
-                    return () => {
-                        let result = {};
-                        for (let key of Object.keys(target)) {
-                            if (reservedName[key]) {
-                                continue;
-                            }
-                            result[key] = target[key];
-                        }
-                        return result;
-                    };
-                }
-                else if (prop == "__addAlias") {
-                    return addAlias;
-                }
-                else if (prop == "__deleteAlias") {
-                    return deleteAlias;
-                }
-                else if (prop == "__trigger") {
-                    return trigger;
-                }
-                return undefined;
-            },
-            get(target, prop, receiver) {
-                if (reservedName[prop]) {
-                    return target[prop];
-                }
-                let customResult = this.tryCustomFunction(target, prop, receiver);
-                if (customResult !== undefined) {
-                    return customResult;
-                }
-                let element = target[prop];
-                if (typeof (element) == 'function') {
-                    if (Array.isArray(target)) {
-                        let result;
-                        if (prop == 'push') {
-                            if (target.__isProxy) {
-                                result = (el) => {
-                                    let index = target.push(el);
-                                    return index;
-                                };
-                            }
-                            else {
-                                result = (el) => {
-                                    let index = target.push(el);
-                                    target.splice(target.length - 1, 1, el);
-                                    trigger('CREATED', target, receiver, receiver[index - 1], "[" + (index - 1) + "]");
-                                    trigger('UPDATED', target, receiver, target.length, "length");
-                                    return index;
-                                };
-                            }
-                        }
-                        else if (prop == 'splice') {
-                            if (target.__isProxy) {
-                                result = (index, nbRemove, ...insert) => {
-                                    let res = target.splice(index, nbRemove, ...insert);
-                                    return res;
-                                };
-                            }
-                            else {
-                                result = (index, nbRemove, ...insert) => {
-                                    let oldValues = [];
-                                    for (let i = index; i < index + nbRemove; i++) {
-                                        oldValues.push(receiver[i]);
-                                    }
-                                    let updateLength = nbRemove != insert.length;
-                                    let res = target.splice(index, nbRemove, ...insert);
-                                    for (let i = 0; i < oldValues.length; i++) {
-                                        trigger('DELETED', target, receiver, oldValues[i], "[" + index + "]");
-                                    }
-                                    for (let i = 0; i < insert.length; i++) {
-                                        target.splice((index + i), 1, insert[i]);
-                                        trigger('CREATED', target, receiver, receiver[(index + i)], "[" + (index + i) + "]");
-                                    }
-                                    // for(let i = fromIndex, j = 0; i < target.length; i++, j++) {
-                                    //     let proxyEl = this.getProxyObject(target, target[i], i);
-                                    //     let recuUpdate = (childEl) => {
-                                    //         if(Array.isArray(childEl)) {
-                                    //             for(let i = 0; i < childEl.length; i++) {
-                                    //                 if(childEl[i] instanceof Object && childEl[i].__path) {
-                                    //                     let newProxyEl = this.getProxyObject(childEl, childEl[i], i);
-                                    //                     recuUpdate(newProxyEl);
-                                    //         else if(childEl instanceof Object && !(childEl instanceof Date)) {
-                                    //             for(let key in childEl) {
-                                    //                 if(childEl[key] instanceof Object && childEl[key].__path) {
-                                    //                     let newProxyEl = this.getProxyObject(childEl, childEl[key], key);
-                                    //                     recuUpdate(newProxyEl);
-                                    //     recuUpdate(proxyEl);
-                                    if (updateLength)
-                                        trigger('UPDATED', target, receiver, target.length, "length");
-                                    return res;
-                                };
-                            }
-                        }
-                        else if (prop == 'pop') {
-                            if (target.__isProxy) {
-                                result = () => {
-                                    let res = target.pop();
-                                    return res;
-                                };
-                            }
-                            else {
-                                result = () => {
-                                    let index = target.length - 1;
-                                    let oldValue = receiver.length ? receiver[receiver.length] : undefined;
-                                    let res = target.pop();
-                                    trigger('DELETED', target, receiver, oldValue, "[" + index + "]");
-                                    trigger('UPDATED', target, receiver, target.length, "length");
-                                    return res;
-                                };
-                            }
-                        }
-                        else {
-                            result = element.bind(target);
-                        }
-                        return result;
-                    }
-                    return element.bind(target);
-                }
-                if (element instanceof Computed) {
-                    return element.value;
-                }
-                if (Watcher._registering.length > 0) {
-                    let currentPath;
-                    let fullPath;
-                    let isArray = Array.isArray(receiver);
-                    if (isArray && /^[0-9]*$/g.exec(prop)) {
-                        fullPath = receiver.__path + "[" + prop + "]";
-                        currentPath = "[" + prop + "]";
-                    }
-                    else {
-                        fullPath = receiver.__path ? receiver.__path + '.' + prop : prop;
-                        currentPath = prop;
-                    }
-                    Watcher._register?.register(receiver, currentPath, Watcher._register.version, fullPath);
-                }
-                if (typeof (element) == 'object') {
-                    return this.getProxyObject(target, element, prop);
-                }
-                return Reflect.get(target, prop, receiver);
-            },
-            set(target, prop, value, receiver) {
-                let oldValue = Reflect.get(target, prop, receiver);
-                value = replaceByAlias(target, value, prop, receiver);
-                let triggerChange = false;
-                if (!reservedName[prop]) {
-                    if (Array.isArray(target)) {
-                        if (prop != "length") {
-                            triggerChange = true;
-                        }
-                    }
-                    else {
-                        if (!compareObject(value, oldValue)) {
-                            triggerChange = true;
-                        }
-                    }
-                }
-                let result = Reflect.set(target, prop, value, receiver);
-                if (triggerChange) {
-                    let index = this.avoidUpdate.indexOf(prop);
-                    if (index == -1) {
-                        trigger('UPDATED', target, receiver, value, prop);
-                    }
-                    else {
-                        this.avoidUpdate.splice(index, 1);
-                    }
-                }
-                return result;
-            },
-            deleteProperty(target, prop) {
-                let triggerChange = false;
-                let pathToDelete = '';
-                if (!reservedName[prop]) {
-                    if (Array.isArray(target)) {
-                        if (prop != "length") {
-                            if (target.__path) {
-                                pathToDelete = target.__path;
-                            }
-                            pathToDelete += "[" + prop + "]";
-                            triggerChange = true;
-                        }
-                    }
-                    else {
-                        if (target.__path) {
-                            pathToDelete = target.__path + '.';
-                        }
-                        pathToDelete += prop;
-                        triggerChange = true;
-                    }
-                }
-                if (internalAliases[pathToDelete]) {
-                    internalAliases[pathToDelete].unbind();
-                }
-                if (target.hasOwnProperty(prop)) {
-                    let oldValue = target[prop];
-                    if (oldValue instanceof Effect) {
-                        oldValue.destroy();
-                    }
-                    delete target[prop];
-                    if (triggerChange) {
-                        clearReservedNames(oldValue);
-                        trigger('DELETED', target, null, oldValue, prop);
-                    }
-                    return true;
-                }
-                return false;
-            },
-            defineProperty(target, prop, descriptor) {
-                let triggerChange = false;
-                let newPath = '';
-                if (!reservedName[prop]) {
-                    if (Array.isArray(target)) {
-                        if (prop != "length") {
-                            if (target.__path) {
-                                newPath = target.__path;
-                            }
-                            newPath += "[" + prop + "]";
-                            if (!target.hasOwnProperty(prop)) {
-                                triggerChange = true;
-                            }
-                        }
-                    }
-                    else {
-                        if (target.__path) {
-                            newPath = target.__path + '.';
-                        }
-                        newPath += prop;
-                        if (!target.hasOwnProperty(prop)) {
-                            triggerChange = true;
-                        }
-                    }
-                }
-                let result = Reflect.defineProperty(target, prop, descriptor);
-                if (triggerChange) {
-                    this.avoidUpdate.push(prop);
-                    let proxyEl = this.getProxyObject(target, descriptor.value, prop);
-                    target[prop] = proxyEl;
-                    trigger('CREATED', target, null, proxyEl, prop);
-                }
-                return result;
-            },
-            ownKeys(target) {
-                let result = Reflect.ownKeys(target);
-                for (let i = 0; i < result.length; i++) {
-                    if (reservedName[result[i]]) {
-                        result.splice(i, 1);
-                        i--;
-                    }
-                }
-                return result;
-            },
-        };
-        if (onDataChanged) {
-            proxyData.callbacks[''] = [onDataChanged];
-        }
-        const trigger = (type, target, receiver, value, prop, dones = []) => {
-            if (target.__isProxy) {
-                return;
-            }
-            let rootPath;
-            if (receiver == null) {
-                rootPath = target.__path;
-            }
-            else {
-                rootPath = receiver.__path;
-            }
-            if (rootPath != "") {
-                if (Array.isArray(target)) {
-                    if (!prop.startsWith("[")) {
-                        if (/^[0-9]*$/g.exec(prop)) {
-                            rootPath += "[" + prop + "]";
-                        }
-                        else {
-                            rootPath += "." + prop;
-                        }
-                    }
-                    else {
-                        rootPath += prop;
-                    }
-                }
-                else {
-                    if (!prop.startsWith("[")) {
-                        rootPath += ".";
-                    }
-                    rootPath += prop;
-                }
-            }
-            else {
-                rootPath = prop;
-            }
-            let stacks = [];
-            if (proxyData.useHistory) {
-                let allStacks = new Error().stack?.split("\n") ?? [];
-                for (let i = allStacks.length - 1; i >= 0; i--) {
-                    let current = allStacks[i].trim().replace("at ", "");
-                    if (current.startsWith("Object.set") || current.startsWith("Proxy.result")) {
-                        break;
-                    }
-                    stacks.push(current);
-                }
-            }
-            dones.push(proxyData.baseData);
-            let aliasesDone = [];
-            for (let name in proxyData.callbacks) {
-                let pathToSend = rootPath;
-                if (name !== "") {
-                    let regex = new RegExp("^" + name.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + "(\\.|(\\[)|$)");
-                    if (!regex.test(rootPath)) {
-                        let regex2 = new RegExp("^" + rootPath.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + "(\\.|(\\[)|$)");
-                        if (!regex2.test(name)) {
-                            continue;
-                        }
-                        else {
-                            pathToSend = "";
-                        }
-                    }
-                    else {
-                        pathToSend = rootPath.replace(regex, "$2");
-                    }
-                }
-                if (name === "" && proxyData.useHistory) {
-                    proxyData.history.push({
-                        object: JSON.parse(JSON.stringify(proxyData.baseData, jsonReplacer)),
-                        trace: stacks.reverse(),
-                        action: WatchAction[type],
-                        path: pathToSend
-                    });
-                }
-                let cbs = [...proxyData.callbacks[name]];
-                for (let cb of cbs) {
-                    try {
-                        cb(WatchAction[type], pathToSend, value);
-                    }
-                    catch (e) {
-                        if (e != 'impossible')
-                            console.error(e);
-                    }
-                }
-                for (let [key, infos] of aliases) {
-                    if (!dones.includes(key)) {
-                        for (let info of infos) {
-                            if (info.name == name) {
-                                aliasesDone.push(key);
-                                info.fct(type, target, receiver, value, prop, dones);
-                            }
-                        }
-                    }
-                }
-            }
-            for (let [key, infos] of aliases) {
-                if (!dones.includes(key) && !aliasesDone.includes(key)) {
-                    for (let info of infos) {
-                        let regex = new RegExp("^" + info.name.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&') + "(\\.|(\\[)|$)");
-                        if (!regex.test(rootPath)) {
-                            continue;
-                        }
-                        let name = rootPath.replace(regex, "$2");
-                        info.fct(type, target, receiver, value, name, dones);
-                    }
-                }
-            }
-        };
-        var realProxy = new Proxy(obj, proxyData);
-        proxyData.baseData = obj;
-        setProxyPath(realProxy, '');
-        return realProxy;
-    }
-    /**
-     * Create a computed variable that will watch any changes
-     */
-    static computed(fct) {
-        const comp = new Computed(fct);
-        return comp;
-    }
-    /**
-     * Create an effect variable that will watch any changes
-     */
-    static effect(fct) {
-        const comp = new Effect(fct);
-        return comp;
-    }
-}
-Watcher.Namespace=`${moduleName}`;
-_.Watcher=Watcher;
 const Uri=class Uri {
     static prepare(uri) {
         let params = [];
@@ -1875,7 +2149,7 @@ const Uri=class Uri {
         if (typeof from == "string") {
             from = this.prepare(from);
         }
-        let matches = from.regex.exec(current);
+        let matches = from.regex.exec(current.toLowerCase());
         if (matches) {
             let slugs = {};
             for (let param of from.params) {
@@ -1915,7 +2189,8 @@ const Uri=class Uri {
         return normalizedPath;
     }
 }
-Uri.Namespace=`${moduleName}`;
+Uri.Namespace=`Aventus`;
+
 _.Uri=Uri;
 const State=class State {
     /**
@@ -1939,7 +2214,8 @@ const State=class State {
         return true;
     }
 }
-State.Namespace=`${moduleName}`;
+State.Namespace=`Aventus`;
+
 _.State=State;
 const EmptyState=class EmptyState extends State {
     localName;
@@ -1954,7 +2230,8 @@ const EmptyState=class EmptyState extends State {
         return this.localName;
     }
 }
-EmptyState.Namespace=`${moduleName}`;
+EmptyState.Namespace=`Aventus`;
+
 _.EmptyState=EmptyState;
 const StateManager=class StateManager {
     subscribers = {};
@@ -1969,7 +2246,7 @@ const StateManager=class StateManager {
     /**
      * Subscribe actions for a state or a state list
      */
-    subscribe(statePatterns, callbacks) {
+    subscribe(statePatterns, callbacks, autoActiveState = true) {
         if (!callbacks.active && !callbacks.inactive && !callbacks.askChange) {
             this._log(`Trying to subscribe to state : ${statePatterns} with no callbacks !`, "warning");
             return;
@@ -1998,7 +2275,7 @@ const StateManager=class StateManager {
                 }
                 for (let activeFct of callbacks.active) {
                     this.subscribers[statePattern].callbacks.active.push(activeFct);
-                    if (this.subscribers[statePattern].isActive && this.activeState) {
+                    if (this.subscribers[statePattern].isActive && this.activeState && autoActiveState) {
                         let slugs = Uri.getParams(this.subscribers[statePattern], this.activeState.name);
                         if (slugs) {
                             activeFct(this.activeState, slugs);
@@ -2020,6 +2297,29 @@ const StateManager=class StateManager {
                 }
                 for (let askChangeFct of callbacks.askChange) {
                     this.subscribers[statePattern].callbacks.askChange.push(askChangeFct);
+                }
+            }
+        }
+    }
+    /**
+     *
+     */
+    activateAfterSubscribe(statePatterns, callbacks) {
+        if (!Array.isArray(statePatterns)) {
+            statePatterns = [statePatterns];
+        }
+        for (let statePattern of statePatterns) {
+            if (callbacks.active) {
+                if (!Array.isArray(callbacks.active)) {
+                    callbacks.active = [callbacks.active];
+                }
+                for (let activeFct of callbacks.active) {
+                    if (this.subscribers[statePattern].isActive && this.activeState) {
+                        let slugs = Uri.getParams(this.subscribers[statePattern], this.activeState.name);
+                        if (slugs) {
+                            activeFct(this.activeState, slugs);
+                        }
+                    }
                 }
             }
         }
@@ -2236,64 +2536,9 @@ const StateManager=class StateManager {
         }
     }
 }
-StateManager.Namespace=`${moduleName}`;
+StateManager.Namespace=`Aventus`;
+
 _.StateManager=StateManager;
-const Computed=class Computed extends Effect {
-    _value;
-    __path = "*";
-    get value() {
-        if (!this.isInit) {
-            this.init();
-        }
-        Watcher._register?.register(this, "*", Watcher._register.version, "*");
-        return this._value;
-    }
-    autoInit() {
-        return false;
-    }
-    constructor(fct) {
-        super(fct);
-    }
-    init() {
-        this.isInit = true;
-        this.computedValue();
-    }
-    computedValue() {
-        this._value = this.run();
-    }
-    onChange(action, changePath, value) {
-        if (!this.checkCanChange(action, changePath, value)) {
-            return;
-        }
-        let oldValue = this._value;
-        this.computedValue();
-        if (oldValue === this._value) {
-            return;
-        }
-        for (let fct of this.__subscribes) {
-            fct(action, changePath, value);
-        }
-    }
-}
-Computed.Namespace=`${moduleName}`;
-_.Computed=Computed;
-const ComputedNoRecomputed=class ComputedNoRecomputed extends Computed {
-    init() {
-        this.isInit = true;
-        Watcher._registering.push(this);
-        this._value = this.fct();
-        Watcher._registering.splice(Watcher._registering.length - 1, 1);
-    }
-    computedValue() {
-        if (this.isInit)
-            this._value = this.fct();
-        else
-            this.init();
-    }
-    run() { }
-}
-ComputedNoRecomputed.Namespace=`${moduleName}`;
-_.ComputedNoRecomputed=ComputedNoRecomputed;
 const TemplateContext=class TemplateContext {
     data = {};
     comp;
@@ -2458,7 +2703,10 @@ const TemplateContext=class TemplateContext {
             }
         });
     }
-    updateWatch(name, value) {
+    updateWatch(name, value, dones) {
+        if (Watcher.is(this.watch[name])) {
+            this.watch[name].__injectedDones(dones);
+        }
         this.watch[name] = value;
     }
     normalizePath(path) {
@@ -2494,7 +2742,8 @@ const TemplateContext=class TemplateContext {
         setValueToObject(name, this.comp, value);
     }
 }
-TemplateContext.Namespace=`${moduleName}`;
+TemplateContext.Namespace=`Aventus`;
+
 _.TemplateContext=TemplateContext;
 const TemplateInstance=class TemplateInstance {
     context;
@@ -2538,11 +2787,15 @@ const TemplateInstance=class TemplateInstance {
     destructor() {
         this.isDestroyed = true;
         for (let name in this.loopRegisteries) {
-            for (let item of this.loopRegisteries[name].templates) {
+            let register = this.loopRegisteries[name];
+            for (let item of register.templates) {
                 item.destructor();
             }
-            for (let item of this.loopRegisteries[name].computeds) {
+            for (let item of register.computeds) {
                 item.destroy();
+            }
+            if (register.unsub) {
+                register.unsub();
             }
         }
         this.loopRegisteries = {};
@@ -2620,10 +2873,10 @@ const TemplateInstance=class TemplateInstance {
             }
             return {};
         });
-        computed.subscribe((action, path, value) => {
+        computed.subscribe((action, path, value, dones) => {
             for (let key in computed.value) {
                 let newValue = computed.value[key];
-                this.context.updateWatch(key, newValue);
+                this.context.updateWatch(key, newValue, dones);
             }
         });
         this.computeds.push(computed);
@@ -2652,7 +2905,7 @@ const TemplateInstance=class TemplateInstance {
                 let cb = getValueFromObject(event.eventName, el);
                 cb?.add((...args) => {
                     try {
-                        event.fct(this.context, args);
+                        return event.fct(this.context, args);
                     }
                     catch (e) {
                         console.error(e);
@@ -2753,7 +3006,7 @@ const TemplateInstance=class TemplateInstance {
             return "";
         });
         let timeout;
-        computed.subscribe((action, path, value) => {
+        computed.subscribe((action, path, value, dones) => {
             clearTimeout(timeout);
             // add timeout to group change that append on the same frame (for example index update)
             timeout = setTimeout(() => {
@@ -2787,8 +3040,11 @@ const TemplateInstance=class TemplateInstance {
             }
         });
         this.computeds.push(computed);
-        computed.subscribe(() => {
+        computed.subscribe((action, path, value, dones) => {
             for (const el of this._components[injection.id]) {
+                if (el instanceof WebComponent && el.__watch && Object.hasOwn(el.__watch, injection.injectionName)) {
+                    el.__watch.__injectedDones(dones);
+                }
                 el[injection.injectionName] = computed.value;
             }
         });
@@ -2817,10 +3073,13 @@ const TemplateInstance=class TemplateInstance {
             }
         });
         this.computeds.push(computed);
-        computed.subscribe(() => {
+        computed.subscribe((action, path, value, dones) => {
             if (isLocalChange)
                 return;
             for (const el of this._components[binding.id]) {
+                if (el instanceof WebComponent && el.__watch && Object.hasOwn(el.__watch, binding.injectionName)) {
+                    el.__watch.__injectedDones(dones);
+                }
                 el[binding.injectionName] = computed.value;
             }
         });
@@ -2927,6 +3186,8 @@ const TemplateInstance=class TemplateInstance {
         for (let i = 0; i < result.length; i++) {
             let context = new TemplateContext(this.component, result[i], this.context, this.loopRegisteries[loop.anchorId]);
             let content = loop.template.template?.content.cloneNode(true);
+            document.adoptNode(content);
+            customElements.upgrade(content);
             let actions = loop.template.actions;
             let instance = new TemplateInstance(this.component, content, actions, loop.template.loops, loop.template.ifs, context);
             instance.render();
@@ -2935,9 +3196,9 @@ const TemplateInstance=class TemplateInstance {
         }
     }
     resetLoopSimple(anchorId, basePath) {
-        let elements = this.context.getValueFromItem(basePath);
-        if (elements && this.loopRegisteries[anchorId]) {
-            elements.unsubscribe(this.loopRegisteries[anchorId].sub);
+        let register = this.loopRegisteries[anchorId];
+        if (register?.unsub) {
+            register.unsub();
         }
         this.resetLoopComplex(anchorId);
     }
@@ -3011,6 +3272,8 @@ const TemplateInstance=class TemplateInstance {
                         let context = new TemplateContext(this.component, {}, this.context, registry);
                         context.registerLoop(basePath, index, indexName, simple.index, simple.item, onThis);
                         let content = loop.template.template?.content.cloneNode(true);
+                        document.adoptNode(content);
+                        customElements.upgrade(content);
                         let actions = loop.template.actions;
                         let instance = new TemplateInstance(this.component, content, actions, loop.template.loops, loop.template.ifs, context);
                         instance.render();
@@ -3036,7 +3299,9 @@ const TemplateInstance=class TemplateInstance {
                     }
                 }
             };
-            this.loopRegisteries[loop.anchorId].sub = sub;
+            this.loopRegisteries[loop.anchorId].unsub = () => {
+                elements.unsubscribe(sub);
+            };
             elements.subscribe(sub);
         }
         let anchor = this._components[loop.anchorId][0];
@@ -3044,6 +3309,8 @@ const TemplateInstance=class TemplateInstance {
             let context = new TemplateContext(this.component, {}, this.context, this.loopRegisteries[loop.anchorId]);
             context.registerLoop(basePath, i, indexName, simple.index, simple.item, onThis);
             let content = loop.template.template?.content.cloneNode(true);
+            document.adoptNode(content);
+            customElements.upgrade(content);
             let actions = loop.template.actions;
             let instance = new TemplateInstance(this.component, content, actions, loop.template.loops, loop.template.ifs, context);
             instance.render();
@@ -3052,8 +3319,14 @@ const TemplateInstance=class TemplateInstance {
         }
     }
     renderIf(_if) {
+        // this.renderIfMemory(_if);
+        this.renderIfRecreate(_if);
+    }
+    renderIfMemory(_if) {
         let computeds = [];
         let instances = [];
+        if (!this._components[_if.anchorId] || this._components[_if.anchorId].length == 0)
+            return;
         let anchor = this._components[_if.anchorId][0];
         let currentActive = -1;
         const calculateActive = () => {
@@ -3095,6 +3368,8 @@ const TemplateInstance=class TemplateInstance {
             this.computeds.push(computed);
             let context = new TemplateContext(this.component, {}, this.context);
             let content = part.template.template?.content.cloneNode(true);
+            document.adoptNode(content);
+            customElements.upgrade(content);
             let actions = part.template.actions;
             let instance = new TemplateInstance(this.component, content, actions, part.template.loops, part.template.ifs, context);
             instances.push(instance);
@@ -3102,8 +3377,63 @@ const TemplateInstance=class TemplateInstance {
         }
         calculateActive();
     }
+    renderIfRecreate(_if) {
+        let computeds = [];
+        if (!this._components[_if.anchorId] || this._components[_if.anchorId].length == 0)
+            return;
+        let anchor = this._components[_if.anchorId][0];
+        let currentActive = undefined;
+        let currentActiveNb = -1;
+        const createContext = () => {
+            if (currentActiveNb < 0 || currentActiveNb > _if.parts.length - 1) {
+                currentActive = undefined;
+                return;
+            }
+            const part = _if.parts[currentActiveNb];
+            let context = new TemplateContext(this.component, {}, this.context);
+            let content = part.template.template?.content.cloneNode(true);
+            document.adoptNode(content);
+            customElements.upgrade(content);
+            let actions = part.template.actions;
+            let instance = new TemplateInstance(this.component, content, actions, part.template.loops, part.template.ifs, context);
+            currentActive = instance;
+            instance.render();
+            anchor.parentNode?.insertBefore(currentActive.content, anchor);
+        };
+        for (let i = 0; i < _if.parts.length; i++) {
+            const part = _if.parts[i];
+            let _class = part.once ? ComputedNoRecomputed : Computed;
+            let computed = new _class(() => {
+                return part.condition(this.context);
+            });
+            computeds.push(computed);
+            computed.subscribe(() => {
+                calculateActive();
+            });
+            this.computeds.push(computed);
+        }
+        const calculateActive = () => {
+            let newActive = -1;
+            for (let i = 0; i < _if.parts.length; i++) {
+                if (computeds[i].value) {
+                    newActive = i;
+                    break;
+                }
+            }
+            if (newActive == currentActiveNb) {
+                return;
+            }
+            if (currentActive) {
+                currentActive.destructor();
+            }
+            currentActiveNb = newActive;
+            createContext();
+        };
+        calculateActive();
+    }
 }
-TemplateInstance.Namespace=`${moduleName}`;
+TemplateInstance.Namespace=`Aventus`;
+
 _.TemplateInstance=TemplateInstance;
 const Template=class Template {
     static validatePath(path, pathToCheck) {
@@ -3235,10 +3565,13 @@ const Template=class Template {
     }
     createInstance(component) {
         let content = this.template.content.cloneNode(true);
+        document.adoptNode(content);
+        customElements.upgrade(content);
         return new TemplateInstance(component, content, this.actions, this.loops, this.ifs);
     }
 }
-Template.Namespace=`${moduleName}`;
+Template.Namespace=`Aventus`;
+
 _.Template=Template;
 const WebComponent=class WebComponent extends HTMLElement {
     /**
@@ -3333,6 +3666,31 @@ const WebComponent=class WebComponent extends HTMLElement {
             this.__watchFunctionsComputed[name].destroy();
         }
         // TODO add missing info for destructor();
+        this.postDestruction();
+        this.destructChildren();
+    }
+    destructChildren() {
+        const recu = (el) => {
+            for (let child of Array.from(el.children)) {
+                if (child instanceof WebComponent) {
+                    child.destructor();
+                }
+                else if (child instanceof HTMLElement) {
+                    recu(child);
+                }
+            }
+            if (el.shadowRoot) {
+                for (let child of Array.from(el.shadowRoot.children)) {
+                    if (child instanceof WebComponent) {
+                        child.destructor();
+                    }
+                    else if (child instanceof HTMLElement) {
+                        recu(child);
+                    }
+                }
+            }
+        };
+        recu(this);
     }
     __addWatchesActions(name, fct) {
         if (!this.__watchActions[name]) {
@@ -3375,8 +3733,13 @@ const WebComponent=class WebComponent extends HTMLElement {
                 let defaultValue = {};
                 this.__defaultValuesWatch(defaultValue);
                 this.__watch = Watcher.get(defaultValue, (type, path, element) => {
-                    let action = this.__watchActionsCb[path.split(".")[0]] || this.__watchActionsCb[path.split("[")[0]];
-                    action(type, path, element);
+                    try {
+                        let action = this.__watchActionsCb[path.split(".")[0]] || this.__watchActionsCb[path.split("[")[0]];
+                        action(type, path, element);
+                    }
+                    catch (e) {
+                        console.error(e);
+                    }
                 });
             }
         }
@@ -3445,7 +3808,7 @@ const WebComponent=class WebComponent extends HTMLElement {
         let shadowRoot = this.attachShadow({ mode: 'open' });
         shadowRoot.adoptedStyleSheets = [...Object.values(staticInstance.__styleSheets), Style.noAnimation];
         shadowRoot.appendChild(this.__templateInstance.content);
-        customElements.upgrade(shadowRoot);
+        // customElements.upgrade(shadowRoot);
         return shadowRoot;
     }
     __registerTemplateAction() {
@@ -3456,19 +3819,30 @@ const WebComponent=class WebComponent extends HTMLElement {
             this._first = false;
             this.__defaultValues();
             this.__upgradeAttributes();
+            this.__activateState();
             this.__templateInstance?.render();
             this.__removeNoAnimations();
         }
+        else {
+            setTimeout(() => {
+                this.postConnect();
+            });
+        }
+    }
+    disconnectedCallback() {
+        setTimeout(() => {
+            this.postDisonnect();
+        });
     }
     __removeNoAnimations() {
         if (document.readyState !== "loading") {
-            this.offsetWidth;
             setTimeout(() => {
                 this.postCreation();
                 this._isReady = true;
                 this.dispatchEvent(new CustomEvent('postCreationDone'));
                 this.shadowRoot.adoptedStyleSheets = Object.values(this.__getStatic().__styleSheets);
                 document.removeEventListener("DOMContentLoaded", this.__removeNoAnimations);
+                this.postConnect();
             }, 50);
         }
     }
@@ -3488,6 +3862,7 @@ const WebComponent=class WebComponent extends HTMLElement {
             }
             else {
                 this.removeAttribute(prop);
+                delete this[prop];
                 this[prop] = false;
             }
         }
@@ -3497,6 +3872,18 @@ const WebComponent=class WebComponent extends HTMLElement {
                 delete this[prop];
                 this[prop] = value;
             }
+            else if (Object.hasOwn(this, prop)) {
+                const value = this[prop];
+                delete this[prop];
+                this[prop] = value;
+            }
+        }
+    }
+    __correctGetter(prop) {
+        if (Object.hasOwn(this, prop)) {
+            const value = this[prop];
+            delete this[prop];
+            this[prop] = value;
         }
     }
     __getStateManager(managerClass) {
@@ -3589,7 +3976,17 @@ const WebComponent=class WebComponent extends HTMLElement {
             for (const managerClass of this.__statesList[route].keys()) {
                 let el = this.__statesList[route].get(managerClass);
                 if (el) {
-                    managerClass.subscribe(route, el);
+                    managerClass.subscribe(route, el, false);
+                }
+            }
+        }
+    }
+    __activateState() {
+        for (let route in this.__statesList) {
+            for (const managerClass of this.__statesList[route].keys()) {
+                let el = this.__statesList[route].get(managerClass);
+                if (el) {
+                    managerClass.activateAfterSubscribe(route, el);
                 }
             }
         }
@@ -3607,12 +4004,18 @@ const WebComponent=class WebComponent extends HTMLElement {
         this.__stateCleared = true;
     }
     dateToString(d) {
+        if (typeof d == 'string') {
+            d = this.stringToDate(d);
+        }
         if (d instanceof Date) {
             return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
         }
         return null;
     }
     dateTimeToString(dt) {
+        if (typeof dt == 'string') {
+            dt = this.stringToDate(dt);
+        }
         if (dt instanceof Date) {
             return new Date(dt.getTime() - (dt.getTimezoneOffset() * 60000)).toISOString().slice(0, -1);
         }
@@ -3773,18 +4176,32 @@ const WebComponent=class WebComponent extends HTMLElement {
             }
         }
     }
-    remove() {
+    /**
+     * Remove a component from the dom
+     * If desctruct is set to true, the component will be fully destroyed
+     */
+    remove(destruct = true) {
         super.remove();
-        this.postDestruction();
+        if (destruct) {
+            this.destructor();
+        }
     }
     /**
-     * Function triggered when the component is removed from the DOM
+     * Function triggered when the component is destroyed
      */
     postDestruction() { }
     /**
      * Function triggered the first time the component is rendering inside DOM
      */
     postCreation() { }
+    /**
+    * Function triggered each time the component is rendering inside DOM
+    */
+    postConnect() { }
+    /**
+    * Function triggered each time the component is removed from the DOM
+    */
+    postDisonnect() { }
     /**
      * Find a parent by tagname if exist
      */
@@ -3822,7 +4239,8 @@ const WebComponent=class WebComponent extends HTMLElement {
         return ElementExtension.getElementsInSlot(this, slotName);
     }
 }
-WebComponent.Namespace=`${moduleName}`;
+WebComponent.Namespace=`Aventus`;
+
 _.WebComponent=WebComponent;
 const WebComponentInstance=class WebComponentInstance {
     static __allDefinitions = [];
@@ -3888,13 +4306,14 @@ const WebComponentInstance=class WebComponentInstance {
         for (let part of splitted) {
             current = current[part];
         }
-        if (current && current.prototype instanceof Aventus.WebComponent) {
+        if (current && current.prototype instanceof WebComponent) {
             return new current();
         }
         return null;
     }
 }
-WebComponentInstance.Namespace=`${moduleName}`;
+WebComponentInstance.Namespace=`Aventus`;
+
 _.WebComponentInstance=WebComponentInstance;
 const ResourceLoader=class ResourceLoader {
     static headerLoaded = {};
@@ -4063,7 +4482,8 @@ const ResourceLoader=class ResourceLoader {
         return result;
     }
 }
-ResourceLoader.Namespace=`${moduleName}`;
+ResourceLoader.Namespace=`Aventus`;
+
 _.ResourceLoader=ResourceLoader;
 const ResizeObserver=class ResizeObserver {
     callback;
@@ -4190,7 +4610,8 @@ const ResizeObserver=class ResizeObserver {
         }, 0);
     }
 }
-ResizeObserver.Namespace=`${moduleName}`;
+ResizeObserver.Namespace=`Aventus`;
+
 _.ResizeObserver=ResizeObserver;
 const Animation=class Animation {
     /**
@@ -4277,7 +4698,8 @@ const Animation=class Animation {
         return this.continueAnimation;
     }
 }
-Animation.Namespace=`${moduleName}`;
+Animation.Namespace=`Aventus`;
+
 _.Animation=Animation;
 const DragAndDrop=class DragAndDrop {
     /**
@@ -4548,7 +4970,8 @@ const DragAndDrop=class DragAndDrop {
         this.pressManager.destroy();
     }
 }
-DragAndDrop.Namespace=`${moduleName}`;
+DragAndDrop.Namespace=`Aventus`;
+
 _.DragAndDrop=DragAndDrop;
 const Json=class Json {
     /**
@@ -4601,6 +5024,7 @@ const Json=class Json {
     static classFromJson(obj, data, options) {
         let realOptions = {
             transformValue: options?.transformValue ?? ((key, value) => value),
+            replaceUndefined: options?.replaceUndefined ?? false,
         };
         return this.__classFromJson(obj, data, realOptions);
     }
@@ -4609,7 +5033,7 @@ const Json=class Json {
         for (let prop of props) {
             let propUpperFirst = prop[0].toUpperCase() + prop.slice(1);
             let value = data[prop] === undefined ? data[propUpperFirst] : data[prop];
-            if (value !== undefined) {
+            if (value !== undefined || options.replaceUndefined) {
                 let propInfo = Object.getOwnPropertyDescriptor(obj, prop);
                 if (propInfo?.writable) {
                     obj[prop] = options.transformValue(prop, value);
@@ -4622,7 +5046,7 @@ const Json=class Json {
             for (let prop of props) {
                 let propUpperFirst = prop[0].toUpperCase() + prop.slice(1);
                 let value = data[prop] === undefined ? data[propUpperFirst] : data[prop];
-                if (value !== undefined) {
+                if (value !== undefined || options.replaceUndefined) {
                     let propInfo = Object.getOwnPropertyDescriptor(cstTemp.prototype, prop);
                     if (propInfo?.set) {
                         obj[prop] = options.transformValue(prop, value);
@@ -4634,7 +5058,8 @@ const Json=class Json {
         return obj;
     }
 }
-Json.Namespace=`${moduleName}`;
+Json.Namespace=`Aventus`;
+
 _.Json=Json;
 const ConverterTransform=class ConverterTransform {
     transform(data) {
@@ -4673,12 +5098,15 @@ const ConverterTransform=class ConverterTransform {
                 let obj = objTemp;
                 this.beforeTransformObject(obj);
                 if (obj.fromJSON) {
-                    obj.fromJSON(data);
+                    obj = obj.fromJSON(data);
                 }
                 else {
                     obj = Json.classFromJson(obj, data, {
                         transformValue: (key, value) => {
                             if (obj[key] instanceof Date) {
+                                return value ? new Date(value) : null;
+                            }
+                            else if (typeof obj[key] == 'string' && /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.(\d{3})Z$/.exec(obj[key])) {
                                 return value ? new Date(value) : null;
                             }
                             else if (obj[key] instanceof Map) {
@@ -4687,6 +5115,21 @@ const ConverterTransform=class ConverterTransform {
                                     map.set(this.transformLoop(keyValue[0]), this.transformLoop(keyValue[1]));
                                 }
                                 return map;
+                            }
+                            else if (obj instanceof Data) {
+                                let cst = obj.constructor;
+                                if (cst.$schema[key] == 'boolean') {
+                                    return value ? true : false;
+                                }
+                                else if (cst.$schema[key] == 'number') {
+                                    return isNaN(Number(value)) ? 0 : Number(value);
+                                }
+                                else if (cst.$schema[key] == 'number') {
+                                    return isNaN(Number(value)) ? 0 : Number(value);
+                                }
+                                else if (cst.$schema[key] == 'Date') {
+                                    return value ? new Date(value) : null;
+                                }
                             }
                             return this.transformLoop(value);
                         }
@@ -4700,6 +5143,9 @@ const ConverterTransform=class ConverterTransform {
                 result[key] = this.transformLoop(data[key]);
             }
             return result;
+        }
+        if (typeof data == 'string' && /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.(\d{3})Z$/.exec(data)) {
+            return new Date(data);
         }
         return data;
     }
@@ -4734,7 +5180,8 @@ const ConverterTransform=class ConverterTransform {
         }
     }
 }
-ConverterTransform.Namespace=`${moduleName}`;
+ConverterTransform.Namespace=`Aventus`;
+
 _.ConverterTransform=ConverterTransform;
 const Converter=class Converter {
     /**
@@ -4803,39 +5250,14 @@ const Converter=class Converter {
         return converter.copyValuesClass(to, from, options);
     }
 }
-Converter.Namespace=`${moduleName}`;
+Converter.Namespace=`Aventus`;
+
 _.Converter=Converter;
-const DataManager=class DataManager {
-    /**
-     * Register a unique string type for a data
-     */
-    static register($type, cst) {
-        Converter.register($type, cst);
-    }
-    /**
-     * Get the contructor for the unique string type
-     */
-    static getConstructor($type) {
-        let result = Converter.info.get($type);
-        if (result) {
-            return result;
-        }
-        return null;
-    }
-    /**
-     * Clone the object to keep real type
-     */
-    static clone(data) {
-        return Converter.transform(JSON.parse(JSON.stringify(data)));
-    }
-}
-DataManager.Namespace=`${moduleName}`;
-_.DataManager=DataManager;
 const Data=class Data {
     /**
      * The schema for the class
      */
-    static get $schema() { return {}; }
+    static $schema;
     /**
      * The current namespace
      */
@@ -4871,8 +5293,15 @@ const Data=class Data {
             isValidKey: (key) => !toAvoid.includes(key)
         });
     }
+    /**
+     * Clone the object by transforming a parsed JSON string back into the original type
+     */
+    clone() {
+        return Converter.transform(JSON.parse(JSON.stringify(this)));
+    }
 }
-Data.Namespace=`${moduleName}`;
+Data.Namespace=`Aventus`;
+
 _.Data=Data;
 
 for(let key in _) { Aventus[key] = _[key] }
@@ -4888,7 +5317,8 @@ const _ = {};
 let _n;
 const Icon = class Icon extends Aventus.WebComponent {
     static get observedAttributes() {return ["icon", "type"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
-    get 'icon'() { return this.getStringProp('icon') }
+    get 'is_hidden'() { return this.getBoolAttr('is_hidden') }
+    set 'is_hidden'(val) { this.setBoolAttr('is_hidden', val) }    get 'icon'() { return this.getStringProp('icon') }
     set 'icon'(val) { this.setStringAttr('icon', val) }get 'type'() { return this.getStringProp('type') }
     set 'type'(val) { this.setStringAttr('type', val) }    static defaultType = 'outlined';
     __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("icon", ((target) => {
@@ -4898,7 +5328,7 @@ const Icon = class Icon extends Aventus.WebComponent {
     if (target.isReady)
         target.loadFont();
 })); }
-    static __style = `:host{--_material-icon-animation-duration: var(--material-icon-animation-duration, 1.75s)}:host{direction:ltr;display:inline-block;font-family:"Material Symbols Outlined";-moz-font-feature-settings:"liga";font-size:24px;-moz-osx-font-smoothing:grayscale;font-style:normal;font-weight:normal;letter-spacing:normal;line-height:1;text-transform:none;white-space:nowrap;word-wrap:normal}:host([type=sharp]){font-family:"Material Symbols Sharp"}:host([type=rounded]){font-family:"Material Symbols Rounded"}:host([type=outlined]){font-family:"Material Symbols Outlined"}:host([spin]){animation:spin var(--_material-icon-animation-duration) linear infinite}:host([reverse_spin]){animation:reverse-spin var(--_material-icon-animation-duration) linear infinite}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes reverse-spin{0%{transform:rotate(360deg)}100%{transform:rotate(0deg)}}`;
+    static __style = `:host{--_material-icon-animation-duration: var(--material-icon-animation-duration, 1.75s)}:host{direction:ltr;display:inline-block;font-family:"Material Symbols Outlined";-moz-font-feature-settings:"liga";font-size:24px;-moz-osx-font-smoothing:grayscale;font-style:normal;font-weight:normal;letter-spacing:normal;line-height:1;text-transform:none;white-space:nowrap;word-wrap:normal}:host([is_hidden]){opacity:0}:host([type=sharp]){font-family:"Material Symbols Sharp"}:host([type=rounded]){font-family:"Material Symbols Rounded"}:host([type=outlined]){font-family:"Material Symbols Outlined"}:host([spin]){animation:spin var(--_material-icon-animation-duration) linear infinite}:host([reverse_spin]){animation:reverse-spin var(--_material-icon-animation-duration) linear infinite}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes reverse-spin{0%{transform:rotate(360deg)}100%{transform:rotate(0deg)}}`;
     __getStatic() {
         return Icon;
     }
@@ -4915,13 +5345,31 @@ const Icon = class Icon extends Aventus.WebComponent {
     getClassName() {
         return "Icon";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('icon')){ this['icon'] = "check_box_outline_blank"; }if(!this.hasAttribute('type')){ this['type'] = Icon.defaultType; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('icon');this.__upgradeProperty('type'); }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('is_hidden')) {this.setAttribute('is_hidden' ,'true'); }if(!this.hasAttribute('icon')){ this['icon'] = "check_box_outline_blank"; }if(!this.hasAttribute('type')){ this['type'] = Icon.defaultType; } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('is_hidden');this.__upgradeProperty('icon');this.__upgradeProperty('type'); }
+    __listBoolProps() { return ["is_hidden"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
     async loadFont() {
         if (!this.type)
             return;
-        let url = 'https://fonts.googleapis.com/icon?family=Material+Symbols+';
-        url += this.type.charAt(0).toUpperCase() + this.type.slice(1);
+        const name = this.type.charAt(0).toUpperCase() + this.type.slice(1);
+        let fontName = 'Material Symbols ' + name;
+        for (let font of document.fonts) {
+            if (font.family == fontName) {
+                this.is_hidden = false;
+                return;
+            }
+        }
+        const cb = (e) => {
+            for (let font of e.fontfaces) {
+                if (font.family == fontName) {
+                    this.is_hidden = false;
+                    break;
+                }
+            }
+            document.fonts.removeEventListener("loadingdone", cb);
+        };
+        document.fonts.addEventListener("loadingdone", cb);
+        let url = 'https://fonts.googleapis.com/icon?family=Material+Symbols+' + name;
         await Aventus.ResourceLoader.loadInHead({
             type: "css",
             url: url
@@ -5130,7 +5578,7 @@ const Img = class Img extends Aventus.WebComponent {
         this.resizeObserver.observe(this);
     }
 }
-Img.Namespace=`${moduleName}`;
+Img.Namespace=`Aventus`;
 Img.Tag=`av-img`;
 _.Img=Img;
 if(!window.customElements.get('av-img')){window.customElements.define('av-img', Img);Aventus.WebComponentInstance.registerDefinition(Img);}
@@ -5178,7 +5626,7 @@ Layout.DynamicCol = class DynamicCol extends Aventus.WebComponent {
     __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('size');this.__upgradeProperty('size_xs');this.__upgradeProperty('size_sm');this.__upgradeProperty('size_md');this.__upgradeProperty('size_lg');this.__upgradeProperty('size_xl');this.__upgradeProperty('offset');this.__upgradeProperty('offset_xs');this.__upgradeProperty('offset_sm');this.__upgradeProperty('offset_md');this.__upgradeProperty('offset_lg');this.__upgradeProperty('offset_xl');this.__upgradeProperty('offset_right');this.__upgradeProperty('offset_right_xs');this.__upgradeProperty('offset_right_sm');this.__upgradeProperty('offset_right_md');this.__upgradeProperty('offset_right_lg');this.__upgradeProperty('offset_right_xl');this.__upgradeProperty('nobreak');this.__upgradeProperty('center'); }
     __listBoolProps() { return ["nobreak","center"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
 }
-Layout.DynamicCol.Namespace=`${moduleName}.Layout`;
+Layout.DynamicCol.Namespace=`Aventus.Layout`;
 Layout.DynamicCol.Tag=`av-dynamic-col`;
 _.Layout.DynamicCol=Layout.DynamicCol;
 if(!window.customElements.get('av-dynamic-col')){window.customElements.define('av-dynamic-col', Layout.DynamicCol);Aventus.WebComponentInstance.registerDefinition(Layout.DynamicCol);}
@@ -5227,7 +5675,7 @@ Layout.DynamicRow = class DynamicRow extends Aventus.WebComponent {
         }).observe(this);
     }
 }
-Layout.DynamicRow.Namespace=`${moduleName}.Layout`;
+Layout.DynamicRow.Namespace=`Aventus.Layout`;
 Layout.DynamicRow.Tag=`av-dynamic-row`;
 _.Layout.DynamicRow=Layout.DynamicRow;
 if(!window.customElements.get('av-dynamic-row')){window.customElements.define('av-dynamic-row', Layout.DynamicRow);Aventus.WebComponentInstance.registerDefinition(Layout.DynamicRow);}
@@ -5269,14 +5717,16 @@ const Tracker=class Tracker {
         };
     }
 }
-Tracker.Namespace=`${moduleName}`;
+Tracker.Namespace=`Aventus`;
+
 _.Tracker=Tracker;
 const RouterStateManager=class RouterStateManager extends Aventus.StateManager {
     static getInstance() {
         return Aventus.Instance.get(RouterStateManager);
     }
 }
-RouterStateManager.Namespace=`${moduleName}`;
+RouterStateManager.Namespace=`Aventus`;
+
 _.RouterStateManager=RouterStateManager;
 Navigation.RouterLink = class RouterLink extends Aventus.WebComponent {
     get 'state'() { return this.getStringAttr('state') }
@@ -5344,7 +5794,7 @@ Navigation.RouterLink = class RouterLink extends Aventus.WebComponent {
         this.addClickEvent();
     }
 }
-Navigation.RouterLink.Namespace=`${moduleName}.Navigation`;
+Navigation.RouterLink.Namespace=`Aventus.Navigation`;
 Navigation.RouterLink.Tag=`av-router-link`;
 _.Navigation.RouterLink=Navigation.RouterLink;
 if(!window.customElements.get('av-router-link')){window.customElements.define('av-router-link', Navigation.RouterLink);Aventus.WebComponentInstance.registerDefinition(Navigation.RouterLink);}
@@ -5400,7 +5850,7 @@ Navigation.Page = class Page extends Aventus.WebComponent {
     onHide() {
     }
 }
-Navigation.Page.Namespace=`${moduleName}.Navigation`;
+Navigation.Page.Namespace=`Aventus.Navigation`;
 _.Navigation.Page=Navigation.Page;
 
 Navigation.Router = class Router extends Aventus.WebComponent {
@@ -5443,6 +5893,7 @@ Navigation.Router = class Router extends Aventus.WebComponent {
     getClassName() {
         return "Router";
     }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('stateManager'); }
     addRouteAsync(options) {
         this.allRoutes[options.route] = options;
     }
@@ -5570,7 +6021,7 @@ Navigation.Router = class Router extends Aventus.WebComponent {
         }
     }
 }
-Navigation.Router.Namespace=`${moduleName}.Navigation`;
+Navigation.Router.Namespace=`Aventus.Navigation`;
 _.Navigation.Router=Navigation.Router;
 
 const TouchRecord=class TouchRecord {
@@ -5664,7 +6115,8 @@ const TouchRecord=class TouchRecord {
         return undefined;
     }
 }
-TouchRecord.Namespace=`${moduleName}`;
+TouchRecord.Namespace=`Aventus`;
+
 _.TouchRecord=TouchRecord;
 Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
     static get observedAttributes() {return ["zoom"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
@@ -5680,10 +6132,16 @@ Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
     set 'no_user_select'(val) { this.setBoolAttr('no_user_select', val) }    get 'zoom'() { return this.getNumberProp('zoom') }
     set 'zoom'(val) { this.setNumberAttr('zoom', val) }    observer;
     display = { x: 0, y: 0 };
-    max = {
+    _max = {
         x: 0,
         y: 0
     };
+    get max() {
+        return {
+            x: this._max.x,
+            y: this._max.y,
+        };
+    }
     margin = {
         x: 0,
         y: 0
@@ -5809,7 +6267,7 @@ Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
         return "Scrollable";
     }
     __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('y_scroll_visible')) { this.attributeChangedCallback('y_scroll_visible', false, false); }if(!this.hasAttribute('x_scroll_visible')) { this.attributeChangedCallback('x_scroll_visible', false, false); }if(!this.hasAttribute('floating_scroll')) { this.attributeChangedCallback('floating_scroll', false, false); }if(!this.hasAttribute('x_scroll')) { this.attributeChangedCallback('x_scroll', false, false); }if(!this.hasAttribute('y_scroll')) {this.setAttribute('y_scroll' ,'true'); }if(!this.hasAttribute('auto_hide')) { this.attributeChangedCallback('auto_hide', false, false); }if(!this.hasAttribute('break')){ this['break'] = 0.1; }if(!this.hasAttribute('disable')) { this.attributeChangedCallback('disable', false, false); }if(!this.hasAttribute('no_user_select')) { this.attributeChangedCallback('no_user_select', false, false); }if(!this.hasAttribute('zoom')){ this['zoom'] = 1; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('y_scroll_visible');this.__upgradeProperty('x_scroll_visible');this.__upgradeProperty('floating_scroll');this.__upgradeProperty('x_scroll');this.__upgradeProperty('y_scroll');this.__upgradeProperty('auto_hide');this.__upgradeProperty('break');this.__upgradeProperty('disable');this.__upgradeProperty('no_user_select');this.__upgradeProperty('zoom'); }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('max');this.__correctGetter('x');this.__correctGetter('y');this.__upgradeProperty('y_scroll_visible');this.__upgradeProperty('x_scroll_visible');this.__upgradeProperty('floating_scroll');this.__upgradeProperty('x_scroll');this.__upgradeProperty('y_scroll');this.__upgradeProperty('auto_hide');this.__upgradeProperty('break');this.__upgradeProperty('disable');this.__upgradeProperty('no_user_select');this.__upgradeProperty('zoom'); }
     __listBoolProps() { return ["y_scroll_visible","x_scroll_visible","floating_scroll","x_scroll","y_scroll","auto_hide","disable","no_user_select"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
     createAnimation() {
         return new Aventus.Animation({
@@ -6064,7 +6522,7 @@ Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
         if (maxScrollContent < 0) {
             maxScrollContent = 0;
         }
-        this.max[direction] = maxScrollContent + this.margin[direction];
+        this._max[direction] = maxScrollContent + this.margin[direction];
     }
     changeZoom() {
         this.contentZoom.style.transform = 'scale(' + this.zoom + ')';
@@ -6127,7 +6585,7 @@ Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
         this.addAction();
     }
 }
-Layout.Scrollable.Namespace=`${moduleName}.Layout`;
+Layout.Scrollable.Namespace=`Aventus.Layout`;
 Layout.Scrollable.Tag=`av-scrollable`;
 _.Layout.Scrollable=Layout.Scrollable;
 if(!window.customElements.get('av-scrollable')){window.customElements.define('av-scrollable', Layout.Scrollable);Aventus.WebComponentInstance.registerDefinition(Layout.Scrollable);}
@@ -6166,7 +6624,7 @@ const Tabs = class Tabs extends Aventus.WebComponent {
         return "Tabs";
     }
 }
-Tabs.Namespace=`${moduleName}`;
+Tabs.Namespace=`AventusWebsite`;
 Tabs.Tag=`av-tabs`;
 _.Tabs=Tabs;
 if(!window.customElements.get('av-tabs')){window.customElements.define('av-tabs', Tabs);Aventus.WebComponentInstance.registerDefinition(Tabs);}
@@ -6191,7 +6649,7 @@ const Result = class Result extends Aventus.WebComponent {
         return "Result";
     }
 }
-Result.Namespace=`${moduleName}`;
+Result.Namespace=`AventusWebsite`;
 Result.Tag=`av-result`;
 _.Result=Result;
 if(!window.customElements.get('av-result')){window.customElements.define('av-result', Result);Aventus.WebComponentInstance.registerDefinition(Result);}
@@ -6263,7 +6721,7 @@ const TutorialFooter = class TutorialFooter extends Aventus.WebComponent {
         }
     }
 }
-TutorialFooter.Namespace=`${moduleName}`;
+TutorialFooter.Namespace=`AventusWebsite`;
 TutorialFooter.Tag=`av-tutorial-footer`;
 _.TutorialFooter=TutorialFooter;
 if(!window.customElements.get('av-tutorial-footer')){window.customElements.define('av-tutorial-footer', TutorialFooter);Aventus.WebComponentInstance.registerDefinition(TutorialFooter);}
@@ -6299,7 +6757,7 @@ const DocLibResizeObserverEditor1Example = class DocLibResizeObserverEditor1Exam
         observer.observe(this);
     }
 }
-DocLibResizeObserverEditor1Example.Namespace=`${moduleName}`;
+DocLibResizeObserverEditor1Example.Namespace=`AventusWebsite`;
 DocLibResizeObserverEditor1Example.Tag=`av-doc-lib-resize-observer-editor-1-example`;
 _.DocLibResizeObserverEditor1Example=DocLibResizeObserverEditor1Example;
 if(!window.customElements.get('av-doc-lib-resize-observer-editor-1-example')){window.customElements.define('av-doc-lib-resize-observer-editor-1-example', DocLibResizeObserverEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocLibResizeObserverEditor1Example);}
@@ -6350,7 +6808,7 @@ const DocLibPressManagerEditor1Example = class DocLibPressManagerEditor1Example 
         });
     }
 }
-DocLibPressManagerEditor1Example.Namespace=`${moduleName}`;
+DocLibPressManagerEditor1Example.Namespace=`AventusWebsite`;
 DocLibPressManagerEditor1Example.Tag=`av-doc-lib-press-manager-editor-1-example`;
 _.DocLibPressManagerEditor1Example=DocLibPressManagerEditor1Example;
 if(!window.customElements.get('av-doc-lib-press-manager-editor-1-example')){window.customElements.define('av-doc-lib-press-manager-editor-1-example', DocLibPressManagerEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocLibPressManagerEditor1Example);}
@@ -6380,7 +6838,7 @@ const DocLibDragAndDropEditor1Example = class DocLibDragAndDropEditor1Example ex
         });
     }
 }
-DocLibDragAndDropEditor1Example.Namespace=`${moduleName}`;
+DocLibDragAndDropEditor1Example.Namespace=`AventusWebsite`;
 DocLibDragAndDropEditor1Example.Tag=`av-doc-lib-drag-and-drop-editor-1-example`;
 _.DocLibDragAndDropEditor1Example=DocLibDragAndDropEditor1Example;
 if(!window.customElements.get('av-doc-lib-drag-and-drop-editor-1-example')){window.customElements.define('av-doc-lib-drag-and-drop-editor-1-example', DocLibDragAndDropEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocLibDragAndDropEditor1Example);}
@@ -6414,7 +6872,7 @@ const DocLibCallbackEditor2Emitter = class DocLibCallbackEditor2Emitter extends 
         this.emitMyEvent();
     }
 }
-DocLibCallbackEditor2Emitter.Namespace=`${moduleName}`;
+DocLibCallbackEditor2Emitter.Namespace=`AventusWebsite`;
 DocLibCallbackEditor2Emitter.Tag=`av-doc-lib-callback-editor-2-emitter`;
 _.DocLibCallbackEditor2Emitter=DocLibCallbackEditor2Emitter;
 if(!window.customElements.get('av-doc-lib-callback-editor-2-emitter')){window.customElements.define('av-doc-lib-callback-editor-2-emitter', DocLibCallbackEditor2Emitter);Aventus.WebComponentInstance.registerDefinition(DocLibCallbackEditor2Emitter);}
@@ -6447,7 +6905,7 @@ const DocLibCallbackEditor2Receiver = class DocLibCallbackEditor2Receiver extend
         }
     }
 }
-DocLibCallbackEditor2Receiver.Namespace=`${moduleName}`;
+DocLibCallbackEditor2Receiver.Namespace=`AventusWebsite`;
 DocLibCallbackEditor2Receiver.Tag=`av-doc-lib-callback-editor-2-receiver`;
 _.DocLibCallbackEditor2Receiver=DocLibCallbackEditor2Receiver;
 if(!window.customElements.get('av-doc-lib-callback-editor-2-receiver')){window.customElements.define('av-doc-lib-callback-editor-2-receiver', DocLibCallbackEditor2Receiver);Aventus.WebComponentInstance.registerDefinition(DocLibCallbackEditor2Receiver);}
@@ -6484,7 +6942,7 @@ const DocLibCallbackEditor1Emitter = class DocLibCallbackEditor1Emitter extends 
         this.emitMyEvent();
     }
 }
-DocLibCallbackEditor1Emitter.Namespace=`${moduleName}`;
+DocLibCallbackEditor1Emitter.Namespace=`AventusWebsite`;
 DocLibCallbackEditor1Emitter.Tag=`av-doc-lib-callback-editor-1-emitter`;
 _.DocLibCallbackEditor1Emitter=DocLibCallbackEditor1Emitter;
 if(!window.customElements.get('av-doc-lib-callback-editor-1-emitter')){window.customElements.define('av-doc-lib-callback-editor-1-emitter', DocLibCallbackEditor1Emitter);Aventus.WebComponentInstance.registerDefinition(DocLibCallbackEditor1Emitter);}
@@ -6517,7 +6975,7 @@ const DocLibCallbackEditor1Receiver = class DocLibCallbackEditor1Receiver extend
         }
     }
 }
-DocLibCallbackEditor1Receiver.Namespace=`${moduleName}`;
+DocLibCallbackEditor1Receiver.Namespace=`AventusWebsite`;
 DocLibCallbackEditor1Receiver.Tag=`av-doc-lib-callback-editor-1-receiver`;
 _.DocLibCallbackEditor1Receiver=DocLibCallbackEditor1Receiver;
 if(!window.customElements.get('av-doc-lib-callback-editor-1-receiver')){window.customElements.define('av-doc-lib-callback-editor-1-receiver', DocLibCallbackEditor1Receiver);Aventus.WebComponentInstance.registerDefinition(DocLibCallbackEditor1Receiver);}
@@ -6604,7 +7062,7 @@ const DocLibAnimationEditor1Example = class DocLibAnimationEditor1Example extend
         this.startAnimation(60);
     }
 }
-DocLibAnimationEditor1Example.Namespace=`${moduleName}`;
+DocLibAnimationEditor1Example.Namespace=`AventusWebsite`;
 DocLibAnimationEditor1Example.Tag=`av-doc-lib-animation-editor-1-example`;
 _.DocLibAnimationEditor1Example=DocLibAnimationEditor1Example;
 if(!window.customElements.get('av-doc-lib-animation-editor-1-example')){window.customElements.define('av-doc-lib-animation-editor-1-example', DocLibAnimationEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocLibAnimationEditor1Example);}
@@ -6617,7 +7075,8 @@ const DocWcStateEditor2StateManager=class DocWcStateEditor2StateManager extends 
         return Aventus.Instance.get(DocWcStateEditor2StateManager);
     }
 }
-DocWcStateEditor2StateManager.Namespace=`${moduleName}`;
+DocWcStateEditor2StateManager.Namespace=`AventusWebsite`;
+
 _.DocWcStateEditor2StateManager=DocWcStateEditor2StateManager;
 const DocWcStateEditor1StateManager=class DocWcStateEditor1StateManager extends Aventus.StateManager {
     /**
@@ -6627,7 +7086,8 @@ const DocWcStateEditor1StateManager=class DocWcStateEditor1StateManager extends 
         return Aventus.Instance.get(DocWcStateEditor1StateManager);
     }
 }
-DocWcStateEditor1StateManager.Namespace=`${moduleName}`;
+DocWcStateEditor1StateManager.Namespace=`AventusWebsite`;
+
 _.DocWcStateEditor1StateManager=DocWcStateEditor1StateManager;
 const DocWcEventEditor2Button = class DocWcEventEditor2Button extends Aventus.WebComponent {
     onCustomClick = new Aventus.Callback();
@@ -6661,7 +7121,7 @@ const DocWcEventEditor2Button = class DocWcEventEditor2Button extends Aventus.We
         this.onCustomClick.trigger([]);
     }
 }
-DocWcEventEditor2Button.Namespace=`${moduleName}`;
+DocWcEventEditor2Button.Namespace=`AventusWebsite`;
 DocWcEventEditor2Button.Tag=`av-doc-wc-event-editor-2-button`;
 _.DocWcEventEditor2Button=DocWcEventEditor2Button;
 if(!window.customElements.get('av-doc-wc-event-editor-2-button')){window.customElements.define('av-doc-wc-event-editor-2-button', DocWcEventEditor2Button);Aventus.WebComponentInstance.registerDefinition(DocWcEventEditor2Button);}
@@ -6697,7 +7157,7 @@ const DocWcEventEditor1Example = class DocWcEventEditor1Example extends Aventus.
         alert("Hello");
     }
 }
-DocWcEventEditor1Example.Namespace=`${moduleName}`;
+DocWcEventEditor1Example.Namespace=`AventusWebsite`;
 DocWcEventEditor1Example.Tag=`av-doc-wc-event-editor-1-example`;
 _.DocWcEventEditor1Example=DocWcEventEditor1Example;
 if(!window.customElements.get('av-doc-wc-event-editor-1-example')){window.customElements.define('av-doc-wc-event-editor-1-example', DocWcEventEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocWcEventEditor1Example);}
@@ -6772,7 +7232,7 @@ const DocWcConditionEditor1Example = class DocWcConditionEditor1Example extends 
         return this.number % 2 === 0;
     }
 }
-DocWcConditionEditor1Example.Namespace=`${moduleName}`;
+DocWcConditionEditor1Example.Namespace=`AventusWebsite`;
 DocWcConditionEditor1Example.Tag=`av-doc-wc-condition-editor-1-example`;
 _.DocWcConditionEditor1Example=DocWcConditionEditor1Example;
 if(!window.customElements.get('av-doc-wc-condition-editor-1-example')){window.customElements.define('av-doc-wc-condition-editor-1-example', DocWcConditionEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocWcConditionEditor1Example);}
@@ -6782,7 +7242,10 @@ const DocWcLoopEditor1Todo=class DocWcLoopEditor1Todo extends Aventus.Data {
     name = "";
     tasks = [];
 }
-DocWcLoopEditor1Todo.Namespace=`${moduleName}`;DocWcLoopEditor1Todo.$schema={"id":"number","name":"string","tasks":"string"};Aventus.DataManager.register(DocWcLoopEditor1Todo.Fullname, DocWcLoopEditor1Todo);
+DocWcLoopEditor1Todo.Namespace=`AventusWebsite`;
+DocWcLoopEditor1Todo.$schema={...(Aventus.Data?.$schema ?? {}), "id":"number","name":"string","tasks":"string"};
+Aventus.Converter.register(DocWcLoopEditor1Todo.Fullname, DocWcLoopEditor1Todo);
+
 _.DocWcLoopEditor1Todo=DocWcLoopEditor1Todo;
 const DocWcLoopEditor4TodoList = class DocWcLoopEditor4TodoList extends Aventus.WebComponent {
     get 'todos'() {
@@ -6841,6 +7304,7 @@ const DocWcLoopEditor4TodoList = class DocWcLoopEditor4TodoList extends Aventus.
         return "DocWcLoopEditor4TodoList";
     }
     __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["todos"] = []; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('todos'); }
     addTodo() {
         this.todoId++;
         let todo = new DocWcLoopEditor1Todo();
@@ -6855,7 +7319,7 @@ const DocWcLoopEditor4TodoList = class DocWcLoopEditor4TodoList extends Aventus.
         return task;
     }
 }
-DocWcLoopEditor4TodoList.Namespace=`${moduleName}`;
+DocWcLoopEditor4TodoList.Namespace=`AventusWebsite`;
 DocWcLoopEditor4TodoList.Tag=`av-doc-wc-loop-editor-4-todo-list`;
 _.DocWcLoopEditor4TodoList=DocWcLoopEditor4TodoList;
 if(!window.customElements.get('av-doc-wc-loop-editor-4-todo-list')){window.customElements.define('av-doc-wc-loop-editor-4-todo-list', DocWcLoopEditor4TodoList);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor4TodoList);}
@@ -6921,6 +7385,7 @@ const DocWcLoopEditor3TodoList = class DocWcLoopEditor3TodoList extends Aventus.
         return "DocWcLoopEditor3TodoList";
     }
     __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["todos"] = []; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('todos'); }
     addTodo() {
         this.todoId++;
         let todo = new DocWcLoopEditor1Todo();
@@ -6944,7 +7409,7 @@ const DocWcLoopEditor3TodoList = class DocWcLoopEditor3TodoList extends Aventus.
         return { 'todo': this.todos[index] };
     }
 }
-DocWcLoopEditor3TodoList.Namespace=`${moduleName}`;
+DocWcLoopEditor3TodoList.Namespace=`AventusWebsite`;
 DocWcLoopEditor3TodoList.Tag=`av-doc-wc-loop-editor-3-todo-list`;
 _.DocWcLoopEditor3TodoList=DocWcLoopEditor3TodoList;
 if(!window.customElements.get('av-doc-wc-loop-editor-3-todo-list')){window.customElements.define('av-doc-wc-loop-editor-3-todo-list', DocWcLoopEditor3TodoList);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor3TodoList);}
@@ -7010,6 +7475,7 @@ const DocWcLoopEditor2TodoList = class DocWcLoopEditor2TodoList extends Aventus.
         return "DocWcLoopEditor2TodoList";
     }
     __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["todos"] = []; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('todos'); }
     addTodo() {
         this.todoId++;
         let todo = new DocWcLoopEditor1Todo();
@@ -7033,7 +7499,7 @@ const DocWcLoopEditor2TodoList = class DocWcLoopEditor2TodoList extends Aventus.
         return { 'todo': this.todos[i] };
     }
 }
-DocWcLoopEditor2TodoList.Namespace=`${moduleName}`;
+DocWcLoopEditor2TodoList.Namespace=`AventusWebsite`;
 DocWcLoopEditor2TodoList.Tag=`av-doc-wc-loop-editor-2-todo-list`;
 _.DocWcLoopEditor2TodoList=DocWcLoopEditor2TodoList;
 if(!window.customElements.get('av-doc-wc-loop-editor-2-todo-list')){window.customElements.define('av-doc-wc-loop-editor-2-todo-list', DocWcLoopEditor2TodoList);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor2TodoList);}
@@ -7075,6 +7541,7 @@ const DocWcInjectionEditor2Example = class DocWcInjectionEditor2Example extends 
         return "DocWcInjectionEditor2Example";
     }
     __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["time"] = 0; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('time'); }
     getTimeTxt() {
         return 'time : ' + this.time;
     }
@@ -7087,7 +7554,7 @@ const DocWcInjectionEditor2Example = class DocWcInjectionEditor2Example extends 
         return this.getTimeTxt();
     }
 }
-DocWcInjectionEditor2Example.Namespace=`${moduleName}`;
+DocWcInjectionEditor2Example.Namespace=`AventusWebsite`;
 DocWcInjectionEditor2Example.Tag=`av-doc-wc-injection-editor-2-example`;
 _.DocWcInjectionEditor2Example=DocWcInjectionEditor2Example;
 if(!window.customElements.get('av-doc-wc-injection-editor-2-example')){window.customElements.define('av-doc-wc-injection-editor-2-example', DocWcInjectionEditor2Example);Aventus.WebComponentInstance.registerDefinition(DocWcInjectionEditor2Example);}
@@ -7129,6 +7596,7 @@ const DocWcInjectionEditor1Example = class DocWcInjectionEditor1Example extends 
         return "DocWcInjectionEditor1Example";
     }
     __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["time"] = 0; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('time'); }
     postCreation() {
         setInterval(() => {
             this.time++;
@@ -7138,7 +7606,7 @@ const DocWcInjectionEditor1Example = class DocWcInjectionEditor1Example extends 
         return this.time;
     }
 }
-DocWcInjectionEditor1Example.Namespace=`${moduleName}`;
+DocWcInjectionEditor1Example.Namespace=`AventusWebsite`;
 DocWcInjectionEditor1Example.Tag=`av-doc-wc-injection-editor-1-example`;
 _.DocWcInjectionEditor1Example=DocWcInjectionEditor1Example;
 if(!window.customElements.get('av-doc-wc-injection-editor-1-example')){window.customElements.define('av-doc-wc-injection-editor-1-example', DocWcInjectionEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocWcInjectionEditor1Example);}
@@ -7197,7 +7665,7 @@ const DocWcBindingEditor4Input = class DocWcBindingEditor4Input extends Aventus.
         return this.val;
     }
 }
-DocWcBindingEditor4Input.Namespace=`${moduleName}`;
+DocWcBindingEditor4Input.Namespace=`AventusWebsite`;
 DocWcBindingEditor4Input.Tag=`av-doc-wc-binding-editor-4-input`;
 _.DocWcBindingEditor4Input=DocWcBindingEditor4Input;
 if(!window.customElements.get('av-doc-wc-binding-editor-4-input')){window.customElements.define('av-doc-wc-binding-editor-4-input', DocWcBindingEditor4Input);Aventus.WebComponentInstance.registerDefinition(DocWcBindingEditor4Input);}
@@ -7256,7 +7724,7 @@ const DocWcBindingEditor3Input = class DocWcBindingEditor3Input extends Aventus.
         return this.val;
     }
 }
-DocWcBindingEditor3Input.Namespace=`${moduleName}`;
+DocWcBindingEditor3Input.Namespace=`AventusWebsite`;
 DocWcBindingEditor3Input.Tag=`av-doc-wc-binding-editor-3-input`;
 _.DocWcBindingEditor3Input=DocWcBindingEditor3Input;
 if(!window.customElements.get('av-doc-wc-binding-editor-3-input')){window.customElements.define('av-doc-wc-binding-editor-3-input', DocWcBindingEditor3Input);Aventus.WebComponentInstance.registerDefinition(DocWcBindingEditor3Input);}
@@ -7308,6 +7776,7 @@ const DocWcBindingEditor2Example = class DocWcBindingEditor2Example extends Aven
         return "DocWcBindingEditor2Example";
     }
     __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["value"] = "My value"; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('value'); }
     __da3baae7677d72d52ac2bb0ec0788ff4method2() {
         return this.value;
     }
@@ -7320,7 +7789,7 @@ const DocWcBindingEditor2Example = class DocWcBindingEditor2Example extends Aven
         }
     }
 }
-DocWcBindingEditor2Example.Namespace=`${moduleName}`;
+DocWcBindingEditor2Example.Namespace=`AventusWebsite`;
 DocWcBindingEditor2Example.Tag=`av-doc-wc-binding-editor-2-example`;
 _.DocWcBindingEditor2Example=DocWcBindingEditor2Example;
 if(!window.customElements.get('av-doc-wc-binding-editor-2-example')){window.customElements.define('av-doc-wc-binding-editor-2-example', DocWcBindingEditor2Example);Aventus.WebComponentInstance.registerDefinition(DocWcBindingEditor2Example);}
@@ -7373,6 +7842,7 @@ const DocWcBindingEditor1Example = class DocWcBindingEditor1Example extends Aven
         return "DocWcBindingEditor1Example";
     }
     __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["value"] = "My value"; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('value'); }
     __f8af63ff30d8769af7e6fa720d2204d9method2() {
         return this.value;
     }
@@ -7385,7 +7855,7 @@ const DocWcBindingEditor1Example = class DocWcBindingEditor1Example extends Aven
         }
     }
 }
-DocWcBindingEditor1Example.Namespace=`${moduleName}`;
+DocWcBindingEditor1Example.Namespace=`AventusWebsite`;
 DocWcBindingEditor1Example.Tag=`av-doc-wc-binding-editor-1-example`;
 _.DocWcBindingEditor1Example=DocWcBindingEditor1Example;
 if(!window.customElements.get('av-doc-wc-binding-editor-1-example')){window.customElements.define('av-doc-wc-binding-editor-1-example', DocWcBindingEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocWcBindingEditor1Example);}
@@ -7417,7 +7887,7 @@ const DocWcStyleEditor4Example = class DocWcStyleEditor4Example extends Aventus.
         addStyle("@Bootstrap");
     }
 }
-DocWcStyleEditor4Example.Namespace=`${moduleName}`;
+DocWcStyleEditor4Example.Namespace=`AventusWebsite`;
 DocWcStyleEditor4Example.Tag=`av-doc-wc-style-editor-4-example`;
 _.DocWcStyleEditor4Example=DocWcStyleEditor4Example;
 if(!window.customElements.get('av-doc-wc-style-editor-4-example')){window.customElements.define('av-doc-wc-style-editor-4-example', DocWcStyleEditor4Example);Aventus.WebComponentInstance.registerDefinition(DocWcStyleEditor4Example);}
@@ -7441,7 +7911,7 @@ const DocWcStyleEditor2Parent = class DocWcStyleEditor2Parent extends Aventus.We
         return "DocWcStyleEditor2Parent";
     }
 }
-DocWcStyleEditor2Parent.Namespace=`${moduleName}`;
+DocWcStyleEditor2Parent.Namespace=`AventusWebsite`;
 DocWcStyleEditor2Parent.Tag=`av-doc-wc-style-editor-2-parent`;
 _.DocWcStyleEditor2Parent=DocWcStyleEditor2Parent;
 if(!window.customElements.get('av-doc-wc-style-editor-2-parent')){window.customElements.define('av-doc-wc-style-editor-2-parent', DocWcStyleEditor2Parent);Aventus.WebComponentInstance.registerDefinition(DocWcStyleEditor2Parent);}
@@ -7469,7 +7939,7 @@ const DocWcStyleEditor1Result = class DocWcStyleEditor1Result extends Aventus.We
     __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('active'); }
     __listBoolProps() { return ["active"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
 }
-DocWcStyleEditor1Result.Namespace=`${moduleName}`;
+DocWcStyleEditor1Result.Namespace=`AventusWebsite`;
 DocWcStyleEditor1Result.Tag=`av-doc-wc-style-editor-1-result`;
 _.DocWcStyleEditor1Result=DocWcStyleEditor1Result;
 if(!window.customElements.get('av-doc-wc-style-editor-1-result')){window.customElements.define('av-doc-wc-style-editor-1-result', DocWcStyleEditor1Result);Aventus.WebComponentInstance.registerDefinition(DocWcStyleEditor1Result);}
@@ -7479,7 +7949,10 @@ const DocWcWatchEditor1Person=class DocWcWatchEditor1Person extends Aventus.Data
     name = "John Doe";
     children = [{ name: "Mini John Doe" }];
 }
-DocWcWatchEditor1Person.Namespace=`${moduleName}`;DocWcWatchEditor1Person.$schema={"id":"number","name":"string","children":"literal"};Aventus.DataManager.register(DocWcWatchEditor1Person.Fullname, DocWcWatchEditor1Person);
+DocWcWatchEditor1Person.Namespace=`AventusWebsite`;
+DocWcWatchEditor1Person.$schema={...(Aventus.Data?.$schema ?? {}), "id":"number","name":"string","children":"literal"};
+Aventus.Converter.register(DocWcWatchEditor1Person.Fullname, DocWcWatchEditor1Person);
+
 _.DocWcWatchEditor1Person=DocWcWatchEditor1Person;
 const DocWcPropertyEditor1Example = class DocWcPropertyEditor1Example extends Aventus.WebComponent {
     static get observedAttributes() {return ["label"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
@@ -7523,7 +7996,7 @@ const DocWcPropertyEditor1Example = class DocWcPropertyEditor1Example extends Av
         return this.label;
     }
 }
-DocWcPropertyEditor1Example.Namespace=`${moduleName}`;
+DocWcPropertyEditor1Example.Namespace=`AventusWebsite`;
 DocWcPropertyEditor1Example.Tag=`av-doc-wc-property-editor-1-example`;
 _.DocWcPropertyEditor1Example=DocWcPropertyEditor1Example;
 if(!window.customElements.get('av-doc-wc-property-editor-1-example')){window.customElements.define('av-doc-wc-property-editor-1-example', DocWcPropertyEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocWcPropertyEditor1Example);}
@@ -7556,7 +8029,7 @@ const DocWcAttributeEditor1Example = class DocWcAttributeEditor1Example extends 
         }, 2000);
     }
 }
-DocWcAttributeEditor1Example.Namespace=`${moduleName}`;
+DocWcAttributeEditor1Example.Namespace=`AventusWebsite`;
 DocWcAttributeEditor1Example.Tag=`av-doc-wc-attribute-editor-1-example`;
 _.DocWcAttributeEditor1Example=DocWcAttributeEditor1Example;
 if(!window.customElements.get('av-doc-wc-attribute-editor-1-example')){window.customElements.define('av-doc-wc-attribute-editor-1-example', DocWcAttributeEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocWcAttributeEditor1Example);}
@@ -7612,7 +8085,7 @@ const DocWcInheritanceEditor3Fillable = class DocWcInheritanceEditor3Fillable ex
     }
     __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('label')){ this['label'] = undefined; } }
     __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["value"] = undefined; }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('label'); }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('label');this.__correctGetter('value'); }
     postCreation() {
         // print the new value
         this.onChange.add(() => {
@@ -7625,7 +8098,7 @@ const DocWcInheritanceEditor3Fillable = class DocWcInheritanceEditor3Fillable ex
         return this.label;
     }
 }
-DocWcInheritanceEditor3Fillable.Namespace=`${moduleName}`;
+DocWcInheritanceEditor3Fillable.Namespace=`AventusWebsite`;
 _.DocWcInheritanceEditor3Fillable=DocWcInheritanceEditor3Fillable;
 
 const DocWcInheritanceEditor4Checkbox = class DocWcInheritanceEditor4Checkbox extends DocWcInheritanceEditor3Fillable {
@@ -7660,7 +8133,7 @@ const DocWcInheritanceEditor4Checkbox = class DocWcInheritanceEditor4Checkbox ex
         this.inputEl.checked = this.value ?? false;
     }
 }
-DocWcInheritanceEditor4Checkbox.Namespace=`${moduleName}`;
+DocWcInheritanceEditor4Checkbox.Namespace=`AventusWebsite`;
 DocWcInheritanceEditor4Checkbox.Tag=`av-doc-wc-inheritance-editor-4-checkbox`;
 _.DocWcInheritanceEditor4Checkbox=DocWcInheritanceEditor4Checkbox;
 if(!window.customElements.get('av-doc-wc-inheritance-editor-4-checkbox')){window.customElements.define('av-doc-wc-inheritance-editor-4-checkbox', DocWcInheritanceEditor4Checkbox);Aventus.WebComponentInstance.registerDefinition(DocWcInheritanceEditor4Checkbox);}
@@ -7716,7 +8189,7 @@ const DocWcInheritanceEditor2Fillable = class DocWcInheritanceEditor2Fillable ex
     }
     __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('label')){ this['label'] = undefined; } }
     __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["value"] = undefined; }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('label'); }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('label');this.__correctGetter('value'); }
     postCreation() {
         // print the new value
         this.onChange.add(() => {
@@ -7729,7 +8202,7 @@ const DocWcInheritanceEditor2Fillable = class DocWcInheritanceEditor2Fillable ex
         return this.label;
     }
 }
-DocWcInheritanceEditor2Fillable.Namespace=`${moduleName}`;
+DocWcInheritanceEditor2Fillable.Namespace=`AventusWebsite`;
 _.DocWcInheritanceEditor2Fillable=DocWcInheritanceEditor2Fillable;
 
 const DocWcCreateEditor4Clock = class DocWcCreateEditor4Clock extends Aventus.WebComponent {
@@ -7774,7 +8247,7 @@ const DocWcCreateEditor4Clock = class DocWcCreateEditor4Clock extends Aventus.We
     }
     __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('color')){ this['color'] = "red"; } }
     __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["timeTxt"] = undefined; }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('color'); }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('color');this.__correctGetter('timeTxt'); }
     calcTime() {
         const d = new Date();
         this.timeTxt = ((d.getHours() < 10) ? "0" : "") + d.getHours() + ":" + ((d.getMinutes() < 10) ? "0" : "") + d.getMinutes() + ":" + ((d.getSeconds() < 10) ? "0" : "") + d.getSeconds();
@@ -7793,7 +8266,7 @@ const DocWcCreateEditor4Clock = class DocWcCreateEditor4Clock extends Aventus.We
         return this.timeTxt;
     }
 }
-DocWcCreateEditor4Clock.Namespace=`${moduleName}`;
+DocWcCreateEditor4Clock.Namespace=`AventusWebsite`;
 DocWcCreateEditor4Clock.Tag=`av-doc-wc-create-editor-4-clock`;
 _.DocWcCreateEditor4Clock=DocWcCreateEditor4Clock;
 if(!window.customElements.get('av-doc-wc-create-editor-4-clock')){window.customElements.define('av-doc-wc-create-editor-4-clock', DocWcCreateEditor4Clock);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor4Clock);}
@@ -7818,7 +8291,7 @@ const DocWcCreateEditor2Error = class DocWcCreateEditor2Error extends Aventus.We
         return "DocWcCreateEditor2Error";
     }
 }
-DocWcCreateEditor2Error.Namespace=`${moduleName}`;
+DocWcCreateEditor2Error.Namespace=`AventusWebsite`;
 DocWcCreateEditor2Error.Tag=`av-doc-wc-create-editor-2-error`;
 _.DocWcCreateEditor2Error=DocWcCreateEditor2Error;
 if(!window.customElements.get('av-doc-wc-create-editor-2-error')){window.customElements.define('av-doc-wc-create-editor-2-error', DocWcCreateEditor2Error);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor2Error);}
@@ -7843,7 +8316,7 @@ const DocWcCreateEditor3ErrorYellow = class DocWcCreateEditor3ErrorYellow extend
         return "DocWcCreateEditor3ErrorYellow";
     }
 }
-DocWcCreateEditor3ErrorYellow.Namespace=`${moduleName}`;
+DocWcCreateEditor3ErrorYellow.Namespace=`AventusWebsite`;
 DocWcCreateEditor3ErrorYellow.Tag=`av-doc-wc-create-editor-3-error-yellow`;
 _.DocWcCreateEditor3ErrorYellow=DocWcCreateEditor3ErrorYellow;
 if(!window.customElements.get('av-doc-wc-create-editor-3-error-yellow')){window.customElements.define('av-doc-wc-create-editor-3-error-yellow', DocWcCreateEditor3ErrorYellow);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor3ErrorYellow);}
@@ -7868,7 +8341,7 @@ const DocWcCreateEditor1Button = class DocWcCreateEditor1Button extends Aventus.
         return "DocWcCreateEditor1Button";
     }
 }
-DocWcCreateEditor1Button.Namespace=`${moduleName}`;
+DocWcCreateEditor1Button.Namespace=`AventusWebsite`;
 DocWcCreateEditor1Button.Tag=`av-doc-wc-create-editor-1-button`;
 _.DocWcCreateEditor1Button=DocWcCreateEditor1Button;
 if(!window.customElements.get('av-doc-wc-create-editor-1-button')){window.customElements.define('av-doc-wc-create-editor-1-button', DocWcCreateEditor1Button);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor1Button);}
@@ -7900,7 +8373,7 @@ const DocuImg = class DocuImg extends Aventus.Img {
         });
     }
 }
-DocuImg.Namespace=`${moduleName}`;
+DocuImg.Namespace=`AventusWebsite`;
 DocuImg.Tag=`av-docu-img`;
 _.DocuImg=DocuImg;
 if(!window.customElements.get('av-docu-img')){window.customElements.define('av-docu-img', DocuImg);Aventus.WebComponentInstance.registerDefinition(DocuImg);}
@@ -7949,7 +8422,7 @@ const DocIntroductionButton = class DocIntroductionButton extends Aventus.WebCom
         return this.count;
     }
 }
-DocIntroductionButton.Namespace=`${moduleName}`;
+DocIntroductionButton.Namespace=`AventusWebsite`;
 DocIntroductionButton.Tag=`av-doc-introduction-button`;
 _.DocIntroductionButton=DocIntroductionButton;
 if(!window.customElements.get('av-doc-introduction-button')){window.customElements.define('av-doc-introduction-button', DocIntroductionButton);Aventus.WebComponentInstance.registerDefinition(DocIntroductionButton);}
@@ -8049,7 +8522,7 @@ const AvCode = class AvCode extends Aventus.WebComponent {
         return this.language;
     }
 }
-AvCode.Namespace=`${moduleName}`;
+AvCode.Namespace=`AventusWebsite`;
 AvCode.Tag=`av-code`;
 _.AvCode=AvCode;
 if(!window.customElements.get('av-code')){window.customElements.define('av-code', AvCode);Aventus.WebComponentInstance.registerDefinition(AvCode);}
@@ -8122,7 +8595,7 @@ const CodeTabs = class CodeTabs extends Aventus.WebComponent {
     }
     __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('tab')){ this['tab'] = 0; } }
     __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["tabs"] = []; }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('tab'); }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('tab');this.__correctGetter('tabs'); }
     tabPress(e, instance) {
         let element = instance.getElement();
         let parent = element.parentNode;
@@ -8164,7 +8637,7 @@ const CodeTabs = class CodeTabs extends Aventus.WebComponent {
         return this.tabs[i].name;
     }
 }
-CodeTabs.Namespace=`${moduleName}`;
+CodeTabs.Namespace=`AventusWebsite`;
 CodeTabs.Tag=`av-code-tabs`;
 _.CodeTabs=CodeTabs;
 if(!window.customElements.get('av-code-tabs')){window.customElements.define('av-code-tabs', CodeTabs);Aventus.WebComponentInstance.registerDefinition(CodeTabs);}
@@ -8241,6 +8714,18 @@ const CodeEditorFile = class CodeEditorFile extends Aventus.WebComponent {
         else if (this.name.endsWith(".html")) {
             this.icon = "/img/html-5.svg";
         }
+        else if (this.name.endsWith(".json")) {
+            this.icon = "/img/json.svg";
+        }
+        else if (this.name.endsWith(".js")) {
+            this.icon = "/img/js.svg";
+        }
+        else if (this.name.endsWith(".d.ts")) {
+            this.icon = "/img/dts.svg";
+        }
+        else if (this.name.endsWith(".ts")) {
+            this.icon = "/img/ts.svg";
+        }
     }
     postCreation() {
         new Aventus.PressManager({
@@ -8260,7 +8745,7 @@ const CodeEditorFile = class CodeEditorFile extends Aventus.WebComponent {
         return this.icon;
     }
 }
-CodeEditorFile.Namespace=`${moduleName}`;
+CodeEditorFile.Namespace=`AventusWebsite`;
 CodeEditorFile.Tag=`av-code-editor-file`;
 _.CodeEditorFile=CodeEditorFile;
 if(!window.customElements.get('av-code-editor-file')){window.customElements.define('av-code-editor-file', CodeEditorFile);Aventus.WebComponentInstance.registerDefinition(CodeEditorFile);}
@@ -8332,7 +8817,7 @@ const DocFooter = class DocFooter extends Aventus.WebComponent {
         }
     }
 }
-DocFooter.Namespace=`${moduleName}`;
+DocFooter.Namespace=`AventusWebsite`;
 DocFooter.Tag=`av-doc-footer`;
 _.DocFooter=DocFooter;
 if(!window.customElements.get('av-doc-footer')){window.customElements.define('av-doc-footer', DocFooter);Aventus.WebComponentInstance.registerDefinition(DocFooter);}
@@ -8372,7 +8857,7 @@ const Collapse = class Collapse extends Aventus.WebComponent {
         this.open = !this.open;
     }
 }
-Collapse.Namespace=`${moduleName}`;
+Collapse.Namespace=`AventusWebsite`;
 Collapse.Tag=`av-collapse`;
 _.Collapse=Collapse;
 if(!window.customElements.get('av-collapse')){window.customElements.define('av-collapse', Collapse);Aventus.WebComponentInstance.registerDefinition(Collapse);}
@@ -8431,7 +8916,7 @@ const CodeEditorFolder = class CodeEditorFolder extends Aventus.WebComponent {
         return this.open;
     }
 }
-CodeEditorFolder.Namespace=`${moduleName}`;
+CodeEditorFolder.Namespace=`AventusWebsite`;
 CodeEditorFolder.Tag=`av-code-editor-folder`;
 _.CodeEditorFolder=CodeEditorFolder;
 if(!window.customElements.get('av-code-editor-folder')){window.customElements.define('av-code-editor-folder', CodeEditorFolder);Aventus.WebComponentInstance.registerDefinition(CodeEditorFolder);}
@@ -8471,7 +8956,7 @@ const RoadMapItem = class RoadMapItem extends Aventus.WebComponent {
         return this.name;
     }
 }
-RoadMapItem.Namespace=`${moduleName}`;
+RoadMapItem.Namespace=`AventusWebsite`;
 RoadMapItem.Tag=`av-road-map-item`;
 _.RoadMapItem=RoadMapItem;
 if(!window.customElements.get('av-road-map-item')){window.customElements.define('av-road-map-item', RoadMapItem);Aventus.WebComponentInstance.registerDefinition(RoadMapItem);}
@@ -8496,7 +8981,7 @@ const RoadMap = class RoadMap extends Aventus.WebComponent {
         return "RoadMap";
     }
 }
-RoadMap.Namespace=`${moduleName}`;
+RoadMap.Namespace=`AventusWebsite`;
 RoadMap.Tag=`av-road-map`;
 _.RoadMap=RoadMap;
 if(!window.customElements.get('av-road-map')){window.customElements.define('av-road-map', RoadMap);Aventus.WebComponentInstance.registerDefinition(RoadMap);}
@@ -8531,7 +9016,7 @@ const Footer = class Footer extends Aventus.WebComponent {
         return new Date().getFullYear();
     }
 }
-Footer.Namespace=`${moduleName}`;
+Footer.Namespace=`AventusWebsite`;
 Footer.Tag=`av-footer`;
 _.Footer=Footer;
 if(!window.customElements.get('av-footer')){window.customElements.define('av-footer', Footer);Aventus.WebComponentInstance.registerDefinition(Footer);}
@@ -8556,7 +9041,7 @@ const Button = class Button extends Aventus.WebComponent {
         return "Button";
     }
 }
-Button.Namespace=`${moduleName}`;
+Button.Namespace=`AventusWebsite`;
 Button.Tag=`av-button`;
 _.Button=Button;
 if(!window.customElements.get('av-button')){window.customElements.define('av-button', Button);Aventus.WebComponentInstance.registerDefinition(Button);}
@@ -8582,7 +9067,7 @@ const Page = class Page extends Aventus.Navigation.Page {
         return "Page";
     }
 }
-Page.Namespace=`${moduleName}`;
+Page.Namespace=`AventusWebsite`;
 _.Page=Page;
 
 const Page404 = class Page404 extends Page {
@@ -8607,7 +9092,7 @@ const Page404 = class Page404 extends Page {
         return "Aventus 404";
     }
 }
-Page404.Namespace=`${moduleName}`;
+Page404.Namespace=`AventusWebsite`;
 Page404.Tag=`av-page-404`;
 _.Page404=Page404;
 if(!window.customElements.get('av-page-404')){window.customElements.define('av-page-404', Page404);Aventus.WebComponentInstance.registerDefinition(Page404);}
@@ -8624,7 +9109,7 @@ const Home = class Home extends Page {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<av-scrollable floating_scroll class="main-scroll">    <div class="height-wrapper">        <div class="main">            <av-dynamic-row class="icon-text">                <av-dynamic-col size="6">                    <av-img src="/img/logo.svg"></av-img>                </av-dynamic-col>                <av-dynamic-col size="4">                    <div class="title">                        The Webcomponent Javascript Framework                    </div>                </av-dynamic-col>            </av-dynamic-row>            <av-dynamic-row class="btn-container">                <av-dynamic-col size="12">                    <av-router-link state="/docs/introduction" class="menu"><av-button>Get                            started</av-button></av-router-link>                    <av-router-link state="/tutorial/introduction" class="menu"><av-button>Tutorial</av-button></av-router-link>                </av-dynamic-col>            </av-dynamic-row>            <av-img class="design-logo" src="/img/logo.svg"></av-img>            <av-img class="design-logo2" src="/img/logo.svg"></av-img>        </div>        <div class="blocks">            <av-dynamic-row>                <av-dynamic-col size_sm="12" size_md="4" size="12">                    <div class="block">                        <div class="title">Encapsulation</div>                        <div class="icon">                            <mi-icon icon="category"></mi-icon>                        </div>                        <p>Avoiding conflicts through encapsulation to build scalable application. Each file has a role                            to play in keeping your code tidy.</p>                    </div>                </av-dynamic-col>                <av-dynamic-col size_sm="12" size_md="4" size="12">                    <div class="block">                        <div class="title">For OOP lovers</div>                        <div class="icon">                            <mi-icon icon="linked_services"></mi-icon>                        </div>                        <p>Even your graphic components can be defined by class which allows inheritance and genericity.                            If you love OOP, you will love making views.</p>                    </div>                </av-dynamic-col>                <av-dynamic-col size_sm="12" size_md="4" size="12">                    <div class="block">                        <div class="title">Type safe</div>                        <div class="icon">                            <mi-icon icon="health_and_safety"></mi-icon>                        </div>                        <p>Prevent errors through typing and make your code more secure. Maintaining a growing                            application over the long term.</p>                    </div>                </av-dynamic-col>            </av-dynamic-row>        </div>        <div class="separator"></div>        <div class="why">            <h2>The Aventus mindset</h2>            <p>Aventus strives to streamline web development by harnessing modern native technologies, with web                components serving as a prime illustration of this approach. In today's landscape, developers can                construct robust applications without the need for an extensive array of libraries obtained via npm and                subsequently processed through a module bundler.</p>            <p>Ease of installation and rapid project setup are paramount considerations. Users should have the ability                to swiftly access and generate templates to expedite development workflows. Presently, Aventus is                exclusively offered as a VSCode extension, ensuring user-friendly accessibility and simplicity of                utilization. This decision simplifies the onboarding process, making the tool readily accessible to                developers, thereby enhancing overall productivity and efficiency in web development efforts.</p>        </div>    </div>    <av-footer></av-footer></av-scrollable>` }
+        blocks: { 'default':`<av-scrollable floating_scroll class="main-scroll">    <div class="height-wrapper">        <div class="main">            <av-dynamic-row class="icon-text">                <av-dynamic-col size="6">                    <av-img src="/img/logo.svg"></av-img>                </av-dynamic-col>                <av-dynamic-col size="4">                    <div class="title">                        The Webcomponent Javascript Framework                    </div>                </av-dynamic-col>            </av-dynamic-row>            <av-dynamic-row class="btn-container">                <av-dynamic-col size="12">                    <av-router-link state="/docs/introduction" class="menu"><av-button>Get                            started</av-button></av-router-link>                    <av-router-link state="/tutorial/introduction" class="menu"><av-button>Tutorial</av-button></av-router-link>                </av-dynamic-col>            </av-dynamic-row>            <av-img class="design-logo" src="/img/logo.svg"></av-img>            <av-img class="design-logo2" src="/img/logo.svg"></av-img>        </div>        <div class="blocks">            <av-dynamic-row>                <av-dynamic-col size_sm="12" size_md="4" size="12">                    <div class="block">                        <div class="title">Encapsulation</div>                        <div class="icon">                            <mi-icon icon="category"></mi-icon>                        </div>                        <p>Avoiding conflicts through encapsulation to build scalable application. Each file has a role                            to play in keeping your code tidy.</p>                    </div>                </av-dynamic-col>                <av-dynamic-col size_sm="12" size_md="4" size="12">                    <div class="block">                        <div class="title">For OOP lovers</div>                        <div class="icon">                            <mi-icon icon="linked_services"></mi-icon>                        </div>                        <p>Even your graphic components can be defined by class which allows inheritance and genericity.                            If you love OOP, you will love making views.</p>                    </div>                </av-dynamic-col>                <av-dynamic-col size_sm="12" size_md="4" size="12">                    <div class="block">                        <div class="title">Type safe</div>                        <div class="icon">                            <mi-icon icon="health_and_safety"></mi-icon>                        </div>                        <p>Prevent errors through typing and make your code more secure. Maintaining a growing                            application over the long term.</p>                    </div>                </av-dynamic-col>            </av-dynamic-row>        </div>        <div class="separator"></div>        <div class="why">            <h2>The Aventus mindset</h2>            <p>AventusJs strives to streamline web development by harnessing modern native technologies, with web                components serving as a prime illustration of this approach. In today's landscape, developers can                construct robust applications without the need for an extensive array of libraries obtained via npm and                subsequently processed through a module bundler.</p>            <p>Ease of installation and rapid project setup are paramount considerations. Users should have the ability                to swiftly access and generate templates to expedite development workflows. Presently, AventusJs is                exclusively offered as a VSCode extension, ensuring user-friendly accessibility and simplicity of                utilization. This decision simplifies the onboarding process, making the tool readily accessible to                developers, thereby enhancing overall productivity and efficiency in web development efforts.</p>        </div>    </div>    <av-footer></av-footer></av-scrollable>` }
     });
 }
     getClassName() {
@@ -8634,7 +9119,7 @@ const Home = class Home extends Page {
         return "Aventus";
     }
 }
-Home.Namespace=`${moduleName}`;
+Home.Namespace=`AventusWebsite`;
 Home.Tag=`av-home`;
 _.Home=Home;
 if(!window.customElements.get('av-home')){window.customElements.define('av-home', Home);Aventus.WebComponentInstance.registerDefinition(Home);}
@@ -8651,7 +9136,7 @@ const About = class About extends Page {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<av-scrollable floating_scroll class="main-scroll">    <div class="height-wrapper">        <div class="main">            <div class="title">                about aventus            </div>            <av-img class="design-logo" src="/img/logo.svg"></av-img>            <av-img class="design-logo2" src="/img/logo.svg"></av-img>        </div>        <div class="container">            <div class="tabs">                <div class="header">                    <div class="tab active" tab-name="map" _id="about_0">Roadmap</div>                    <div class="tab" tab-name="team" _id="about_1">Team</div>                    <div class="tab" tab-name="sponsor" _id="about_2">Sponsor</div>                </div>                <div class="body">                    <div class="tab active" name="map">                        <h2>Aventus Roadmap</h2>                        <p>The road map will depend of the community feedbacks, but the team has already agreed on the                            following points.</p>                        <div class="road-map">                            <av-road-map>                                <av-road-map-item name="Aventus@UI">End the Aventus@UI package to provide a simple                                    solution                                    to create user interface.</av-road-map-item>                                <av-road-map-item name="SCSS">Improve SCSS autocompletion and improve usability by                                    creating                                    scss tree based on the DOM.</av-road-map-item>                                <av-road-map-item name="i18n">Add a method to translate your application based on the                                    i18n                                    logic.</av-road-map-item>                                <av-road-map-item name="AventusSharp">End the AventusSharp library to write fullstack                                    application with Aventus.</av-road-map-item>                                <av-road-map-item name="Data">Auto manage data link inside the RAM to get a perfect data                                    sync.</av-road-map-item>                            </av-road-map>                        </div>                    </div>                    <div class="tab" name="team">                        <h2>Team</h2>                        <p class="help-us">Aventus is a product develop by Cobwebsite company. We are looking for                            support to                            ensure that this project lasts. If you would like to help us directly with the project,                            please                            send an email to <a href="mailto:info@cobwebsite.ch">info@cobwebsite.ch</a>. You can also                            give                            us financial support via github donations.</p>                        <div class="cards">                            <div class="card">                                <div class="img" style="background-image:url(https://avatars.githubusercontent.com/u/19285564?v=4)">                                </div>                                <div class="name">Maxime Bétrisey</div>                                <div class="position">Creator</div>                                <a class="sponsor" href="https://github.com/sponsors/max529" target="_blank">                                    <svg data-v-a71028e4="" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" viewBox="0 0 24 24" class="sponsor-icon">                                        <path d="M12,22.2c-0.3,0-0.5-0.1-0.7-0.3l-8.8-8.8c-2.5-2.5-2.5-6.7,0-9.2c2.5-2.5,6.7-2.5,9.2,0L12,4.3l0.4-0.4c0,0,0,0,0,0C13.6,2.7,15.2,2,16.9,2c0,0,0,0,0,0c1.7,0,3.4,0.7,4.6,1.9l0,0c1.2,1.2,1.9,2.9,1.9,4.6c0,1.7-0.7,3.4-1.9,4.6l-8.8,8.8C12.5,22.1,12.3,22.2,12,22.2zM7,4C5.9,4,4.7,4.4,3.9,5.3c-1.8,1.8-1.8,4.6,0,6.4l8.1,8.1l8.1-8.1c0.9-0.9,1.3-2,1.3-3.2c0-1.2-0.5-2.3-1.3-3.2l0,0C19.3,4.5,18.2,4,17,4c0,0,0,0,0,0c-1.2,0-2.3,0.5-3.2,1.3c0,0,0,0,0,0l-1.1,1.1c-0.4,0.4-1,0.4-1.4,0l-1.1-1.1C9.4,4.4,8.2,4,7,4z">                                        </path>                                    </svg>                                    <span>Sponsor</span>                                </a>                                <div class="location">Switzerland</div>                                <div class="language">French - English</div>                                <a class="github" href="https://github.com/max529" target="_blank">                                    <svg data-v-a71028e4="" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" viewBox="0 0 24 24" class="social-icon">                                        <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12">                                        </path>                                    </svg>                                </a>                            </div>                        </div>                    </div>                    <div class="tab" name="sponsor">                        <h2>Sponsor</h2>                        <h3>Become a Sponsor of Aventus</h3>                        <p>Join us in our mission to advance web development by becoming a sponsor of Aventus. Your                            support plays a vital role in our ability to enhance Aventus, expand its capabilities, and                            empower developers like you to create exceptional web experiences. Together, we can invest                            more time and resources into making Aventus even more powerful and providing new                            opportunities for programming professionals.</p>                        <h3 style="display:none">Our Generous Sponsors</h3>                        <p style="display:none">We would like to express our deep gratitude to the individuals and                            companies who support Aventus. Their trust and ongoing support inspire us to go further and                            push the boundaries of web development. Here is a list of the sponsors who put their trust                            in us and accompany us on our journey towards excellence:</p>                        <av-sponsor-logo style="display:none"></av-sponsor-logo>                        <p style="display:none">We extend heartfelt thanks to all our sponsors for their invaluable                            support. It is through their contributions that we are able to continue our work, develop                            Aventus, and provide developers with an exceptional platform to build cutting-edge web                            applications.</p>                    </div>                </div>            </div>        </div>    </div>    <av-footer></av-footer></av-scrollable>` }
+        blocks: { 'default':`<av-scrollable floating_scroll class="main-scroll">    <div class="height-wrapper">        <div class="main">            <div class="title">                about aventus            </div>            <av-img class="design-logo" src="/img/logo.svg"></av-img>            <av-img class="design-logo2" src="/img/logo.svg"></av-img>        </div>        <div class="container">            <div class="tabs">                <div class="header">                    <div class="tab active" tab-name="map" _id="about_0">Roadmap</div>                    <div class="tab" tab-name="team" _id="about_1">Team</div>                    <div class="tab" tab-name="sponsor" _id="about_2">Sponsor</div>                </div>                <div class="body">                    <div class="tab active" name="map">                        <h2>AventusJs Roadmap</h2>                        <p>The road map will depend of the community feedbacks, but the team has already agreed on the                            following points.</p>                        <div class="road-map">                            <av-road-map>                                <av-road-map-item name="Aventus@UI">End the Aventus@UI package to provide a simple                                    solution                                    to create user interface.</av-road-map-item>                                <av-road-map-item name="SCSS">Improve SCSS autocompletion and improve usability by                                    creating                                    scss tree based on the DOM.</av-road-map-item>                                <av-road-map-item name="i18n">Add a method to translate your application based on the                                    i18n                                    logic.</av-road-map-item>                                <av-road-map-item name="AventusSharp">End the AventusSharp library to write fullstack                                    application with AventusJs.</av-road-map-item>                                <av-road-map-item name="Data">Auto manage data link inside the RAM to get a perfect data                                    sync.</av-road-map-item>                            </av-road-map>                        </div>                    </div>                    <div class="tab" name="team">                        <h2>Team</h2>                        <p class="help-us">Aventus is a product develop by Cobwebsite company. We are looking for                            support to                            ensure that this project lasts. If you would like to help us directly with the project,                            please                            send an email to <a href="mailto:info@cobwebsite.ch">info@cobwebsite.ch</a>. You can also                            give                            us financial support via github donations.</p>                        <div class="cards">                            <div class="card">                                <div class="img" style="background-image:url(https://avatars.githubusercontent.com/u/19285564?v=4)">                                </div>                                <div class="name">Maxime Bétrisey</div>                                <div class="position">Creator</div>                                <a class="sponsor" href="https://github.com/sponsors/max529" target="_blank">                                    <svg data-v-a71028e4="" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" viewBox="0 0 24 24" class="sponsor-icon">                                        <path d="M12,22.2c-0.3,0-0.5-0.1-0.7-0.3l-8.8-8.8c-2.5-2.5-2.5-6.7,0-9.2c2.5-2.5,6.7-2.5,9.2,0L12,4.3l0.4-0.4c0,0,0,0,0,0C13.6,2.7,15.2,2,16.9,2c0,0,0,0,0,0c1.7,0,3.4,0.7,4.6,1.9l0,0c1.2,1.2,1.9,2.9,1.9,4.6c0,1.7-0.7,3.4-1.9,4.6l-8.8,8.8C12.5,22.1,12.3,22.2,12,22.2zM7,4C5.9,4,4.7,4.4,3.9,5.3c-1.8,1.8-1.8,4.6,0,6.4l8.1,8.1l8.1-8.1c0.9-0.9,1.3-2,1.3-3.2c0-1.2-0.5-2.3-1.3-3.2l0,0C19.3,4.5,18.2,4,17,4c0,0,0,0,0,0c-1.2,0-2.3,0.5-3.2,1.3c0,0,0,0,0,0l-1.1,1.1c-0.4,0.4-1,0.4-1.4,0l-1.1-1.1C9.4,4.4,8.2,4,7,4z">                                        </path>                                    </svg>                                    <span>Sponsor</span>                                </a>                                <div class="location">Switzerland</div>                                <div class="language">French - English</div>                                <a class="github" href="https://github.com/max529" target="_blank">                                    <svg data-v-a71028e4="" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" viewBox="0 0 24 24" class="social-icon">                                        <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12">                                        </path>                                    </svg>                                </a>                            </div>                        </div>                    </div>                    <div class="tab" name="sponsor">                        <h2>Sponsor</h2>                        <h3>Become a Sponsor of Aventus</h3>                        <p>Join us in our mission to advance web development by becoming a sponsor of Aventus. Your                            support plays a vital role in our ability to enhance Aventus, expand its capabilities, and                            empower developers like you to create exceptional web experiences. Together, we can invest                            more time and resources into making Aventus even more powerful and providing new                            opportunities for programming professionals.</p>                        <h3 style="display:none">Our Generous Sponsors</h3>                        <p style="display:none">We would like to express our deep gratitude to the individuals and                            companies who support Aventus. Their trust and ongoing support inspire us to go further and                            push the boundaries of web development. Here is a list of the sponsors who put their trust                            in us and accompany us on our journey towards excellence:</p>                        <av-sponsor-logo style="display:none"></av-sponsor-logo>                        <p style="display:none">We extend heartfelt thanks to all our sponsors for their invaluable                            support. It is through their contributions that we are able to continue our work, develop                            Aventus, and provide developers with an exceptional platform to build cutting-edge web                            applications.</p>                    </div>                </div>            </div>        </div>    </div>    <av-footer></av-footer></av-scrollable>` }
     });
 }
     __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
@@ -8697,7 +9182,7 @@ const About = class About extends Page {
         return "Aventus";
     }
 }
-About.Namespace=`${moduleName}`;
+About.Namespace=`AventusWebsite`;
 About.Tag=`av-about`;
 _.About=About;
 if(!window.customElements.get('av-about')){window.customElements.define('av-about', About);Aventus.WebComponentInstance.registerDefinition(About);}
@@ -11162,7 +11647,8 @@ const IconLib=class IconLib {
         throw "Can't found the icon " + name;
     }
 }
-IconLib.Namespace=`${moduleName}`;
+IconLib.Namespace=`AventusWebsite`;
+
 _.IconLib=IconLib;
 const Icon = class Icon extends Aventus.WebComponent {
     static get observedAttributes() {return ["icon"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
@@ -11204,7 +11690,7 @@ const Icon = class Icon extends Aventus.WebComponent {
     __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('icon')){ this['icon'] = undefined; } }
     __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('icon'); }
 }
-Icon.Namespace=`${moduleName}`;
+Icon.Namespace=`AventusWebsite`;
 Icon.Tag=`av-icon`;
 _.Icon=Icon;
 if(!window.customElements.get('av-icon')){window.customElements.define('av-icon', Icon);Aventus.WebComponentInstance.registerDefinition(Icon);}
@@ -11271,7 +11757,7 @@ const Navbar = class Navbar extends Aventus.WebComponent {
         }
     }
 }
-Navbar.Namespace=`${moduleName}`;
+Navbar.Namespace=`AventusWebsite`;
 Navbar.Tag=`av-navbar`;
 _.Navbar=Navbar;
 if(!window.customElements.get('av-navbar')){window.customElements.define('av-navbar', Navbar);Aventus.WebComponentInstance.registerDefinition(Navbar);}
@@ -11355,7 +11841,7 @@ const TutorialSidenav = class TutorialSidenav extends Aventus.WebComponent {
         this.addActiveWatch();
     }
 }
-TutorialSidenav.Namespace=`${moduleName}`;
+TutorialSidenav.Namespace=`AventusWebsite`;
 TutorialSidenav.Tag=`av-tutorial-sidenav`;
 _.TutorialSidenav=TutorialSidenav;
 if(!window.customElements.get('av-tutorial-sidenav')){window.customElements.define('av-tutorial-sidenav', TutorialSidenav);Aventus.WebComponentInstance.registerDefinition(TutorialSidenav);}
@@ -11372,7 +11858,7 @@ const DocSidenav = class DocSidenav extends Aventus.WebComponent {
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<av-icon icon="close" class="close-icon" _id="docsidenav_0"></av-icon><av-scrollable class="menu">    <av-collapse>        <div class="title" slot="header">install</div>        <ul>            <li><av-router-link state="/docs/introduction">Introduction</av-router-link></li>            <li><av-router-link state="/docs/installation">Install Aventus</av-router-link></li>            <li><av-router-link state="/docs/experience">Dev experience</av-router-link></li>            <li><av-router-link state="/docs/first_app">Your first app</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">configuration</div>        <ul>            <li><av-router-link state="/docs/config/basic_prop">Generic properties</av-router-link></li>            <li><av-router-link state="/docs/config/build">Builds</av-router-link></li>            <li><av-router-link state="/docs/config/static">Statics</av-router-link></li>            <li><av-router-link state="/docs/config/lib">Import libs</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">data</div>        <ul>            <li><av-router-link state="/docs/data/create">Create</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">ram</div>        <ul>            <li><av-router-link state="/docs/ram/create">Create</av-router-link></li>            <li><av-router-link state="/docs/ram/crud">CRUD operation</av-router-link></li>            <li><av-router-link state="/docs/ram/listen_changes">Listen changes</av-router-link></li>            <li><av-router-link state="/docs/ram/mixin">Extend data</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">state</div>        <ul>            <li><av-router-link state="/docs/state/create">Create</av-router-link></li>            <li><av-router-link state="/docs/state/change">Change state</av-router-link></li>            <li><av-router-link state="/docs/state/listen_changes">Listen state change</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">webcomponent</div>        <ul>            <li><av-router-link state="/docs/wc/create">Create</av-router-link></li>            <li><av-router-link state="/docs/wc/style">Style</av-router-link></li>            <li><av-router-link state="/docs/wc/inheritance">Inhertiance</av-router-link></li>            <li><av-router-link state="/docs/wc/attribute">Attribute</av-router-link></li>            <li><av-router-link state="/docs/wc/property">Property</av-router-link></li>            <li><av-router-link state="/docs/wc/watch">Watch</av-router-link></li>            <li><av-router-link state="/docs/wc/interpolation">Interpolation</av-router-link></li>            <li><av-router-link state="/docs/wc/element">Select element</av-router-link></li>            <li><av-router-link state="/docs/wc/injection">Injection</av-router-link></li>            <li><av-router-link state="/docs/wc/event">Event</av-router-link></li>            <li><av-router-link state="/docs/wc/binding">Binding</av-router-link></li>            <li><av-router-link state="/docs/wc/state">State</av-router-link></li>            <li><av-router-link state="/docs/wc/loop">Loop</av-router-link></li>            <li><av-router-link state="/docs/wc/condition">Condition</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">lib</div>        <ul>            <li><av-router-link state="/docs/lib/create">Create</av-router-link></li>            <li><av-router-link state="/docs/lib/animation">Animation</av-router-link></li>            <li><av-router-link state="/docs/lib/callback">Callback</av-router-link></li>            <li><av-router-link state="/docs/lib/press_manager">PressManager</av-router-link></li>            <li><av-router-link state="/docs/lib/drag_and_drop">Drag&Drop</av-router-link></li>            <li><av-router-link state="/docs/lib/instance">Instance</av-router-link></li>            <li><av-router-link state="/docs/lib/resize_observer">ResizeObserver</av-router-link></li>            <li><av-router-link state="/docs/lib/resource_loader">ResourceLoader</av-router-link></li>            <li><av-router-link state="/docs/lib/watcher">Watcher</av-router-link></li>            <li><av-router-link state="/docs/lib/tools">Tools</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">advanced</div>        <ul>            <li><av-router-link state="/docs/advanced/template">Template</av-router-link></li>        </ul>    </av-collapse></av-scrollable>` }
+        blocks: { 'default':`<av-icon icon="close" class="close-icon" _id="docsidenav_0"></av-icon><av-scrollable class="menu">    <av-collapse>        <div class="title" slot="header">install</div>        <ul>            <li><av-router-link state="/docs/introduction">Introduction</av-router-link></li>            <li><av-router-link state="/docs/installation">Install Aventus</av-router-link></li>            <li><av-router-link state="/docs/experience">Dev experience</av-router-link></li>            <li><av-router-link state="/docs/first_app">Your first app</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">configuration</div>        <ul>            <li><av-router-link state="/docs/config/basic_prop">Generic properties</av-router-link></li>            <li><av-router-link state="/docs/config/build">Builds</av-router-link></li>            <li><av-router-link state="/docs/config/static">Statics</av-router-link></li>            <li><av-router-link state="/docs/config/lib">Import libs</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">data</div>        <ul>            <li><av-router-link state="/docs/data/create">Create</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">ram</div>        <ul>            <li><av-router-link state="/docs/ram/create">Create</av-router-link></li>            <li><av-router-link state="/docs/ram/crud">CRUD operation</av-router-link></li>            <li><av-router-link state="/docs/ram/listen_changes">Listen changes</av-router-link></li>            <li><av-router-link state="/docs/ram/mixin">Extend data</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">state</div>        <ul>            <li><av-router-link state="/docs/state/create">Create</av-router-link></li>            <li><av-router-link state="/docs/state/change">Change state</av-router-link></li>            <li><av-router-link state="/docs/state/listen_changes">Listen state change</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">webcomponent</div>        <ul>            <li><av-router-link state="/docs/wc/create">Create</av-router-link></li>            <li><av-router-link state="/docs/wc/style">Style</av-router-link></li>            <li><av-router-link state="/docs/wc/inheritance">Inhertiance</av-router-link></li>            <li><av-router-link state="/docs/wc/attribute">Attribute</av-router-link></li>            <li><av-router-link state="/docs/wc/property">Property</av-router-link></li>            <li><av-router-link state="/docs/wc/watch">Watch</av-router-link></li>            <li><av-router-link state="/docs/wc/interpolation">Interpolation</av-router-link></li>            <li><av-router-link state="/docs/wc/element">Select element</av-router-link></li>            <li><av-router-link state="/docs/wc/injection">Injection</av-router-link></li>            <li><av-router-link state="/docs/wc/event">Event</av-router-link></li>            <li><av-router-link state="/docs/wc/binding">Binding</av-router-link></li>            <li><av-router-link state="/docs/wc/state">State</av-router-link></li>            <li><av-router-link state="/docs/wc/loop">Loop</av-router-link></li>            <li><av-router-link state="/docs/wc/condition">Condition</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">lib</div>        <ul>            <li><av-router-link state="/docs/lib/create">Create</av-router-link></li>            <li><av-router-link state="/docs/lib/animation">Animation</av-router-link></li>            <li><av-router-link state="/docs/lib/callback">Callback</av-router-link></li>            <li><av-router-link state="/docs/lib/press_manager">PressManager</av-router-link></li>            <li><av-router-link state="/docs/lib/drag_and_drop">Drag&Drop</av-router-link></li>            <li><av-router-link state="/docs/lib/instance">Instance</av-router-link></li>            <li><av-router-link state="/docs/lib/resize_observer">ResizeObserver</av-router-link></li>            <li><av-router-link state="/docs/lib/resource_loader">ResourceLoader</av-router-link></li>            <li><av-router-link state="/docs/lib/watcher">Watcher</av-router-link></li>            <li><av-router-link state="/docs/lib/tools">Tools</av-router-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">advanced</div>        <ul>            <li><av-router-link state="/docs/advanced/template">Template</av-router-link></li>            <li><av-router-link state="/docs/advanced/npm_export">Npm Export</av-router-link></li>            <li><av-router-link state="/docs/advanced/storybook">Storybook</av-router-link></li>        </ul>    </av-collapse></av-scrollable>` }
     });
 }
     __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
@@ -11439,7 +11925,7 @@ const DocSidenav = class DocSidenav extends Aventus.WebComponent {
         this.addActiveWatch();
     }
 }
-DocSidenav.Namespace=`${moduleName}`;
+DocSidenav.Namespace=`AventusWebsite`;
 DocSidenav.Tag=`av-doc-sidenav`;
 _.DocSidenav=DocSidenav;
 if(!window.customElements.get('av-doc-sidenav')){window.customElements.define('av-doc-sidenav', DocSidenav);Aventus.WebComponentInstance.registerDefinition(DocSidenav);}
@@ -11493,7 +11979,7 @@ const DocGenericPage = class DocGenericPage extends Page {
         return "Aventus - Documentation";
     }
 }
-DocGenericPage.Namespace=`${moduleName}`;
+DocGenericPage.Namespace=`AventusWebsite`;
 DocGenericPage.Tag=`av-doc-generic-page`;
 _.DocGenericPage=DocGenericPage;
 if(!window.customElements.get('av-doc-generic-page')){window.customElements.define('av-doc-generic-page', DocGenericPage);Aventus.WebComponentInstance.registerDefinition(DocGenericPage);}
@@ -11517,7 +12003,7 @@ const DocLibWatcher = class DocLibWatcher extends DocGenericPage {
         return "DocLibWatcher";
     }
 }
-DocLibWatcher.Namespace=`${moduleName}`;
+DocLibWatcher.Namespace=`AventusWebsite`;
 DocLibWatcher.Tag=`av-doc-lib-watcher`;
 _.DocLibWatcher=DocLibWatcher;
 if(!window.customElements.get('av-doc-lib-watcher')){window.customElements.define('av-doc-lib-watcher', DocLibWatcher);Aventus.WebComponentInstance.registerDefinition(DocLibWatcher);}
@@ -11541,7 +12027,7 @@ const DocLibResourceLoader = class DocLibResourceLoader extends DocGenericPage {
         return "DocLibResourceLoader";
     }
 }
-DocLibResourceLoader.Namespace=`${moduleName}`;
+DocLibResourceLoader.Namespace=`AventusWebsite`;
 DocLibResourceLoader.Tag=`av-doc-lib-resource-loader`;
 _.DocLibResourceLoader=DocLibResourceLoader;
 if(!window.customElements.get('av-doc-lib-resource-loader')){window.customElements.define('av-doc-lib-resource-loader', DocLibResourceLoader);Aventus.WebComponentInstance.registerDefinition(DocLibResourceLoader);}
@@ -11565,7 +12051,7 @@ const DocLibInstance = class DocLibInstance extends DocGenericPage {
         return "DocLibInstance";
     }
 }
-DocLibInstance.Namespace=`${moduleName}`;
+DocLibInstance.Namespace=`AventusWebsite`;
 DocLibInstance.Tag=`av-doc-lib-instance`;
 _.DocLibInstance=DocLibInstance;
 if(!window.customElements.get('av-doc-lib-instance')){window.customElements.define('av-doc-lib-instance', DocLibInstance);Aventus.WebComponentInstance.registerDefinition(DocLibInstance);}
@@ -11589,7 +12075,7 @@ const DocLibCreate = class DocLibCreate extends DocGenericPage {
         return "DocLibCreate";
     }
 }
-DocLibCreate.Namespace=`${moduleName}`;
+DocLibCreate.Namespace=`AventusWebsite`;
 DocLibCreate.Tag=`av-doc-lib-create`;
 _.DocLibCreate=DocLibCreate;
 if(!window.customElements.get('av-doc-lib-create')){window.customElements.define('av-doc-lib-create', DocLibCreate);Aventus.WebComponentInstance.registerDefinition(DocLibCreate);}
@@ -11613,7 +12099,7 @@ const DocWcElement = class DocWcElement extends DocGenericPage {
         return "DocWcElement";
     }
 }
-DocWcElement.Namespace=`${moduleName}`;
+DocWcElement.Namespace=`AventusWebsite`;
 DocWcElement.Tag=`av-doc-wc-element`;
 _.DocWcElement=DocWcElement;
 if(!window.customElements.get('av-doc-wc-element')){window.customElements.define('av-doc-wc-element', DocWcElement);Aventus.WebComponentInstance.registerDefinition(DocWcElement);}
@@ -11637,7 +12123,7 @@ const DocConfigLib = class DocConfigLib extends DocGenericPage {
         return "DocConfigLib";
     }
 }
-DocConfigLib.Namespace=`${moduleName}`;
+DocConfigLib.Namespace=`AventusWebsite`;
 DocConfigLib.Tag=`av-doc-config-lib`;
 _.DocConfigLib=DocConfigLib;
 if(!window.customElements.get('av-doc-config-lib')){window.customElements.define('av-doc-config-lib', DocConfigLib);Aventus.WebComponentInstance.registerDefinition(DocConfigLib);}
@@ -11661,13 +12147,13 @@ const DocConfigStatic = class DocConfigStatic extends DocGenericPage {
         return "DocConfigStatic";
     }
 }
-DocConfigStatic.Namespace=`${moduleName}`;
+DocConfigStatic.Namespace=`AventusWebsite`;
 DocConfigStatic.Tag=`av-doc-config-static`;
 _.DocConfigStatic=DocConfigStatic;
 if(!window.customElements.get('av-doc-config-static')){window.customElements.define('av-doc-config-static', DocConfigStatic);Aventus.WebComponentInstance.registerDefinition(DocConfigStatic);}
 
 const DocConfigBuild = class DocConfigBuild extends DocGenericPage {
-    static __style = `:host .table av-dynamic-row:not(.header) av-dynamic-col:nth-child(2){text-align:justify}:host .table av-dynamic-row:not(.header) av-router-link,:host .table av-dynamic-row:not(.header) b,:host .table av-dynamic-row:not(.header) i{display:contents}:host .table .constraint{display:block;font-size:14px;margin-top:5px}`;
+    static __style = `:host .table av-dynamic-row:not(.header) av-dynamic-col{text-align:left}:host .table av-dynamic-row:not(.header) av-dynamic-col:nth-child(2){text-align:justify}:host .table av-dynamic-row:not(.header) av-router-link,:host .table av-dynamic-row:not(.header) b,:host .table av-dynamic-row:not(.header) i{display:contents}:host .table .constraint{display:block;font-size:14px;margin-top:5px}:host .table .darker{background-color:rgba(0,0,0,.1)}:host .table .lvl-1 av-dynamic-col:first-child{padding-left:30px}:host .table .lvl-2 av-dynamic-col:first-child{padding-left:40px}:host .table .lvl-3 av-dynamic-col:first-child{padding-left:50px}`;
     __getStatic() {
         return DocConfigBuild;
     }
@@ -11678,14 +12164,14 @@ const DocConfigBuild = class DocConfigBuild extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Configuration - Build</h1><p>Inside a module, you can split you code into differents submodules. Inside Aventus, this submodule is called a    <span class="cn">Build</span>. The build job is to transform some Aventus input files into a JavaScript file (for an    app) and/or a    Aventus Package File (for a lib).</p><div class="table">    <av-dynamic-row class="header">        <av-dynamic-col size="4" center>Name</av-dynamic-col>        <av-dynamic-col size="8" center>Description</av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>name</av-dynamic-col>        <av-dynamic-col size="8" center>            <div>This is the name for the build. If the build is exported as a library, the                library name                will be <span class="cn">$module</span>@<span class="cn">$name</span></div>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>src</av-dynamic-col>        <av-dynamic-col size="8" center>This is an array of string to define which folders Aventus will watch. For            example, if you set "./src/*", all files inside the folder "src" will be compiled.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>disabled</av-dynamic-col>        <av-dynamic-col size="8" center>This is a boolean to define if the build is active or not.            <span class="constraint">Must satisfy: <span class="cn">true|false</span></span>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>compile</av-dynamic-col>        <av-dynamic-col size="8" center>This is an array to define how to compile your build.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>compile.input</av-dynamic-col>        <av-dynamic-col size="8" center>This is string or an array to define the entries points of your program. If not set, all the files matching the build.src will be compiled. Otherwise, only the needed file by your entries points will be compiled        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>compile.output</av-dynamic-col>        <av-dynamic-col size="8" center>This is string to define where the compiled JavaScript file must be written.            <span class="constraint">Must satisfy: ^\\S+\\.js</span>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>compile.package</av-dynamic-col>        <av-dynamic-col size="8" center>This is string to define where the .package.avt file must be written.            <span class="constraint">Must satisfy: ^\\S+\\.package\\.avt</span>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>outsideModule</av-dynamic-col>        <av-dynamic-col size="8" center>            <div>This is an array of string to define which folders Aventus will watch. The                watched file will be compiled outside of the module. For example, if you define a class "Test" inside a                module "HelloWorld", you can reach the class by typing <span class="cn">window.Test</span> instead of                <span class="cn">window.HelloWorld.Test</span>            </div>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>namespaceStrategy</av-dynamic-col>        <av-dynamic-col size="8" center>            <span>This is a string to define how Aventus must deal with namespace.</span>            <ul>                <li>manual: the developer will write the namespace by himself</li>                <li>followFolders: the namespace will be set based on the current folder and the namespaceRoot property                </li>                <li>rules: the namespace will be set based on the namespaceRules property</li>            </ul>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>namespaceRoot</av-dynamic-col>        <av-dynamic-col size="8" center>            <span>This is a string to define what is the namespace root folder (only for followFolders strategy)</span>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>namespaceRules</av-dynamic-col>        <av-dynamic-col size="8" center>            <span>This is an object to define the namespace based on the uri where the key is the namespace and the                value is an array of string to match uri</span>            <av-code language="json">                <pre>                {                    ...,                    namespaceRules:{                        "Data": ["./src/data/*"]                    }                }                </pre>            </av-code></av-code>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>dependances</av-dynamic-col>        <av-dynamic-col size="8" center>            <span>This is an array of <av-router-link state="/docs/config/lib">dependance options</av-router-link> to                use code and/or autocompletion inside your code.</span>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>nodeModulesDir</av-dynamic-col>        <av-dynamic-col size="8" center>The path where the node_modules are installed. By default the value is ./node_modules        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>module</av-dynamic-col>        <av-dynamic-col size="8" center>This will override the module value of the <av-router-link state="/docs/config/basic_prop">basic config</av-router-link>.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>version</av-dynamic-col>        <av-dynamic-col size="8" center>This will override the version value of the <av-router-link state="/docs/config/basic_prop">basic config</av-router-link>.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>componentPrefix</av-dynamic-col>        <av-dynamic-col size="8" center>This will override the componentPrefix value of the <av-router-link state="/docs/config/basic_prop">basic config</av-router-link>.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>hideWarnings</av-dynamic-col>        <av-dynamic-col size="8" center>This will override the hideWarnings value of the <av-router-link state="/docs/config/basic_prop">basic config</av-router-link>.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>avoidParsingInsideTags</av-dynamic-col>        <av-dynamic-col size="8" center>This will override the avoidParsingInsideTags value of the <av-router-link state="/docs/config/basic_prop">basic config</av-router-link>.        </av-dynamic-col>    </av-dynamic-row></div>` }
+        blocks: { 'default':`<h1>Configuration - Build</h1><p>Inside a module, you can split you code into differents submodules. Inside Aventus, this submodule is called a    <span class="cn">Build</span>. The build job is to transform some Aventus input files into a JavaScript file (for an    app) and/or a    Aventus Package File (for a lib).</p><div class="table">    <av-dynamic-row class="header">        <av-dynamic-col size="4" center>Name</av-dynamic-col>        <av-dynamic-col size="8" center>Description</av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>name</av-dynamic-col>        <av-dynamic-col size="8" center>            <div>This is the name for the build. If the build is exported as a library, the                library name                will be <span class="cn">$module</span>@<span class="cn">$name</span></div>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="darker">        <av-dynamic-col size="4" center>src</av-dynamic-col>        <av-dynamic-col size="8" center>This is an array of string to define which folders Aventus will watch. For            example, if you set "./src/*", all files inside the folder "src" will be compiled.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>disabled</av-dynamic-col>        <av-dynamic-col size="8" center>This is a boolean to define if the build is active or not.            <span class="constraint">Must satisfy: <span class="cn">true|false</span></span>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="darker">        <av-dynamic-col size="4" center>compile</av-dynamic-col>        <av-dynamic-col size="8" center>This is an array to define how to compile your build.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="darker lvl-1">        <av-dynamic-col size="4" center>input</av-dynamic-col>        <av-dynamic-col size="8" center>This is string or an array to define the entries points of your program. If not set, all the files matching the build.src will be compiled. Otherwise, only the needed file by your entries points will be compiled        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="darker lvl-1">        <av-dynamic-col size="4" center>output</av-dynamic-col>        <av-dynamic-col size="8" center>This is string to define where the compiled JavaScript file must be written.            <span class="constraint">Must satisfy: ^\\S+\\.js</span>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="darker lvl-1">        <av-dynamic-col size="4" center>outputNpm</av-dynamic-col>        <av-dynamic-col size="8" center>This is a string or an array to define where to export your project to npm project. It can also be a object to customize settings.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="darker lvl-2">        <av-dynamic-col size="4" center>path</av-dynamic-col>        <av-dynamic-col size="8" center>This is a string or an array to define where to export your project to npm project        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="darker lvl-2">        <av-dynamic-col size="4" center>packageJson</av-dynamic-col>        <av-dynamic-col size="8" center>This is a boolean to define if you need a package.json when you are exporting        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="darker lvl-1">        <av-dynamic-col size="4" center>package</av-dynamic-col>        <av-dynamic-col size="8" center>This is string to define where the .package.avt file must be written.            <span class="constraint">Must satisfy: ^\\S+\\.package\\.avt</span>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>stories</av-dynamic-col>        <av-dynamic-col size="8" center>This is an object to configure how to export storybook for your package.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="lvl-1">        <av-dynamic-col size="4" center>output</av-dynamic-col>        <av-dynamic-col size="8" center>This is a string to define where to export storybook        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="lvl-1">        <av-dynamic-col size="4" center>workspace</av-dynamic-col>        <av-dynamic-col size="8" center>This is a string to define where to add the .storybook folder        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="lvl-1">        <av-dynamic-col size="4" center>live</av-dynamic-col>        <av-dynamic-col size="8" center>            <span>This is a boolean to define if the story content must be recompiled on change or only with the command</span>            <span class="cn" style="width: fit-content">Aventus : Build storybook</span>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="lvl-1">        <av-dynamic-col size="4" center>prefix</av-dynamic-col>        <av-dynamic-col size="8" center>This is a string to prefix all your stories to group stories        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="lvl-1">        <av-dynamic-col size="4" center>format</av-dynamic-col>        <av-dynamic-col size="8" center>            <span>This is a string to define how Aventus must deal with elements to export to storybook.</span>            <ul>                <li>all: export all elements</li>                <li>public: only public elements will be exported</li>                <li>manual: only elements with tag Storybook will be exported</li>            </ul>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="darker">        <av-dynamic-col size="4" center>outsideModule</av-dynamic-col>        <av-dynamic-col size="8" center>            <div>This is an array of string to define which folders Aventus will watch. The                watched file will be compiled outside of the module. For example, if you define a class "Test" inside a                module "HelloWorld", you can reach the class by typing <span class="cn">window.Test</span> instead of                <span class="cn">window.HelloWorld.Test</span>            </div>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>namespaceStrategy</av-dynamic-col>        <av-dynamic-col size="8" center>            <span>This is a string to define how Aventus must deal with namespace.</span>            <ul>                <li>manual: the developer will write the namespace by himself</li>                <li>followFolders: the namespace will be set based on the current folder and the namespaceRoot property                </li>                <li>rules: the namespace will be set based on the namespaceRules property</li>            </ul>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="darker">        <av-dynamic-col size="4" center>namespaceRoot</av-dynamic-col>        <av-dynamic-col size="8" center>            <span>This is a string to define what is the namespace root folder (only for followFolders strategy)</span>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>namespaceRules</av-dynamic-col>        <av-dynamic-col size="8" center>            <span>This is an object to define the namespace based on the uri where the key is the namespace and the                value is an array of string to match uri</span>            <av-code language="json">                <pre>                {                    ...,                    namespaceRules:{                        "Data": ["./src/data/*"]                    }                }                </pre>            </av-code></av-code>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="darker">        <av-dynamic-col size="4" center>dependances</av-dynamic-col>        <av-dynamic-col size="8" center>            <span>This is an array of <av-router-link state="/docs/config/lib">dependance options</av-router-link> to                use code and/or autocompletion inside your code.</span>        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>nodeModulesDir</av-dynamic-col>        <av-dynamic-col size="8" center>The path where the node_modules are installed. By default the value is ./node_modules        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="darker">        <av-dynamic-col size="4" center>module</av-dynamic-col>        <av-dynamic-col size="8" center>This will override the module value of the <av-router-link state="/docs/config/basic_prop">basic config</av-router-link>.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>version</av-dynamic-col>        <av-dynamic-col size="8" center>This will override the version value of the <av-router-link state="/docs/config/basic_prop">basic config</av-router-link>.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="darker">        <av-dynamic-col size="4" center>componentPrefix</av-dynamic-col>        <av-dynamic-col size="8" center>This will override the componentPrefix value of the <av-router-link state="/docs/config/basic_prop">basic config</av-router-link>.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row>        <av-dynamic-col size="4" center>hideWarnings</av-dynamic-col>        <av-dynamic-col size="8" center>This will override the hideWarnings value of the <av-router-link state="/docs/config/basic_prop">basic config</av-router-link>.        </av-dynamic-col>    </av-dynamic-row>    <av-dynamic-row class="darker">        <av-dynamic-col size="4" center>avoidParsingInsideTags</av-dynamic-col>        <av-dynamic-col size="8" center>This will override the avoidParsingInsideTags value of the <av-router-link state="/docs/config/basic_prop">basic config</av-router-link>.        </av-dynamic-col>    </av-dynamic-row></div>` }
     });
 }
     getClassName() {
         return "DocConfigBuild";
     }
 }
-DocConfigBuild.Namespace=`${moduleName}`;
+DocConfigBuild.Namespace=`AventusWebsite`;
 DocConfigBuild.Tag=`av-doc-config-build`;
 _.DocConfigBuild=DocConfigBuild;
 if(!window.customElements.get('av-doc-config-build')){window.customElements.define('av-doc-config-build', DocConfigBuild);Aventus.WebComponentInstance.registerDefinition(DocConfigBuild);}
@@ -11709,7 +12195,7 @@ const DocConfigBasic = class DocConfigBasic extends DocGenericPage {
         return "DocConfigBasic";
     }
 }
-DocConfigBasic.Namespace=`${moduleName}`;
+DocConfigBasic.Namespace=`AventusWebsite`;
 DocConfigBasic.Tag=`av-doc-config-basic`;
 _.DocConfigBasic=DocConfigBasic;
 if(!window.customElements.get('av-doc-config-basic')){window.customElements.define('av-doc-config-basic', DocConfigBasic);Aventus.WebComponentInstance.registerDefinition(DocConfigBasic);}
@@ -11736,7 +12222,7 @@ const DocInstallation = class DocInstallation extends DocGenericPage {
         return "Aventus - Installation";
     }
 }
-DocInstallation.Namespace=`${moduleName}`;
+DocInstallation.Namespace=`AventusWebsite`;
 DocInstallation.Tag=`av-doc-installation`;
 _.DocInstallation=DocInstallation;
 if(!window.customElements.get('av-doc-installation')){window.customElements.define('av-doc-installation', DocInstallation);Aventus.WebComponentInstance.registerDefinition(DocInstallation);}
@@ -12031,7 +12517,7 @@ const CodeEditor = class CodeEditor extends Aventus.WebComponent {
         return this.name;
     }
 }
-CodeEditor.Namespace=`${moduleName}`;
+CodeEditor.Namespace=`AventusWebsite`;
 CodeEditor.Tag=`av-code-editor`;
 _.CodeEditor=CodeEditor;
 if(!window.customElements.get('av-code-editor')){window.customElements.define('av-code-editor', CodeEditor);Aventus.WebComponentInstance.registerDefinition(CodeEditor);}
@@ -12090,7 +12576,7 @@ const BaseEditor = class BaseEditor extends Aventus.WebComponent {
         }
     }
 }
-BaseEditor.Namespace=`${moduleName}`;
+BaseEditor.Namespace=`AventusWebsite`;
 BaseEditor.Tag=`av-base-editor`;
 _.BaseEditor=BaseEditor;
 if(!window.customElements.get('av-base-editor')){window.customElements.define('av-base-editor', BaseEditor);Aventus.WebComponentInstance.registerDefinition(BaseEditor);}
@@ -12115,7 +12601,7 @@ const TutorialGenericPageEditor1 = class TutorialGenericPageEditor1 extends Base
         return "TutorialGenericPageEditor1";
     }
 }
-TutorialGenericPageEditor1.Namespace=`${moduleName}`;
+TutorialGenericPageEditor1.Namespace=`AventusWebsite`;
 TutorialGenericPageEditor1.Tag=`av-tutorial-generic-page-editor-1`;
 _.TutorialGenericPageEditor1=TutorialGenericPageEditor1;
 if(!window.customElements.get('av-tutorial-generic-page-editor-1')){window.customElements.define('av-tutorial-generic-page-editor-1', TutorialGenericPageEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialGenericPageEditor1);}
@@ -12140,7 +12626,7 @@ const DocLibWatcherEditor1 = class DocLibWatcherEditor1 extends BaseEditor {
         return "DocLibWatcherEditor1";
     }
 }
-DocLibWatcherEditor1.Namespace=`${moduleName}`;
+DocLibWatcherEditor1.Namespace=`AventusWebsite`;
 DocLibWatcherEditor1.Tag=`av-doc-lib-watcher-editor-1`;
 _.DocLibWatcherEditor1=DocLibWatcherEditor1;
 if(!window.customElements.get('av-doc-lib-watcher-editor-1')){window.customElements.define('av-doc-lib-watcher-editor-1', DocLibWatcherEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibWatcherEditor1);}
@@ -12165,7 +12651,7 @@ const DocLibResourceLoaderEditor1 = class DocLibResourceLoaderEditor1 extends Ba
         return "DocLibResourceLoaderEditor1";
     }
 }
-DocLibResourceLoaderEditor1.Namespace=`${moduleName}`;
+DocLibResourceLoaderEditor1.Namespace=`AventusWebsite`;
 DocLibResourceLoaderEditor1.Tag=`av-doc-lib-resource-loader-editor-1`;
 _.DocLibResourceLoaderEditor1=DocLibResourceLoaderEditor1;
 if(!window.customElements.get('av-doc-lib-resource-loader-editor-1')){window.customElements.define('av-doc-lib-resource-loader-editor-1', DocLibResourceLoaderEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibResourceLoaderEditor1);}
@@ -12190,7 +12676,7 @@ const DocLibInstanceEditor1 = class DocLibInstanceEditor1 extends BaseEditor {
         return "DocLibInstanceEditor1";
     }
 }
-DocLibInstanceEditor1.Namespace=`${moduleName}`;
+DocLibInstanceEditor1.Namespace=`AventusWebsite`;
 DocLibInstanceEditor1.Tag=`av-doc-lib-instance-editor-1`;
 _.DocLibInstanceEditor1=DocLibInstanceEditor1;
 if(!window.customElements.get('av-doc-lib-instance-editor-1')){window.customElements.define('av-doc-lib-instance-editor-1', DocLibInstanceEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibInstanceEditor1);}
@@ -12233,7 +12719,7 @@ const TutorialInitEditor3 = class TutorialInitEditor3 extends BaseEditor {
         super.postCreation();
     }
 }
-TutorialInitEditor3.Namespace=`${moduleName}`;
+TutorialInitEditor3.Namespace=`AventusWebsite`;
 TutorialInitEditor3.Tag=`av-tutorial-init-editor-3`;
 _.TutorialInitEditor3=TutorialInitEditor3;
 if(!window.customElements.get('av-tutorial-init-editor-3')){window.customElements.define('av-tutorial-init-editor-3', TutorialInitEditor3);Aventus.WebComponentInstance.registerDefinition(TutorialInitEditor3);}
@@ -12264,7 +12750,7 @@ const TutorialInitEditor1 = class TutorialInitEditor1 extends BaseEditor {
         return "Demo";
     }
 }
-TutorialInitEditor1.Namespace=`${moduleName}`;
+TutorialInitEditor1.Namespace=`AventusWebsite`;
 TutorialInitEditor1.Tag=`av-tutorial-init-editor-1`;
 _.TutorialInitEditor1=TutorialInitEditor1;
 if(!window.customElements.get('av-tutorial-init-editor-1')){window.customElements.define('av-tutorial-init-editor-1', TutorialInitEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialInitEditor1);}
@@ -12299,7 +12785,7 @@ const TutorialInitEditor2 = class TutorialInitEditor2 extends TutorialInitEditor
         ];
     }
 }
-TutorialInitEditor2.Namespace=`${moduleName}`;
+TutorialInitEditor2.Namespace=`AventusWebsite`;
 TutorialInitEditor2.Tag=`av-tutorial-init-editor-2`;
 _.TutorialInitEditor2=TutorialInitEditor2;
 if(!window.customElements.get('av-tutorial-init-editor-2')){window.customElements.define('av-tutorial-init-editor-2', TutorialInitEditor2);Aventus.WebComponentInstance.registerDefinition(TutorialInitEditor2);}
@@ -12327,10 +12813,147 @@ const TutorialCreateAppEditor1 = class TutorialCreateAppEditor1 extends BaseEdit
         return false;
     }
 }
-TutorialCreateAppEditor1.Namespace=`${moduleName}`;
+TutorialCreateAppEditor1.Namespace=`AventusWebsite`;
 TutorialCreateAppEditor1.Tag=`av-tutorial-create-app-editor-1`;
 _.TutorialCreateAppEditor1=TutorialCreateAppEditor1;
 if(!window.customElements.get('av-tutorial-create-app-editor-1')){window.customElements.define('av-tutorial-create-app-editor-1', TutorialCreateAppEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialCreateAppEditor1);}
+
+const DocAdvancedStorybookEditor1 = class DocAdvancedStorybookEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocAdvancedStorybookEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocAdvancedStorybookEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="test">    <av-code language="typescript" filename="test/aventus.conf.avt">        <pre>            {            	"module": "test",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [{            				"output": "./dist/test.js"            			}]            		}            	]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="test/src/Button/Button.wcl.avt">        <pre>            export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region events                &nbsp;                //#endregion            &nbsp;                //#region methods                &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="test/src/Button/Button.wcs.avt">        <pre>            :host {            	--_button-background-color: var(--button-background-color, var(--primary-color, #3c95d0));            }            &nbsp;            &nbsp;            :host {            	background-color: var(--_button-background-color);            	border: 1px solid transparent;            	border-radius: 10px;            	padding: 5px 15px;            }            &nbsp;            &nbsp;            :host([outline]) {            	background-color: #ffffff;            	border-color: var(--_button-background-color);            	color: var(--_button-background-color);            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="test/src/Button/Button.wcv.avt">        <pre>            &lt;slot&gt;test&lt;/slot&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocAdvancedStorybookEditor1";
+    }
+    startupFile() {
+        return 'test/aventus.conf.avt';
+    }
+}
+DocAdvancedStorybookEditor1.Namespace=`AventusWebsite`;
+DocAdvancedStorybookEditor1.Tag=`av-doc-advanced-storybook-editor-1`;
+_.DocAdvancedStorybookEditor1=DocAdvancedStorybookEditor1;
+if(!window.customElements.get('av-doc-advanced-storybook-editor-1')){window.customElements.define('av-doc-advanced-storybook-editor-1', DocAdvancedStorybookEditor1);Aventus.WebComponentInstance.registerDefinition(DocAdvancedStorybookEditor1);}
+
+const DocAdvancedStorybookEditor2 = class DocAdvancedStorybookEditor2 extends DocAdvancedStorybookEditor1 {
+    static __style = ``;
+    __getStatic() {
+        return DocAdvancedStorybookEditor2;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocAdvancedStorybookEditor2.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code language="typescript" filename="test/aventus.conf.avt">    <pre>        {            "module": "test",            "componentPrefix": "av",            "build": [                {                    "name": "Main",                    "src": [                        "./src/*"                    ],                    "compile": [{                        "output": "./dist/test.js"                    }],                    "stories": {                        "output": "./storybook"                    }                }            ]        }    </pre></av-code></av-code><slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocAdvancedStorybookEditor2";
+    }
+}
+DocAdvancedStorybookEditor2.Namespace=`AventusWebsite`;
+DocAdvancedStorybookEditor2.Tag=`av-doc-advanced-storybook-editor-2`;
+_.DocAdvancedStorybookEditor2=DocAdvancedStorybookEditor2;
+if(!window.customElements.get('av-doc-advanced-storybook-editor-2')){window.customElements.define('av-doc-advanced-storybook-editor-2', DocAdvancedStorybookEditor2);Aventus.WebComponentInstance.registerDefinition(DocAdvancedStorybookEditor2);}
+
+const DocAdvancedNpmExportEditor1 = class DocAdvancedNpmExportEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocAdvancedNpmExportEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocAdvancedNpmExportEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="test">    <av-code language="typescript" filename="test/aventus.conf.avt">        <pre>            {            	"module": "test",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [{            				"output": "./dist/test.js"            			}]            		}            	]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="test/src/Button/Button.wcl.avt">        <pre>            export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region events                &nbsp;                //#endregion            &nbsp;                //#region methods                &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="test/src/Button/Button.wcs.avt">        <pre>            :host {            	/*            	* description2            	* @type color            	*/            	--_button-background-color: var(--button-background-color, var(--primary-color, #3c95d0));            }            &nbsp;            &nbsp;            :host {            	background-color: var(--_button-background-color);            	border: 1px solid transparent;            	border-radius: 10px;            	padding: 5px 15px;            }            &nbsp;            &nbsp;            :host([outline]) {            	background-color: #ffffff;            	border-color: var(--_button-background-color);            	color: var(--_button-background-color);            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="test/src/Button/Button.wcv.avt">        <pre>            &lt;slot&gt;test&lt;/slot&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocAdvancedNpmExportEditor1";
+    }
+    startupFile() {
+        return 'test/aventus.conf.avt';
+    }
+}
+DocAdvancedNpmExportEditor1.Namespace=`AventusWebsite`;
+DocAdvancedNpmExportEditor1.Tag=`av-doc-advanced-npm-export-editor-1`;
+_.DocAdvancedNpmExportEditor1=DocAdvancedNpmExportEditor1;
+if(!window.customElements.get('av-doc-advanced-npm-export-editor-1')){window.customElements.define('av-doc-advanced-npm-export-editor-1', DocAdvancedNpmExportEditor1);Aventus.WebComponentInstance.registerDefinition(DocAdvancedNpmExportEditor1);}
+
+const DocAdvancedNpmExportEditor2 = class DocAdvancedNpmExportEditor2 extends DocAdvancedNpmExportEditor1 {
+    static __style = ``;
+    __getStatic() {
+        return DocAdvancedNpmExportEditor2;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocAdvancedNpmExportEditor2.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code language="typescript" filename="test/aventus.conf.avt">    <pre>        {            "module": "test",            "componentPrefix": "av",            "build": [                {                    "name": "Main",                    "src": [                        "./src/*"                    ],                    "compile": [{                        "output": "./dist/test.js",                        "outputNpm": "./npm"                    }]                }            ]        }    </pre></av-code></av-code><slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocAdvancedNpmExportEditor2";
+    }
+}
+DocAdvancedNpmExportEditor2.Namespace=`AventusWebsite`;
+DocAdvancedNpmExportEditor2.Tag=`av-doc-advanced-npm-export-editor-2`;
+_.DocAdvancedNpmExportEditor2=DocAdvancedNpmExportEditor2;
+if(!window.customElements.get('av-doc-advanced-npm-export-editor-2')){window.customElements.define('av-doc-advanced-npm-export-editor-2', DocAdvancedNpmExportEditor2);Aventus.WebComponentInstance.registerDefinition(DocAdvancedNpmExportEditor2);}
+
+const DocAdvancedNpmExportEditor3 = class DocAdvancedNpmExportEditor3 extends DocAdvancedNpmExportEditor2 {
+    static __style = ``;
+    __getStatic() {
+        return DocAdvancedNpmExportEditor3;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocAdvancedNpmExportEditor3.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code language="typescript" filename="test/npm/index.d.ts">    <pre>        import * as test from "./test";        &nbsp;        &nbsp;        export { test };        &nbsp;    </pre></av-code></av-code><av-code language="javascript" filename="test/npm/index.js">    <pre>        import * as test from "./test/index.js";        export { test };        &nbsp;    </pre></av-code></av-code><av-code language="json" filename="test/npm/package.json">    <pre>        {          "name": "@test/main",          "displayName": "test Main",          "description": "Aventus build &#102;or @test/Main",          "version": "1.0.0",          "author": {            "name": "Cobwebsite",            "email": "info@cobwebsite.ch",            "url": "https://cobwesbite.ch"          },          "main": "index.js",          "types": "index.d.ts",          "dependencies": {}        }    </pre></av-code></av-code><av-code language="typescript" filename="test/npm/test/index.d.ts">    <pre>        import { WebComponent, DefaultComponent, WebComponentInstance } from "@aventusjs/main/Aventus";        &nbsp;        export class Button extends WebComponent implements DefaultComponent {        }        &nbsp;        &nbsp;    </pre></av-code></av-code><av-code language="javascript" filename="test/npm/test/index.js">    <pre>        export { Button } from "../__src/src/Button/Button.wcl.js"        &nbsp;    </pre></av-code></av-code><av-code language="javascript" filename="test/npm/__src/src/Button/Button.wcl.js">    <pre>        import { WebComponent, WebComponentInstance } from "@aventusjs/main/Aventus/index.js";        &nbsp;        export const Button = class Button extends WebComponent {            static __style = &#96;:host{--_button-background-color: var(--button-background-color, var(--primary-color, #3c95d0))}:host{background-color:var(--_button-background-color);border:1px solid rgba(0,0,0,0);border-radius:10px;padding:5px 15px}:host([outline]){background-color:#fff;border-color:var(--_button-background-color);color:var(--_button-background-color)}&#96;;            __getStatic() {                return Button;            }            __getStyle() {                let arrStyle = super.__getStyle();                arrStyle.push(Button.__style);                return arrStyle;            }            __getHtml() {            this.__getStatic().__template.setHTML({                slots: { 'default':&#96;&lt;slot&gt;test&lt;/slot&gt;&#96; },                 blocks: { 'default':&#96;&lt;slot&gt;test&lt;/slot&gt;&#96; }            });        }            getClassName() {                return "Button";            }        }        Button.Namespace=&#96;test&#96;;        Button.Tag=&#96;av-button&#96;;        &#105;f(!window.customElements.get('av-button')){window.customElements.define('av-button', Button);WebComponentInstance.registerDefinition(Button);}        &nbsp;    </pre></av-code></av-code><slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocAdvancedNpmExportEditor3";
+    }
+    open_folder() {
+        return ['test/npm/test', 'test/npm/__src/src/Button'];
+    }
+    all_open() {
+        return false;
+    }
+}
+DocAdvancedNpmExportEditor3.Namespace=`AventusWebsite`;
+DocAdvancedNpmExportEditor3.Tag=`av-doc-advanced-npm-export-editor-3`;
+_.DocAdvancedNpmExportEditor3=DocAdvancedNpmExportEditor3;
+if(!window.customElements.get('av-doc-advanced-npm-export-editor-3')){window.customElements.define('av-doc-advanced-npm-export-editor-3', DocAdvancedNpmExportEditor3);Aventus.WebComponentInstance.registerDefinition(DocAdvancedNpmExportEditor3);}
 
 const DocAdvancedTemplateEditor1 = class DocAdvancedTemplateEditor1 extends BaseEditor {
     static __style = ``;
@@ -12352,7 +12975,7 @@ const DocAdvancedTemplateEditor1 = class DocAdvancedTemplateEditor1 extends Base
         return "DocAdvancedTemplateEditor1";
     }
 }
-DocAdvancedTemplateEditor1.Namespace=`${moduleName}`;
+DocAdvancedTemplateEditor1.Namespace=`AventusWebsite`;
 DocAdvancedTemplateEditor1.Tag=`av-doc-advanced-template-editor-1`;
 _.DocAdvancedTemplateEditor1=DocAdvancedTemplateEditor1;
 if(!window.customElements.get('av-doc-advanced-template-editor-1')){window.customElements.define('av-doc-advanced-template-editor-1', DocAdvancedTemplateEditor1);Aventus.WebComponentInstance.registerDefinition(DocAdvancedTemplateEditor1);}
@@ -12380,7 +13003,7 @@ const DocAdvancedTemplateEditor2 = class DocAdvancedTemplateEditor2 extends DocA
         return 'Template/.aventus/templates/TailwindComponent/template.avt';
     }
 }
-DocAdvancedTemplateEditor2.Namespace=`${moduleName}`;
+DocAdvancedTemplateEditor2.Namespace=`AventusWebsite`;
 DocAdvancedTemplateEditor2.Tag=`av-doc-advanced-template-editor-2`;
 _.DocAdvancedTemplateEditor2=DocAdvancedTemplateEditor2;
 if(!window.customElements.get('av-doc-advanced-template-editor-2')){window.customElements.define('av-doc-advanced-template-editor-2', DocAdvancedTemplateEditor2);Aventus.WebComponentInstance.registerDefinition(DocAdvancedTemplateEditor2);}
@@ -12408,7 +13031,7 @@ const DocAdvancedTemplateEditor3 = class DocAdvancedTemplateEditor3 extends DocA
         return 'Template/.aventus/templates/TailwindComponent/${{componentName}}/${{componentName}}.wcl.avt';
     }
 }
-DocAdvancedTemplateEditor3.Namespace=`${moduleName}`;
+DocAdvancedTemplateEditor3.Namespace=`AventusWebsite`;
 DocAdvancedTemplateEditor3.Tag=`av-doc-advanced-template-editor-3`;
 _.DocAdvancedTemplateEditor3=DocAdvancedTemplateEditor3;
 if(!window.customElements.get('av-doc-advanced-template-editor-3')){window.customElements.define('av-doc-advanced-template-editor-3', DocAdvancedTemplateEditor3);Aventus.WebComponentInstance.registerDefinition(DocAdvancedTemplateEditor3);}
@@ -12436,7 +13059,7 @@ const DocAdvancedTemplateEditor4 = class DocAdvancedTemplateEditor4 extends DocA
         return 'Template/src/NewComp/NewComp.wcl.avt';
     }
 }
-DocAdvancedTemplateEditor4.Namespace=`${moduleName}`;
+DocAdvancedTemplateEditor4.Namespace=`AventusWebsite`;
 DocAdvancedTemplateEditor4.Tag=`av-doc-advanced-template-editor-4`;
 _.DocAdvancedTemplateEditor4=DocAdvancedTemplateEditor4;
 if(!window.customElements.get('av-doc-advanced-template-editor-4')){window.customElements.define('av-doc-advanced-template-editor-4', DocAdvancedTemplateEditor4);Aventus.WebComponentInstance.registerDefinition(DocAdvancedTemplateEditor4);}
@@ -12464,7 +13087,7 @@ const DocAdvancedTemplateEditor5 = class DocAdvancedTemplateEditor5 extends DocA
         return 'Template/.aventus/templates/TailwindComponent/template.avt';
     }
 }
-DocAdvancedTemplateEditor5.Namespace=`${moduleName}`;
+DocAdvancedTemplateEditor5.Namespace=`AventusWebsite`;
 DocAdvancedTemplateEditor5.Tag=`av-doc-advanced-template-editor-5`;
 _.DocAdvancedTemplateEditor5=DocAdvancedTemplateEditor5;
 if(!window.customElements.get('av-doc-advanced-template-editor-5')){window.customElements.define('av-doc-advanced-template-editor-5', DocAdvancedTemplateEditor5);Aventus.WebComponentInstance.registerDefinition(DocAdvancedTemplateEditor5);}
@@ -12498,7 +13121,7 @@ const DocLibToolsEditor2 = class DocLibToolsEditor2 extends BaseEditor {
         return 'Tools/src/StringExtension.lib.avt';
     }
 }
-DocLibToolsEditor2.Namespace=`${moduleName}`;
+DocLibToolsEditor2.Namespace=`AventusWebsite`;
 DocLibToolsEditor2.Tag=`av-doc-lib-tools-editor-2`;
 _.DocLibToolsEditor2=DocLibToolsEditor2;
 if(!window.customElements.get('av-doc-lib-tools-editor-2')){window.customElements.define('av-doc-lib-tools-editor-2', DocLibToolsEditor2);Aventus.WebComponentInstance.registerDefinition(DocLibToolsEditor2);}
@@ -12523,7 +13146,7 @@ const DocLibToolsEditor3 = class DocLibToolsEditor3 extends BaseEditor {
         return "DocLibToolsEditor3";
     }
 }
-DocLibToolsEditor3.Namespace=`${moduleName}`;
+DocLibToolsEditor3.Namespace=`AventusWebsite`;
 DocLibToolsEditor3.Tag=`av-doc-lib-tools-editor-3`;
 _.DocLibToolsEditor3=DocLibToolsEditor3;
 if(!window.customElements.get('av-doc-lib-tools-editor-3')){window.customElements.define('av-doc-lib-tools-editor-3', DocLibToolsEditor3);Aventus.WebComponentInstance.registerDefinition(DocLibToolsEditor3);}
@@ -12551,7 +13174,7 @@ const DocLibToolsEditor1 = class DocLibToolsEditor1 extends BaseEditor {
         return 'Tools/src/Parser.lib.avt';
     }
 }
-DocLibToolsEditor1.Namespace=`${moduleName}`;
+DocLibToolsEditor1.Namespace=`AventusWebsite`;
 DocLibToolsEditor1.Tag=`av-doc-lib-tools-editor-1`;
 _.DocLibToolsEditor1=DocLibToolsEditor1;
 if(!window.customElements.get('av-doc-lib-tools-editor-1')){window.customElements.define('av-doc-lib-tools-editor-1', DocLibToolsEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibToolsEditor1);}
@@ -12576,7 +13199,7 @@ const DocLibCallbackEditor3 = class DocLibCallbackEditor3 extends BaseEditor {
         return "DocLibCallbackEditor3";
     }
 }
-DocLibCallbackEditor3.Namespace=`${moduleName}`;
+DocLibCallbackEditor3.Namespace=`AventusWebsite`;
 DocLibCallbackEditor3.Tag=`av-doc-lib-callback-editor-3`;
 _.DocLibCallbackEditor3=DocLibCallbackEditor3;
 if(!window.customElements.get('av-doc-lib-callback-editor-3')){window.customElements.define('av-doc-lib-callback-editor-3', DocLibCallbackEditor3);Aventus.WebComponentInstance.registerDefinition(DocLibCallbackEditor3);}
@@ -12610,7 +13233,7 @@ const DocWcInterpolationEditor1 = class DocWcInterpolationEditor1 extends BaseEd
         ];
     }
 }
-DocWcInterpolationEditor1.Namespace=`${moduleName}`;
+DocWcInterpolationEditor1.Namespace=`AventusWebsite`;
 DocWcInterpolationEditor1.Tag=`av-doc-wc-interpolation-editor-1`;
 _.DocWcInterpolationEditor1=DocWcInterpolationEditor1;
 if(!window.customElements.get('av-doc-wc-interpolation-editor-1')){window.customElements.define('av-doc-wc-interpolation-editor-1', DocWcInterpolationEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcInterpolationEditor1);}
@@ -12644,7 +13267,7 @@ const DocWcStyleEditor5 = class DocWcStyleEditor5 extends BaseEditor {
         ];
     }
 }
-DocWcStyleEditor5.Namespace=`${moduleName}`;
+DocWcStyleEditor5.Namespace=`AventusWebsite`;
 DocWcStyleEditor5.Tag=`av-doc-wc-style-editor-5`;
 _.DocWcStyleEditor5=DocWcStyleEditor5;
 if(!window.customElements.get('av-doc-wc-style-editor-5')){window.customElements.define('av-doc-wc-style-editor-5', DocWcStyleEditor5);Aventus.WebComponentInstance.registerDefinition(DocWcStyleEditor5);}
@@ -12669,7 +13292,7 @@ const DocWcStyleEditor3 = class DocWcStyleEditor3 extends BaseEditor {
         return "DocWcStyleEditor3";
     }
 }
-DocWcStyleEditor3.Namespace=`${moduleName}`;
+DocWcStyleEditor3.Namespace=`AventusWebsite`;
 DocWcStyleEditor3.Tag=`av-doc-wc-style-editor-3`;
 _.DocWcStyleEditor3=DocWcStyleEditor3;
 if(!window.customElements.get('av-doc-wc-style-editor-3')){window.customElements.define('av-doc-wc-style-editor-3', DocWcStyleEditor3);Aventus.WebComponentInstance.registerDefinition(DocWcStyleEditor3);}
@@ -12703,7 +13326,7 @@ const DocWcInheritanceEditor1 = class DocWcInheritanceEditor1 extends BaseEditor
         ];
     }
 }
-DocWcInheritanceEditor1.Namespace=`${moduleName}`;
+DocWcInheritanceEditor1.Namespace=`AventusWebsite`;
 DocWcInheritanceEditor1.Tag=`av-doc-wc-inheritance-editor-1`;
 _.DocWcInheritanceEditor1=DocWcInheritanceEditor1;
 if(!window.customElements.get('av-doc-wc-inheritance-editor-1')){window.customElements.define('av-doc-wc-inheritance-editor-1', DocWcInheritanceEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcInheritanceEditor1);}
@@ -12731,7 +13354,7 @@ const DocStateListenEditor1 = class DocStateListenEditor1 extends BaseEditor {
         return "StateExample/src/Test.lib.avt";
     }
 }
-DocStateListenEditor1.Namespace=`${moduleName}`;
+DocStateListenEditor1.Namespace=`AventusWebsite`;
 DocStateListenEditor1.Tag=`av-doc-state-listen-editor-1`;
 _.DocStateListenEditor1=DocStateListenEditor1;
 if(!window.customElements.get('av-doc-state-listen-editor-1')){window.customElements.define('av-doc-state-listen-editor-1', DocStateListenEditor1);Aventus.WebComponentInstance.registerDefinition(DocStateListenEditor1);}
@@ -12756,7 +13379,7 @@ const DocStateListenEditor2 = class DocStateListenEditor2 extends DocStateListen
         return "DocStateListenEditor2";
     }
 }
-DocStateListenEditor2.Namespace=`${moduleName}`;
+DocStateListenEditor2.Namespace=`AventusWebsite`;
 DocStateListenEditor2.Tag=`av-doc-state-listen-editor-2`;
 _.DocStateListenEditor2=DocStateListenEditor2;
 if(!window.customElements.get('av-doc-state-listen-editor-2')){window.customElements.define('av-doc-state-listen-editor-2', DocStateListenEditor2);Aventus.WebComponentInstance.registerDefinition(DocStateListenEditor2);}
@@ -12781,7 +13404,7 @@ const DocStateListenEditor3 = class DocStateListenEditor3 extends DocStateListen
         return "DocStateListenEditor3";
     }
 }
-DocStateListenEditor3.Namespace=`${moduleName}`;
+DocStateListenEditor3.Namespace=`AventusWebsite`;
 DocStateListenEditor3.Tag=`av-doc-state-listen-editor-3`;
 _.DocStateListenEditor3=DocStateListenEditor3;
 if(!window.customElements.get('av-doc-state-listen-editor-3')){window.customElements.define('av-doc-state-listen-editor-3', DocStateListenEditor3);Aventus.WebComponentInstance.registerDefinition(DocStateListenEditor3);}
@@ -12809,7 +13432,7 @@ const DocStateListenEditor4 = class DocStateListenEditor4 extends DocStateListen
         return "StateExample/src/CreatePerson.state.avt";
     }
 }
-DocStateListenEditor4.Namespace=`${moduleName}`;
+DocStateListenEditor4.Namespace=`AventusWebsite`;
 DocStateListenEditor4.Tag=`av-doc-state-listen-editor-4`;
 _.DocStateListenEditor4=DocStateListenEditor4;
 if(!window.customElements.get('av-doc-state-listen-editor-4')){window.customElements.define('av-doc-state-listen-editor-4', DocStateListenEditor4);Aventus.WebComponentInstance.registerDefinition(DocStateListenEditor4);}
@@ -12837,7 +13460,7 @@ const DocStateChangeEditor1 = class DocStateChangeEditor1 extends BaseEditor {
         return "StateExample/src/Test.lib.avt";
     }
 }
-DocStateChangeEditor1.Namespace=`${moduleName}`;
+DocStateChangeEditor1.Namespace=`AventusWebsite`;
 DocStateChangeEditor1.Tag=`av-doc-state-change-editor-1`;
 _.DocStateChangeEditor1=DocStateChangeEditor1;
 if(!window.customElements.get('av-doc-state-change-editor-1')){window.customElements.define('av-doc-state-change-editor-1', DocStateChangeEditor1);Aventus.WebComponentInstance.registerDefinition(DocStateChangeEditor1);}
@@ -12862,7 +13485,7 @@ const DocStateChangeEditor2 = class DocStateChangeEditor2 extends DocStateChange
         return "DocStateChangeEditor2";
     }
 }
-DocStateChangeEditor2.Namespace=`${moduleName}`;
+DocStateChangeEditor2.Namespace=`AventusWebsite`;
 DocStateChangeEditor2.Tag=`av-doc-state-change-editor-2`;
 _.DocStateChangeEditor2=DocStateChangeEditor2;
 if(!window.customElements.get('av-doc-state-change-editor-2')){window.customElements.define('av-doc-state-change-editor-2', DocStateChangeEditor2);Aventus.WebComponentInstance.registerDefinition(DocStateChangeEditor2);}
@@ -12887,7 +13510,7 @@ const DocStateChangeEditor3 = class DocStateChangeEditor3 extends DocStateChange
         return "DocStateChangeEditor3";
     }
 }
-DocStateChangeEditor3.Namespace=`${moduleName}`;
+DocStateChangeEditor3.Namespace=`AventusWebsite`;
 DocStateChangeEditor3.Tag=`av-doc-state-change-editor-3`;
 _.DocStateChangeEditor3=DocStateChangeEditor3;
 if(!window.customElements.get('av-doc-state-change-editor-3')){window.customElements.define('av-doc-state-change-editor-3', DocStateChangeEditor3);Aventus.WebComponentInstance.registerDefinition(DocStateChangeEditor3);}
@@ -12915,7 +13538,7 @@ const DocStateCreateEditor1 = class DocStateCreateEditor1 extends BaseEditor {
         return "StateExample/src/CreatePerson.state.avt";
     }
 }
-DocStateCreateEditor1.Namespace=`${moduleName}`;
+DocStateCreateEditor1.Namespace=`AventusWebsite`;
 DocStateCreateEditor1.Tag=`av-doc-state-create-editor-1`;
 _.DocStateCreateEditor1=DocStateCreateEditor1;
 if(!window.customElements.get('av-doc-state-create-editor-1')){window.customElements.define('av-doc-state-create-editor-1', DocStateCreateEditor1);Aventus.WebComponentInstance.registerDefinition(DocStateCreateEditor1);}
@@ -12943,7 +13566,7 @@ const DocRamMixinEditor1 = class DocRamMixinEditor1 extends BaseEditor {
         return "ExampleRAM/src/Person.data.avt";
     }
 }
-DocRamMixinEditor1.Namespace=`${moduleName}`;
+DocRamMixinEditor1.Namespace=`AventusWebsite`;
 DocRamMixinEditor1.Tag=`av-doc-ram-mixin-editor-1`;
 _.DocRamMixinEditor1=DocRamMixinEditor1;
 if(!window.customElements.get('av-doc-ram-mixin-editor-1')){window.customElements.define('av-doc-ram-mixin-editor-1', DocRamMixinEditor1);Aventus.WebComponentInstance.registerDefinition(DocRamMixinEditor1);}
@@ -12971,7 +13594,7 @@ const DocRamMixinEditor2 = class DocRamMixinEditor2 extends DocRamMixinEditor1 {
         return "ExampleRAM/src/Person.ram.avt";
     }
 }
-DocRamMixinEditor2.Namespace=`${moduleName}`;
+DocRamMixinEditor2.Namespace=`AventusWebsite`;
 DocRamMixinEditor2.Tag=`av-doc-ram-mixin-editor-2`;
 _.DocRamMixinEditor2=DocRamMixinEditor2;
 if(!window.customElements.get('av-doc-ram-mixin-editor-2')){window.customElements.define('av-doc-ram-mixin-editor-2', DocRamMixinEditor2);Aventus.WebComponentInstance.registerDefinition(DocRamMixinEditor2);}
@@ -12996,7 +13619,7 @@ const DocRamMixinEditor3 = class DocRamMixinEditor3 extends DocRamMixinEditor2 {
         return "DocRamMixinEditor3";
     }
 }
-DocRamMixinEditor3.Namespace=`${moduleName}`;
+DocRamMixinEditor3.Namespace=`AventusWebsite`;
 DocRamMixinEditor3.Tag=`av-doc-ram-mixin-editor-3`;
 _.DocRamMixinEditor3=DocRamMixinEditor3;
 if(!window.customElements.get('av-doc-ram-mixin-editor-3')){window.customElements.define('av-doc-ram-mixin-editor-3', DocRamMixinEditor3);Aventus.WebComponentInstance.registerDefinition(DocRamMixinEditor3);}
@@ -13021,7 +13644,7 @@ const DocRamMixinEditor4 = class DocRamMixinEditor4 extends DocRamMixinEditor3 {
         return "DocRamMixinEditor4";
     }
 }
-DocRamMixinEditor4.Namespace=`${moduleName}`;
+DocRamMixinEditor4.Namespace=`AventusWebsite`;
 DocRamMixinEditor4.Tag=`av-doc-ram-mixin-editor-4`;
 _.DocRamMixinEditor4=DocRamMixinEditor4;
 if(!window.customElements.get('av-doc-ram-mixin-editor-4')){window.customElements.define('av-doc-ram-mixin-editor-4', DocRamMixinEditor4);Aventus.WebComponentInstance.registerDefinition(DocRamMixinEditor4);}
@@ -13046,7 +13669,7 @@ const DocRamMixinEditor5 = class DocRamMixinEditor5 extends DocRamMixinEditor4 {
         return "DocRamMixinEditor5";
     }
 }
-DocRamMixinEditor5.Namespace=`${moduleName}`;
+DocRamMixinEditor5.Namespace=`AventusWebsite`;
 DocRamMixinEditor5.Tag=`av-doc-ram-mixin-editor-5`;
 _.DocRamMixinEditor5=DocRamMixinEditor5;
 if(!window.customElements.get('av-doc-ram-mixin-editor-5')){window.customElements.define('av-doc-ram-mixin-editor-5', DocRamMixinEditor5);Aventus.WebComponentInstance.registerDefinition(DocRamMixinEditor5);}
@@ -13071,7 +13694,7 @@ const DocRamMixinEditor6 = class DocRamMixinEditor6 extends DocRamMixinEditor5 {
         return "DocRamMixinEditor6";
     }
 }
-DocRamMixinEditor6.Namespace=`${moduleName}`;
+DocRamMixinEditor6.Namespace=`AventusWebsite`;
 DocRamMixinEditor6.Tag=`av-doc-ram-mixin-editor-6`;
 _.DocRamMixinEditor6=DocRamMixinEditor6;
 if(!window.customElements.get('av-doc-ram-mixin-editor-6')){window.customElements.define('av-doc-ram-mixin-editor-6', DocRamMixinEditor6);Aventus.WebComponentInstance.registerDefinition(DocRamMixinEditor6);}
@@ -13099,7 +13722,7 @@ const DocRamMixinEditor7 = class DocRamMixinEditor7 extends DocRamMixinEditor6 {
         return 'ExampleRAM/src/Test.lib.avt';
     }
 }
-DocRamMixinEditor7.Namespace=`${moduleName}`;
+DocRamMixinEditor7.Namespace=`AventusWebsite`;
 DocRamMixinEditor7.Tag=`av-doc-ram-mixin-editor-7`;
 _.DocRamMixinEditor7=DocRamMixinEditor7;
 if(!window.customElements.get('av-doc-ram-mixin-editor-7')){window.customElements.define('av-doc-ram-mixin-editor-7', DocRamMixinEditor7);Aventus.WebComponentInstance.registerDefinition(DocRamMixinEditor7);}
@@ -13127,7 +13750,7 @@ const DocRamListenChangesEditor1 = class DocRamListenChangesEditor1 extends Base
         return "ExampleRAM/src/Test.lib.avt";
     }
 }
-DocRamListenChangesEditor1.Namespace=`${moduleName}`;
+DocRamListenChangesEditor1.Namespace=`AventusWebsite`;
 DocRamListenChangesEditor1.Tag=`av-doc-ram-listen-changes-editor-1`;
 _.DocRamListenChangesEditor1=DocRamListenChangesEditor1;
 if(!window.customElements.get('av-doc-ram-listen-changes-editor-1')){window.customElements.define('av-doc-ram-listen-changes-editor-1', DocRamListenChangesEditor1);Aventus.WebComponentInstance.registerDefinition(DocRamListenChangesEditor1);}
@@ -13155,7 +13778,7 @@ const DocRamListenChangesEditor2 = class DocRamListenChangesEditor2 extends DocR
         return 'ExampleRAM/src/DisplayPerson/DisplayPerson.wcl.avt';
     }
 }
-DocRamListenChangesEditor2.Namespace=`${moduleName}`;
+DocRamListenChangesEditor2.Namespace=`AventusWebsite`;
 DocRamListenChangesEditor2.Tag=`av-doc-ram-listen-changes-editor-2`;
 _.DocRamListenChangesEditor2=DocRamListenChangesEditor2;
 if(!window.customElements.get('av-doc-ram-listen-changes-editor-2')){window.customElements.define('av-doc-ram-listen-changes-editor-2', DocRamListenChangesEditor2);Aventus.WebComponentInstance.registerDefinition(DocRamListenChangesEditor2);}
@@ -13180,7 +13803,7 @@ const DocRamListenChangesEditor3 = class DocRamListenChangesEditor3 extends DocR
         return "DocRamListenChangesEditor3";
     }
 }
-DocRamListenChangesEditor3.Namespace=`${moduleName}`;
+DocRamListenChangesEditor3.Namespace=`AventusWebsite`;
 DocRamListenChangesEditor3.Tag=`av-doc-ram-listen-changes-editor-3`;
 _.DocRamListenChangesEditor3=DocRamListenChangesEditor3;
 if(!window.customElements.get('av-doc-ram-listen-changes-editor-3')){window.customElements.define('av-doc-ram-listen-changes-editor-3', DocRamListenChangesEditor3);Aventus.WebComponentInstance.registerDefinition(DocRamListenChangesEditor3);}
@@ -13208,7 +13831,7 @@ const DocRamCrudEditor1 = class DocRamCrudEditor1 extends BaseEditor {
         return "ExampleRAM/src/Test.lib.avt";
     }
 }
-DocRamCrudEditor1.Namespace=`${moduleName}`;
+DocRamCrudEditor1.Namespace=`AventusWebsite`;
 DocRamCrudEditor1.Tag=`av-doc-ram-crud-editor-1`;
 _.DocRamCrudEditor1=DocRamCrudEditor1;
 if(!window.customElements.get('av-doc-ram-crud-editor-1')){window.customElements.define('av-doc-ram-crud-editor-1', DocRamCrudEditor1);Aventus.WebComponentInstance.registerDefinition(DocRamCrudEditor1);}
@@ -13233,7 +13856,7 @@ const DocRamCrudEditor2 = class DocRamCrudEditor2 extends DocRamCrudEditor1 {
         return "DocRamCrudEditor2";
     }
 }
-DocRamCrudEditor2.Namespace=`${moduleName}`;
+DocRamCrudEditor2.Namespace=`AventusWebsite`;
 DocRamCrudEditor2.Tag=`av-doc-ram-crud-editor-2`;
 _.DocRamCrudEditor2=DocRamCrudEditor2;
 if(!window.customElements.get('av-doc-ram-crud-editor-2')){window.customElements.define('av-doc-ram-crud-editor-2', DocRamCrudEditor2);Aventus.WebComponentInstance.registerDefinition(DocRamCrudEditor2);}
@@ -13258,7 +13881,7 @@ const DocRamCrudEditor3 = class DocRamCrudEditor3 extends DocRamCrudEditor2 {
         return "DocRamCrudEditor3";
     }
 }
-DocRamCrudEditor3.Namespace=`${moduleName}`;
+DocRamCrudEditor3.Namespace=`AventusWebsite`;
 DocRamCrudEditor3.Tag=`av-doc-ram-crud-editor-3`;
 _.DocRamCrudEditor3=DocRamCrudEditor3;
 if(!window.customElements.get('av-doc-ram-crud-editor-3')){window.customElements.define('av-doc-ram-crud-editor-3', DocRamCrudEditor3);Aventus.WebComponentInstance.registerDefinition(DocRamCrudEditor3);}
@@ -13283,7 +13906,7 @@ const DocRamCrudEditor4 = class DocRamCrudEditor4 extends DocRamCrudEditor3 {
         return "DocRamCrudEditor4";
     }
 }
-DocRamCrudEditor4.Namespace=`${moduleName}`;
+DocRamCrudEditor4.Namespace=`AventusWebsite`;
 DocRamCrudEditor4.Tag=`av-doc-ram-crud-editor-4`;
 _.DocRamCrudEditor4=DocRamCrudEditor4;
 if(!window.customElements.get('av-doc-ram-crud-editor-4')){window.customElements.define('av-doc-ram-crud-editor-4', DocRamCrudEditor4);Aventus.WebComponentInstance.registerDefinition(DocRamCrudEditor4);}
@@ -13308,7 +13931,7 @@ const DocRamCrudEditor5 = class DocRamCrudEditor5 extends DocRamCrudEditor4 {
         return "DocRamCrudEditor5";
     }
 }
-DocRamCrudEditor5.Namespace=`${moduleName}`;
+DocRamCrudEditor5.Namespace=`AventusWebsite`;
 DocRamCrudEditor5.Tag=`av-doc-ram-crud-editor-5`;
 _.DocRamCrudEditor5=DocRamCrudEditor5;
 if(!window.customElements.get('av-doc-ram-crud-editor-5')){window.customElements.define('av-doc-ram-crud-editor-5', DocRamCrudEditor5);Aventus.WebComponentInstance.registerDefinition(DocRamCrudEditor5);}
@@ -13336,7 +13959,7 @@ const DocRamCreateEditor3 = class DocRamCreateEditor3 extends BaseEditor {
         return "ExampleRAM/src/Shape.ram.avt";
     }
 }
-DocRamCreateEditor3.Namespace=`${moduleName}`;
+DocRamCreateEditor3.Namespace=`AventusWebsite`;
 DocRamCreateEditor3.Tag=`av-doc-ram-create-editor-3`;
 _.DocRamCreateEditor3=DocRamCreateEditor3;
 if(!window.customElements.get('av-doc-ram-create-editor-3')){window.customElements.define('av-doc-ram-create-editor-3', DocRamCreateEditor3);Aventus.WebComponentInstance.registerDefinition(DocRamCreateEditor3);}
@@ -13364,7 +13987,7 @@ const DocRamCreateEditor1 = class DocRamCreateEditor1 extends BaseEditor {
         return "ExampleRAM/src/Person.ram.avt";
     }
 }
-DocRamCreateEditor1.Namespace=`${moduleName}`;
+DocRamCreateEditor1.Namespace=`AventusWebsite`;
 DocRamCreateEditor1.Tag=`av-doc-ram-create-editor-1`;
 _.DocRamCreateEditor1=DocRamCreateEditor1;
 if(!window.customElements.get('av-doc-ram-create-editor-1')){window.customElements.define('av-doc-ram-create-editor-1', DocRamCreateEditor1);Aventus.WebComponentInstance.registerDefinition(DocRamCreateEditor1);}
@@ -13389,7 +14012,7 @@ const DocRamCreateEditor2 = class DocRamCreateEditor2 extends DocRamCreateEditor
         return "DocRamCreateEditor2";
     }
 }
-DocRamCreateEditor2.Namespace=`${moduleName}`;
+DocRamCreateEditor2.Namespace=`AventusWebsite`;
 DocRamCreateEditor2.Tag=`av-doc-ram-create-editor-2`;
 _.DocRamCreateEditor2=DocRamCreateEditor2;
 if(!window.customElements.get('av-doc-ram-create-editor-2')){window.customElements.define('av-doc-ram-create-editor-2', DocRamCreateEditor2);Aventus.WebComponentInstance.registerDefinition(DocRamCreateEditor2);}
@@ -13417,7 +14040,7 @@ const DocDateCreateEditor1 = class DocDateCreateEditor1 extends BaseEditor {
         return "ExampleData/src/Person.data.avt";
     }
 }
-DocDateCreateEditor1.Namespace=`${moduleName}`;
+DocDateCreateEditor1.Namespace=`AventusWebsite`;
 DocDateCreateEditor1.Tag=`av-doc-date-create-editor-1`;
 _.DocDateCreateEditor1=DocDateCreateEditor1;
 if(!window.customElements.get('av-doc-date-create-editor-1')){window.customElements.define('av-doc-date-create-editor-1', DocDateCreateEditor1);Aventus.WebComponentInstance.registerDefinition(DocDateCreateEditor1);}
@@ -13445,7 +14068,7 @@ const DocDateCreateEditor2 = class DocDateCreateEditor2 extends DocDateCreateEdi
         return "ExampleData/src/Test.lib.avt";
     }
 }
-DocDateCreateEditor2.Namespace=`${moduleName}`;
+DocDateCreateEditor2.Namespace=`AventusWebsite`;
 DocDateCreateEditor2.Tag=`av-doc-date-create-editor-2`;
 _.DocDateCreateEditor2=DocDateCreateEditor2;
 if(!window.customElements.get('av-doc-date-create-editor-2')){window.customElements.define('av-doc-date-create-editor-2', DocDateCreateEditor2);Aventus.WebComponentInstance.registerDefinition(DocDateCreateEditor2);}
@@ -13462,14 +14085,14 @@ const DocIntroduction = class DocIntroduction extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Introduction</h1><p>Aventus is a framework that allow you to create complex user interfaces by splitting common parts of a    front-end application in several well knowned files. It builds on top of standard HTML, CSS, JavaScript    and provide a way to keep your development under control.</p><p>Here is a minimal example:</p><av-code-editor name="Button example">    <av-code language="typescript" tab="1" filename="Button/Button.wcl.avt">        export class DocIntroductionButton extends Aventus.WebComponent implements Aventus.DefaultComponent {            @Property()            private count: number = 0;            private onClick(): void {                this.count++;            }        }    </av-code></av-code>    <av-code language="html" tab="1" filename="Button/Button.wcv.avt">        <button @click="onClick">Count is {{ this.count }}</button>    </av-code></av-code>    <av-code language="css" tab="1" filename="Button/Button.wcs.avt">        :host {            button {                background-color: #e5540e;                border: none;                border-radius: 5px;                color: white;                cursor: pointer;                padding: 5px 15px;            }        }    </av-code></av-code>    <av-doc-introduction-button slot="result"></av-doc-introduction-button></av-code-editor><p>To understand the capabilities of Aventus, you need to learn about the following:</p><ul>    <li><span class="cn">Webcomponent</span></li>    <li><span class="cn">Data / Storage</span></li>    <li><span class="cn">States</span></li>    <li><span class="cn">Websocket</span></li></ul>` }
+        blocks: { 'default':`<h1>Introduction</h1><p>Aventus is a framework that allow you to create complex user interfaces by splitting common parts of a    front-end application in several well knowned files. It builds on top of standard HTML, CSS, JavaScript    and provide a way to keep your development under control.</p><p>Here is a minimal example:</p><av-code-editor name="Button example">    <av-code language="typescript" tab="1" filename="Button/Button.wcl.avt">        export class DocIntroductionButton extends Aventus.WebComponent implements Aventus.DefaultComponent {            @Property()            private count: number = 0;            private onClick(): void {                this.count++;            }        }    </av-code></av-code>    <av-code language="html" tab="1" filename="Button/Button.wcv.avt">        <button @click="onClick">Count is {{ this.count }}</button>    </av-code></av-code>    <av-code language="css" tab="1" filename="Button/Button.wcs.avt">        :host {            button {                background-color: #e5540e;                border: none;                border-radius: 5px;                color: white;                cursor: pointer;                padding: 5px 15px;            }        }    </av-code></av-code>    <av-doc-introduction-button slot="result"></av-doc-introduction-button></av-code-editor><p>To understand the capabilities of Aventus, you need to learn about the following:</p><ul>    <li><span class="cn">Webcomponent</span></li>    <li><span class="cn">Data / Storage</span></li>    <li><span class="cn">States</span></li>    <li><span class="cn">Http Request</span></li></ul>` }
     });
 }
     getClassName() {
         return "DocIntroduction";
     }
 }
-DocIntroduction.Namespace=`${moduleName}`;
+DocIntroduction.Namespace=`AventusWebsite`;
 DocIntroduction.Tag=`av-doc-introduction`;
 _.DocIntroduction=DocIntroduction;
 if(!window.customElements.get('av-doc-introduction')){window.customElements.define('av-doc-introduction', DocIntroduction);Aventus.WebComponentInstance.registerDefinition(DocIntroduction);}
@@ -13493,7 +14116,7 @@ const DocExperience = class DocExperience extends DocGenericPage {
         return "DocExperience";
     }
 }
-DocExperience.Namespace=`${moduleName}`;
+DocExperience.Namespace=`AventusWebsite`;
 DocExperience.Tag=`av-doc-experience`;
 _.DocExperience=DocExperience;
 if(!window.customElements.get('av-doc-experience')){window.customElements.define('av-doc-experience', DocExperience);Aventus.WebComponentInstance.registerDefinition(DocExperience);}
@@ -13521,7 +14144,7 @@ const DocFirstAppEditor1 = class DocFirstAppEditor1 extends BaseEditor {
         return "HelloAventus/aventus.conf.avt";
     }
 }
-DocFirstAppEditor1.Namespace=`${moduleName}`;
+DocFirstAppEditor1.Namespace=`AventusWebsite`;
 DocFirstAppEditor1.Tag=`av-doc-first-app-editor-1`;
 _.DocFirstAppEditor1=DocFirstAppEditor1;
 if(!window.customElements.get('av-doc-first-app-editor-1')){window.customElements.define('av-doc-first-app-editor-1', DocFirstAppEditor1);Aventus.WebComponentInstance.registerDefinition(DocFirstAppEditor1);}
@@ -13546,7 +14169,7 @@ const DocFirstAppEditor2 = class DocFirstAppEditor2 extends DocFirstAppEditor1 {
         return "DocFirstAppEditor2";
     }
 }
-DocFirstAppEditor2.Namespace=`${moduleName}`;
+DocFirstAppEditor2.Namespace=`AventusWebsite`;
 DocFirstAppEditor2.Tag=`av-doc-first-app-editor-2`;
 _.DocFirstAppEditor2=DocFirstAppEditor2;
 if(!window.customElements.get('av-doc-first-app-editor-2')){window.customElements.define('av-doc-first-app-editor-2', DocFirstAppEditor2);Aventus.WebComponentInstance.registerDefinition(DocFirstAppEditor2);}
@@ -13574,7 +14197,7 @@ const DocFirstAppEditor3 = class DocFirstAppEditor3 extends DocFirstAppEditor2 {
         return "HelloAventus/src/MyComponent.wcs.avt";
     }
 }
-DocFirstAppEditor3.Namespace=`${moduleName}`;
+DocFirstAppEditor3.Namespace=`AventusWebsite`;
 DocFirstAppEditor3.Tag=`av-doc-first-app-editor-3`;
 _.DocFirstAppEditor3=DocFirstAppEditor3;
 if(!window.customElements.get('av-doc-first-app-editor-3')){window.customElements.define('av-doc-first-app-editor-3', DocFirstAppEditor3);Aventus.WebComponentInstance.registerDefinition(DocFirstAppEditor3);}
@@ -13602,7 +14225,7 @@ const DocFirstAppEditor4 = class DocFirstAppEditor4 extends DocFirstAppEditor3 {
         return "HelloAventus/static/index.html";
     }
 }
-DocFirstAppEditor4.Namespace=`${moduleName}`;
+DocFirstAppEditor4.Namespace=`AventusWebsite`;
 DocFirstAppEditor4.Tag=`av-doc-first-app-editor-4`;
 _.DocFirstAppEditor4=DocFirstAppEditor4;
 if(!window.customElements.get('av-doc-first-app-editor-4')){window.customElements.define('av-doc-first-app-editor-4', DocFirstAppEditor4);Aventus.WebComponentInstance.registerDefinition(DocFirstAppEditor4);}
@@ -13629,7 +14252,7 @@ const DocFirstAppEditor5 = class DocFirstAppEditor5 extends DocFirstAppEditor4 {
         return "HelloAventus/aventus.conf.avt";
     }
 }
-DocFirstAppEditor5.Namespace=`${moduleName}`;
+DocFirstAppEditor5.Namespace=`AventusWebsite`;
 DocFirstAppEditor5.Tag=`av-doc-first-app-editor-5`;
 _.DocFirstAppEditor5=DocFirstAppEditor5;
 if(!window.customElements.get('av-doc-first-app-editor-5')){window.customElements.define('av-doc-first-app-editor-5', DocFirstAppEditor5);Aventus.WebComponentInstance.registerDefinition(DocFirstAppEditor5);}
@@ -13653,7 +14276,7 @@ const DocFirstApp = class DocFirstApp extends DocGenericPage {
         return "DocFirstApp";
     }
 }
-DocFirstApp.Namespace=`${moduleName}`;
+DocFirstApp.Namespace=`AventusWebsite`;
 DocFirstApp.Tag=`av-doc-first-app`;
 _.DocFirstApp=DocFirstApp;
 if(!window.customElements.get('av-doc-first-app')){window.customElements.define('av-doc-first-app', DocFirstApp);Aventus.WebComponentInstance.registerDefinition(DocFirstApp);}
@@ -13677,7 +14300,7 @@ const DocDataCreate = class DocDataCreate extends DocGenericPage {
         return "DocDataCreate";
     }
 }
-DocDataCreate.Namespace=`${moduleName}`;
+DocDataCreate.Namespace=`AventusWebsite`;
 DocDataCreate.Tag=`av-doc-data-create`;
 _.DocDataCreate=DocDataCreate;
 if(!window.customElements.get('av-doc-data-create')){window.customElements.define('av-doc-data-create', DocDataCreate);Aventus.WebComponentInstance.registerDefinition(DocDataCreate);}
@@ -13701,7 +14324,7 @@ const DocRamCreate = class DocRamCreate extends DocGenericPage {
         return "DocRamCreate";
     }
 }
-DocRamCreate.Namespace=`${moduleName}`;
+DocRamCreate.Namespace=`AventusWebsite`;
 DocRamCreate.Tag=`av-doc-ram-create`;
 _.DocRamCreate=DocRamCreate;
 if(!window.customElements.get('av-doc-ram-create')){window.customElements.define('av-doc-ram-create', DocRamCreate);Aventus.WebComponentInstance.registerDefinition(DocRamCreate);}
@@ -13725,7 +14348,7 @@ const DocRamCrud = class DocRamCrud extends DocGenericPage {
         return "DocRamCrud";
     }
 }
-DocRamCrud.Namespace=`${moduleName}`;
+DocRamCrud.Namespace=`AventusWebsite`;
 DocRamCrud.Tag=`av-doc-ram-crud`;
 _.DocRamCrud=DocRamCrud;
 if(!window.customElements.get('av-doc-ram-crud')){window.customElements.define('av-doc-ram-crud', DocRamCrud);Aventus.WebComponentInstance.registerDefinition(DocRamCrud);}
@@ -13749,7 +14372,7 @@ const DocRamListenChanges = class DocRamListenChanges extends DocGenericPage {
         return "DocRamListenChanges";
     }
 }
-DocRamListenChanges.Namespace=`${moduleName}`;
+DocRamListenChanges.Namespace=`AventusWebsite`;
 DocRamListenChanges.Tag=`av-doc-ram-listen-changes`;
 _.DocRamListenChanges=DocRamListenChanges;
 if(!window.customElements.get('av-doc-ram-listen-changes')){window.customElements.define('av-doc-ram-listen-changes', DocRamListenChanges);Aventus.WebComponentInstance.registerDefinition(DocRamListenChanges);}
@@ -13773,7 +14396,7 @@ const DocRamMixin = class DocRamMixin extends DocGenericPage {
         return "DocRamMixin";
     }
 }
-DocRamMixin.Namespace=`${moduleName}`;
+DocRamMixin.Namespace=`AventusWebsite`;
 DocRamMixin.Tag=`av-doc-ram-mixin`;
 _.DocRamMixin=DocRamMixin;
 if(!window.customElements.get('av-doc-ram-mixin')){window.customElements.define('av-doc-ram-mixin', DocRamMixin);Aventus.WebComponentInstance.registerDefinition(DocRamMixin);}
@@ -13797,7 +14420,7 @@ const DocStateCreate = class DocStateCreate extends DocGenericPage {
         return "DocStateCreate";
     }
 }
-DocStateCreate.Namespace=`${moduleName}`;
+DocStateCreate.Namespace=`AventusWebsite`;
 DocStateCreate.Tag=`av-doc-state-create`;
 _.DocStateCreate=DocStateCreate;
 if(!window.customElements.get('av-doc-state-create')){window.customElements.define('av-doc-state-create', DocStateCreate);Aventus.WebComponentInstance.registerDefinition(DocStateCreate);}
@@ -13821,7 +14444,7 @@ const DocStateChange = class DocStateChange extends DocGenericPage {
         return "DocStateChange";
     }
 }
-DocStateChange.Namespace=`${moduleName}`;
+DocStateChange.Namespace=`AventusWebsite`;
 DocStateChange.Tag=`av-doc-state-change`;
 _.DocStateChange=DocStateChange;
 if(!window.customElements.get('av-doc-state-change')){window.customElements.define('av-doc-state-change', DocStateChange);Aventus.WebComponentInstance.registerDefinition(DocStateChange);}
@@ -13845,7 +14468,7 @@ const DocStateListen = class DocStateListen extends DocGenericPage {
         return "DocStateListen";
     }
 }
-DocStateListen.Namespace=`${moduleName}`;
+DocStateListen.Namespace=`AventusWebsite`;
 DocStateListen.Tag=`av-doc-state-listen`;
 _.DocStateListen=DocStateListen;
 if(!window.customElements.get('av-doc-state-listen')){window.customElements.define('av-doc-state-listen', DocStateListen);Aventus.WebComponentInstance.registerDefinition(DocStateListen);}
@@ -13873,7 +14496,7 @@ const DocWcCreateEditor1 = class DocWcCreateEditor1 extends BaseEditor {
         return "ComponentExample/static/index.html";
     }
 }
-DocWcCreateEditor1.Namespace=`${moduleName}`;
+DocWcCreateEditor1.Namespace=`AventusWebsite`;
 DocWcCreateEditor1.Tag=`av-doc-wc-create-editor-1`;
 _.DocWcCreateEditor1=DocWcCreateEditor1;
 if(!window.customElements.get('av-doc-wc-create-editor-1')){window.customElements.define('av-doc-wc-create-editor-1', DocWcCreateEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor1);}
@@ -13901,7 +14524,7 @@ const DocWcCreateEditor2 = class DocWcCreateEditor2 extends BaseEditor {
         return "ComponentExample/src/Error/Error.wcv.avt";
     }
 }
-DocWcCreateEditor2.Namespace=`${moduleName}`;
+DocWcCreateEditor2.Namespace=`AventusWebsite`;
 DocWcCreateEditor2.Tag=`av-doc-wc-create-editor-2`;
 _.DocWcCreateEditor2=DocWcCreateEditor2;
 if(!window.customElements.get('av-doc-wc-create-editor-2')){window.customElements.define('av-doc-wc-create-editor-2', DocWcCreateEditor2);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor2);}
@@ -13929,7 +14552,7 @@ const DocWcCreateEditor3 = class DocWcCreateEditor3 extends BaseEditor {
         return "ComponentExample/src/ErrorYellow/ErrorYellow.wcv.avt";
     }
 }
-DocWcCreateEditor3.Namespace=`${moduleName}`;
+DocWcCreateEditor3.Namespace=`AventusWebsite`;
 DocWcCreateEditor3.Tag=`av-doc-wc-create-editor-3`;
 _.DocWcCreateEditor3=DocWcCreateEditor3;
 if(!window.customElements.get('av-doc-wc-create-editor-3')){window.customElements.define('av-doc-wc-create-editor-3', DocWcCreateEditor3);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor3);}
@@ -13957,7 +14580,7 @@ const DocWcCreateEditor4 = class DocWcCreateEditor4 extends BaseEditor {
         return "ComponentExample/src/Clock/Clock.wcv.avt";
     }
 }
-DocWcCreateEditor4.Namespace=`${moduleName}`;
+DocWcCreateEditor4.Namespace=`AventusWebsite`;
 DocWcCreateEditor4.Tag=`av-doc-wc-create-editor-4`;
 _.DocWcCreateEditor4=DocWcCreateEditor4;
 if(!window.customElements.get('av-doc-wc-create-editor-4')){window.customElements.define('av-doc-wc-create-editor-4', DocWcCreateEditor4);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor4);}
@@ -13981,7 +14604,7 @@ const DocWcCreate = class DocWcCreate extends DocGenericPage {
         return "DocWcCreate";
     }
 }
-DocWcCreate.Namespace=`${moduleName}`;
+DocWcCreate.Namespace=`AventusWebsite`;
 DocWcCreate.Tag=`av-doc-wc-create`;
 _.DocWcCreate=DocWcCreate;
 if(!window.customElements.get('av-doc-wc-create')){window.customElements.define('av-doc-wc-create', DocWcCreate);Aventus.WebComponentInstance.registerDefinition(DocWcCreate);}
@@ -14029,7 +14652,7 @@ const DocWcInheritanceEditor2Input = class DocWcInheritanceEditor2Input extends 
         this.inputEl.value = this.value ?? '&nbsp;';
     }
 }
-DocWcInheritanceEditor2Input.Namespace=`${moduleName}`;
+DocWcInheritanceEditor2Input.Namespace=`AventusWebsite`;
 DocWcInheritanceEditor2Input.Tag=`av-doc-wc-inheritance-editor-2-input`;
 _.DocWcInheritanceEditor2Input=DocWcInheritanceEditor2Input;
 if(!window.customElements.get('av-doc-wc-inheritance-editor-2-input')){window.customElements.define('av-doc-wc-inheritance-editor-2-input', DocWcInheritanceEditor2Input);Aventus.WebComponentInstance.registerDefinition(DocWcInheritanceEditor2Input);}
@@ -14068,7 +14691,7 @@ const DocWcInheritanceEditor2 = class DocWcInheritanceEditor2 extends DocWcInher
         return el;
     }
 }
-DocWcInheritanceEditor2.Namespace=`${moduleName}`;
+DocWcInheritanceEditor2.Namespace=`AventusWebsite`;
 DocWcInheritanceEditor2.Tag=`av-doc-wc-inheritance-editor-2`;
 _.DocWcInheritanceEditor2=DocWcInheritanceEditor2;
 if(!window.customElements.get('av-doc-wc-inheritance-editor-2')){window.customElements.define('av-doc-wc-inheritance-editor-2', DocWcInheritanceEditor2);Aventus.WebComponentInstance.registerDefinition(DocWcInheritanceEditor2);}
@@ -14116,7 +14739,7 @@ const DocWcInheritanceEditor3Input = class DocWcInheritanceEditor3Input extends 
         this.inputEl.value = this.value ?? '&nbsp;';
     }
 }
-DocWcInheritanceEditor3Input.Namespace=`${moduleName}`;
+DocWcInheritanceEditor3Input.Namespace=`AventusWebsite`;
 DocWcInheritanceEditor3Input.Tag=`av-doc-wc-inheritance-editor-3-input`;
 _.DocWcInheritanceEditor3Input=DocWcInheritanceEditor3Input;
 if(!window.customElements.get('av-doc-wc-inheritance-editor-3-input')){window.customElements.define('av-doc-wc-inheritance-editor-3-input', DocWcInheritanceEditor3Input);Aventus.WebComponentInstance.registerDefinition(DocWcInheritanceEditor3Input);}
@@ -14155,7 +14778,7 @@ const DocWcInheritanceEditor3 = class DocWcInheritanceEditor3 extends DocWcInher
         return el;
     }
 }
-DocWcInheritanceEditor3.Namespace=`${moduleName}`;
+DocWcInheritanceEditor3.Namespace=`AventusWebsite`;
 DocWcInheritanceEditor3.Tag=`av-doc-wc-inheritance-editor-3`;
 _.DocWcInheritanceEditor3=DocWcInheritanceEditor3;
 if(!window.customElements.get('av-doc-wc-inheritance-editor-3')){window.customElements.define('av-doc-wc-inheritance-editor-3', DocWcInheritanceEditor3);Aventus.WebComponentInstance.registerDefinition(DocWcInheritanceEditor3);}
@@ -14195,7 +14818,7 @@ const DocWcInheritanceEditor4 = class DocWcInheritanceEditor4 extends DocWcInher
         return el;
     }
 }
-DocWcInheritanceEditor4.Namespace=`${moduleName}`;
+DocWcInheritanceEditor4.Namespace=`AventusWebsite`;
 DocWcInheritanceEditor4.Tag=`av-doc-wc-inheritance-editor-4`;
 _.DocWcInheritanceEditor4=DocWcInheritanceEditor4;
 if(!window.customElements.get('av-doc-wc-inheritance-editor-4')){window.customElements.define('av-doc-wc-inheritance-editor-4', DocWcInheritanceEditor4);Aventus.WebComponentInstance.registerDefinition(DocWcInheritanceEditor4);}
@@ -14219,7 +14842,7 @@ const DocWcInheritance = class DocWcInheritance extends DocGenericPage {
         return "DocWcInheritance";
     }
 }
-DocWcInheritance.Namespace=`${moduleName}`;
+DocWcInheritance.Namespace=`AventusWebsite`;
 DocWcInheritance.Tag=`av-doc-wc-inheritance`;
 _.DocWcInheritance=DocWcInheritance;
 if(!window.customElements.get('av-doc-wc-inheritance')){window.customElements.define('av-doc-wc-inheritance', DocWcInheritance);Aventus.WebComponentInstance.registerDefinition(DocWcInheritance);}
@@ -14253,7 +14876,7 @@ const DocWcAttributeEditor1 = class DocWcAttributeEditor1 extends BaseEditor {
         return cont;
     }
 }
-DocWcAttributeEditor1.Namespace=`${moduleName}`;
+DocWcAttributeEditor1.Namespace=`AventusWebsite`;
 DocWcAttributeEditor1.Tag=`av-doc-wc-attribute-editor-1`;
 _.DocWcAttributeEditor1=DocWcAttributeEditor1;
 if(!window.customElements.get('av-doc-wc-attribute-editor-1')){window.customElements.define('av-doc-wc-attribute-editor-1', DocWcAttributeEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcAttributeEditor1);}
@@ -14277,7 +14900,7 @@ const DocWcAttribute = class DocWcAttribute extends DocGenericPage {
         return "DocWcAttribute";
     }
 }
-DocWcAttribute.Namespace=`${moduleName}`;
+DocWcAttribute.Namespace=`AventusWebsite`;
 DocWcAttribute.Tag=`av-doc-wc-attribute`;
 _.DocWcAttribute=DocWcAttribute;
 if(!window.customElements.get('av-doc-wc-attribute')){window.customElements.define('av-doc-wc-attribute', DocWcAttribute);Aventus.WebComponentInstance.registerDefinition(DocWcAttribute);}
@@ -14305,7 +14928,7 @@ const DocWcPropertyEditor1 = class DocWcPropertyEditor1 extends BaseEditor {
         return new DocWcPropertyEditor1Example();
     }
 }
-DocWcPropertyEditor1.Namespace=`${moduleName}`;
+DocWcPropertyEditor1.Namespace=`AventusWebsite`;
 DocWcPropertyEditor1.Tag=`av-doc-wc-property-editor-1`;
 _.DocWcPropertyEditor1=DocWcPropertyEditor1;
 if(!window.customElements.get('av-doc-wc-property-editor-1')){window.customElements.define('av-doc-wc-property-editor-1', DocWcPropertyEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcPropertyEditor1);}
@@ -14329,7 +14952,7 @@ const DocWcProperty = class DocWcProperty extends DocGenericPage {
         return "DocWcProperty";
     }
 }
-DocWcProperty.Namespace=`${moduleName}`;
+DocWcProperty.Namespace=`AventusWebsite`;
 DocWcProperty.Tag=`av-doc-wc-property`;
 _.DocWcProperty=DocWcProperty;
 if(!window.customElements.get('av-doc-wc-property')){window.customElements.define('av-doc-wc-property', DocWcProperty);Aventus.WebComponentInstance.registerDefinition(DocWcProperty);}
@@ -14370,6 +14993,7 @@ const DocWcWatchEditor1Example = class DocWcWatchEditor1Example extends Aventus.
         return "DocWcWatchEditor1Example";
     }
     __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["person"] = undefined; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('person'); }
     postCreation() {
         this.person = new DocWcWatchEditor1Person();
     }
@@ -14377,7 +15001,7 @@ const DocWcWatchEditor1Example = class DocWcWatchEditor1Example extends Aventus.
         return this.person?.name;
     }
 }
-DocWcWatchEditor1Example.Namespace=`${moduleName}`;
+DocWcWatchEditor1Example.Namespace=`AventusWebsite`;
 DocWcWatchEditor1Example.Tag=`av-doc-wc-watch-editor-1-example`;
 _.DocWcWatchEditor1Example=DocWcWatchEditor1Example;
 if(!window.customElements.get('av-doc-wc-watch-editor-1-example')){window.customElements.define('av-doc-wc-watch-editor-1-example', DocWcWatchEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocWcWatchEditor1Example);}
@@ -14405,7 +15029,7 @@ const DocWcWatchEditor1 = class DocWcWatchEditor1 extends BaseEditor {
         return new DocWcWatchEditor1Example();
     }
 }
-DocWcWatchEditor1.Namespace=`${moduleName}`;
+DocWcWatchEditor1.Namespace=`AventusWebsite`;
 DocWcWatchEditor1.Tag=`av-doc-wc-watch-editor-1`;
 _.DocWcWatchEditor1=DocWcWatchEditor1;
 if(!window.customElements.get('av-doc-wc-watch-editor-1')){window.customElements.define('av-doc-wc-watch-editor-1', DocWcWatchEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcWatchEditor1);}
@@ -14429,7 +15053,7 @@ const DocWcWatch = class DocWcWatch extends DocGenericPage {
         return "DocWcWatch";
     }
 }
-DocWcWatch.Namespace=`${moduleName}`;
+DocWcWatch.Namespace=`AventusWebsite`;
 DocWcWatch.Tag=`av-doc-wc-watch`;
 _.DocWcWatch=DocWcWatch;
 if(!window.customElements.get('av-doc-wc-watch')){window.customElements.define('av-doc-wc-watch', DocWcWatch);Aventus.WebComponentInstance.registerDefinition(DocWcWatch);}
@@ -14466,7 +15090,7 @@ const DocWcStyleEditor1 = class DocWcStyleEditor1 extends BaseEditor {
         return el;
     }
 }
-DocWcStyleEditor1.Namespace=`${moduleName}`;
+DocWcStyleEditor1.Namespace=`AventusWebsite`;
 DocWcStyleEditor1.Tag=`av-doc-wc-style-editor-1`;
 _.DocWcStyleEditor1=DocWcStyleEditor1;
 if(!window.customElements.get('av-doc-wc-style-editor-1')){window.customElements.define('av-doc-wc-style-editor-1', DocWcStyleEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcStyleEditor1);}
@@ -14491,7 +15115,7 @@ const DocWcStyleEditor2Child = class DocWcStyleEditor2Child extends DocWcStyleEd
         return "DocWcStyleEditor2Child";
     }
 }
-DocWcStyleEditor2Child.Namespace=`${moduleName}`;
+DocWcStyleEditor2Child.Namespace=`AventusWebsite`;
 DocWcStyleEditor2Child.Tag=`av-doc-wc-style-editor-2-child`;
 _.DocWcStyleEditor2Child=DocWcStyleEditor2Child;
 if(!window.customElements.get('av-doc-wc-style-editor-2-child')){window.customElements.define('av-doc-wc-style-editor-2-child', DocWcStyleEditor2Child);Aventus.WebComponentInstance.registerDefinition(DocWcStyleEditor2Child);}
@@ -14533,7 +15157,7 @@ const DocWcStyleEditor2 = class DocWcStyleEditor2 extends BaseEditor {
         return el;
     }
 }
-DocWcStyleEditor2.Namespace=`${moduleName}`;
+DocWcStyleEditor2.Namespace=`AventusWebsite`;
 DocWcStyleEditor2.Tag=`av-doc-wc-style-editor-2`;
 _.DocWcStyleEditor2=DocWcStyleEditor2;
 if(!window.customElements.get('av-doc-wc-style-editor-2')){window.customElements.define('av-doc-wc-style-editor-2', DocWcStyleEditor2);Aventus.WebComponentInstance.registerDefinition(DocWcStyleEditor2);}
@@ -14561,7 +15185,7 @@ const DocWcStyleEditor4 = class DocWcStyleEditor4 extends BaseEditor {
         return new DocWcStyleEditor4Example();
     }
 }
-DocWcStyleEditor4.Namespace=`${moduleName}`;
+DocWcStyleEditor4.Namespace=`AventusWebsite`;
 DocWcStyleEditor4.Tag=`av-doc-wc-style-editor-4`;
 _.DocWcStyleEditor4=DocWcStyleEditor4;
 if(!window.customElements.get('av-doc-wc-style-editor-4')){window.customElements.define('av-doc-wc-style-editor-4', DocWcStyleEditor4);Aventus.WebComponentInstance.registerDefinition(DocWcStyleEditor4);}
@@ -14585,7 +15209,7 @@ const DocWcStyle = class DocWcStyle extends DocGenericPage {
         return "DocWcStyle";
     }
 }
-DocWcStyle.Namespace=`${moduleName}`;
+DocWcStyle.Namespace=`AventusWebsite`;
 DocWcStyle.Tag=`av-doc-wc-style`;
 _.DocWcStyle=DocWcStyle;
 if(!window.customElements.get('av-doc-wc-style')){window.customElements.define('av-doc-wc-style', DocWcStyle);Aventus.WebComponentInstance.registerDefinition(DocWcStyle);}
@@ -14609,7 +15233,7 @@ const DocWcInterpolation = class DocWcInterpolation extends DocGenericPage {
         return "DocWcInterpolation";
     }
 }
-DocWcInterpolation.Namespace=`${moduleName}`;
+DocWcInterpolation.Namespace=`AventusWebsite`;
 DocWcInterpolation.Tag=`av-doc-wc-interpolation`;
 _.DocWcInterpolation=DocWcInterpolation;
 if(!window.customElements.get('av-doc-wc-interpolation')){window.customElements.define('av-doc-wc-interpolation', DocWcInterpolation);Aventus.WebComponentInstance.registerDefinition(DocWcInterpolation);}
@@ -14646,7 +15270,7 @@ const DocWcBindingEditor1 = class DocWcBindingEditor1 extends BaseEditor {
         return new DocWcBindingEditor1Example();
     }
 }
-DocWcBindingEditor1.Namespace=`${moduleName}`;
+DocWcBindingEditor1.Namespace=`AventusWebsite`;
 DocWcBindingEditor1.Tag=`av-doc-wc-binding-editor-1`;
 _.DocWcBindingEditor1=DocWcBindingEditor1;
 if(!window.customElements.get('av-doc-wc-binding-editor-1')){window.customElements.define('av-doc-wc-binding-editor-1', DocWcBindingEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcBindingEditor1);}
@@ -14674,7 +15298,7 @@ const DocWcBindingEditor2 = class DocWcBindingEditor2 extends DocWcBindingEditor
         return new DocWcBindingEditor2Example();
     }
 }
-DocWcBindingEditor2.Namespace=`${moduleName}`;
+DocWcBindingEditor2.Namespace=`AventusWebsite`;
 DocWcBindingEditor2.Tag=`av-doc-wc-binding-editor-2`;
 _.DocWcBindingEditor2=DocWcBindingEditor2;
 if(!window.customElements.get('av-doc-wc-binding-editor-2')){window.customElements.define('av-doc-wc-binding-editor-2', DocWcBindingEditor2);Aventus.WebComponentInstance.registerDefinition(DocWcBindingEditor2);}
@@ -14727,6 +15351,7 @@ const DocWcBindingEditor3Example = class DocWcBindingEditor3Example extends Aven
         return "DocWcBindingEditor3Example";
     }
     __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["value"] = "My value"; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('value'); }
     __77083cda2f6373a8d72b2660cd45bdf9method2() {
         return this.value;
     }
@@ -14739,7 +15364,7 @@ const DocWcBindingEditor3Example = class DocWcBindingEditor3Example extends Aven
         }
     }
 }
-DocWcBindingEditor3Example.Namespace=`${moduleName}`;
+DocWcBindingEditor3Example.Namespace=`AventusWebsite`;
 DocWcBindingEditor3Example.Tag=`av-doc-wc-binding-editor-3-example`;
 _.DocWcBindingEditor3Example=DocWcBindingEditor3Example;
 if(!window.customElements.get('av-doc-wc-binding-editor-3-example')){window.customElements.define('av-doc-wc-binding-editor-3-example', DocWcBindingEditor3Example);Aventus.WebComponentInstance.registerDefinition(DocWcBindingEditor3Example);}
@@ -14776,7 +15401,7 @@ const DocWcBindingEditor3 = class DocWcBindingEditor3 extends BaseEditor {
         return new DocWcBindingEditor3Example();
     }
 }
-DocWcBindingEditor3.Namespace=`${moduleName}`;
+DocWcBindingEditor3.Namespace=`AventusWebsite`;
 DocWcBindingEditor3.Tag=`av-doc-wc-binding-editor-3`;
 _.DocWcBindingEditor3=DocWcBindingEditor3;
 if(!window.customElements.get('av-doc-wc-binding-editor-3')){window.customElements.define('av-doc-wc-binding-editor-3', DocWcBindingEditor3);Aventus.WebComponentInstance.registerDefinition(DocWcBindingEditor3);}
@@ -14829,6 +15454,7 @@ const DocWcBindingEditor4Example = class DocWcBindingEditor4Example extends Aven
         return "DocWcBindingEditor4Example";
     }
     __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["value"] = "My value"; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('value'); }
     __e31c65bc70f15a42dc3a676fbe4e86abmethod2() {
         return this.value;
     }
@@ -14841,7 +15467,7 @@ const DocWcBindingEditor4Example = class DocWcBindingEditor4Example extends Aven
         }
     }
 }
-DocWcBindingEditor4Example.Namespace=`${moduleName}`;
+DocWcBindingEditor4Example.Namespace=`AventusWebsite`;
 DocWcBindingEditor4Example.Tag=`av-doc-wc-binding-editor-4-example`;
 _.DocWcBindingEditor4Example=DocWcBindingEditor4Example;
 if(!window.customElements.get('av-doc-wc-binding-editor-4-example')){window.customElements.define('av-doc-wc-binding-editor-4-example', DocWcBindingEditor4Example);Aventus.WebComponentInstance.registerDefinition(DocWcBindingEditor4Example);}
@@ -14875,7 +15501,7 @@ const DocWcBindingEditor4 = class DocWcBindingEditor4 extends BaseEditor {
         return new DocWcBindingEditor4Example();
     }
 }
-DocWcBindingEditor4.Namespace=`${moduleName}`;
+DocWcBindingEditor4.Namespace=`AventusWebsite`;
 DocWcBindingEditor4.Tag=`av-doc-wc-binding-editor-4`;
 _.DocWcBindingEditor4=DocWcBindingEditor4;
 if(!window.customElements.get('av-doc-wc-binding-editor-4')){window.customElements.define('av-doc-wc-binding-editor-4', DocWcBindingEditor4);Aventus.WebComponentInstance.registerDefinition(DocWcBindingEditor4);}
@@ -14899,7 +15525,7 @@ const DocWcBinding = class DocWcBinding extends DocGenericPage {
         return "DocWcBinding";
     }
 }
-DocWcBinding.Namespace=`${moduleName}`;
+DocWcBinding.Namespace=`AventusWebsite`;
 DocWcBinding.Tag=`av-doc-wc-binding`;
 _.DocWcBinding=DocWcBinding;
 if(!window.customElements.get('av-doc-wc-binding')){window.customElements.define('av-doc-wc-binding', DocWcBinding);Aventus.WebComponentInstance.registerDefinition(DocWcBinding);}
@@ -14927,7 +15553,7 @@ const DocWcInjectionEditor1 = class DocWcInjectionEditor1 extends BaseEditor {
         return new DocWcInjectionEditor1Example();
     }
 }
-DocWcInjectionEditor1.Namespace=`${moduleName}`;
+DocWcInjectionEditor1.Namespace=`AventusWebsite`;
 DocWcInjectionEditor1.Tag=`av-doc-wc-injection-editor-1`;
 _.DocWcInjectionEditor1=DocWcInjectionEditor1;
 if(!window.customElements.get('av-doc-wc-injection-editor-1')){window.customElements.define('av-doc-wc-injection-editor-1', DocWcInjectionEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcInjectionEditor1);}
@@ -14955,7 +15581,7 @@ const DocWcInjectionEditor2 = class DocWcInjectionEditor2 extends BaseEditor {
         return new DocWcInjectionEditor2Example();
     }
 }
-DocWcInjectionEditor2.Namespace=`${moduleName}`;
+DocWcInjectionEditor2.Namespace=`AventusWebsite`;
 DocWcInjectionEditor2.Tag=`av-doc-wc-injection-editor-2`;
 _.DocWcInjectionEditor2=DocWcInjectionEditor2;
 if(!window.customElements.get('av-doc-wc-injection-editor-2')){window.customElements.define('av-doc-wc-injection-editor-2', DocWcInjectionEditor2);Aventus.WebComponentInstance.registerDefinition(DocWcInjectionEditor2);}
@@ -14979,7 +15605,7 @@ const DocWcInjection = class DocWcInjection extends DocGenericPage {
         return "DocWcInjection";
     }
 }
-DocWcInjection.Namespace=`${moduleName}`;
+DocWcInjection.Namespace=`AventusWebsite`;
 DocWcInjection.Tag=`av-doc-wc-injection`;
 _.DocWcInjection=DocWcInjection;
 if(!window.customElements.get('av-doc-wc-injection')){window.customElements.define('av-doc-wc-injection', DocWcInjection);Aventus.WebComponentInstance.registerDefinition(DocWcInjection);}
@@ -15039,6 +15665,7 @@ const DocWcLoopEditor1TodoList = class DocWcLoopEditor1TodoList extends Aventus.
         return "DocWcLoopEditor1TodoList";
     }
     __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["todos"] = []; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('todos'); }
     addTodo() {
         this.todoId++;
         let todo = new DocWcLoopEditor1Todo();
@@ -15059,7 +15686,7 @@ const DocWcLoopEditor1TodoList = class DocWcLoopEditor1TodoList extends Aventus.
         return this.todos[i].tasks[j];
     }
 }
-DocWcLoopEditor1TodoList.Namespace=`${moduleName}`;
+DocWcLoopEditor1TodoList.Namespace=`AventusWebsite`;
 DocWcLoopEditor1TodoList.Tag=`av-doc-wc-loop-editor-1-todo-list`;
 _.DocWcLoopEditor1TodoList=DocWcLoopEditor1TodoList;
 if(!window.customElements.get('av-doc-wc-loop-editor-1-todo-list')){window.customElements.define('av-doc-wc-loop-editor-1-todo-list', DocWcLoopEditor1TodoList);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor1TodoList);}
@@ -15090,7 +15717,7 @@ const DocWcLoopEditor1 = class DocWcLoopEditor1 extends BaseEditor {
         return 'For/src/TodoList/TodoList.wcv.avt';
     }
 }
-DocWcLoopEditor1.Namespace=`${moduleName}`;
+DocWcLoopEditor1.Namespace=`AventusWebsite`;
 DocWcLoopEditor1.Tag=`av-doc-wc-loop-editor-1`;
 _.DocWcLoopEditor1=DocWcLoopEditor1;
 if(!window.customElements.get('av-doc-wc-loop-editor-1')){window.customElements.define('av-doc-wc-loop-editor-1', DocWcLoopEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor1);}
@@ -15118,7 +15745,7 @@ const DocWcLoopEditor2 = class DocWcLoopEditor2 extends DocWcLoopEditor1 {
         return new DocWcLoopEditor2TodoList();
     }
 }
-DocWcLoopEditor2.Namespace=`${moduleName}`;
+DocWcLoopEditor2.Namespace=`AventusWebsite`;
 DocWcLoopEditor2.Tag=`av-doc-wc-loop-editor-2`;
 _.DocWcLoopEditor2=DocWcLoopEditor2;
 if(!window.customElements.get('av-doc-wc-loop-editor-2')){window.customElements.define('av-doc-wc-loop-editor-2', DocWcLoopEditor2);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor2);}
@@ -15146,7 +15773,7 @@ const DocWcLoopEditor3 = class DocWcLoopEditor3 extends DocWcLoopEditor2 {
         return new DocWcLoopEditor3TodoList();
     }
 }
-DocWcLoopEditor3.Namespace=`${moduleName}`;
+DocWcLoopEditor3.Namespace=`AventusWebsite`;
 DocWcLoopEditor3.Tag=`av-doc-wc-loop-editor-3`;
 _.DocWcLoopEditor3=DocWcLoopEditor3;
 if(!window.customElements.get('av-doc-wc-loop-editor-3')){window.customElements.define('av-doc-wc-loop-editor-3', DocWcLoopEditor3);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor3);}
@@ -15174,7 +15801,7 @@ const DocWcLoopEditor4 = class DocWcLoopEditor4 extends DocWcLoopEditor3 {
         return new DocWcLoopEditor4TodoList();
     }
 }
-DocWcLoopEditor4.Namespace=`${moduleName}`;
+DocWcLoopEditor4.Namespace=`AventusWebsite`;
 DocWcLoopEditor4.Tag=`av-doc-wc-loop-editor-4`;
 _.DocWcLoopEditor4=DocWcLoopEditor4;
 if(!window.customElements.get('av-doc-wc-loop-editor-4')){window.customElements.define('av-doc-wc-loop-editor-4', DocWcLoopEditor4);Aventus.WebComponentInstance.registerDefinition(DocWcLoopEditor4);}
@@ -15198,7 +15825,7 @@ const DocWcLoop = class DocWcLoop extends DocGenericPage {
         return "DocWcLoop";
     }
 }
-DocWcLoop.Namespace=`${moduleName}`;
+DocWcLoop.Namespace=`AventusWebsite`;
 DocWcLoop.Tag=`av-doc-wc-loop`;
 _.DocWcLoop=DocWcLoop;
 if(!window.customElements.get('av-doc-wc-loop')){window.customElements.define('av-doc-wc-loop', DocWcLoop);Aventus.WebComponentInstance.registerDefinition(DocWcLoop);}
@@ -15229,7 +15856,7 @@ const DocWcConditionEditor1 = class DocWcConditionEditor1 extends BaseEditor {
         return new DocWcConditionEditor1Example();
     }
 }
-DocWcConditionEditor1.Namespace=`${moduleName}`;
+DocWcConditionEditor1.Namespace=`AventusWebsite`;
 DocWcConditionEditor1.Tag=`av-doc-wc-condition-editor-1`;
 _.DocWcConditionEditor1=DocWcConditionEditor1;
 if(!window.customElements.get('av-doc-wc-condition-editor-1')){window.customElements.define('av-doc-wc-condition-editor-1', DocWcConditionEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcConditionEditor1);}
@@ -15253,7 +15880,7 @@ const DocWcCondition = class DocWcCondition extends DocGenericPage {
         return "DocWcCondition";
     }
 }
-DocWcCondition.Namespace=`${moduleName}`;
+DocWcCondition.Namespace=`AventusWebsite`;
 DocWcCondition.Tag=`av-doc-wc-condition`;
 _.DocWcCondition=DocWcCondition;
 if(!window.customElements.get('av-doc-wc-condition')){window.customElements.define('av-doc-wc-condition', DocWcCondition);Aventus.WebComponentInstance.registerDefinition(DocWcCondition);}
@@ -15284,7 +15911,7 @@ const DocWcEventEditor1 = class DocWcEventEditor1 extends BaseEditor {
         return new DocWcEventEditor1Example();
     }
 }
-DocWcEventEditor1.Namespace=`${moduleName}`;
+DocWcEventEditor1.Namespace=`AventusWebsite`;
 DocWcEventEditor1.Tag=`av-doc-wc-event-editor-1`;
 _.DocWcEventEditor1=DocWcEventEditor1;
 if(!window.customElements.get('av-doc-wc-event-editor-1')){window.customElements.define('av-doc-wc-event-editor-1', DocWcEventEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcEventEditor1);}
@@ -15321,7 +15948,7 @@ const DocWcEventEditor2Example = class DocWcEventEditor2Example extends Aventus.
         alert("Hello");
     }
 }
-DocWcEventEditor2Example.Namespace=`${moduleName}`;
+DocWcEventEditor2Example.Namespace=`AventusWebsite`;
 DocWcEventEditor2Example.Tag=`av-doc-wc-event-editor-2-example`;
 _.DocWcEventEditor2Example=DocWcEventEditor2Example;
 if(!window.customElements.get('av-doc-wc-event-editor-2-example')){window.customElements.define('av-doc-wc-event-editor-2-example', DocWcEventEditor2Example);Aventus.WebComponentInstance.registerDefinition(DocWcEventEditor2Example);}
@@ -15358,7 +15985,7 @@ const DocWcEventEditor2 = class DocWcEventEditor2 extends BaseEditor {
         return new DocWcEventEditor2Example();
     }
 }
-DocWcEventEditor2.Namespace=`${moduleName}`;
+DocWcEventEditor2.Namespace=`AventusWebsite`;
 DocWcEventEditor2.Tag=`av-doc-wc-event-editor-2`;
 _.DocWcEventEditor2=DocWcEventEditor2;
 if(!window.customElements.get('av-doc-wc-event-editor-2')){window.customElements.define('av-doc-wc-event-editor-2', DocWcEventEditor2);Aventus.WebComponentInstance.registerDefinition(DocWcEventEditor2);}
@@ -15382,7 +16009,7 @@ const DocWcEvent = class DocWcEvent extends DocGenericPage {
         return "DocWcEvent";
     }
 }
-DocWcEvent.Namespace=`${moduleName}`;
+DocWcEvent.Namespace=`AventusWebsite`;
 DocWcEvent.Tag=`av-doc-wc-event`;
 _.DocWcEvent=DocWcEvent;
 if(!window.customElements.get('av-doc-wc-event')){window.customElements.define('av-doc-wc-event', DocWcEvent);Aventus.WebComponentInstance.registerDefinition(DocWcEvent);}
@@ -15447,7 +16074,7 @@ const DocWcStateEditor1Example = class DocWcStateEditor1Example extends Aventus.
         }
     }
 }
-DocWcStateEditor1Example.Namespace=`${moduleName}`;
+DocWcStateEditor1Example.Namespace=`AventusWebsite`;
 DocWcStateEditor1Example.Tag=`av-doc-wc-state-editor-1-example`;
 _.DocWcStateEditor1Example=DocWcStateEditor1Example;
 if(!window.customElements.get('av-doc-wc-state-editor-1-example')){window.customElements.define('av-doc-wc-state-editor-1-example', DocWcStateEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocWcStateEditor1Example);}
@@ -15475,7 +16102,7 @@ const DocWcStateEditor1 = class DocWcStateEditor1 extends BaseEditor {
         return new DocWcStateEditor1Example();
     }
 }
-DocWcStateEditor1.Namespace=`${moduleName}`;
+DocWcStateEditor1.Namespace=`AventusWebsite`;
 DocWcStateEditor1.Tag=`av-doc-wc-state-editor-1`;
 _.DocWcStateEditor1=DocWcStateEditor1;
 if(!window.customElements.get('av-doc-wc-state-editor-1')){window.customElements.define('av-doc-wc-state-editor-1', DocWcStateEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcStateEditor1);}
@@ -15546,7 +16173,7 @@ const DocWcStateEditor2Example = class DocWcStateEditor2Example extends Aventus.
         }
     }
 }
-DocWcStateEditor2Example.Namespace=`${moduleName}`;
+DocWcStateEditor2Example.Namespace=`AventusWebsite`;
 DocWcStateEditor2Example.Tag=`av-doc-wc-state-editor-2-example`;
 _.DocWcStateEditor2Example=DocWcStateEditor2Example;
 if(!window.customElements.get('av-doc-wc-state-editor-2-example')){window.customElements.define('av-doc-wc-state-editor-2-example', DocWcStateEditor2Example);Aventus.WebComponentInstance.registerDefinition(DocWcStateEditor2Example);}
@@ -15574,7 +16201,7 @@ const DocWcStateEditor2 = class DocWcStateEditor2 extends DocWcStateEditor1 {
         return new DocWcStateEditor2Example();
     }
 }
-DocWcStateEditor2.Namespace=`${moduleName}`;
+DocWcStateEditor2.Namespace=`AventusWebsite`;
 DocWcStateEditor2.Tag=`av-doc-wc-state-editor-2`;
 _.DocWcStateEditor2=DocWcStateEditor2;
 if(!window.customElements.get('av-doc-wc-state-editor-2')){window.customElements.define('av-doc-wc-state-editor-2', DocWcStateEditor2);Aventus.WebComponentInstance.registerDefinition(DocWcStateEditor2);}
@@ -15598,7 +16225,7 @@ const DocWcState = class DocWcState extends DocGenericPage {
         return "DocWcState";
     }
 }
-DocWcState.Namespace=`${moduleName}`;
+DocWcState.Namespace=`AventusWebsite`;
 DocWcState.Tag=`av-doc-wc-state`;
 _.DocWcState=DocWcState;
 if(!window.customElements.get('av-doc-wc-state')){window.customElements.define('av-doc-wc-state', DocWcState);Aventus.WebComponentInstance.registerDefinition(DocWcState);}
@@ -15626,7 +16253,7 @@ const DocLibAnimationEditor1 = class DocLibAnimationEditor1 extends BaseEditor {
         return new DocLibAnimationEditor1Example();
     }
 }
-DocLibAnimationEditor1.Namespace=`${moduleName}`;
+DocLibAnimationEditor1.Namespace=`AventusWebsite`;
 DocLibAnimationEditor1.Tag=`av-doc-lib-animation-editor-1`;
 _.DocLibAnimationEditor1=DocLibAnimationEditor1;
 if(!window.customElements.get('av-doc-lib-animation-editor-1')){window.customElements.define('av-doc-lib-animation-editor-1', DocLibAnimationEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibAnimationEditor1);}
@@ -15650,7 +16277,7 @@ const DocLibAnimation = class DocLibAnimation extends DocGenericPage {
         return "DocLibAnimation";
     }
 }
-DocLibAnimation.Namespace=`${moduleName}`;
+DocLibAnimation.Namespace=`AventusWebsite`;
 DocLibAnimation.Tag=`av-doc-lib-animation`;
 _.DocLibAnimation=DocLibAnimation;
 if(!window.customElements.get('av-doc-lib-animation')){window.customElements.define('av-doc-lib-animation', DocLibAnimation);Aventus.WebComponentInstance.registerDefinition(DocLibAnimation);}
@@ -15687,7 +16314,7 @@ const DocLibCallbackEditor1 = class DocLibCallbackEditor1 extends BaseEditor {
         return div;
     }
 }
-DocLibCallbackEditor1.Namespace=`${moduleName}`;
+DocLibCallbackEditor1.Namespace=`AventusWebsite`;
 DocLibCallbackEditor1.Tag=`av-doc-lib-callback-editor-1`;
 _.DocLibCallbackEditor1=DocLibCallbackEditor1;
 if(!window.customElements.get('av-doc-lib-callback-editor-1')){window.customElements.define('av-doc-lib-callback-editor-1', DocLibCallbackEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibCallbackEditor1);}
@@ -15724,7 +16351,7 @@ const DocLibCallbackEditor2 = class DocLibCallbackEditor2 extends BaseEditor {
         return div;
     }
 }
-DocLibCallbackEditor2.Namespace=`${moduleName}`;
+DocLibCallbackEditor2.Namespace=`AventusWebsite`;
 DocLibCallbackEditor2.Tag=`av-doc-lib-callback-editor-2`;
 _.DocLibCallbackEditor2=DocLibCallbackEditor2;
 if(!window.customElements.get('av-doc-lib-callback-editor-2')){window.customElements.define('av-doc-lib-callback-editor-2', DocLibCallbackEditor2);Aventus.WebComponentInstance.registerDefinition(DocLibCallbackEditor2);}
@@ -15748,7 +16375,7 @@ const DocLibCallback = class DocLibCallback extends DocGenericPage {
         return "DocLibCallback";
     }
 }
-DocLibCallback.Namespace=`${moduleName}`;
+DocLibCallback.Namespace=`AventusWebsite`;
 DocLibCallback.Tag=`av-doc-lib-callback`;
 _.DocLibCallback=DocLibCallback;
 if(!window.customElements.get('av-doc-lib-callback')){window.customElements.define('av-doc-lib-callback', DocLibCallback);Aventus.WebComponentInstance.registerDefinition(DocLibCallback);}
@@ -15776,7 +16403,7 @@ const DocLibDragAndDropEditor1 = class DocLibDragAndDropEditor1 extends BaseEdit
         return new DocLibDragAndDropEditor1Example();
     }
 }
-DocLibDragAndDropEditor1.Namespace=`${moduleName}`;
+DocLibDragAndDropEditor1.Namespace=`AventusWebsite`;
 DocLibDragAndDropEditor1.Tag=`av-doc-lib-drag-and-drop-editor-1`;
 _.DocLibDragAndDropEditor1=DocLibDragAndDropEditor1;
 if(!window.customElements.get('av-doc-lib-drag-and-drop-editor-1')){window.customElements.define('av-doc-lib-drag-and-drop-editor-1', DocLibDragAndDropEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibDragAndDropEditor1);}
@@ -15800,7 +16427,7 @@ const DocLibDragAndDrop = class DocLibDragAndDrop extends DocGenericPage {
         return "DocLibDragAndDrop";
     }
 }
-DocLibDragAndDrop.Namespace=`${moduleName}`;
+DocLibDragAndDrop.Namespace=`AventusWebsite`;
 DocLibDragAndDrop.Tag=`av-doc-lib-drag-and-drop`;
 _.DocLibDragAndDrop=DocLibDragAndDrop;
 if(!window.customElements.get('av-doc-lib-drag-and-drop')){window.customElements.define('av-doc-lib-drag-and-drop', DocLibDragAndDrop);Aventus.WebComponentInstance.registerDefinition(DocLibDragAndDrop);}
@@ -15828,7 +16455,7 @@ const DocLibPressManagerEditor1 = class DocLibPressManagerEditor1 extends BaseEd
         return new DocLibPressManagerEditor1Example();
     }
 }
-DocLibPressManagerEditor1.Namespace=`${moduleName}`;
+DocLibPressManagerEditor1.Namespace=`AventusWebsite`;
 DocLibPressManagerEditor1.Tag=`av-doc-lib-press-manager-editor-1`;
 _.DocLibPressManagerEditor1=DocLibPressManagerEditor1;
 if(!window.customElements.get('av-doc-lib-press-manager-editor-1')){window.customElements.define('av-doc-lib-press-manager-editor-1', DocLibPressManagerEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibPressManagerEditor1);}
@@ -15852,7 +16479,7 @@ const DocLibPressManager = class DocLibPressManager extends DocGenericPage {
         return "DocLibPressManager";
     }
 }
-DocLibPressManager.Namespace=`${moduleName}`;
+DocLibPressManager.Namespace=`AventusWebsite`;
 DocLibPressManager.Tag=`av-doc-lib-press-manager`;
 _.DocLibPressManager=DocLibPressManager;
 if(!window.customElements.get('av-doc-lib-press-manager')){window.customElements.define('av-doc-lib-press-manager', DocLibPressManager);Aventus.WebComponentInstance.registerDefinition(DocLibPressManager);}
@@ -15880,7 +16507,7 @@ const DocLibResizeObserverEditor1 = class DocLibResizeObserverEditor1 extends Ba
         return new DocLibResizeObserverEditor1Example();
     }
 }
-DocLibResizeObserverEditor1.Namespace=`${moduleName}`;
+DocLibResizeObserverEditor1.Namespace=`AventusWebsite`;
 DocLibResizeObserverEditor1.Tag=`av-doc-lib-resize-observer-editor-1`;
 _.DocLibResizeObserverEditor1=DocLibResizeObserverEditor1;
 if(!window.customElements.get('av-doc-lib-resize-observer-editor-1')){window.customElements.define('av-doc-lib-resize-observer-editor-1', DocLibResizeObserverEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibResizeObserverEditor1);}
@@ -15904,7 +16531,7 @@ const DocLibResizeObserver = class DocLibResizeObserver extends DocGenericPage {
         return "DocLibResizeObserver";
     }
 }
-DocLibResizeObserver.Namespace=`${moduleName}`;
+DocLibResizeObserver.Namespace=`AventusWebsite`;
 DocLibResizeObserver.Tag=`av-doc-lib-resize-observer`;
 _.DocLibResizeObserver=DocLibResizeObserver;
 if(!window.customElements.get('av-doc-lib-resize-observer')){window.customElements.define('av-doc-lib-resize-observer', DocLibResizeObserver);Aventus.WebComponentInstance.registerDefinition(DocLibResizeObserver);}
@@ -15928,7 +16555,7 @@ const DocLibTools = class DocLibTools extends DocGenericPage {
         return "DocLibTools";
     }
 }
-DocLibTools.Namespace=`${moduleName}`;
+DocLibTools.Namespace=`AventusWebsite`;
 DocLibTools.Tag=`av-doc-lib-tools`;
 _.DocLibTools=DocLibTools;
 if(!window.customElements.get('av-doc-lib-tools')){window.customElements.define('av-doc-lib-tools', DocLibTools);Aventus.WebComponentInstance.registerDefinition(DocLibTools);}
@@ -15952,10 +16579,58 @@ const DocAdvancedTemplate = class DocAdvancedTemplate extends DocGenericPage {
         return "DocAdvancedTemplate";
     }
 }
-DocAdvancedTemplate.Namespace=`${moduleName}`;
+DocAdvancedTemplate.Namespace=`AventusWebsite`;
 DocAdvancedTemplate.Tag=`av-doc-advanced-template`;
 _.DocAdvancedTemplate=DocAdvancedTemplate;
 if(!window.customElements.get('av-doc-advanced-template')){window.customElements.define('av-doc-advanced-template', DocAdvancedTemplate);Aventus.WebComponentInstance.registerDefinition(DocAdvancedTemplate);}
+
+const DocAdvancedNpmExport = class DocAdvancedNpmExport extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocAdvancedNpmExport;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocAdvancedNpmExport.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Advanced - Npm Export</h1><p>Exporting your AventusJs code to npm (Node Package Manager) is a powerful way to share and reuse your code across multiple projects. By publishing your code as an npm package, you can easily integrate it into any JavaScript project, streamline updates, and collaborate with others.</p><h2>Setup for the example</h2><p>First of all you need to create a new empty project <span class="cn">test</span> with a component named <span class="cn">Button</span></p><av-doc-advanced-npm-export-editor-1></av-doc-advanced-npm-export-editor-1><p>Now, add the section <span class="cn">build.compile.outputNpm</span> with the path <span class="cn">./npm</span>.</p><av-doc-advanced-npm-export-editor-2></av-doc-advanced-npm-export-editor-2><p>On save, this will create a new folder <span class="cn">npm</span> with all files ready for the deployment</p><av-doc-advanced-npm-export-editor-3></av-doc-advanced-npm-export-editor-3><p>Now run the command <span class="cn">npm publish --access public</span> to publish your script to npm so that you can use it everywhere.</p>` }
+    });
+}
+    getClassName() {
+        return "DocAdvancedNpmExport";
+    }
+}
+DocAdvancedNpmExport.Namespace=`AventusWebsite`;
+DocAdvancedNpmExport.Tag=`av-doc-advanced-npm-export`;
+_.DocAdvancedNpmExport=DocAdvancedNpmExport;
+if(!window.customElements.get('av-doc-advanced-npm-export')){window.customElements.define('av-doc-advanced-npm-export', DocAdvancedNpmExport);Aventus.WebComponentInstance.registerDefinition(DocAdvancedNpmExport);}
+
+const DocAdvancedStorybook = class DocAdvancedStorybook extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocAdvancedStorybook;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocAdvancedStorybook.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Advanced - Storybook</h1><p>Exporting your AventusJs code to Storybook is a powerful way to visualize and document your UI components and your    code. Storybook provides an interactive environment for developing, testing, and showcasing components in isolation,    making it an invaluable tool for both development and collaboration.</p><h2>Setup for the example</h2><p>First of all you need to create a new empty project <span class="cn">test</span> with a component named <span class="cn">Button</span></p><av-doc-advanced-storybook-editor-1></av-doc-advanced-storybook-editor-1><p>Now, add the section <span class="cn">build.compile.outputNpm</span> with the path <span class="cn">./npm</span>.</p><av-doc-advanced-storybook-editor-2></av-doc-advanced-storybook-editor-2><p>On save, nothing happen. It's because by default stories don't compile on live. You can change the behaviour by    adding the property <span class="cn">live: true</span> inside the <span class="cn">stories</span> section. For this    example, you will keep live: false.</p><p>To export stories, you can press <span class="cn">ctrl + shift + p</span> to open the command launcher and search for    <span class="cn">Aventus : Build storybook</span>. When you hit enter, a new folder named <span class="cn">storybook</span> is created.</p><p>This folder contains a storybook projet with the following structure.</p><ul>    <li><span class="cn">.storybook</span> : contains the configuration files for storybook. You can find more <a href="https://storybook.js.org/docs/configure" target="_blank">here</a>.</li>    <li><span class="cn">assets</span> : contains assets for your stories.</li>    <li><span class="cn">auto</span> : contains stories exported from Aventus. You shouldn't write inside the folder.    </li>    <li><span class="cn">generated</span> : contains your aventus project exported as npm package. You shouldn't write        inside the folder.</li>    <li><span class="cn">static</span> : static folder mounted by storybook</li></ul><p>You can now write custom documentation with <span class="cn">.mdx</span> files or custom stories.</p><p>First of all, run the command <span class="cn">npm i</span> inside the folder <span class="cn">storybook</span> to    install node_modules then run <span class="cn">npm run storybook</span> to start storybook. A new page will open    inside your default browser with the storybook project.</p><av-img src="/img/doc/advanced/storybook/first-storybook.png" style="max-height:500px"></av-img><p>The meta for each story is build based on the documentation you provide inside your code. There is custom    documentation you can add to improve your story content.</p><h2>Document slots</h2><p>To document slots, you can add a comment over you component class with the tag <span class="cn">@slot (slotName)? -        description</span>. The default value for slotName is <span class="cn">default</span>.</p><av-code language="typescript" filename="test/src/Button/Button.wcl.avt">    <pre>        /**         * This is an aventus button         * @slot default - Content for your button         */        export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {        }    </pre></av-code></av-code><av-img src="/img/doc/advanced/storybook/slots.png" style="max-height:500px"></av-img><p>As you can see, the component has now a description and the slot default has also a description.</p><h2>Style variables</h2><p>To add documentation to your style variables, you can add a comment over the variable. Two tags are available to extends your documentation</p><ul>    <li><span class="cn">@type</span> : to define the type of your variable. Actually only <span class="cn">color</span> will apply change to the docuementation.</li>    <li><span class="cn">@default</span> : to define the default value of your css variable. By default the value is the last static value inside the var chain</li></ul><av-code language="css" filename="test/src/Button/Button.wcs.avt">    <pre>        :host {            /**            * Background color for the button            * @type color            */            --_button-background-color: var(--button-background-color, var(--primary-color, #3c95d0));        }        &nbsp;        &nbsp;        :host {            background-color: var(--_button-background-color);            border: 1px solid transparent;            border-radius: 10px;            padding: 5px 15px;        }        &nbsp;        &nbsp;        :host([outline]) {            background-color: #ffffff;            border-color: var(--_button-background-color);            color: var(--_button-background-color);        }        &nbsp;    </pre></av-code></av-code><av-img src="/img/doc/advanced/storybook/css-vars.png" style="max-height:500px"></av-img><p>As you can see, the variable has now a type and a description. Furthermore, inside the <span class="cn">Live section</span>, you can see that the control change to be a color picker.</p><h2>Write custom stories</h2><p>If you need to write custom stories, you can add the decorator <span class="cn">@Storybook</span> with the configuration <span class="cn">onlyMeta: true</span>. Now only the meta is created. No more documentation is created for your button</p><av-code language="typescript" filename="test/src/Button/Button.wcl.avt">    <pre>        /**         * This is an aventus button         * @slot default - Content for your button         */        @Storybook({            onlyMeta: true        })        export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {        }    </pre></av-code></av-code><p>To write custom story, you can create a new file named <span class="cn">Button.stories.ts</span> inside the folder <span class="cn">storybook</span></p><av-code language="typescript" filename="test/storybook/Button.stories.ts">    <pre>        import { type Meta, type Story } from '@aventusjs/storybook';        &nbsp;        import ButtonMeta from './auto/Button.stories';        &nbsp;        const meta: Meta = { ...ButtonMeta }        &nbsp;        export default meta;        &nbsp;        &nbsp;        export const MyCustomStory: Story = {}    </pre></av-code></av-code><p>In this file, you can write custom stories. You can read the <a href="https://storybook.js.org/docs" target="_blank">storybook documentation</a> to learn how stories are working.</p><p>If you use custom stories, you need to redefine the title inside the meta constant. Otherwhise the file name will be used as title. </p><av-code language="typescript" filename="test/storybook/Button.stories.ts">    <pre>        import { type Meta, type Story } from '@aventusjs/storybook';        &nbsp;        import ButtonMeta from './auto/Button.stories';        &nbsp;        const meta: Meta = {             ...ButtonMeta,            title: "Button" // if you want a custom name or group        }        &nbsp;        export default meta;        &nbsp;        &nbsp;        export const MyCustomStory: Story = {}    </pre></av-code></av-code><h2>Write custom documentation pages</h2><p>If you want to write custom document page, you can create a <span class="cn">.mdx file</span>. Most of the time, you will need diagram to explain how things are working togther. By default, the tag <span class="cn">av-diagram</span> is available to create mermaid diagram. You can read the mermaid documentation <a href="https://mermaid.js.org/intro/getting-started.html" target="_blank">here</a>.</p><av-code language="js" filename="test/storybook/MyPage.mdx">    <pre>        import { Meta } from "@storybook/blocks";        &nbsp;        &lt;Meta title="My Page" /&gt;        &nbsp;        &lt;av-diagram&gt;        {&#96;---        title: Node        ---        flowchart LR            id        &#96;}        &lt;/av-diagram&gt;    </pre></av-code></av-code><p>We also suggest to download the extension <span class="cn">Draw.io Integration</span> inside your vscode. With this extension you can create asset file named <span class="cn">MyPage.drawio.svg</span> inside the <span class="cn">asset</span> folder and edit it live inside vscode. Then you can import this file inside your mdx to render the svg.</p><av-img src="/img/doc/advanced/storybook/drawio.png" style="max-height:500px"></av-img><av-code language="js" filename="test/storybook/MyPage.mdx">    <pre>        import { Meta } from "@storybook/blocks";        import DrawIO from "./assets/MyPage.drawio.svg";        &nbsp;        &lt;Meta title="My Page" /&gt;        &nbsp;        &lt;av-diagram&gt;        {&#96;---        title: Node        ---        flowchart LR            id        &#96;}        &lt;/av-diagram&gt;        &nbsp;        &lt;img src={DrawIO} /&gt;    </pre></av-code></av-code><av-img src="/img/doc/advanced/storybook/custom.png" style="max-height:500px"></av-img><h2>Configure export</h2><p>You can configure how stories must be exported from Aventus. If you want a public documentation maybe you don't want that private and protected methods / properties are displayed inside your storybook. You can add the property <span class="cn">format</span> inside the <span class="cn">stories section</span> of your <span class="cn">aventus.conf.avt</span> with one of this value :</p><ul>    <li><span class="cn">all</span> : export all elements</li>    <li><span class="cn">public</span> : only public elements will be exported</li>    <li><span class="cn">manual</span> : only elements with tag Storybook will be exported</li></ul><p>You can always override the default behaviour by using the decorator <span class="cn">@Storybook</span>.</p><p>You can also prefix your stories in the aventus.conf.avt or with the decorator @Storybook to group your stories.</p><av-code language="typescript" filename="test/src/Button/Button.wcl.avt">    <pre>        /**         * This is an aventus button         * @slot default - Content for your button         */        @Storybook({            prefix: "UI"        })        export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {        }    </pre></av-code></av-code><av-img src="/img/doc/advanced/storybook/group.png" style="max-height:500px"></av-img>` }
+    });
+}
+    getClassName() {
+        return "DocAdvancedStorybook";
+    }
+}
+DocAdvancedStorybook.Namespace=`AventusWebsite`;
+DocAdvancedStorybook.Tag=`av-doc-advanced-storybook`;
+_.DocAdvancedStorybook=DocAdvancedStorybook;
+if(!window.customElements.get('av-doc-advanced-storybook')){window.customElements.define('av-doc-advanced-storybook', DocAdvancedStorybook);Aventus.WebComponentInstance.registerDefinition(DocAdvancedStorybook);}
 
 const DocApp = class DocApp extends Aventus.Navigation.Router {
     docPage;
@@ -16033,6 +16708,8 @@ const DocApp = class DocApp extends Aventus.Navigation.Router {
         //#endregion
         //#region doc advanced
         this.addRoute("/docs/advanced/template", DocAdvancedTemplate);
+        this.addRoute("/docs/advanced/npm_export", DocAdvancedNpmExport);
+        this.addRoute("/docs/advanced/storybook", DocAdvancedStorybook);
         //#endregion
     }
     error404(state) {
@@ -16042,7 +16719,7 @@ const DocApp = class DocApp extends Aventus.Navigation.Router {
         return null;
     }
 }
-DocApp.Namespace=`${moduleName}`;
+DocApp.Namespace=`AventusWebsite`;
 DocApp.Tag=`av-doc-app`;
 _.DocApp=DocApp;
 if(!window.customElements.get('av-doc-app')){window.customElements.define('av-doc-app', DocApp);Aventus.WebComponentInstance.registerDefinition(DocApp);}
@@ -16098,7 +16775,7 @@ const DocPage = class DocPage extends Page {
         this.open = false;
     }
 }
-DocPage.Namespace=`${moduleName}`;
+DocPage.Namespace=`AventusWebsite`;
 DocPage.Tag=`av-doc-page`;
 _.DocPage=DocPage;
 if(!window.customElements.get('av-doc-page')){window.customElements.define('av-doc-page', DocPage);Aventus.WebComponentInstance.registerDefinition(DocPage);}
@@ -16152,7 +16829,7 @@ const TutorialGenericPage = class TutorialGenericPage extends Page {
         return "Aventus - Tutorial";
     }
 }
-TutorialGenericPage.Namespace=`${moduleName}`;
+TutorialGenericPage.Namespace=`AventusWebsite`;
 TutorialGenericPage.Tag=`av-tutorial-generic-page`;
 _.TutorialGenericPage=TutorialGenericPage;
 if(!window.customElements.get('av-tutorial-generic-page')){window.customElements.define('av-tutorial-generic-page', TutorialGenericPage);Aventus.WebComponentInstance.registerDefinition(TutorialGenericPage);}
@@ -16194,7 +16871,7 @@ const TutorialCreateAppEditor2 = class TutorialCreateAppEditor2 extends Tutorial
         return iframe;
     }
 }
-TutorialCreateAppEditor2.Namespace=`${moduleName}`;
+TutorialCreateAppEditor2.Namespace=`AventusWebsite`;
 TutorialCreateAppEditor2.Tag=`av-tutorial-create-app-editor-2`;
 _.TutorialCreateAppEditor2=TutorialCreateAppEditor2;
 if(!window.customElements.get('av-tutorial-create-app-editor-2')){window.customElements.define('av-tutorial-create-app-editor-2', TutorialCreateAppEditor2);Aventus.WebComponentInstance.registerDefinition(TutorialCreateAppEditor2);}
@@ -16234,7 +16911,7 @@ const TutorialCreateAppEditor3 = class TutorialCreateAppEditor3 extends Tutorial
         return iframe;
     }
 }
-TutorialCreateAppEditor3.Namespace=`${moduleName}`;
+TutorialCreateAppEditor3.Namespace=`AventusWebsite`;
 TutorialCreateAppEditor3.Tag=`av-tutorial-create-app-editor-3`;
 _.TutorialCreateAppEditor3=TutorialCreateAppEditor3;
 if(!window.customElements.get('av-tutorial-create-app-editor-3')){window.customElements.define('av-tutorial-create-app-editor-3', TutorialCreateAppEditor3);Aventus.WebComponentInstance.registerDefinition(TutorialCreateAppEditor3);}
@@ -16284,7 +16961,7 @@ const TutorialCreateAppEditor4 = class TutorialCreateAppEditor4 extends Tutorial
         return iframe;
     }
 }
-TutorialCreateAppEditor4.Namespace=`${moduleName}`;
+TutorialCreateAppEditor4.Namespace=`AventusWebsite`;
 TutorialCreateAppEditor4.Tag=`av-tutorial-create-app-editor-4`;
 _.TutorialCreateAppEditor4=TutorialCreateAppEditor4;
 if(!window.customElements.get('av-tutorial-create-app-editor-4')){window.customElements.define('av-tutorial-create-app-editor-4', TutorialCreateAppEditor4);Aventus.WebComponentInstance.registerDefinition(TutorialCreateAppEditor4);}
@@ -16326,7 +17003,7 @@ const TutorialCreateAppEditor5 = class TutorialCreateAppEditor5 extends Tutorial
         return iframe;
     }
 }
-TutorialCreateAppEditor5.Namespace=`${moduleName}`;
+TutorialCreateAppEditor5.Namespace=`AventusWebsite`;
 TutorialCreateAppEditor5.Tag=`av-tutorial-create-app-editor-5`;
 _.TutorialCreateAppEditor5=TutorialCreateAppEditor5;
 if(!window.customElements.get('av-tutorial-create-app-editor-5')){window.customElements.define('av-tutorial-create-app-editor-5', TutorialCreateAppEditor5);Aventus.WebComponentInstance.registerDefinition(TutorialCreateAppEditor5);}
@@ -16379,7 +17056,7 @@ const TutorialCreateAppEditor6 = class TutorialCreateAppEditor6 extends Tutorial
         return iframe;
     }
 }
-TutorialCreateAppEditor6.Namespace=`${moduleName}`;
+TutorialCreateAppEditor6.Namespace=`AventusWebsite`;
 TutorialCreateAppEditor6.Tag=`av-tutorial-create-app-editor-6`;
 _.TutorialCreateAppEditor6=TutorialCreateAppEditor6;
 if(!window.customElements.get('av-tutorial-create-app-editor-6')){window.customElements.define('av-tutorial-create-app-editor-6', TutorialCreateAppEditor6);Aventus.WebComponentInstance.registerDefinition(TutorialCreateAppEditor6);}
@@ -16403,7 +17080,7 @@ const TutorialCreateApp = class TutorialCreateApp extends TutorialGenericPage {
         return "TutorialCreateApp";
     }
 }
-TutorialCreateApp.Namespace=`${moduleName}`;
+TutorialCreateApp.Namespace=`AventusWebsite`;
 TutorialCreateApp.Tag=`av-tutorial-create-app`;
 _.TutorialCreateApp=TutorialCreateApp;
 if(!window.customElements.get('av-tutorial-create-app')){window.customElements.define('av-tutorial-create-app', TutorialCreateApp);Aventus.WebComponentInstance.registerDefinition(TutorialCreateApp);}
@@ -16443,7 +17120,7 @@ const TutorialDataEditor1 = class TutorialDataEditor1 extends TutorialCreateAppE
         return null;
     }
 }
-TutorialDataEditor1.Namespace=`${moduleName}`;
+TutorialDataEditor1.Namespace=`AventusWebsite`;
 TutorialDataEditor1.Tag=`av-tutorial-data-editor-1`;
 _.TutorialDataEditor1=TutorialDataEditor1;
 if(!window.customElements.get('av-tutorial-data-editor-1')){window.customElements.define('av-tutorial-data-editor-1', TutorialDataEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialDataEditor1);}
@@ -16467,7 +17144,7 @@ const TutorialData = class TutorialData extends TutorialGenericPage {
         return "TutorialData";
     }
 }
-TutorialData.Namespace=`${moduleName}`;
+TutorialData.Namespace=`AventusWebsite`;
 TutorialData.Tag=`av-tutorial-data`;
 _.TutorialData=TutorialData;
 if(!window.customElements.get('av-tutorial-data')){window.customElements.define('av-tutorial-data', TutorialData);Aventus.WebComponentInstance.registerDefinition(TutorialData);}
@@ -16500,7 +17177,7 @@ const TutorialRamEditor1 = class TutorialRamEditor1 extends TutorialDataEditor1 
         ];
     }
 }
-TutorialRamEditor1.Namespace=`${moduleName}`;
+TutorialRamEditor1.Namespace=`AventusWebsite`;
 TutorialRamEditor1.Tag=`av-tutorial-ram-editor-1`;
 _.TutorialRamEditor1=TutorialRamEditor1;
 if(!window.customElements.get('av-tutorial-ram-editor-1')){window.customElements.define('av-tutorial-ram-editor-1', TutorialRamEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialRamEditor1);}
@@ -16524,7 +17201,7 @@ const TutorialRam = class TutorialRam extends TutorialGenericPage {
         return "TutorialRam";
     }
 }
-TutorialRam.Namespace=`${moduleName}`;
+TutorialRam.Namespace=`AventusWebsite`;
 TutorialRam.Tag=`av-tutorial-ram`;
 _.TutorialRam=TutorialRam;
 if(!window.customElements.get('av-tutorial-ram')){window.customElements.define('av-tutorial-ram', TutorialRam);Aventus.WebComponentInstance.registerDefinition(TutorialRam);}
@@ -16570,7 +17247,7 @@ const TutorialDisplayTodoEditor1 = class TutorialDisplayTodoEditor1 extends Tuto
         return iframe;
     }
 }
-TutorialDisplayTodoEditor1.Namespace=`${moduleName}`;
+TutorialDisplayTodoEditor1.Namespace=`AventusWebsite`;
 TutorialDisplayTodoEditor1.Tag=`av-tutorial-display-todo-editor-1`;
 _.TutorialDisplayTodoEditor1=TutorialDisplayTodoEditor1;
 if(!window.customElements.get('av-tutorial-display-todo-editor-1')){window.customElements.define('av-tutorial-display-todo-editor-1', TutorialDisplayTodoEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialDisplayTodoEditor1);}
@@ -16614,7 +17291,7 @@ const TutorialDisplayTodoEditor2 = class TutorialDisplayTodoEditor2 extends Tuto
         return iframe;
     }
 }
-TutorialDisplayTodoEditor2.Namespace=`${moduleName}`;
+TutorialDisplayTodoEditor2.Namespace=`AventusWebsite`;
 TutorialDisplayTodoEditor2.Tag=`av-tutorial-display-todo-editor-2`;
 _.TutorialDisplayTodoEditor2=TutorialDisplayTodoEditor2;
 if(!window.customElements.get('av-tutorial-display-todo-editor-2')){window.customElements.define('av-tutorial-display-todo-editor-2', TutorialDisplayTodoEditor2);Aventus.WebComponentInstance.registerDefinition(TutorialDisplayTodoEditor2);}
@@ -16638,7 +17315,7 @@ const TutorialDisplayTodo = class TutorialDisplayTodo extends TutorialGenericPag
         return "TutorialDisplayTodo";
     }
 }
-TutorialDisplayTodo.Namespace=`${moduleName}`;
+TutorialDisplayTodo.Namespace=`AventusWebsite`;
 TutorialDisplayTodo.Tag=`av-tutorial-display-todo`;
 _.TutorialDisplayTodo=TutorialDisplayTodo;
 if(!window.customElements.get('av-tutorial-display-todo')){window.customElements.define('av-tutorial-display-todo', TutorialDisplayTodo);Aventus.WebComponentInstance.registerDefinition(TutorialDisplayTodo);}
@@ -16687,7 +17364,7 @@ const TutorialIconEditor1 = class TutorialIconEditor1 extends TutorialDisplayTod
         return iframe;
     }
 }
-TutorialIconEditor1.Namespace=`${moduleName}`;
+TutorialIconEditor1.Namespace=`AventusWebsite`;
 TutorialIconEditor1.Tag=`av-tutorial-icon-editor-1`;
 _.TutorialIconEditor1=TutorialIconEditor1;
 if(!window.customElements.get('av-tutorial-icon-editor-1')){window.customElements.define('av-tutorial-icon-editor-1', TutorialIconEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialIconEditor1);}
@@ -16711,7 +17388,7 @@ const TutorialIcon = class TutorialIcon extends TutorialGenericPage {
         return "TutorialIcon";
     }
 }
-TutorialIcon.Namespace=`${moduleName}`;
+TutorialIcon.Namespace=`AventusWebsite`;
 TutorialIcon.Tag=`av-tutorial-icon`;
 _.TutorialIcon=TutorialIcon;
 if(!window.customElements.get('av-tutorial-icon')){window.customElements.define('av-tutorial-icon', TutorialIcon);Aventus.WebComponentInstance.registerDefinition(TutorialIcon);}
@@ -16756,7 +17433,7 @@ const TutorialCreateTodoEditor1 = class TutorialCreateTodoEditor1 extends Tutori
         return iframe;
     }
 }
-TutorialCreateTodoEditor1.Namespace=`${moduleName}`;
+TutorialCreateTodoEditor1.Namespace=`AventusWebsite`;
 TutorialCreateTodoEditor1.Tag=`av-tutorial-create-todo-editor-1`;
 _.TutorialCreateTodoEditor1=TutorialCreateTodoEditor1;
 if(!window.customElements.get('av-tutorial-create-todo-editor-1')){window.customElements.define('av-tutorial-create-todo-editor-1', TutorialCreateTodoEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialCreateTodoEditor1);}
@@ -16802,7 +17479,7 @@ const TutorialCreateTodoEditor2 = class TutorialCreateTodoEditor2 extends Tutori
         return iframe;
     }
 }
-TutorialCreateTodoEditor2.Namespace=`${moduleName}`;
+TutorialCreateTodoEditor2.Namespace=`AventusWebsite`;
 TutorialCreateTodoEditor2.Tag=`av-tutorial-create-todo-editor-2`;
 _.TutorialCreateTodoEditor2=TutorialCreateTodoEditor2;
 if(!window.customElements.get('av-tutorial-create-todo-editor-2')){window.customElements.define('av-tutorial-create-todo-editor-2', TutorialCreateTodoEditor2);Aventus.WebComponentInstance.registerDefinition(TutorialCreateTodoEditor2);}
@@ -16847,7 +17524,7 @@ const TutorialCreateTodoEditor3 = class TutorialCreateTodoEditor3 extends Tutori
         return iframe;
     }
 }
-TutorialCreateTodoEditor3.Namespace=`${moduleName}`;
+TutorialCreateTodoEditor3.Namespace=`AventusWebsite`;
 TutorialCreateTodoEditor3.Tag=`av-tutorial-create-todo-editor-3`;
 _.TutorialCreateTodoEditor3=TutorialCreateTodoEditor3;
 if(!window.customElements.get('av-tutorial-create-todo-editor-3')){window.customElements.define('av-tutorial-create-todo-editor-3', TutorialCreateTodoEditor3);Aventus.WebComponentInstance.registerDefinition(TutorialCreateTodoEditor3);}
@@ -16893,7 +17570,7 @@ const TutorialCreateTodoEditor4 = class TutorialCreateTodoEditor4 extends Tutori
         return iframe;
     }
 }
-TutorialCreateTodoEditor4.Namespace=`${moduleName}`;
+TutorialCreateTodoEditor4.Namespace=`AventusWebsite`;
 TutorialCreateTodoEditor4.Tag=`av-tutorial-create-todo-editor-4`;
 _.TutorialCreateTodoEditor4=TutorialCreateTodoEditor4;
 if(!window.customElements.get('av-tutorial-create-todo-editor-4')){window.customElements.define('av-tutorial-create-todo-editor-4', TutorialCreateTodoEditor4);Aventus.WebComponentInstance.registerDefinition(TutorialCreateTodoEditor4);}
@@ -16917,7 +17594,7 @@ const TutorialCreateTodo = class TutorialCreateTodo extends TutorialGenericPage 
         return "TutorialCreateTodo";
     }
 }
-TutorialCreateTodo.Namespace=`${moduleName}`;
+TutorialCreateTodo.Namespace=`AventusWebsite`;
 TutorialCreateTodo.Tag=`av-tutorial-create-todo`;
 _.TutorialCreateTodo=TutorialCreateTodo;
 if(!window.customElements.get('av-tutorial-create-todo')){window.customElements.define('av-tutorial-create-todo', TutorialCreateTodo);Aventus.WebComponentInstance.registerDefinition(TutorialCreateTodo);}
@@ -16962,7 +17639,7 @@ const TutorialListTodoEditor1 = class TutorialListTodoEditor1 extends TutorialCr
         return iframe;
     }
 }
-TutorialListTodoEditor1.Namespace=`${moduleName}`;
+TutorialListTodoEditor1.Namespace=`AventusWebsite`;
 TutorialListTodoEditor1.Tag=`av-tutorial-list-todo-editor-1`;
 _.TutorialListTodoEditor1=TutorialListTodoEditor1;
 if(!window.customElements.get('av-tutorial-list-todo-editor-1')){window.customElements.define('av-tutorial-list-todo-editor-1', TutorialListTodoEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialListTodoEditor1);}
@@ -16986,7 +17663,7 @@ const TutorialListTodo = class TutorialListTodo extends DocGenericPage {
         return "TutorialListTodo";
     }
 }
-TutorialListTodo.Namespace=`${moduleName}`;
+TutorialListTodo.Namespace=`AventusWebsite`;
 TutorialListTodo.Tag=`av-tutorial-list-todo`;
 _.TutorialListTodo=TutorialListTodo;
 if(!window.customElements.get('av-tutorial-list-todo')){window.customElements.define('av-tutorial-list-todo', TutorialListTodo);Aventus.WebComponentInstance.registerDefinition(TutorialListTodo);}
@@ -17025,7 +17702,7 @@ const TutorialIntroductionEditor1 = class TutorialIntroductionEditor1 extends Tu
         return iframe;
     }
 }
-TutorialIntroductionEditor1.Namespace=`${moduleName}`;
+TutorialIntroductionEditor1.Namespace=`AventusWebsite`;
 TutorialIntroductionEditor1.Tag=`av-tutorial-introduction-editor-1`;
 _.TutorialIntroductionEditor1=TutorialIntroductionEditor1;
 if(!window.customElements.get('av-tutorial-introduction-editor-1')){window.customElements.define('av-tutorial-introduction-editor-1', TutorialIntroductionEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialIntroductionEditor1);}
@@ -17049,7 +17726,7 @@ const TutorialIntroduction = class TutorialIntroduction extends TutorialGenericP
         return "TutorialIntroduction";
     }
 }
-TutorialIntroduction.Namespace=`${moduleName}`;
+TutorialIntroduction.Namespace=`AventusWebsite`;
 TutorialIntroduction.Tag=`av-tutorial-introduction`;
 _.TutorialIntroduction=TutorialIntroduction;
 if(!window.customElements.get('av-tutorial-introduction')){window.customElements.define('av-tutorial-introduction', TutorialIntroduction);Aventus.WebComponentInstance.registerDefinition(TutorialIntroduction);}
@@ -17073,7 +17750,7 @@ const TutorialInit = class TutorialInit extends TutorialGenericPage {
         return "TutorialInit";
     }
 }
-TutorialInit.Namespace=`${moduleName}`;
+TutorialInit.Namespace=`AventusWebsite`;
 TutorialInit.Tag=`av-tutorial-init`;
 _.TutorialInit=TutorialInit;
 if(!window.customElements.get('av-tutorial-init')){window.customElements.define('av-tutorial-init', TutorialInit);Aventus.WebComponentInstance.registerDefinition(TutorialInit);}
@@ -17115,7 +17792,7 @@ const TutorialApp = class TutorialApp extends Aventus.Navigation.Router {
         return null;
     }
 }
-TutorialApp.Namespace=`${moduleName}`;
+TutorialApp.Namespace=`AventusWebsite`;
 TutorialApp.Tag=`av-tutorial-app`;
 _.TutorialApp=TutorialApp;
 if(!window.customElements.get('av-tutorial-app')){window.customElements.define('av-tutorial-app', TutorialApp);Aventus.WebComponentInstance.registerDefinition(TutorialApp);}
@@ -17171,7 +17848,7 @@ const TutorialPage = class TutorialPage extends Page {
         this.open = false;
     }
 }
-TutorialPage.Namespace=`${moduleName}`;
+TutorialPage.Namespace=`AventusWebsite`;
 TutorialPage.Tag=`av-tutorial-page`;
 _.TutorialPage=TutorialPage;
 if(!window.customElements.get('av-tutorial-page')){window.customElements.define('av-tutorial-page', TutorialPage);Aventus.WebComponentInstance.registerDefinition(TutorialPage);}
@@ -17205,7 +17882,7 @@ const App = class App extends Aventus.Navigation.Router {
         return Page404;
     }
 }
-App.Namespace=`${moduleName}`;
+App.Namespace=`AventusWebsite`;
 App.Tag=`av-app`;
 _.App=App;
 if(!window.customElements.get('av-app')){window.customElements.define('av-app', App);Aventus.WebComponentInstance.registerDefinition(App);}
