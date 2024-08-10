@@ -2,27 +2,55 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocAdvancedNpmExport extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Advanced Guide: Exporting AventusJs Code to NPM";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to export your AventusJs code to NPM to share and reuse across multiple JavaScript projects. This comprehensive guide covers setting up a project, configuring build outputs, and publishing your package for public use.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs export",
+            "NPM package publishing",
+            "JavaScript code sharing",
+            "build.compile.outputNpm",
+            "npm publish",
+            "AventusJs tutorial",
+            "JavaScript project integration",
+            "code reuse",
+            "web development tools",
+        ];
+    }
+    //#endregion
+
 }

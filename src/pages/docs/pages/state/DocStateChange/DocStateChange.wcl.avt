@@ -2,33 +2,59 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocStateChange extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "How to Change States in Aventus";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Discover how to change states in Aventus with various methods. Learn how to use the setState method on the state manager, the activate method on the Aventus.State class, and instance-specific activation techniques for efficient state management.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Change state Aventus",
+            "Aventus state management",
+            "Set state method Aventus",
+            "Activate state Aventus",
+            "State manager Aventus",
+            "Static state activation Aventus",
+            "Instance state activation Aventus",
+        ];
+    }
+
+    //#endregion
+
 }

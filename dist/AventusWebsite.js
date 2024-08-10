@@ -689,6 +689,9 @@ const compareObject=function compareObject(obj1, obj2) {
 
 _.compareObject=compareObject;
 const getValueFromObject=function getValueFromObject(path, obj) {
+    if (path === undefined) {
+        path = '';
+    }
     path = path.replace(/\[(.*?)\]/g, '.$1');
     if (path == "") {
         return obj;
@@ -839,6 +842,8 @@ Effect.Namespace=`Aventus`;
 
 _.Effect=Effect;
 const Watcher=class Watcher {
+    constructor() { }
+    ;
     static __reservedName = {
         __path: '__path',
     };
@@ -925,7 +930,7 @@ const Watcher=class Watcher {
                 let root = element.__root;
                 if (root != proxyData.baseData) {
                     element.__validatePath();
-                    let oldPath = element.__path;
+                    let oldPath = element.__path ?? '';
                     let unbindElement = getValueFromObject(oldPath, root);
                     if (receiver == null) {
                         receiver = getValueFromObject(target.__path, realProxy);
@@ -1120,6 +1125,9 @@ const Watcher=class Watcher {
                     };
                 }
                 else if (prop == "toJSON") {
+                    if (target.toJSON) {
+                        return target.toJSON;
+                    }
                     if (Array.isArray(target)) {
                         return () => {
                             let result = [];
@@ -1338,6 +1346,9 @@ const Watcher=class Watcher {
             set(target, prop, value, receiver) {
                 let oldValue = Reflect.get(target, prop, receiver);
                 value = replaceByAlias(target, value, prop, receiver);
+                if (value instanceof Signal) {
+                    value = value.value;
+                }
                 let triggerChange = false;
                 if (!reservedName[prop]) {
                     if (Array.isArray(target)) {
@@ -1391,7 +1402,7 @@ const Watcher=class Watcher {
                 }
                 if (target.hasOwnProperty(prop)) {
                     let oldValue = target[prop];
-                    if (oldValue instanceof Effect) {
+                    if (oldValue instanceof Effect || oldValue instanceof Signal) {
                         oldValue.destroy();
                     }
                     delete target[prop];
@@ -1617,10 +1628,59 @@ const Watcher=class Watcher {
         const comp = new Effect(fct);
         return comp;
     }
+    /**
+     * Create a signal variable
+     */
+    static signal(item, onChange) {
+        return new Signal(item, onChange);
+    }
 }
 Watcher.Namespace=`Aventus`;
 
 _.Watcher=Watcher;
+const Signal=class Signal {
+    __subscribes = [];
+    _value;
+    _onChange;
+    get value() {
+        Watcher._register?.register(this, "*", Watcher._register.version, "*");
+        return this._value;
+    }
+    set value(item) {
+        const oldValue = this._value;
+        this._value = item;
+        if (oldValue != item) {
+            if (this._onChange) {
+                this._onChange();
+            }
+            for (let fct of this.__subscribes) {
+                fct(WatchAction.UPDATED, "*", item, []);
+            }
+        }
+    }
+    constructor(item, onChange) {
+        this._value = item;
+        this._onChange = onChange;
+    }
+    subscribe(fct) {
+        let index = this.__subscribes.indexOf(fct);
+        if (index == -1) {
+            this.__subscribes.push(fct);
+        }
+    }
+    unsubscribe(fct) {
+        let index = this.__subscribes.indexOf(fct);
+        if (index > -1) {
+            this.__subscribes.splice(index, 1);
+        }
+    }
+    destroy() {
+        this.__subscribes = [];
+    }
+}
+Signal.Namespace=`Aventus`;
+
+_.Signal=Signal;
 const Computed=class Computed extends Effect {
     _value;
     __path = "*";
@@ -3631,6 +3691,8 @@ const WebComponent=class WebComponent extends HTMLElement {
     __watchFunctions = {};
     __watchFunctionsComputed = {};
     __pressManagers = [];
+    __signalActions = {};
+    __signals = {};
     __isDefaultState = true;
     __defaultActiveState = new Map();
     __defaultInactiveState = new Map();
@@ -3649,6 +3711,7 @@ const WebComponent=class WebComponent extends HTMLElement {
         this.__renderTemplate();
         this.__registerWatchesActions();
         this.__registerPropertiesActions();
+        this.__registerSignalsActions();
         this.__createStates();
         this.__subscribeState();
     }
@@ -3664,6 +3727,9 @@ const WebComponent=class WebComponent extends HTMLElement {
         }
         for (let name in this.__watchFunctionsComputed) {
             this.__watchFunctionsComputed[name].destroy();
+        }
+        for (let name in this.__signals) {
+            this.__signals[name].destroy();
         }
         // TODO add missing info for destructor();
         this.postDestruction();
@@ -3750,6 +3816,31 @@ const WebComponent=class WebComponent extends HTMLElement {
             }
         }
     }
+    __addSignalActions(name, fct) {
+        this.__signalActions[name] = () => {
+            fct(this);
+        };
+    }
+    __registerSignalsActions() {
+        if (Object.keys(this.__signals).length > 0) {
+            const defaultValues = {};
+            for (let name in this.__signals) {
+                this.__registerSignalsAction(name);
+                this.__defaultValuesSignal(defaultValues);
+            }
+            for (let name in defaultValues) {
+                this.__signals[name].value = defaultValues[name];
+            }
+        }
+    }
+    __registerSignalsAction(name) {
+        this.__signals[name] = new Signal(undefined, () => {
+            if (this.__signalActions[name]) {
+                this.__signalActions[name]();
+            }
+        });
+    }
+    __defaultValuesSignal(s) { }
     __addPropertyActions(name, fct) {
         if (!this.__onChangeFct[name]) {
             this.__onChangeFct[name] = [];
@@ -3834,12 +3925,29 @@ const WebComponent=class WebComponent extends HTMLElement {
             this.postDisonnect();
         });
     }
+    __onReadyCb = [];
+    onReady(cb) {
+        if (this._isReady) {
+            cb();
+        }
+        else {
+            this.__onReadyCb.push(cb);
+        }
+    }
+    __setReady() {
+        this._isReady = true;
+        this.dispatchEvent(new CustomEvent('postCreationDone'));
+        let cbs = [...this.__onReadyCb];
+        for (let cb of cbs) {
+            cb();
+        }
+        this.__onReadyCb = [];
+    }
     __removeNoAnimations() {
         if (document.readyState !== "loading") {
             setTimeout(() => {
                 this.postCreation();
-                this._isReady = true;
-                this.dispatchEvent(new CustomEvent('postCreationDone'));
+                this.__setReady();
                 this.shadowRoot.adoptedStyleSheets = Object.values(this.__getStatic().__styleSheets);
                 document.removeEventListener("DOMContentLoaded", this.__removeNoAnimations);
                 this.postConnect();
@@ -4738,7 +4846,10 @@ const DragAndDrop=class DragAndDrop {
                 enable: false,
                 container: document.body,
                 removeOnStop: true,
-                transform: () => { }
+                transform: () => { },
+                delete: (el) => {
+                    el.remove();
+                }
             },
             strict: false,
             targets: [],
@@ -4787,6 +4898,9 @@ const DragAndDrop=class DragAndDrop {
             }
             if (options.shadow.transform !== void 0) {
                 this.options.shadow.transform = options.shadow.transform;
+            }
+            if (options.shadow.delete !== void 0) {
+                this.options.shadow.delete = options.shadow.delete;
             }
         }
     }
@@ -4879,7 +4993,7 @@ const DragAndDrop=class DragAndDrop {
         let targets = this.getMatchingTargets();
         let draggableElement = this.draggableElement;
         if (this.options.shadow.enable && this.options.shadow.removeOnStop) {
-            draggableElement.parentNode?.removeChild(draggableElement);
+            this.options.shadow.delete(draggableElement);
         }
         if (targets.length > 0) {
             this.options.onDrop(this.options.element, targets);
@@ -4916,7 +5030,14 @@ const DragAndDrop=class DragAndDrop {
     getMatchingTargets() {
         let draggableElement = this.draggableElement;
         let matchingTargets = [];
-        for (let target of this.options.targets) {
+        let srcTargets;
+        if (typeof this.options.targets == "function") {
+            srcTargets = this.options.targets();
+        }
+        else {
+            srcTargets = this.options.targets;
+        }
+        for (let target of srcTargets) {
             const elementCoordinates = draggableElement.getBoundingClientRect();
             const targetCoordinates = target.getBoundingClientRect();
             let offsetX = this.options.getOffsetX();
@@ -4961,6 +5082,12 @@ const DragAndDrop=class DragAndDrop {
      * Set targets where to drop
      */
     setTargets(targets) {
+        this.options.targets = targets;
+    }
+    /**
+     * Set targets where to drop
+     */
+    setTargetsFct(targets) {
         this.options.targets = targets;
     }
     /**
@@ -5025,6 +5152,7 @@ const Json=class Json {
         let realOptions = {
             transformValue: options?.transformValue ?? ((key, value) => value),
             replaceUndefined: options?.replaceUndefined ?? false,
+            replaceUndefinedWithKey: options?.replaceUndefinedWithKey ?? false,
         };
         return this.__classFromJson(obj, data, realOptions);
     }
@@ -5033,7 +5161,7 @@ const Json=class Json {
         for (let prop of props) {
             let propUpperFirst = prop[0].toUpperCase() + prop.slice(1);
             let value = data[prop] === undefined ? data[propUpperFirst] : data[prop];
-            if (value !== undefined || options.replaceUndefined) {
+            if (value !== undefined || options.replaceUndefined || (options.replaceUndefinedWithKey && (Object.hasOwn(data, prop) || Object.hasOwn(data, propUpperFirst)))) {
                 let propInfo = Object.getOwnPropertyDescriptor(obj, prop);
                 if (propInfo?.writable) {
                     obj[prop] = options.transformValue(prop, value);
@@ -5046,7 +5174,7 @@ const Json=class Json {
             for (let prop of props) {
                 let propUpperFirst = prop[0].toUpperCase() + prop.slice(1);
                 let value = data[prop] === undefined ? data[propUpperFirst] : data[prop];
-                if (value !== undefined || options.replaceUndefined) {
+                if (value !== undefined || options.replaceUndefined || (options.replaceUndefinedWithKey && (Object.hasOwn(data, prop) || Object.hasOwn(data, propUpperFirst)))) {
                     let propInfo = Object.getOwnPropertyDescriptor(cstTemp.prototype, prop);
                     if (propInfo?.set) {
                         obj[prop] = options.transformValue(prop, value);
@@ -5322,13 +5450,14 @@ const Icon = class Icon extends Aventus.WebComponent {
     set 'icon'(val) { this.setStringAttr('icon', val) }get 'type'() { return this.getStringProp('type') }
     set 'type'(val) { this.setStringAttr('type', val) }    static defaultType = 'outlined';
     __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("icon", ((target) => {
-    if (target.isReady)
-        target.shadowRoot.innerHTML = target.icon;
+    if (target.isReady) {
+        // target.shadowRoot.innerHTML = target.icon;
+    }
 }));this.__addPropertyActions("type", ((target) => {
     if (target.isReady)
         target.loadFont();
 })); }
-    static __style = `:host{--_material-icon-animation-duration: var(--material-icon-animation-duration, 1.75s)}:host{direction:ltr;display:inline-block;font-family:"Material Symbols Outlined";-moz-font-feature-settings:"liga";font-size:24px;-moz-osx-font-smoothing:grayscale;font-style:normal;font-weight:normal;letter-spacing:normal;line-height:1;text-transform:none;white-space:nowrap;word-wrap:normal}:host([is_hidden]){opacity:0}:host([type=sharp]){font-family:"Material Symbols Sharp"}:host([type=rounded]){font-family:"Material Symbols Rounded"}:host([type=outlined]){font-family:"Material Symbols Outlined"}:host([spin]){animation:spin var(--_material-icon-animation-duration) linear infinite}:host([reverse_spin]){animation:reverse-spin var(--_material-icon-animation-duration) linear infinite}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes reverse-spin{0%{transform:rotate(360deg)}100%{transform:rotate(0deg)}}`;
+    static __style = `:host{--_material-icon-animation-duration: var(--material-icon-animation-duration, 1.75s)}:host{direction:ltr;display:inline-block;font-family:"Material Symbols Outlined";-moz-font-feature-settings:"liga";font-size:24px;-moz-osx-font-smoothing:grayscale;font-style:normal;font-weight:normal;letter-spacing:normal;line-height:1;text-transform:none;white-space:nowrap;word-wrap:normal}:host .icon{direction:inherit;display:inline-block;font-family:inherit;-moz-font-feature-settings:inherit;font-size:inherit;-moz-osx-font-smoothing:inherit;font-style:inherit;font-weight:inherit;letter-spacing:inherit;line-height:inherit;text-transform:inherit;white-space:inherit;word-wrap:inherit}:host([is_hidden]){opacity:0}:host([type=sharp]){font-family:"Material Symbols Sharp"}:host([type=rounded]){font-family:"Material Symbols Rounded"}:host([type=outlined]){font-family:"Material Symbols Outlined"}:host([spin]){animation:spin var(--_material-icon-animation-duration) linear infinite}:host([reverse_spin]){animation:reverse-spin var(--_material-icon-animation-duration) linear infinite}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes reverse-spin{0%{transform:rotate(360deg)}100%{transform:rotate(0deg)}}`;
     __getStatic() {
         return Icon;
     }
@@ -5339,9 +5468,19 @@ const Icon = class Icon extends Aventus.WebComponent {
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`` }
+        blocks: { 'default':`<div class="icon" _id="icon_0"></div>` }
     });
 }
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "iconEl",
+      "ids": [
+        "icon_0"
+      ]
+    }
+  ]
+}); }
     getClassName() {
         return "Icon";
     }
@@ -5352,16 +5491,19 @@ const Icon = class Icon extends Aventus.WebComponent {
         if (!this.type)
             return;
         const name = this.type.charAt(0).toUpperCase() + this.type.slice(1);
-        let fontName = 'Material Symbols ' + name;
+        let fontsName = [
+            'Material Symbols ' + name,
+            '"Material Symbols ' + name + '"',
+        ];
         for (let font of document.fonts) {
-            if (font.family == fontName) {
+            if (fontsName.includes(font.family)) {
                 this.is_hidden = false;
                 return;
             }
         }
         const cb = (e) => {
             for (let font of e.fontfaces) {
-                if (font.family == fontName) {
+                if (fontsName.includes(font.family)) {
                     this.is_hidden = false;
                     break;
                 }
@@ -5377,13 +5519,13 @@ const Icon = class Icon extends Aventus.WebComponent {
     }
     async init() {
         await this.loadFont();
-        this.shadowRoot.innerHTML = this.icon;
+        this.iconEl.innerHTML = this.icon;
     }
     postCreation() {
         this.init();
     }
 }
-Icon.Namespace=`${moduleName}`;
+Icon.Namespace=`MaterialIcon`;
 Icon.Tag=`mi-icon`;
 _.Icon=Icon;
 if(!window.customElements.get('mi-icon')){window.customElements.define('mi-icon', Icon);Aventus.WebComponentInstance.registerDefinition(Icon);}
@@ -5837,6 +5979,12 @@ Navigation.Page = class Page extends Aventus.WebComponent {
     pageTitle() {
         return undefined;
     }
+    pageDescription() {
+        return undefined;
+    }
+    pageKeywords() {
+        return undefined;
+    }
     async show(state) {
         this.currentState = state;
         this.visible = true;
@@ -5945,6 +6093,22 @@ Navigation.Router = class Router extends Aventus.WebComponent {
                     let title = element.pageTitle();
                     if (title !== undefined)
                         document.title = title;
+                    let keywords = element.pageKeywords();
+                    if (keywords !== undefined) {
+                        let meta = document.querySelector('meta[name="keywords"]');
+                        if (!meta) {
+                            meta = document.createElement('meta');
+                        }
+                        meta.setAttribute("content", keywords.join(", "));
+                    }
+                    let description = element.pageDescription();
+                    if (description !== undefined) {
+                        let meta = document.querySelector('meta[name="description"]');
+                        if (!meta) {
+                            meta = document.createElement('meta');
+                        }
+                        meta.setAttribute("content", description);
+                    }
                     if (this.bindToUrl() && window.location.pathname != currentState.name) {
                         let newUrl = window.location.origin + currentState.name;
                         window.history.pushState({}, title ?? "", newUrl);
@@ -9066,6 +9230,15 @@ const Page = class Page extends Aventus.Navigation.Page {
     getClassName() {
         return "Page";
     }
+    pageTitle() {
+        return this.Title();
+    }
+    pageDescription() {
+        return this.Description();
+    }
+    pageKeywords() {
+        return this.Keywords();
+    }
 }
 Page.Namespace=`AventusWebsite`;
 _.Page=Page;
@@ -9088,8 +9261,22 @@ const Page404 = class Page404 extends Page {
     getClassName() {
         return "Page404";
     }
-    pageTitle() {
-        return "Aventus 404";
+    Title() {
+        return "404 - Page Not Found";
+    }
+    Description() {
+        return "Oops! The page you're looking for cannot be found. This might be due to a broken link, a mistyped URL, or the page might have been moved or deleted. Please check the URL and try again, or return to the homepage to find what you're looking for.";
+    }
+    Keywords() {
+        return [
+            "404 Error",
+            "Page Not Found",
+            "Aventus",
+            "Web Development",
+            "Error Page",
+            "Page Error",
+            "Not Found",
+        ];
     }
 }
 Page404.Namespace=`AventusWebsite`;
@@ -9115,8 +9302,25 @@ const Home = class Home extends Page {
     getClassName() {
         return "Home";
     }
-    pageTitle() {
-        return "Aventus";
+    Title() {
+        return "Aventus: The Web Component Framework for Scalable, Type-Safe Development";
+    }
+    Description() {
+        return "Explore Aventus, a JavaScript framework that leverages web components to build scalable applications with encapsulation, object-oriented programming, and type safety. Aventus offers an easy installation process and rapid project setup, exclusively as a VSCode extension, to enhance productivity and streamline web development.";
+    }
+    Keywords() {
+        return [
+            "Aventus framework",
+            "web components",
+            "JavaScript framework",
+            "encapsulation",
+            "type safety",
+            "object-oriented programming",
+            "scalable applications",
+            "VSCode extension",
+            "rapid project setup",
+            "web development tools",
+        ];
     }
 }
 Home.Namespace=`AventusWebsite`;
@@ -9158,6 +9362,25 @@ const About = class About extends Page {
     getClassName() {
         return "About";
     }
+    Title() {
+        return "Aventus - About";
+    }
+    Description() {
+        return "Discover the future plans for Aventus, developed by Cobwebsite. Learn about our dedicated team and how you can contribute to the project through direct support or sponsorship. Join us in enhancing web development and empowering developers with Aventus.";
+    }
+    Keywords() {
+        return [
+            "Aventus roadmap",
+            "Cobwebsite team",
+            "web development sponsorship",
+            "support Aventus",
+            "become a sponsor",
+            "enhance web tools",
+            "developer resources",
+            "web development project",
+            "programming sponsorship"
+        ];
+    }
     changeTab(e, instance) {
         let element = instance.getElement();
         if (element.classList.contains("active")) {
@@ -9177,9 +9400,6 @@ const About = class About extends Page {
         if (newTabActive) {
             newTabActive.classList.add("active");
         }
-    }
-    pageTitle() {
-        return "Aventus";
     }
 }
 About.Namespace=`AventusWebsite`;
@@ -11933,6 +12153,7 @@ if(!window.customElements.get('av-doc-sidenav')){window.customElements.define('a
 const DocGenericPage = class DocGenericPage extends Page {
     get 'fade'() { return this.getBoolAttr('fade') }
     set 'fade'(val) { this.setBoolAttr('fade', val) }    static __style = `:host{color:var(--text-color);opacity:0;transition:visibility .3s ease-in,opacity .3s ease-in;visibility:hidden}:host .container{max-width:none;width:100%}:host .container img{border-radius:5px}:host .container av-scrollable{--scroller-right: 10px}:host .container .page-content{font-size:1.6rem;margin:auto;padding:0 50px}:host .icon-menu{color:var(--text-color);cursor:pointer;display:none;font-size:25px;left:16px;position:absolute;-webkit-tap-highlight-color:rgba(0,0,0,0);top:28px;z-index:9999}:host h1{color:var(--title-color);font-size:3.2rem;margin:2.3rem 0;text-align:center}:host a{color:var(--link-color);text-decoration:none}:host p{line-height:1.7;text-align:justify}:host av-router-link,:host av-router-link{color:var(--link-color);cursor:pointer;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host av-img,:host av-docu-img{max-height:300px;width:100%}:host ul li,:host ol li{margin:5px 0}:host .table{margin:15px 0}:host .table .header{font-size:20px;font-weight:700;letter-spacing:1px;padding:0px}:host .table .header av-dynamic-col{text-align:center}:host .table .header::after{background:linear-gradient(90deg, transparent 0%, var(--text-color) 50%, transparent 100%);content:"";height:1px;margin:5px auto;width:100%}:host .table av-dynamic-row{align-items:center;padding:10px}:host .table av-dynamic-row av-dynamic-col{padding:0 15px;text-align:center}:host .cn{background-color:#cfd1d4;background-color:var(--light-primary-color);border-radius:5px;color:var(--aventus-color);font-size:14px;padding:2px 8px}:host([fade]){opacity:1;visibility:visible}@media screen and (max-width: 1100px){:host .container av-scrollable{--scroller-right: 3px}:host .container .page-content{padding:0px 16px}:host h1{padding:0 32px}:host .icon-menu{display:block}}`;
+    constructor() { super(); if (this.constructor == DocGenericPage) { throw "can't instanciate an abstract class"; } }
     __getStatic() {
         return DocGenericPage;
     }
@@ -11975,14 +12196,9 @@ const DocGenericPage = class DocGenericPage extends Page {
         await Aventus.sleep(350);
         super.hide();
     }
-    pageTitle() {
-        return "Aventus - Documentation";
-    }
 }
 DocGenericPage.Namespace=`AventusWebsite`;
-DocGenericPage.Tag=`av-doc-generic-page`;
 _.DocGenericPage=DocGenericPage;
-if(!window.customElements.get('av-doc-generic-page')){window.customElements.define('av-doc-generic-page', DocGenericPage);Aventus.WebComponentInstance.registerDefinition(DocGenericPage);}
 
 const DocLibWatcher = class DocLibWatcher extends DocGenericPage {
     static __style = ``;
@@ -12122,6 +12338,26 @@ const DocConfigLib = class DocConfigLib extends DocGenericPage {
     getClassName() {
         return "DocConfigLib";
     }
+    Title() {
+        return "How to Configure and Import Libraries in AventusJs Builds";
+    }
+    Description() {
+        return "Learn how to configure and import libraries in AventusJs builds, including setting up library URIs, managing dependencies, and controlling code inclusion in your output files. This guide covers local libraries, predefined Aventus libraries, and HTTP-based imports for seamless code reuse.";
+    }
+    Keywords() {
+        return [
+            "AventusJs library configuration",
+            "importing libraries in AventusJs",
+            "Aventus build libraries",
+            "URI setup AventusJs",
+            "Aventus dependency management",
+            "JavaScript library inclusion",
+            "Aventus local libraries",
+            "Aventus HTTP imports",
+            "AventusJs coding guide",
+            "sub-dependency inclusion",
+        ];
+    }
 }
 DocConfigLib.Namespace=`AventusWebsite`;
 DocConfigLib.Tag=`av-doc-config-lib`;
@@ -12145,6 +12381,26 @@ const DocConfigStatic = class DocConfigStatic extends DocGenericPage {
 }
     getClassName() {
         return "DocConfigStatic";
+    }
+    Title() {
+        return "How to Manage Static Files in AventusJs: A Complete Guide";
+    }
+    Description() {
+        return "Discover how to efficiently manage and export static files in AventusJs, including HTML, PNG, and Sass files. This guide explains setting up static input and output folders, using special files like Sass for CSS compilation, and leveraging global styles for web development.";
+    }
+    Keywords() {
+        return [
+            "AventusJs static files",
+            "managing static assets",
+            "Aventus static configuration",
+            "exporting static files",
+            "Sass to CSS compilation",
+            "Aventus global styles",
+            "web development tools",
+            "Aventus special files",
+            "static folder setup",
+            "AventusJs guide",
+        ];
     }
 }
 DocConfigStatic.Namespace=`AventusWebsite`;
@@ -12170,6 +12426,26 @@ const DocConfigBuild = class DocConfigBuild extends DocGenericPage {
     getClassName() {
         return "DocConfigBuild";
     }
+    Title() {
+        return "Comprehensive Guide to Configuring Builds in AventusJs";
+    }
+    Description() {
+        return "Explore how to configure builds in AventusJs to manage submodules and compile your code effectively. This guide details the setup of build names, input and output options, NPM exports, Storybook integration, and namespace strategies for optimized JavaScript and Aventus package development.";
+    }
+    Keywords() {
+        return [
+            "AventusJs build configuration",
+            "JavaScript build setup",
+            "Aventus submodules",
+            "NPM export configuration",
+            "Storybook integration",
+            "AventusJs compile options",
+            "namespace strategies",
+            "Aventus package files",
+            "web development tools",
+            "Aventus advanced guide",
+        ];
+    }
 }
 DocConfigBuild.Namespace=`AventusWebsite`;
 DocConfigBuild.Tag=`av-doc-config-build`;
@@ -12193,6 +12469,26 @@ const DocConfigBasic = class DocConfigBasic extends DocGenericPage {
 }
     getClassName() {
         return "DocConfigBasic";
+    }
+    Title() {
+        return "Basic Configuration Guide for AventusJs: Setting Up aventus.conf.avt";
+    }
+    Description() {
+        return "Learn how to configure your AventusJs application by setting up the aventus.conf.avt file. This guide explains essential properties such as module name, versioning, component prefixes, and more to ensure your project is properly structured and optimized.";
+    }
+    Keywords() {
+        return [
+            "AventusJs configuration",
+            "aventus.conf.avt setup",
+            "module creation",
+            "AventusJs basic info",
+            "web component prefix",
+            "versioning in AventusJs",
+            "AventusJs build options",
+            "JavaScript project setup",
+            "AventusJs guide",
+            "configuration properties",
+        ];
     }
 }
 DocConfigBasic.Namespace=`AventusWebsite`;
@@ -12218,8 +12514,25 @@ const DocInstallation = class DocInstallation extends DocGenericPage {
     getClassName() {
         return "DocInstallation";
     }
-    pageTitle() {
-        return "Aventus - Installation";
+    Title() {
+        return "How to Install and Use Aventus Extension in VSCode";
+    }
+    Description() {
+        return "Learn how to install the Aventus extension in Visual Studio Code and get started with essential commands. Find out how to reload the window, compile builds, export static folders, import templates, and access Aventus storage. The source code is available on GitHub.";
+    }
+    Keywords() {
+        return [
+            "Aventus installation",
+            "VSCode Aventus extension",
+            "install Aventus VSCode",
+            "Aventus commands",
+            "reload VSCode window",
+            "compile Aventus build",
+            "export static folder Aventus",
+            "import Aventus templates",
+            "access Aventus storage",
+            "Aventus GitHub source code",
+        ];
     }
 }
 DocInstallation.Namespace=`AventusWebsite`;
@@ -12524,7 +12837,7 @@ if(!window.customElements.get('av-code-editor')){window.customElements.define('a
 
 const BaseEditor = class BaseEditor extends Aventus.WebComponent {
     editorEl;
-    static __style = `:host{width:100%}:host iframe{border:none;height:400px;width:100%}`;
+    static __style = `:host{width:100%;display:none}:host iframe{border:none;height:400px;width:100%}`;
     __getStatic() {
         return BaseEditor;
     }
@@ -14091,6 +14404,25 @@ const DocIntroduction = class DocIntroduction extends DocGenericPage {
     getClassName() {
         return "DocIntroduction";
     }
+    Title() {
+        return "Introduction to Aventus Framework: Building Complex UIs Efficiently";
+    }
+    Description() {
+        return "Discover Aventus, a framework designed to help you build complex user interfaces by organizing front-end components into manageable files. Learn how Aventus leverages HTML, CSS, and JavaScript to streamline development with web components, data storage, state management, and HTTP requests.";
+    }
+    Keywords() {
+        return [
+            "Aventus framework",
+            "build complex user interfaces",
+            "Aventus introduction",
+            "web components",
+            "data storage",
+            "state management",
+            "HTTP requests",
+            "front-end development",
+            "HTML CSS JavaScript framework",
+        ];
+    }
 }
 DocIntroduction.Namespace=`AventusWebsite`;
 DocIntroduction.Tag=`av-doc-introduction`;
@@ -14114,6 +14446,26 @@ const DocExperience = class DocExperience extends DocGenericPage {
 }
     getClassName() {
         return "DocExperience";
+    }
+    Title() {
+        return "Enhancing Your Development Experience with Aventus Extension for VSCode";
+    }
+    Description() {
+        return "Explore how the Aventus extension enhances your VSCode development experience with features like project creation, build information, and a live server. Learn about new context menu options, build status display, and how to customize the live server settings.";
+    }
+    Keywords() {
+        return [
+            "Aventus VSCode extension",
+            "VSCode UI enhancements",
+            "Aventus project creation",
+            "VSCode live server",
+            "Aventus build status",
+            "VSCode context menu options",
+            "Aventus development tools",
+            "live server customization",
+            "VSCode development experience",
+            "Aventus UI features",
+        ];
     }
 }
 DocExperience.Namespace=`AventusWebsite`;
@@ -14275,6 +14627,26 @@ const DocFirstApp = class DocFirstApp extends DocGenericPage {
     getClassName() {
         return "DocFirstApp";
     }
+    Title() {
+        return "Create Your First Aventus Project: A Step-by-Step Guide";
+    }
+    Description() {
+        return "Learn how to create your first project with Aventus. This guide covers initializing a project, configuring the aventus.conf.avt file, creating your first web component, and setting up the live server. Follow these steps to get started with Aventus development.";
+    }
+    Keywords() {
+        return [
+            "Aventus project setup",
+            "create Aventus project",
+            "initializing Aventus",
+            "aventus.conf.avt configuration",
+            "web component creation",
+            "Aventus live server",
+            "Aventus development tutorial",
+            "first Aventus app",
+            "Aventus guide",
+            "setting up Aventus",
+        ];
+    }
 }
 DocFirstApp.Namespace=`AventusWebsite`;
 DocFirstApp.Tag=`av-doc-first-app`;
@@ -14298,6 +14670,25 @@ const DocDataCreate = class DocDataCreate extends DocGenericPage {
 }
     getClassName() {
         return "DocDataCreate";
+    }
+    Title() {
+        return "How to Define and Manage Data Structures in AventusJs";
+    }
+    Description() {
+        return "Learn how to define and manage data structures in AventusJs. This guide covers creating Data classes, implementing Aventus.IData, and ensuring proper initialization and schema synchronization in your web application.";
+    }
+    Keywords() {
+        return [
+            "AventusJs data structures",
+            "creating data classes",
+            "Aventus data management",
+            "Aventus.IData implementation",
+            "data schema synchronization",
+            "Aventus web development",
+            "backend object structures",
+            "Aventus class creation",
+            "Aventus data guide",
+        ];
     }
 }
 DocDataCreate.Namespace=`AventusWebsite`;
@@ -14323,6 +14714,24 @@ const DocRamCreate = class DocRamCreate extends DocGenericPage {
     getClassName() {
         return "DocRamCreate";
     }
+    Title() {
+        return "How to Create and Use RAM in Aventus";
+    }
+    Description() {
+        return "Discover how to create a RAM (Random Access Memory) class in Aventus for managing data instances. Learn about CRUD operations, default indexing, and customizing your RAM with defineIndexKey and getTypeForData. Master the use of RAM as a singleton for effective data storage in your Aventus application.";
+    }
+    Keywords() {
+        return [
+            "Create RAM Aventus",
+            "Aventus RAM class",
+            "Data storage Aventus",
+            "CRUD operations Aventus RAM",
+            "Define index key Aventus",
+            "Custom RAM indexing Aventus",
+            "RAM singleton Aventus",
+            "Get type for data Aventus",
+        ];
+    }
 }
 DocRamCreate.Namespace=`AventusWebsite`;
 DocRamCreate.Tag=`av-doc-ram-create`;
@@ -14346,6 +14755,23 @@ const DocRamCrud = class DocRamCrud extends DocGenericPage {
 }
     getClassName() {
         return "DocRamCrud";
+    }
+    Title() {
+        return "Managing Data with RAM Operations in Aventus";
+    }
+    Description() {
+        return "Learn how to perform CRUD operations using the RAM class in Aventus. Understand how to create, read, update, and delete data with detailed function explanations. Discover methods like getAll, create, update, and delete to efficiently manage data within your application.";
+    }
+    Keywords() {
+        return [
+            "RAM operations Aventus",
+            "Create Read Update Delete RAM",
+            "Aventus RAM CRUD operations",
+            "Manage data Aventus",
+            "Aventus getAll getById",
+            "Aventus createList updateList deleteList",
+            "RAM data management Aventus",
+        ];
     }
 }
 DocRamCrud.Namespace=`AventusWebsite`;
@@ -14371,6 +14797,24 @@ const DocRamListenChanges = class DocRamListenChanges extends DocGenericPage {
     getClassName() {
         return "DocRamListenChanges";
     }
+    Title() {
+        return "Listening to RAM Changes in Aventus: Item and RAM Scoped Functions";
+    }
+    Description() {
+        return "Discover how to listen for changes in data within RAM in Aventus. Learn about item-scoped functions for updating and deleting data, as well as RAM-scoped functions for monitoring data creation, updates, and deletions. Understand how to manage callbacks and avoid scope errors using @BindThis().";
+    }
+    Keywords() {
+        return [
+            "RAM changes Aventus",
+            "Item scoped functions Aventus",
+            "onUpdate onDelete offUpdate offDelete",
+            "RAM scoped functions Aventus",
+            "onCreated onUpdated onDeleted",
+            "Listen to RAM changes Aventus",
+            "Aventus data change listeners",
+            "Manage RAM callbacks Aventus",
+        ];
+    }
 }
 DocRamListenChanges.Namespace=`AventusWebsite`;
 DocRamListenChanges.Tag=`av-doc-ram-listen-changes`;
@@ -14394,6 +14838,24 @@ const DocRamMixin = class DocRamMixin extends DocGenericPage {
 }
     getClassName() {
         return "DocRamMixin";
+    }
+    Title() {
+        return "Extending Data in RAM with Custom Functions in Aventus";
+    }
+    Description() {
+        return "Learn how to extend data items in RAM using the mixin pattern in Aventus. This guide demonstrates how to add custom functions, such as helloWorld, to your data items. Follow along with an example to integrate additional functionalities into auto-generated data from your backend.";
+    }
+    Keywords() {
+        return [
+            "Extend data RAM Aventus",
+            "Custom functions RAM Aventus",
+            "Mixin pattern Aventus",
+            "Add functions to RAM items",
+            "Aventus data extension",
+            "Implement custom methods RAM",
+            "helloWorld function RAM Aventus",
+            "RAM data extension example",
+        ];
     }
 }
 DocRamMixin.Namespace=`AventusWebsite`;
@@ -14419,6 +14881,23 @@ const DocStateCreate = class DocStateCreate extends DocGenericPage {
     getClassName() {
         return "DocStateCreate";
     }
+    Title() {
+        return "How to Create and Manage States in Aventus";
+    }
+    Description() {
+        return " Learn how to define and manage application states in Aventus. This guide covers the creation of state classes and state managers, essential for handling transitions and maintaining unique application states, with a focus on practical examples like routers.";
+    }
+    Keywords() {
+        return [
+            "Aventus states",
+            "State management Aventus",
+            "Create state Aventus",
+            "Aventus StateManager",
+            "Application state Aventus",
+            "Router state Aventus",
+            "Vscode Aventus state creation",
+        ];
+    }
 }
 DocStateCreate.Namespace=`AventusWebsite`;
 DocStateCreate.Tag=`av-doc-state-create`;
@@ -14443,6 +14922,23 @@ const DocStateChange = class DocStateChange extends DocGenericPage {
     getClassName() {
         return "DocStateChange";
     }
+    Title() {
+        return "How to Change States in Aventus";
+    }
+    Description() {
+        return "Discover how to change states in Aventus with various methods. Learn how to use the setState method on the state manager, the activate method on the Aventus.State class, and instance-specific activation techniques for efficient state management.";
+    }
+    Keywords() {
+        return [
+            "Change state Aventus",
+            "Aventus state management",
+            "Set state method Aventus",
+            "Activate state Aventus",
+            "State manager Aventus",
+            "Static state activation Aventus",
+            "Instance state activation Aventus",
+        ];
+    }
 }
 DocStateChange.Namespace=`AventusWebsite`;
 DocStateChange.Tag=`av-doc-state-change`;
@@ -14466,6 +14962,23 @@ const DocStateListen = class DocStateListen extends DocGenericPage {
 }
     getClassName() {
         return "DocStateListen";
+    }
+    Title() {
+        return "How to Listen for State Changes in Aventus";
+    }
+    Description() {
+        return "Learn how to listen for state changes in Aventus using the StateAction lifecycle methods: active, inactive, and askChange. Discover how to subscribe to state changes, handle state transitions, and override lifecycle methods within your State class for effective state management.";
+    }
+    Keywords() {
+        return [
+            "Listen state changes Aventus",
+            "Aventus StateAction",
+            "StateManager callbacks Aventus",
+            "State active inactive askChange Aventus",
+            "Subscribe to state changes Aventus",
+            "Handle state transitions Aventus",
+            "Override state lifecycle methods Aventus",
+        ];
     }
 }
 DocStateListen.Namespace=`AventusWebsite`;
@@ -16578,6 +17091,26 @@ const DocAdvancedTemplate = class DocAdvancedTemplate extends DocGenericPage {
     getClassName() {
         return "DocAdvancedTemplate";
     }
+    Title() {
+        return "Advanced Guide: Creating and Using Templates in AventusJs";
+    }
+    Description() {
+        return "Unlock the power of AventusJs by creating and using templates for efficient component and project development. Learn how to set up templates, automate file generation, and optimize user experience with predefined variables and custom commands.";
+    }
+    Keywords() {
+        return [
+            "AventusJs templates",
+            "component automation",
+            "template creation guide",
+            "Tailwind integration",
+            "AventusJs advanced features",
+            "web component templates",
+            "project initialization",
+            "AventusJs development tools",
+            "code generation",
+            "template management",
+        ];
+    }
 }
 DocAdvancedTemplate.Namespace=`AventusWebsite`;
 DocAdvancedTemplate.Tag=`av-doc-advanced-template`;
@@ -16602,6 +17135,25 @@ const DocAdvancedNpmExport = class DocAdvancedNpmExport extends DocGenericPage {
     getClassName() {
         return "DocAdvancedNpmExport";
     }
+    Title() {
+        return "Advanced Guide: Exporting AventusJs Code to NPM";
+    }
+    Description() {
+        return "Learn how to export your AventusJs code to NPM to share and reuse across multiple JavaScript projects. This comprehensive guide covers setting up a project, configuring build outputs, and publishing your package for public use.";
+    }
+    Keywords() {
+        return [
+            "AventusJs export",
+            "NPM package publishing",
+            "JavaScript code sharing",
+            "build.compile.outputNpm",
+            "npm publish",
+            "AventusJs tutorial",
+            "JavaScript project integration",
+            "code reuse",
+            "web development tools",
+        ];
+    }
 }
 DocAdvancedNpmExport.Namespace=`AventusWebsite`;
 DocAdvancedNpmExport.Tag=`av-doc-advanced-npm-export`;
@@ -16625,6 +17177,26 @@ const DocAdvancedStorybook = class DocAdvancedStorybook extends DocGenericPage {
 }
     getClassName() {
         return "DocAdvancedStorybook";
+    }
+    Title() {
+        return "Advanced Guide: Exporting AventusJs Code to Storybook for UI Component Visualization";
+    }
+    Description() {
+        return "Master the process of exporting your AventusJs code to Storybook for interactive UI component development and documentation. This guide covers setting up a project, configuring Storybook, writing custom stories, and creating detailed documentation for your components.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Storybook export",
+            "UI component documentation",
+            "Storybook setup guide",
+            "AventusJs tutorials",
+            "JavaScript component visualization",
+            "custom stories in Storybook",
+            "Storybook documentation",
+            "npm package integration",
+            "UI development tools",
+            "AventusJs advanced features"
+        ];
     }
 }
 DocAdvancedStorybook.Namespace=`AventusWebsite`;
@@ -16727,6 +17299,7 @@ if(!window.customElements.get('av-doc-app')){window.customElements.define('av-do
 const DocPage = class DocPage extends Page {
     get 'open'() { return this.getBoolAttr('open') }
     set 'open'(val) { this.setBoolAttr('open', val) }    static __style = `:host{position:100%}:host av-doc-sidenav{transition:left .4s var(--bezier-curve)}:host .hider{background-color:rgba(0,0,0,0);display:none;height:100%;left:0;position:absolute;top:0;width:100%;z-index:99}:host>.container{width:calc(100% - 300px);max-width:none}:host([visible]){display:flex}@media screen and (max-width: 1100px){:host>.container{width:100%}:host av-doc-sidenav{height:calc(100% - 50px);left:-300px;position:absolute;top:50px;z-index:100}:host([open]) av-doc-sidenav{left:0px}:host([open]) .hider{display:block}}`;
+    constructor() { super(); if (this.constructor == DocPage) { throw "can't instanciate an abstract class"; } }
     __getStatic() {
         return DocPage;
     }
@@ -16765,9 +17338,6 @@ const DocPage = class DocPage extends Page {
     getNextAndPrevious(state) {
         return this.sidenavEl.getNextAndPrevious(state);
     }
-    pageTitle() {
-        return "Aventus - Documentation";
-    }
     openMenu() {
         this.open = true;
     }
@@ -16776,9 +17346,7 @@ const DocPage = class DocPage extends Page {
     }
 }
 DocPage.Namespace=`AventusWebsite`;
-DocPage.Tag=`av-doc-page`;
 _.DocPage=DocPage;
-if(!window.customElements.get('av-doc-page')){window.customElements.define('av-doc-page', DocPage);Aventus.WebComponentInstance.registerDefinition(DocPage);}
 
 const TutorialGenericPage = class TutorialGenericPage extends Page {
     get 'fade'() { return this.getBoolAttr('fade') }
@@ -16825,8 +17393,23 @@ const TutorialGenericPage = class TutorialGenericPage extends Page {
         await Aventus.sleep(350);
         super.hide();
     }
-    pageTitle() {
-        return "Aventus - Tutorial";
+    Title() {
+        return "Getting Started with Aventus: Building a Simple Todo List";
+    }
+    Description() {
+        return "In this tutorial, you will explore the core concepts of Aventus by creating a simple todo list application. Learn how to structure your project, work with web components, and manage data behavior effectively. Prerequisites include having Aventus installed in your development environment. By the end of this tutorial, you'll be equipped with the foundational skills needed to build scalable applications using Aventus.";
+    }
+    Keywords() {
+        return [
+            "Aventus",
+            "Tutorial",
+            "Web Components",
+            "Data Management",
+            "Project Structure",
+            "Todo List",
+            "VSCode",
+            "JavaScript Framework",
+        ];
     }
 }
 TutorialGenericPage.Namespace=`AventusWebsite`;
@@ -17644,7 +18227,7 @@ TutorialListTodoEditor1.Tag=`av-tutorial-list-todo-editor-1`;
 _.TutorialListTodoEditor1=TutorialListTodoEditor1;
 if(!window.customElements.get('av-tutorial-list-todo-editor-1')){window.customElements.define('av-tutorial-list-todo-editor-1', TutorialListTodoEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialListTodoEditor1);}
 
-const TutorialListTodo = class TutorialListTodo extends DocGenericPage {
+const TutorialListTodo = class TutorialListTodo extends TutorialGenericPage {
     static __style = ``;
     __getStatic() {
         return TutorialListTodo;
@@ -17835,11 +18418,26 @@ const TutorialPage = class TutorialPage extends Page {
     __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('open')) { this.attributeChangedCallback('open', false, false); } }
     __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('open'); }
     __listBoolProps() { return ["open"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    Title() {
+        return "Getting Started with Aventus: Building a Simple Todo List";
+    }
+    Description() {
+        return "In this tutorial, you will explore the core concepts of Aventus by creating a simple todo list application. Learn how to structure your project, work with web components, and manage data behavior effectively. Prerequisites include having Aventus installed in your development environment. By the end of this tutorial, you'll be equipped with the foundational skills needed to build scalable applications using Aventus.";
+    }
+    Keywords() {
+        return [
+            "Aventus",
+            "Tutorial",
+            "Web Components",
+            "Data Management",
+            "Project Structure",
+            "Todo List",
+            "VSCode",
+            "JavaScript Framework",
+        ];
+    }
     getNextAndPrevious(state) {
         return this.sidenavEl.getNextAndPrevious(state);
-    }
-    pageTitle() {
-        return "Aventus - Tutorial";
     }
     openMenu() {
         this.open = true;

@@ -2,33 +2,60 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocRamMixin extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Extending Data in RAM with Custom Functions in Aventus";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to extend data items in RAM using the mixin pattern in Aventus. This guide demonstrates how to add custom functions, such as helloWorld, to your data items. Follow along with an example to integrate additional functionalities into auto-generated data from your backend.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Extend data RAM Aventus",
+            "Custom functions RAM Aventus",
+            "Mixin pattern Aventus",
+            "Add functions to RAM items",
+            "Aventus data extension",
+            "Implement custom methods RAM",
+            "helloWorld function RAM Aventus",
+            "RAM data extension example",
+        ];
+    }
+
+    //#endregion
+
 }

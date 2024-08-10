@@ -2,33 +2,62 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocConfigBuild extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Comprehensive Guide to Configuring Builds in AventusJs";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Explore how to configure builds in AventusJs to manage submodules and compile your code effectively. This guide details the setup of build names, input and output options, NPM exports, Storybook integration, and namespace strategies for optimized JavaScript and Aventus package development.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs build configuration",
+            "JavaScript build setup",
+            "Aventus submodules",
+            "NPM export configuration",
+            "Storybook integration",
+            "AventusJs compile options",
+            "namespace strategies",
+            "Aventus package files",
+            "web development tools",
+            "Aventus advanced guide",
+        ];
+    }
+
+    //#endregion
+
 }

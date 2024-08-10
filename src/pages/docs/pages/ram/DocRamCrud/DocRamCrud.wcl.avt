@@ -2,33 +2,59 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocRamCrud extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Managing Data with RAM Operations in Aventus";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to perform CRUD operations using the RAM class in Aventus. Understand how to create, read, update, and delete data with detailed function explanations. Discover methods like getAll, create, update, and delete to efficiently manage data within your application.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "RAM operations Aventus",
+            "Create Read Update Delete RAM",
+            "Aventus RAM CRUD operations",
+            "Manage data Aventus",
+            "Aventus getAll getById",
+            "Aventus createList updateList deleteList",
+            "RAM data management Aventus",
+        ];
+    }
+
+    //#endregion
+
 }

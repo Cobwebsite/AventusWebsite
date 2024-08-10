@@ -222,6 +222,16 @@
         <lastmod>2023-06-16</lastmod>
         <priority>0.5</priority>
     </url>
+     <url>
+        <loc>https://aventusjs.com/docs/advanced/npm_export</loc>
+        <lastmod>2023-06-16</lastmod>
+        <priority>0.5</priority>
+    </url>
+     <url>
+        <loc>https://aventusjs.com/docs/advanced/storybook</loc>
+        <lastmod>2023-06-16</lastmod>
+        <priority>0.5</priority>
+    </url>
     <url>
         <loc>https://aventusjs.com/tutorial/introduction</loc>
         <lastmod>2023-06-16</lastmod>

@@ -2,33 +2,62 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocConfigBasic extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Basic Configuration Guide for AventusJs: Setting Up aventus.conf.avt";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to configure your AventusJs application by setting up the aventus.conf.avt file. This guide explains essential properties such as module name, versioning, component prefixes, and more to ensure your project is properly structured and optimized.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs configuration",
+            "aventus.conf.avt setup",
+            "module creation",
+            "AventusJs basic info",
+            "web component prefix",
+            "versioning in AventusJs",
+            "AventusJs build options",
+            "JavaScript project setup",
+            "AventusJs guide",
+            "configuration properties",
+        ];
+    }
+
+    //#endregion
+
 }

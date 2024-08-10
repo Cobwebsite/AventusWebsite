@@ -2,33 +2,59 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocStateListen extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "How to Listen for State Changes in Aventus";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to listen for state changes in Aventus using the StateAction lifecycle methods: active, inactive, and askChange. Discover how to subscribe to state changes, handle state transitions, and override lifecycle methods within your State class for effective state management.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Listen state changes Aventus",
+            "Aventus StateAction",
+            "StateManager callbacks Aventus",
+            "State active inactive askChange Aventus",
+            "Subscribe to state changes Aventus",
+            "Handle state transitions Aventus",
+            "Override state lifecycle methods Aventus",
+        ];
+    }
+
+    //#endregion
+
 }

@@ -2,33 +2,61 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocDataCreate extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "How to Define and Manage Data Structures in AventusJs";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to define and manage data structures in AventusJs. This guide covers creating Data classes, implementing Aventus.IData, and ensuring proper initialization and schema synchronization in your web application.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs data structures",
+            "creating data classes",
+            "Aventus data management",
+            "Aventus.IData implementation",
+            "data schema synchronization",
+            "Aventus web development",
+            "backend object structures",
+            "Aventus class creation",
+            "Aventus data guide",
+        ];
+    }
+
+    //#endregion
+
 }
