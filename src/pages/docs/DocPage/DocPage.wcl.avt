@@ -1,7 +1,7 @@
 import { DocSidenav } from "../DocSidenav/DocSidenav.wcl.avt";
 import { Page } from "../../../core/components/Page/Page.wcl.avt";
 
-export abstract class DocPage extends Page implements Aventus.DefaultComponent {
+export class DocPage extends Page implements Aventus.DefaultComponent {
 
     //#region static
 
@@ -31,6 +31,24 @@ export abstract class DocPage extends Page implements Aventus.DefaultComponent {
 
 
     //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Aventus - Documentation";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Documentation for Aventus";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [];
+    }
     public getNextAndPrevious(state: string) {
         return this.sidenavEl.getNextAndPrevious(state);
     }
