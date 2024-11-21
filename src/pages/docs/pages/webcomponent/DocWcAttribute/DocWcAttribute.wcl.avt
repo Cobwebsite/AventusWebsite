@@ -28,6 +28,24 @@ export class DocWcAttribute extends DocGenericPage implements Aventus.DefaultCom
 	
 	
 	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+		return "AventusJs - Attribute"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Use attribute on your webcomponent"
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return ["Html", "Webcomponent", "Attribute", "Tag"]
+	}
 	
 	//#endregion
 	

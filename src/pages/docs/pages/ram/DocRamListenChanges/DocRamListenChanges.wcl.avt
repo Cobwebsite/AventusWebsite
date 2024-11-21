@@ -2,33 +2,60 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocRamListenChanges extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Listening to RAM Changes in Aventus: Item and RAM Scoped Functions";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Discover how to listen for changes in data within RAM in Aventus. Learn about item-scoped functions for updating and deleting data, as well as RAM-scoped functions for monitoring data creation, updates, and deletions. Understand how to manage callbacks and avoid scope errors using @BindThis().";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "RAM changes Aventus",
+            "Item scoped functions Aventus",
+            "onUpdate onDelete offUpdate offDelete",
+            "RAM scoped functions Aventus",
+            "onCreated onUpdated onDeleted",
+            "Listen to RAM changes Aventus",
+            "Aventus data change listeners",
+            "Manage RAM callbacks Aventus",
+        ];
+    }
+
+    //#endregion
+
 }

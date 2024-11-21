@@ -23,6 +23,24 @@ export class DocLibResourceLoader extends DocGenericPage implements Aventus.Defa
 	
 	
 	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "AventusJs - Resource Loader"
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+		return "Load resource inside your code to avoid duplication"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return ['resource', "duplication", "url", "uri"]
+	}
 	
 	//#endregion
 	

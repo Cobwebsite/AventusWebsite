@@ -28,6 +28,24 @@ export class DocWcInheritance extends DocGenericPage implements Aventus.DefaultC
 	
 	
 	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+		return "AventusJs - Inheritance";
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+		return "Use inheritance inside your webcomponent"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return ["OOP", "Inheritance", "Generic", "Class", "Interface", "Webcomponent"]
+	}
 	
 	//#endregion
 	

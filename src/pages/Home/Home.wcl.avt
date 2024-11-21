@@ -2,36 +2,62 @@ import { Page } from "../../core/components/Page/Page.wcl.avt";
 
 export class Home extends Page implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-    public override pageTitle(): string {
-       return "Aventus";
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Aventus: The Web Component Framework for Scalable, Type-Safe Development";
     }
-	
-	//#endregion
-	
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Explore Aventus, a JavaScript framework that leverages web components to build scalable applications with encapsulation, object-oriented programming, and type safety. Aventus offers an easy installation process and rapid project setup, exclusively as a VSCode extension, to enhance productivity and streamline web development.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus framework",
+            "web components",
+            "JavaScript framework",
+            "encapsulation",
+            "type safety",
+            "object-oriented programming",
+            "scalable applications",
+            "VSCode extension",
+            "rapid project setup",
+            "web development tools",
+        ];
+    }
+
+    //#endregion
+
 }

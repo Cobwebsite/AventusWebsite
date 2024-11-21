@@ -2,34 +2,55 @@ import { Page } from "../../core/components/Page/Page.wcl.avt";
 
 export class Page404 extends Page implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
     /**
      * @inheritdoc
      */
-    public override pageTitle(): string {
-        return "Aventus 404";
+    protected override Title(): string {
+        return "404 - Page Not Found";
     }
-	
-	//#endregion
-	
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Oops! The page you're looking for cannot be found. This might be due to a broken link, a mistyped URL, or the page might have been moved or deleted. Please check the URL and try again, or return to the homepage to find what you're looking for.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "404 Error",
+            "Page Not Found",
+            "Aventus",
+            "Web Development",
+            "Error Page",
+            "Page Error",
+            "Not Found",
+        ];
+    }
+
+
+    //#endregion
+
 }

@@ -23,6 +23,24 @@ export class DocWcCondition extends DocGenericPage implements Aventus.DefaultCom
 	
 	
 	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+		return "AventusJs - Condition"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+		return "Use if / else if / else to render your view"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return ["if", "else if", "else", "condition", "Dynamic", "view", "html"]
+	}
 	
 	//#endregion
 	

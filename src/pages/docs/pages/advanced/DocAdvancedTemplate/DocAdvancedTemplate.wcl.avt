@@ -2,28 +2,57 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocAdvancedTemplate extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Advanced Guide: Creating and Using Templates in AventusJs";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Unlock the power of AventusJs by creating and using templates for efficient component and project development. Learn how to set up templates, automate file generation, and optimize user experience with predefined variables and custom commands.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs templates",
+            "component automation",
+            "template creation guide",
+            "Tailwind integration",
+            "AventusJs advanced features",
+            "web component templates",
+            "project initialization",
+            "AventusJs development tools",
+            "code generation",
+            "template management",
+        ];
+    }
+
+    //#endregion
+
 }

@@ -28,6 +28,24 @@ export class DocLibCreate extends DocGenericPage implements Aventus.DefaultCompo
 	
 	
 	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "AventusJs - Lib file"
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Understand how to create lib file and use it"
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return ["Lib file", "Library", "Custom code", "Function", "Const"]
+	}
 	
 	//#endregion
 	

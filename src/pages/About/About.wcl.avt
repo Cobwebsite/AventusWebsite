@@ -23,6 +23,34 @@ export class About extends Page implements Aventus.DefaultComponent {
 
 
     //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Aventus - About";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Discover the future plans for Aventus, developed by Cobwebsite. Learn about our dedicated team and how you can contribute to the project through direct support or sponsorship. Join us in enhancing web development and empowering developers with Aventus.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus roadmap",
+            "Cobwebsite team",
+            "web development sponsorship",
+            "support Aventus",
+            "become a sponsor",
+            "enhance web tools",
+            "developer resources",
+            "web development project",
+            "programming sponsorship"
+        ];
+    }
 
 
     /**
@@ -50,13 +78,6 @@ export class About extends Page implements Aventus.DefaultComponent {
             newTabActive.classList.add("active");
         }
 
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public override pageTitle(): string {
-        return "Aventus";
     }
 
     //#endregion

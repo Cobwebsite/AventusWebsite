@@ -2,28 +2,57 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocAdvancedStorybook extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Advanced Guide: Exporting AventusJs Code to Storybook for UI Component Visualization";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Master the process of exporting your AventusJs code to Storybook for interactive UI component development and documentation. This guide covers setting up a project, configuring Storybook, writing custom stories, and creating detailed documentation for your components.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs Storybook export",
+            "UI component documentation",
+            "Storybook setup guide",
+            "AventusJs tutorials",
+            "JavaScript component visualization",
+            "custom stories in Storybook",
+            "Storybook documentation",
+            "npm package integration",
+            "UI development tools",
+            "AventusJs advanced features"
+        ];
+    }
+
+    //#endregion
+
 }

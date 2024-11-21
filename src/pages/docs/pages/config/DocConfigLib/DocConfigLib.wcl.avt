@@ -2,33 +2,62 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocConfigLib extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "How to Configure and Import Libraries in AventusJs Builds";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to configure and import libraries in AventusJs builds, including setting up library URIs, managing dependencies, and controlling code inclusion in your output files. This guide covers local libraries, predefined Aventus libraries, and HTTP-based imports for seamless code reuse.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs library configuration",
+            "importing libraries in AventusJs",
+            "Aventus build libraries",
+            "URI setup AventusJs",
+            "Aventus dependency management",
+            "JavaScript library inclusion",
+            "Aventus local libraries",
+            "Aventus HTTP imports",
+            "AventusJs coding guide",
+            "sub-dependency inclusion",
+        ];
+    }
+
+    //#endregion
+
 }

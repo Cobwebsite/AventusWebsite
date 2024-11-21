@@ -28,6 +28,24 @@ export class DocWcLoop extends DocGenericPage implements Aventus.DefaultComponen
 	
 	
 	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+		return "AventusJs - Loop"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+		return "Use loop inside your view"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return ["Loop", "for", "for in", "for of", "View", "Webcomponent"]
+	}
 	
 	//#endregion
 	

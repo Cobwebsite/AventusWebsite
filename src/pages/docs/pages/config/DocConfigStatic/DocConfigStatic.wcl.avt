@@ -2,33 +2,62 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocConfigStatic extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "How to Manage Static Files in AventusJs: A Complete Guide";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Discover how to efficiently manage and export static files in AventusJs, including HTML, PNG, and Sass files. This guide explains setting up static input and output folders, using special files like Sass for CSS compilation, and leveraging global styles for web development.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs static files",
+            "managing static assets",
+            "Aventus static configuration",
+            "exporting static files",
+            "Sass to CSS compilation",
+            "Aventus global styles",
+            "web development tools",
+            "Aventus special files",
+            "static folder setup",
+            "AventusJs guide",
+        ];
+    }
+
+    //#endregion
+
 }

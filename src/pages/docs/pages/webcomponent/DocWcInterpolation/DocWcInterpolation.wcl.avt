@@ -23,6 +23,24 @@ export class DocWcInterpolation extends DocGenericPage implements Aventus.Defaul
 	
 	
 	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+		return "AventusJs - Interpolation"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+		return "Interpolate your variable inside your view to make them dynamic"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return ['Dynamic', "interpolation", "view", "Webcomponent"]
+    }
 	
 	//#endregion
 	

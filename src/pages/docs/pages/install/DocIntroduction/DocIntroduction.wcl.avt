@@ -28,6 +28,34 @@ export class DocIntroduction extends DocGenericPage implements Aventus.DefaultCo
 
 
     //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Introduction to Aventus Framework: Building Complex UIs Efficiently";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Discover Aventus, a framework designed to help you build complex user interfaces by organizing front-end components into manageable files. Learn how Aventus leverages HTML, CSS, and JavaScript to streamline development with web components, data storage, state management, and HTTP requests.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus framework",
+            "build complex user interfaces",
+            "Aventus introduction",
+            "web components",
+            "data storage",
+            "state management",
+            "HTTP requests",
+            "front-end development",
+            "HTML CSS JavaScript framework",
+        ];
+    }
 
 
     //#endregion

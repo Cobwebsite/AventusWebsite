@@ -2,35 +2,62 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocInstallation extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	public override pageTitle(): string {
-		return "Aventus - Installation";
-	}
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "How to Install and Use Aventus Extension in VSCode";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to install the Aventus extension in Visual Studio Code and get started with essential commands. Find out how to reload the window, compile builds, export static folders, import templates, and access Aventus storage. The source code is available on GitHub.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus installation",
+            "VSCode Aventus extension",
+            "install Aventus VSCode",
+            "Aventus commands",
+            "reload VSCode window",
+            "compile Aventus build",
+            "export static folder Aventus",
+            "import Aventus templates",
+            "access Aventus storage",
+            "Aventus GitHub source code",
+        ];
+    }
+
+    //#endregion
+
 }

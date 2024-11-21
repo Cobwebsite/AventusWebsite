@@ -1,6 +1,6 @@
-import { DocGenericPage } from "../../../docs/pages/DocGenericPage/DocGenericPage.wcl.avt";
+import { TutorialGenericPage } from "../TutorialGenericPage/TutorialGenericPage.wcl.avt";
 
-export class TutorialListTodo extends DocGenericPage implements Aventus.DefaultComponent {
+export class TutorialListTodo extends TutorialGenericPage implements Aventus.DefaultComponent {
 
 	//#region static
 	

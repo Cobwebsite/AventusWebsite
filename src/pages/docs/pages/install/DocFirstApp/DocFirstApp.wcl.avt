@@ -2,33 +2,62 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocFirstApp extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Create Your First Aventus Project: A Step-by-Step Guide";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to create your first project with Aventus. This guide covers initializing a project, configuring the aventus.conf.avt file, creating your first web component, and setting up the live server. Follow these steps to get started with Aventus development.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus project setup",
+            "create Aventus project",
+            "initializing Aventus",
+            "aventus.conf.avt configuration",
+            "web component creation",
+            "Aventus live server",
+            "Aventus development tutorial",
+            "first Aventus app",
+            "Aventus guide",
+            "setting up Aventus",
+        ];
+    }
+
+    //#endregion
+
 }

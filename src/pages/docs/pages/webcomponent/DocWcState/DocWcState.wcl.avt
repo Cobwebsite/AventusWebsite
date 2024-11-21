@@ -28,6 +28,24 @@ export class DocWcState extends DocGenericPage implements Aventus.DefaultCompone
 	
 	
 	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+		return "AventusJs - State";
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+		return "Use state inside your aventus app to centralize your data"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return ['State', "Centralization", "active", "inactive", "askChange"]
+	}
 	
 	//#endregion
 	

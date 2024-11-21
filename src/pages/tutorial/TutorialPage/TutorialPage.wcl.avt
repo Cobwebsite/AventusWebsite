@@ -31,11 +31,35 @@ export class TutorialPage extends Page implements Aventus.DefaultComponent {
 
 
     //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Getting Started with Aventus: Building a Simple Todo List";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "In this tutorial, you will explore the core concepts of Aventus by creating a simple todo list application. Learn how to structure your project, work with web components, and manage data behavior effectively. Prerequisites include having Aventus installed in your development environment. By the end of this tutorial, you'll be equipped with the foundational skills needed to build scalable applications using Aventus.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus",
+            "Tutorial",
+            "Web Components",
+            "Data Management",
+            "Project Structure",
+            "Todo List",
+            "VSCode",
+            "JavaScript Framework",
+        ];
+    }
     public getNextAndPrevious(state: string) {
         return this.sidenavEl.getNextAndPrevious(state);
-    }
-    public override pageTitle(): string {
-        return "Aventus - Tutorial";
     }
 
     /**

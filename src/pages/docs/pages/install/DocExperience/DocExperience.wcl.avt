@@ -2,33 +2,62 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocExperience extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Enhancing Your Development Experience with Aventus Extension for VSCode";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Explore how the Aventus extension enhances your VSCode development experience with features like project creation, build information, and a live server. Learn about new context menu options, build status display, and how to customize the live server settings.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus VSCode extension",
+            "VSCode UI enhancements",
+            "Aventus project creation",
+            "VSCode live server",
+            "Aventus build status",
+            "VSCode context menu options",
+            "Aventus development tools",
+            "live server customization",
+            "VSCode development experience",
+            "Aventus UI features",
+        ];
+    }
+
+    //#endregion
+
 }
