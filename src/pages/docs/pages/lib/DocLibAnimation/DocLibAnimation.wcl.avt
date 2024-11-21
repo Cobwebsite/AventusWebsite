@@ -23,6 +23,24 @@ export class DocLibAnimation extends DocGenericPage implements Aventus.DefaultCo
 	
 	
 	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "AventusJs - Animation"
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Manage animation inside AventusJs"
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return ['Animation', 'requestAnimationFrame']
+    }
 	
 	//#endregion
 	

@@ -2,33 +2,51 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocWcElement extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "AventusJs - Element";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Reference your view element inside your class";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return ["View", "Element", "Reference", "ref"];
+    }
+
+    //#endregion
+
 }

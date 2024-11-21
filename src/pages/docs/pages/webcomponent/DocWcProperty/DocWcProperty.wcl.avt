@@ -2,33 +2,51 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocWcProperty extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "AventusJs - Property";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Create property to watch change on tag attribute";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return ["Property", "Tag", "Attribute", "Dynamic"];
+    }
+
+    //#endregion
+
 }

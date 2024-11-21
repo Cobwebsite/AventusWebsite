@@ -23,6 +23,24 @@ export class DocLibTools extends DocGenericPage implements Aventus.DefaultCompon
 	
 	
 	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "AventusJs - Tools";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+		return "Use predefined function to simplify code";
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return ['compareObject', 'getValueFromObject', 'setValueToObject', 'Json', 'Converter', 'Mutex', 'sleep', 'UUID', 'Error'];
+	}
 	
 	//#endregion
 	

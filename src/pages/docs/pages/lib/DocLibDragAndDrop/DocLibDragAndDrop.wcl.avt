@@ -2,28 +2,46 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocLibDragAndDrop extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "AventusJs - Drag and Drop";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+		return "Use drag and drop inside AventusJs"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return ["Drag", "Drop", "Touch", "Action", "Library"]
+	}
+
+    //#endregion
+
 }

@@ -2,33 +2,51 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocWcWatch extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "AventusJs - Watch";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Add dyamic variable into your webcomponent";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return ["Watch", "Reactivity", "Dynamic", "Watcher", "Webcomponent"];
+    }
+
+    //#endregion
+
 }

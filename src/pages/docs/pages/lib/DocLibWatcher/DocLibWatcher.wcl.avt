@@ -23,6 +23,24 @@ export class DocLibWatcher extends DocGenericPage implements Aventus.DefaultComp
 	
 	
 	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return 'AventusJs - Watcher';
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return 'Implement reactivity inside your application with Watcher';
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return ["Watcher", "Reactivity", "Proxy", "Computed", "Effect"]
+	}
 	
 	//#endregion
 	

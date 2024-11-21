@@ -25,35 +25,6 @@ var npmCompilation;
 npmCompilation['c940c285ff5c6f70f9e3538ac79e1aec']['saveAs'] = _['saveAs'];
 
 })(npmCompilation);
-Object.defineProperty(window, "AvInstance", {
-	get() {return Aventus.Instance;}
-});
-
-(() => {
-	Map.prototype._defaultHas = Map.prototype.has;
-	Map.prototype._defaultSet = Map.prototype.set;
-	Map.prototype._defaultGet = Map.prototype.get;
-	Map.prototype.has = function(key) {
-		if(Aventus.Watcher?.is(key)) {
-			return Map.prototype._defaultHas.call(this,key.getTarget())
-		}
-		return Map.prototype._defaultHas.call(this,key);
-	}
-
-	Map.prototype.set = function(key, value) {
-		if(Aventus.Watcher?.is(key)) {
-			return Map.prototype._defaultSet.call(this, key.getTarget(), value)
-		}
-		return Map.prototype._defaultSet.call(this, key, value);
-	}
-	Map.prototype.get = function(key) {
-		if(Aventus.Watcher?.is(key)) {
-			return Map.prototype._defaultGet.call(this, key.getTarget())
-		}
-		return Map.prototype._defaultGet.call(this, key);
-	}
-})()
-
 var Aventus;
 (Aventus||(Aventus = {}));
 (function (Aventus) {
@@ -62,12 +33,36 @@ const _ = {};
 
 
 let _n;
-const sleep=function sleep(ms) {
+let DateConverter=class DateConverter {
+    static __converter = new DateConverter();
+    static get converter() {
+        return this.__converter;
+    }
+    static set converter(value) {
+        this.__converter = value;
+    }
+    isStringDate(txt) {
+        return /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.(\d{3})Z$/.exec(txt) !== null;
+    }
+    fromString(txt) {
+        return new Date(txt);
+    }
+    toString(date) {
+        if (date.getFullYear() < 100) {
+            return "0001-01-01T00:00:00.000Z";
+        }
+        return date.toISOString();
+    }
+}
+DateConverter.Namespace=`Aventus`;
+_.DateConverter=DateConverter;
+
+let sleep=function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
-
 _.sleep=sleep;
-const ElementExtension=class ElementExtension {
+
+let ElementExtension=class ElementExtension {
     /**
      * Find a parent by tagname if exist Static.findParentByTag(this, "av-img")
      */
@@ -291,7 +286,7 @@ const ElementExtension=class ElementExtension {
             }
             if (el.shadowRoot && x !== undefined && y !== undefined) {
                 var newEl = el.shadowRoot.elementFromPoint(x, y);
-                if (newEl && newEl != el && el.shadowRoot.contains(newEl)) {
+                if (newEl && newEl != el && (el.shadowRoot.contains(newEl) || el.contains(newEl))) {
                     return _realTarget(newEl, i + 1);
                 }
             }
@@ -304,9 +299,9 @@ const ElementExtension=class ElementExtension {
     }
 }
 ElementExtension.Namespace=`Aventus`;
-
 _.ElementExtension=ElementExtension;
-const Instance=class Instance {
+
+let Instance=class Instance {
     static elements = new Map();
     static get(type) {
         let result = this.elements.get(type);
@@ -331,9 +326,9 @@ const Instance=class Instance {
     }
 }
 Instance.Namespace=`Aventus`;
-
 _.Instance=Instance;
-const Style=class Style {
+
+let Style=class Style {
     static instance;
     static noAnimation;
     static defaultStyleSheets = {
@@ -411,9 +406,9 @@ const Style=class Style {
     }
 }
 Style.Namespace=`Aventus`;
-
 _.Style=Style;
-const setValueToObject=function setValueToObject(path, obj, value) {
+
+let setValueToObject=function setValueToObject(path, obj, value) {
     path = path.replace(/\[(.*?)\]/g, '.$1');
     const val = (key) => {
         if (obj instanceof Map) {
@@ -438,9 +433,9 @@ const setValueToObject=function setValueToObject(path, obj, value) {
         obj[splitted[splitted.length - 1]] = value;
     }
 }
-
 _.setValueToObject=setValueToObject;
-const Callback=class Callback {
+
+let Callback=class Callback {
     callbacks = new Map();
     /**
      * Clear all callbacks
@@ -475,9 +470,9 @@ const Callback=class Callback {
     }
 }
 Callback.Namespace=`Aventus`;
-
 _.Callback=Callback;
-const Mutex=class Mutex {
+
+let Mutex=class Mutex {
     /**
      * Array to store functions waiting for the mutex to become available.
      * @type {((run: boolean) => void)[]}
@@ -614,9 +609,88 @@ const Mutex=class Mutex {
     }
 }
 Mutex.Namespace=`Aventus`;
-
 _.Mutex=Mutex;
-const compareObject=function compareObject(obj1, obj2) {
+
+let NormalizedEvent=class NormalizedEvent {
+    _event;
+    get event() {
+        return this._event;
+    }
+    constructor(event) {
+        this._event = event;
+    }
+    getProp(prop) {
+        if (prop in this.event) {
+            return this.event[prop];
+        }
+        return undefined;
+    }
+    stopImmediatePropagation() {
+        this.event.stopImmediatePropagation();
+    }
+    get clientX() {
+        if ('clientX' in this.event) {
+            return this.event.clientX;
+        }
+        else if ('touches' in this.event && this.event.touches.length > 0) {
+            return this.event.touches[0].clientX;
+        }
+        return 0;
+    }
+    get clientY() {
+        if ('clientY' in this.event) {
+            return this.event.clientY;
+        }
+        else if ('touches' in this.event && this.event.touches.length > 0) {
+            return this.event.touches[0].clientY;
+        }
+        return 0;
+    }
+    get pageX() {
+        if ('pageX' in this.event) {
+            return this.event.pageX;
+        }
+        else if ('touches' in this.event && this.event.touches.length > 0) {
+            return this.event.touches[0].pageX;
+        }
+        return 0;
+    }
+    get pageY() {
+        if ('pageY' in this.event) {
+            return this.event.pageY;
+        }
+        else if ('touches' in this.event && this.event.touches.length > 0) {
+            return this.event.touches[0].pageY;
+        }
+        return 0;
+    }
+    get type() {
+        return this.event.type;
+    }
+    get target() {
+        return this.event.target;
+    }
+    get timeStamp() {
+        return this.event.timeStamp;
+    }
+    get pointerType() {
+        if (this._event instanceof TouchEvent)
+            return "touch";
+        return this.getProp("pointerType");
+    }
+    get button() {
+        return this.getProp("button");
+    }
+    get isTouch() {
+        if (this._event instanceof TouchEvent)
+            return true;
+        return this._event.pointerType == "touch";
+    }
+}
+NormalizedEvent.Namespace=`Aventus`;
+_.NormalizedEvent=NormalizedEvent;
+
+let compareObject=function compareObject(obj1, obj2) {
     if (Array.isArray(obj1)) {
         if (!Array.isArray(obj2)) {
             return false;
@@ -644,14 +718,24 @@ const compareObject=function compareObject(obj1, obj2) {
         if (typeof obj2 !== 'object' || obj2 === undefined || obj2 === null) {
             return false;
         }
+        if (obj1 == obj2) {
+            return true;
+        }
         if (obj1 instanceof HTMLElement || obj2 instanceof HTMLElement) {
-            return obj1 == obj2;
+            return false;
         }
         if (obj1 instanceof Date || obj2 instanceof Date) {
             return obj1.toString() === obj2.toString();
         }
-        obj1 = Watcher.extract(obj1);
-        obj2 = Watcher.extract(obj2);
+        let oneProxy = false;
+        if (Watcher.is(obj1)) {
+            oneProxy = true;
+            obj1 = Watcher.extract(obj1, false);
+        }
+        if (Watcher.is(obj2)) {
+            oneProxy = true;
+            obj2 = Watcher.extract(obj2, false);
+        }
         if (obj1 instanceof Map && obj2 instanceof Map) {
             if (obj1.size != obj2.size) {
                 return false;
@@ -672,6 +756,9 @@ const compareObject=function compareObject(obj1, obj2) {
                 return false;
             }
             for (let key in obj1) {
+                if (oneProxy && Watcher['__reservedName'][key]) {
+                    continue;
+                }
                 if (!(key in obj2)) {
                     return false;
                 }
@@ -686,9 +773,9 @@ const compareObject=function compareObject(obj1, obj2) {
         return obj1 === obj2;
     }
 }
-
 _.compareObject=compareObject;
-const getValueFromObject=function getValueFromObject(path, obj) {
+
+let getValueFromObject=function getValueFromObject(path, obj) {
     if (path === undefined) {
         path = '';
     }
@@ -716,17 +803,17 @@ const getValueFromObject=function getValueFromObject(path, obj) {
     }
     return val(splitted[splitted.length - 1]);
 }
-
 _.getValueFromObject=getValueFromObject;
+
 var WatchAction;
 (function (WatchAction) {
     WatchAction[WatchAction["CREATED"] = 0] = "CREATED";
     WatchAction[WatchAction["UPDATED"] = 1] = "UPDATED";
     WatchAction[WatchAction["DELETED"] = 2] = "DELETED";
 })(WatchAction || (WatchAction = {}));
-
 _.WatchAction=WatchAction;
-const Effect=class Effect {
+
+let Effect=class Effect {
     callbacks = [];
     isInit = false;
     isDestroy = false;
@@ -839,14 +926,15 @@ const Effect=class Effect {
     }
 }
 Effect.Namespace=`Aventus`;
-
 _.Effect=Effect;
-const Watcher=class Watcher {
+
+let Watcher=class Watcher {
     constructor() { }
     ;
     static __reservedName = {
         __path: '__path',
     };
+    static __triggerForced = false;
     static _registering = [];
     static get _register() {
         return this._registering[this._registering.length - 1];
@@ -907,9 +995,9 @@ const Watcher=class Watcher {
                 }
             }
         };
-        const replaceByAlias = (target, element, prop, receiver) => {
+        const replaceByAlias = (target, element, prop, receiver, apply, out = {}) => {
             let fullInternalPath = "";
-            if (Array.isArray(target)) {
+            if (Array.isArray(receiver)) {
                 if (prop != "length") {
                     if (target.__path) {
                         fullInternalPath = target.__path;
@@ -931,14 +1019,19 @@ const Watcher=class Watcher {
                 if (root != proxyData.baseData) {
                     element.__validatePath();
                     let oldPath = element.__path ?? '';
-                    let unbindElement = getValueFromObject(oldPath, root);
+                    let unbindElement = Watcher.extract(getValueFromObject(oldPath, root));
+                    if (unbindElement === undefined) {
+                        return element;
+                    }
                     if (receiver == null) {
                         receiver = getValueFromObject(target.__path, realProxy);
                         if (internalAliases[fullInternalPath]) {
                             internalAliases[fullInternalPath].unbind();
                         }
                     }
-                    let result = Reflect.set(target, prop, unbindElement, receiver);
+                    if (apply) {
+                        let result = Reflect.set(target, prop, unbindElement, receiver);
+                    }
                     element.__addAlias(proxyData.baseData, oldPath, (type, target, receiver2, value, prop2, dones) => {
                         let triggerPath;
                         if (prop2.startsWith("[") || fullInternalPath == "" || prop2 == "") {
@@ -947,23 +1040,24 @@ const Watcher=class Watcher {
                         else {
                             triggerPath = fullInternalPath + "." + prop2;
                         }
-                        triggerPath = triggerPath.replace(/\[(.*?)\]/g, '.$1');
                         if (type == 'DELETED' && internalAliases[triggerPath]) {
                             internalAliases[triggerPath].unbind();
                         }
+                        triggerPath = triggerPath.replace(/\[(.*?)\]/g, '.$1');
                         let splitted = triggerPath.split(".");
                         let newProp = splitted.pop();
                         let newReceiver = getValueFromObject(splitted.join("."), realProxy);
-                        trigger(type, target, newReceiver, value, newProp, dones);
+                        if (newReceiver.getTarget(false) == target)
+                            trigger(type, target, newReceiver, value, newProp, dones);
                     });
                     internalAliases[fullInternalPath] = {
                         unbind: () => {
                             delete internalAliases[fullInternalPath];
                             element.__deleteAlias(proxyData.baseData, oldPath);
-                            deleteAlias(root, prop);
+                            deleteAlias(root, fullInternalPath);
                         }
                     };
-                    addAlias(root, prop, (type, target, receiver2, value, prop2, dones) => {
+                    addAlias(root, fullInternalPath, (type, target, receiver2, value, prop2, dones) => {
                         const pathSave = element.__path;
                         let proxy = element.__getProxy;
                         let triggerPath;
@@ -977,9 +1071,11 @@ const Watcher=class Watcher {
                         let splitted = triggerPath.split(".");
                         let newProp = splitted.pop();
                         let newReceiver = getValueFromObject(splitted.join("."), proxy);
-                        element.__trigger(type, target, newReceiver, value, newProp, dones);
+                        if (newReceiver.getTarget(false) == target)
+                            element.__trigger(type, target, newReceiver, value, newProp, dones);
                         element.__path = pathSave;
                     });
+                    out.otherRoot = root;
                     return unbindElement;
                 }
             }
@@ -1006,7 +1102,7 @@ const Watcher=class Watcher {
             useHistory: false,
             getProxyObject(target, element, prop) {
                 let newProxy;
-                element = replaceByAlias(target, element, prop, null);
+                element = replaceByAlias(target, element, prop, null, true);
                 if (element instanceof Object && element.__isProxy) {
                     newProxy = element;
                 }
@@ -1119,8 +1215,9 @@ const Watcher=class Watcher {
                     };
                 }
                 else if (prop == "getTarget") {
-                    return () => {
-                        clearReservedNames(target);
+                    return (clear = true) => {
+                        if (clear)
+                            clearReservedNames(target);
                         return target;
                     };
                 }
@@ -1128,7 +1225,7 @@ const Watcher=class Watcher {
                     if (target.toJSON) {
                         return target.toJSON;
                     }
-                    if (Array.isArray(target)) {
+                    if (Array.isArray(receiver)) {
                         return () => {
                             let result = [];
                             for (let element of target) {
@@ -1164,12 +1261,17 @@ const Watcher=class Watcher {
                 }
                 else if (prop == "__static_trigger") {
                     return (type) => {
+                        Watcher.__triggerForced = true;
                         trigger(type, target, receiver, target, '');
+                        Watcher.__triggerForced = false;
                     };
                 }
                 return undefined;
             },
             get(target, prop, receiver) {
+                if (typeof prop == 'symbol') {
+                    return Reflect.get(target, prop, receiver);
+                }
                 if (reservedName[prop]) {
                     return target[prop];
                 }
@@ -1179,7 +1281,7 @@ const Watcher=class Watcher {
                 }
                 let element = target[prop];
                 if (typeof (element) == 'function') {
-                    if (Array.isArray(target)) {
+                    if (Array.isArray(receiver)) {
                         let result;
                         if (prop == 'push') {
                             if (target.__isProxy) {
@@ -1190,10 +1292,16 @@ const Watcher=class Watcher {
                             }
                             else {
                                 result = (el) => {
-                                    let index = target.push(el);
-                                    target.splice(target.length - 1, 1, el);
-                                    trigger('CREATED', target, receiver, receiver[index - 1], "[" + (index - 1) + "]");
-                                    trigger('UPDATED', target, receiver, target.length, "length");
+                                    let index = target.length;
+                                    let out = {};
+                                    el = replaceByAlias(target, el, target.length + '', receiver, false, out);
+                                    target.push(el);
+                                    const dones = [];
+                                    if (out.otherRoot) {
+                                        dones.push(out.otherRoot);
+                                    }
+                                    trigger('CREATED', target, receiver, receiver[index], "[" + (index) + "]", dones);
+                                    trigger('UPDATED', target, receiver, target.length, "length", dones);
                                     return index;
                                 };
                             }
@@ -1208,35 +1316,25 @@ const Watcher=class Watcher {
                             else {
                                 result = (index, nbRemove, ...insert) => {
                                     let oldValues = [];
+                                    const extReceiver = Watcher.extract(receiver);
                                     for (let i = index; i < index + nbRemove; i++) {
-                                        oldValues.push(receiver[i]);
+                                        oldValues.push(extReceiver[i]);
                                     }
                                     let updateLength = nbRemove != insert.length;
-                                    let res = target.splice(index, nbRemove, ...insert);
                                     for (let i = 0; i < oldValues.length; i++) {
+                                        target.splice((index + i), 1);
                                         trigger('DELETED', target, receiver, oldValues[i], "[" + index + "]");
                                     }
                                     for (let i = 0; i < insert.length; i++) {
-                                        target.splice((index + i), 1, insert[i]);
-                                        trigger('CREATED', target, receiver, receiver[(index + i)], "[" + (index + i) + "]");
+                                        const out = {};
+                                        let value = replaceByAlias(target, insert[i], (index + i) + '', receiver, false, out);
+                                        const dones = out.otherRoot ? [out.otherRoot] : [];
+                                        target.splice((index + i), 0, value);
+                                        trigger('CREATED', target, receiver, receiver[(index + i)], "[" + (index + i) + "]", dones);
                                     }
-                                    // for(let i = fromIndex, j = 0; i < target.length; i++, j++) {
-                                    //     let proxyEl = this.getProxyObject(target, target[i], i);
-                                    //     let recuUpdate = (childEl) => {
-                                    //         if(Array.isArray(childEl)) {
-                                    //             for(let i = 0; i < childEl.length; i++) {
-                                    //                 if(childEl[i] instanceof Object && childEl[i].__path) {
-                                    //                     let newProxyEl = this.getProxyObject(childEl, childEl[i], i);
-                                    //                     recuUpdate(newProxyEl);
-                                    //         else if(childEl instanceof Object && !(childEl instanceof Date)) {
-                                    //             for(let key in childEl) {
-                                    //                 if(childEl[key] instanceof Object && childEl[key].__path) {
-                                    //                     let newProxyEl = this.getProxyObject(childEl, childEl[key], key);
-                                    //                     recuUpdate(newProxyEl);
-                                    //     recuUpdate(proxyEl);
                                     if (updateLength)
                                         trigger('UPDATED', target, receiver, target.length, "length");
-                                    return res;
+                                    return target;
                                 };
                             }
                         }
@@ -1273,9 +1371,15 @@ const Watcher=class Watcher {
                             }
                             else {
                                 result = (key, value) => {
+                                    const out = {};
+                                    let dones = [];
+                                    key = Watcher.extract(key);
+                                    value = replaceByAlias(target, value, key + '', receiver, false, out);
+                                    if (out.otherRoot)
+                                        dones.push(out.otherRoot);
                                     let result = target.set(key, value);
-                                    trigger('CREATED', target, receiver, receiver.get(key), key);
-                                    trigger('UPDATED', target, receiver, target.size, "size");
+                                    trigger('CREATED', target, receiver, receiver.get(key), key + '', dones);
+                                    trigger('UPDATED', target, receiver, target.size, "size", dones);
                                     return result;
                                 };
                             }
@@ -1306,9 +1410,10 @@ const Watcher=class Watcher {
                             }
                             else {
                                 result = (key) => {
+                                    key = Watcher.extract(key);
                                     let oldValue = receiver.get(key);
                                     let res = target.delete(key);
-                                    trigger('DELETED', target, receiver, oldValue, key);
+                                    trigger('DELETED', target, receiver, oldValue, key + '');
                                     trigger('UPDATED', target, receiver, target.size, "size");
                                     return res;
                                 };
@@ -1344,14 +1449,17 @@ const Watcher=class Watcher {
                 return Reflect.get(target, prop, receiver);
             },
             set(target, prop, value, receiver) {
+                if (typeof prop == 'symbol') {
+                    return Reflect.set(target, prop, value, receiver);
+                }
                 let oldValue = Reflect.get(target, prop, receiver);
-                value = replaceByAlias(target, value, prop, receiver);
+                value = replaceByAlias(target, value, prop, receiver, true);
                 if (value instanceof Signal) {
                     value = value.value;
                 }
                 let triggerChange = false;
                 if (!reservedName[prop]) {
-                    if (Array.isArray(target)) {
+                    if (Array.isArray(receiver)) {
                         if (prop != "length") {
                             triggerChange = true;
                         }
@@ -1360,6 +1468,9 @@ const Watcher=class Watcher {
                         if (!compareObject(value, oldValue)) {
                             triggerChange = true;
                         }
+                    }
+                    if (Watcher.__triggerForced) {
+                        triggerChange = true;
                     }
                 }
                 let result = Reflect.set(target, prop, value, receiver);
@@ -1377,6 +1488,9 @@ const Watcher=class Watcher {
                 return result;
             },
             deleteProperty(target, prop) {
+                if (typeof prop == 'symbol') {
+                    return Reflect.deleteProperty(target, prop);
+                }
                 let triggerChange = false;
                 let pathToDelete = '';
                 if (!reservedName[prop]) {
@@ -1415,6 +1529,9 @@ const Watcher=class Watcher {
                 return false;
             },
             defineProperty(target, prop, descriptor) {
+                if (typeof prop == 'symbol') {
+                    return Reflect.defineProperty(target, prop, descriptor);
+                }
                 let triggerChange = false;
                 let newPath = '';
                 if (!reservedName[prop]) {
@@ -1480,7 +1597,7 @@ const Watcher=class Watcher {
                 rootPath = receiver.__path;
             }
             if (rootPath != "") {
-                if (Array.isArray(target)) {
+                if (Array.isArray(receiver)) {
                     if (prop && !prop.startsWith("[")) {
                         if (/^[0-9]*$/g.exec(prop)) {
                             rootPath += "[" + prop + "]";
@@ -1576,13 +1693,17 @@ const Watcher=class Watcher {
                         if (!regex.test(rootPath)) {
                             continue;
                         }
+                        let newProp = rootPath.replace(info.name, "");
+                        if (newProp.startsWith(".")) {
+                            newProp = newProp.slice(1);
+                        }
                         if (target.__path) {
                             let oldPath = target.__path;
-                            info.fct(type, target, receiver, value, prop, dones);
+                            info.fct(type, target, receiver, value, newProp, dones);
                             target.__path = oldPath;
                         }
                         else {
-                            info.fct(type, target, receiver, value, prop, dones);
+                            info.fct(type, target, receiver, value, newProp, dones);
                         }
                     }
                 }
@@ -1596,9 +1717,9 @@ const Watcher=class Watcher {
     static is(obj) {
         return typeof obj == 'object' && obj.__isProxy;
     }
-    static extract(obj) {
+    static extract(obj, clearPath = false) {
         if (this.is(obj)) {
-            return obj.getTarget();
+            return obj.getTarget(clearPath);
         }
         else {
             if (obj instanceof Object) {
@@ -1636,9 +1757,9 @@ const Watcher=class Watcher {
     }
 }
 Watcher.Namespace=`Aventus`;
-
 _.Watcher=Watcher;
-const Signal=class Signal {
+
+let Signal=class Signal {
     __subscribes = [];
     _value;
     _onChange;
@@ -1679,9 +1800,9 @@ const Signal=class Signal {
     }
 }
 Signal.Namespace=`Aventus`;
-
 _.Signal=Signal;
-const Computed=class Computed extends Effect {
+
+let Computed=class Computed extends Effect {
     _value;
     __path = "*";
     get value() {
@@ -1719,9 +1840,9 @@ const Computed=class Computed extends Effect {
     }
 }
 Computed.Namespace=`Aventus`;
-
 _.Computed=Computed;
-const ComputedNoRecomputed=class ComputedNoRecomputed extends Computed {
+
+let ComputedNoRecomputed=class ComputedNoRecomputed extends Computed {
     init() {
         this.isInit = true;
         Watcher._registering.push(this);
@@ -1737,11 +1858,11 @@ const ComputedNoRecomputed=class ComputedNoRecomputed extends Computed {
     run() { }
 }
 ComputedNoRecomputed.Namespace=`Aventus`;
-
 _.ComputedNoRecomputed=ComputedNoRecomputed;
-const PressManager=class PressManager {
+
+let PressManager=class PressManager {
     static globalConfig = {
-        delayDblPress: 150,
+        delayDblPress: 250,
         delayLongPress: 700,
         offsetDrag: 20
     };
@@ -1764,37 +1885,28 @@ const PressManager=class PressManager {
     }
     options;
     element;
-    delayDblPress = PressManager.globalConfig.delayDblPress ?? 150;
-    delayLongPress = PressManager.globalConfig.delayLongPress ?? 700;
+    delayDblPress;
+    delayLongPress;
     nbPress = 0;
-    offsetDrag = PressManager.globalConfig.offsetDrag ?? 20;
+    offsetDrag;
     state = {
-        oneActionTriggered: false,
-        isMoving: false,
+        oneActionTriggered: null,
     };
     startPosition = { x: 0, y: 0 };
     customFcts = {};
     timeoutDblPress = 0;
     timeoutLongPress = 0;
     downEventSaved;
-    actionsName = {
-        press: "press",
-        longPress: "longPress",
-        dblPress: "dblPress",
-        drag: "drag"
-    };
     useDblPress = false;
     stopPropagation = () => true;
+    pointersRecord = {};
     functionsBinded = {
         downAction: (e) => { },
         upAction: (e) => { },
         moveAction: (e) => { },
         childPressStart: (e) => { },
         childPressEnd: (e) => { },
-        childPress: (e) => { },
-        childDblPress: (e) => { },
-        childLongPress: (e) => { },
-        childDragStart: (e) => { },
+        childPressMove: (e) => { }
     };
     /**
      * @param {*} options - The options
@@ -1804,6 +1916,9 @@ const PressManager=class PressManager {
         if (options.element === void 0) {
             throw 'You must provide an element';
         }
+        this.offsetDrag = PressManager.globalConfig.offsetDrag !== undefined ? PressManager.globalConfig.offsetDrag : 20;
+        this.delayLongPress = PressManager.globalConfig.delayLongPress ?? 700;
+        this.delayDblPress = PressManager.globalConfig.delayDblPress ?? 150;
         this.element = options.element;
         this.checkDragConstraint(options);
         this.assignValueOption(options);
@@ -1893,76 +2008,124 @@ const PressManager=class PressManager {
         this.functionsBinded.downAction = this.downAction.bind(this);
         this.functionsBinded.moveAction = this.moveAction.bind(this);
         this.functionsBinded.upAction = this.upAction.bind(this);
-        this.functionsBinded.childDblPress = this.childDblPress.bind(this);
-        this.functionsBinded.childDragStart = this.childDragStart.bind(this);
-        this.functionsBinded.childLongPress = this.childLongPress.bind(this);
-        this.functionsBinded.childPress = this.childPress.bind(this);
         this.functionsBinded.childPressStart = this.childPressStart.bind(this);
         this.functionsBinded.childPressEnd = this.childPressEnd.bind(this);
+        this.functionsBinded.childPressMove = this.childPressMove.bind(this);
     }
     init() {
         this.bindAllFunction();
         this.element.addEventListener("pointerdown", this.functionsBinded.downAction);
-        this.element.addEventListener("trigger_pointer_press", this.functionsBinded.childPress);
+        this.element.addEventListener("touchstart", this.functionsBinded.downAction);
         this.element.addEventListener("trigger_pointer_pressstart", this.functionsBinded.childPressStart);
         this.element.addEventListener("trigger_pointer_pressend", this.functionsBinded.childPressEnd);
-        this.element.addEventListener("trigger_pointer_dblpress", this.functionsBinded.childDblPress);
-        this.element.addEventListener("trigger_pointer_longpress", this.functionsBinded.childLongPress);
-        this.element.addEventListener("trigger_pointer_dragstart", this.functionsBinded.childDragStart);
+        this.element.addEventListener("trigger_pointer_pressmove", this.functionsBinded.childPressMove);
     }
-    downAction(e) {
+    identifyEvent(touch) {
+        if (touch instanceof Touch)
+            return touch.identifier;
+        return touch.pointerId;
+    }
+    registerEvent(ev) {
+        if (ev instanceof TouchEvent) {
+            for (let touch of ev.targetTouches) {
+                const id = this.identifyEvent(touch);
+                if (this.pointersRecord[id]) {
+                    return false;
+                }
+                this.pointersRecord[id] = ev;
+            }
+            return true;
+        }
+        else {
+            const id = this.identifyEvent(ev);
+            if (this.pointersRecord[id]) {
+                return false;
+            }
+            this.pointersRecord[id] = ev;
+            return true;
+        }
+    }
+    unregisterEvent(ev) {
+        let result = true;
+        if (ev instanceof TouchEvent) {
+            for (let touch of ev.changedTouches) {
+                const id = this.identifyEvent(touch);
+                if (!this.pointersRecord[id]) {
+                    result = false;
+                }
+                else {
+                    delete this.pointersRecord[id];
+                }
+            }
+        }
+        else {
+            const id = this.identifyEvent(ev);
+            if (!this.pointersRecord[id]) {
+                result = false;
+            }
+            else {
+                delete this.pointersRecord[id];
+            }
+        }
+        return result;
+    }
+    genericDownAction(state, e) {
+        this.downEventSaved = e;
+        if (this.options.onLongPress) {
+            this.timeoutLongPress = setTimeout(() => {
+                if (!state.oneActionTriggered) {
+                    if (this.options.onLongPress) {
+                        if (this.options.onLongPress(e, this) !== false) {
+                            state.oneActionTriggered = this;
+                        }
+                    }
+                }
+            }, this.delayLongPress);
+        }
+    }
+    downAction(ev) {
+        const isFirst = Object.values(this.pointersRecord).length == 0;
+        if (!this.registerEvent(ev)) {
+            if (this.stopPropagation()) {
+                ev.stopImmediatePropagation();
+            }
+            return;
+        }
+        const e = new NormalizedEvent(ev);
         if (this.options.onEvent) {
             this.options.onEvent(e);
         }
-        if (!this.options.buttonAllowed?.includes(e.button)) {
+        if (e.button != undefined && !this.options.buttonAllowed?.includes(e.button)) {
+            this.unregisterEvent(ev);
             return;
         }
-        this.downEventSaved = e;
         if (this.stopPropagation()) {
             e.stopImmediatePropagation();
         }
         this.customFcts = {};
-        if (this.nbPress == 0) {
-            this.state.oneActionTriggered = false;
+        if (this.nbPress == 0 && isFirst) {
+            this.state.oneActionTriggered = null;
             clearTimeout(this.timeoutDblPress);
         }
         this.startPosition = { x: e.pageX, y: e.pageY };
-        document.addEventListener("pointerup", this.functionsBinded.upAction);
-        document.addEventListener("pointercancel", this.functionsBinded.upAction);
-        document.addEventListener("pointermove", this.functionsBinded.moveAction);
-        this.timeoutLongPress = setTimeout(() => {
-            if (!this.state.oneActionTriggered) {
-                if (this.options.onLongPress) {
-                    this.state.oneActionTriggered = true;
-                    this.options.onLongPress(e, this);
-                    this.triggerEventToParent(this.actionsName.longPress, e);
-                }
-                else {
-                    this.emitTriggerFunction(this.actionsName.longPress, e);
-                }
-            }
-        }, this.delayLongPress);
+        if (isFirst) {
+            document.addEventListener("pointerup", this.functionsBinded.upAction);
+            document.addEventListener("pointercancel", this.functionsBinded.upAction);
+            document.addEventListener("touchend", this.functionsBinded.upAction);
+            document.addEventListener("touchcancel", this.functionsBinded.upAction);
+            document.addEventListener("pointermove", this.functionsBinded.moveAction);
+        }
+        this.genericDownAction(this.state, e);
         if (this.options.onPressStart) {
             this.options.onPressStart(e, this);
-            this.emitTriggerFunctionParent("pressstart", e);
+            this.lastEmitEvent = e;
+            // this.emitTriggerFunctionParent("pressstart", e);
         }
-        else {
-            this.emitTriggerFunction("pressstart", e);
-        }
+        this.emitTriggerFunction("pressstart", e);
     }
-    upAction(e) {
-        if (this.options.onEvent) {
-            this.options.onEvent(e);
-        }
-        if (this.stopPropagation()) {
-            e.stopImmediatePropagation();
-        }
-        document.removeEventListener("pointerup", this.functionsBinded.upAction);
-        document.removeEventListener("pointercancel", this.functionsBinded.upAction);
-        document.removeEventListener("pointermove", this.functionsBinded.moveAction);
+    genericUpAction(state, e) {
         clearTimeout(this.timeoutLongPress);
-        if (this.state.isMoving) {
-            this.state.isMoving = false;
+        if (state.oneActionTriggered == this) {
             if (this.options.onDragEnd) {
                 this.options.onDragEnd(e, this);
             }
@@ -1974,79 +2137,82 @@ const PressManager=class PressManager {
             if (this.useDblPress) {
                 this.nbPress++;
                 if (this.nbPress == 2) {
-                    if (!this.state.oneActionTriggered) {
-                        this.state.oneActionTriggered = true;
+                    if (!state.oneActionTriggered) {
                         this.nbPress = 0;
                         if (this.options.onDblPress) {
-                            this.options.onDblPress(e, this);
-                            this.triggerEventToParent(this.actionsName.dblPress, e);
-                        }
-                        else {
-                            this.emitTriggerFunction(this.actionsName.dblPress, e);
+                            if (this.options.onDblPress(e, this) !== false) {
+                                state.oneActionTriggered = this;
+                            }
                         }
                     }
                 }
                 else if (this.nbPress == 1) {
                     this.timeoutDblPress = setTimeout(() => {
                         this.nbPress = 0;
-                        if (!this.state.oneActionTriggered) {
+                        if (!state.oneActionTriggered) {
                             if (this.options.onPress) {
-                                this.state.oneActionTriggered = true;
-                                this.options.onPress(e, this);
-                                this.triggerEventToParent(this.actionsName.press, e);
-                            }
-                            else {
-                                this.emitTriggerFunction(this.actionsName.press, e);
+                                if (this.options.onPress(e, this) !== false) {
+                                    state.oneActionTriggered = this;
+                                }
                             }
                         }
                     }, this.delayDblPress);
                 }
             }
             else {
-                if (!this.state.oneActionTriggered) {
+                if (!state.oneActionTriggered) {
                     if (this.options.onPress) {
-                        this.state.oneActionTriggered = true;
-                        this.options.onPress(e, this);
-                        this.triggerEventToParent(this.actionsName.press, e);
-                    }
-                    else {
-                        this.emitTriggerFunction("press", e);
+                        if (this.options.onPress(e, this) !== false) {
+                            state.oneActionTriggered = this;
+                        }
                     }
                 }
             }
         }
-        if (this.options.onPressEnd) {
-            this.options.onPressEnd(e, this);
-            this.emitTriggerFunctionParent("pressend", e);
-        }
-        else {
-            this.emitTriggerFunction("pressend", e);
-        }
     }
-    moveAction(e) {
+    upAction(ev) {
+        if (!this.unregisterEvent(ev)) {
+            if (this.stopPropagation()) {
+                ev.stopImmediatePropagation();
+            }
+            return;
+        }
+        const e = new NormalizedEvent(ev);
         if (this.options.onEvent) {
             this.options.onEvent(e);
         }
-        if (!this.state.isMoving && !this.state.oneActionTriggered) {
-            if (this.stopPropagation()) {
-                e.stopImmediatePropagation();
-            }
+        if (this.stopPropagation()) {
+            e.stopImmediatePropagation();
+        }
+        if (Object.values(this.pointersRecord).length == 0) {
+            document.removeEventListener("pointerup", this.functionsBinded.upAction);
+            document.removeEventListener("pointercancel", this.functionsBinded.upAction);
+            document.removeEventListener("touchend", this.functionsBinded.upAction);
+            document.removeEventListener("touchcancel", this.functionsBinded.upAction);
+            document.removeEventListener("pointermove", this.functionsBinded.moveAction);
+        }
+        this.genericUpAction(this.state, e);
+        if (this.options.onPressEnd) {
+            this.options.onPressEnd(e, this);
+            this.lastEmitEvent = e;
+            // this.emitTriggerFunctionParent("pressend", e);
+        }
+        this.emitTriggerFunction("pressend", e);
+    }
+    genericMoveAction(state, e) {
+        if (!state.oneActionTriggered) {
             let xDist = e.pageX - this.startPosition.x;
             let yDist = e.pageY - this.startPosition.y;
             let distance = Math.sqrt(xDist * xDist + yDist * yDist);
             if (distance > this.offsetDrag && this.downEventSaved) {
-                this.state.oneActionTriggered = true;
                 if (this.options.onDragStart) {
-                    this.state.isMoving = true;
-                    this.options.onDragStart(this.downEventSaved, this);
-                    this.triggerEventToParent(this.actionsName.drag, e);
-                }
-                else {
-                    this.emitTriggerFunction("dragstart", this.downEventSaved);
+                    if (this.options.onDragStart(this.downEventSaved, this) !== false) {
+                        state.oneActionTriggered = this;
+                    }
                 }
             }
         }
-        else if (this.state.isMoving) {
+        else if (state.oneActionTriggered == this) {
             if (this.options.onDrag) {
                 this.options.onDrag(e, this);
             }
@@ -2055,88 +2221,42 @@ const PressManager=class PressManager {
             }
         }
     }
-    triggerEventToParent(eventName, pointerEvent) {
-        if (this.element.parentNode) {
-            this.element.parentNode.dispatchEvent(new CustomEvent("pressaction_trigger", {
-                bubbles: true,
-                cancelable: false,
-                composed: true,
-                detail: {
-                    target: this.element,
-                    eventName: eventName,
-                    realEvent: pointerEvent
-                }
-            }));
+    moveAction(ev) {
+        const e = new NormalizedEvent(ev);
+        if (this.options.onEvent) {
+            this.options.onEvent(e);
         }
+        if (this.stopPropagation()) {
+            e.stopImmediatePropagation();
+        }
+        this.genericMoveAction(this.state, e);
+        this.lastEmitEvent = e;
+        // if(this.options.onDrag) {
+        //     this.emitTriggerFunctionParent("pressmove", e);
+        this.emitTriggerFunction("pressmove", e);
     }
     childPressStart(e) {
+        if (this.lastEmitEvent == e.detail.realEvent)
+            return;
+        this.genericDownAction(e.detail.state, e.detail.realEvent);
         if (this.options.onPressStart) {
             this.options.onPressStart(e.detail.realEvent, this);
         }
     }
     childPressEnd(e) {
+        if (this.lastEmitEvent == e.detail.realEvent)
+            return;
+        this.genericUpAction(e.detail.state, e.detail.realEvent);
         if (this.options.onPressEnd) {
             this.options.onPressEnd(e.detail.realEvent, this);
         }
     }
-    childPress(e) {
-        if (this.options.onPress) {
-            if (this.stopPropagation()) {
-                e.stopImmediatePropagation();
-            }
-            e.detail.state.oneActionTriggered = true;
-            this.options.onPress(e.detail.realEvent, this);
-            this.triggerEventToParent(this.actionsName.press, e.detail.realEvent);
-        }
+    childPressMove(e) {
+        if (this.lastEmitEvent == e.detail.realEvent)
+            return;
+        this.genericMoveAction(e.detail.state, e.detail.realEvent);
     }
-    childDblPress(e) {
-        if (this.options.onDblPress) {
-            if (this.stopPropagation()) {
-                e.stopImmediatePropagation();
-            }
-            if (e.detail.state) {
-                e.detail.state.oneActionTriggered = true;
-            }
-            this.options.onDblPress(e.detail.realEvent, this);
-            this.triggerEventToParent(this.actionsName.dblPress, e.detail.realEvent);
-        }
-    }
-    childLongPress(e) {
-        if (this.options.onLongPress) {
-            if (this.stopPropagation()) {
-                e.stopImmediatePropagation();
-            }
-            e.detail.state.oneActionTriggered = true;
-            this.options.onLongPress(e.detail.realEvent, this);
-            this.triggerEventToParent(this.actionsName.longPress, e.detail.realEvent);
-        }
-    }
-    childDragStart(e) {
-        if (this.options.onDragStart) {
-            if (this.stopPropagation()) {
-                e.stopImmediatePropagation();
-            }
-            e.detail.state.isMoving = true;
-            e.detail.customFcts.src = this;
-            e.detail.customFcts.onDrag = this.options.onDrag;
-            e.detail.customFcts.onDragEnd = this.options.onDragEnd;
-            e.detail.customFcts.offsetDrag = this.options.offsetDrag;
-            this.options.onDragStart(e.detail.realEvent, this);
-            this.triggerEventToParent(this.actionsName.drag, e.detail.realEvent);
-        }
-    }
-    emitTriggerFunctionParent(action, e) {
-        let el = this.element.parentElement;
-        if (el == null) {
-            let parentNode = this.element.parentNode;
-            if (parentNode instanceof ShadowRoot) {
-                this.emitTriggerFunction(action, e, parentNode.host);
-            }
-        }
-        else {
-            this.emitTriggerFunction(action, e, el);
-        }
-    }
+    lastEmitEvent;
     emitTriggerFunction(action, e, el) {
         let ev = new CustomEvent("trigger_pointer_" + action, {
             bubbles: true,
@@ -2148,6 +2268,7 @@ const PressManager=class PressManager {
                 realEvent: e
             }
         });
+        this.lastEmitEvent = e;
         if (!el) {
             el = this.element;
         }
@@ -2159,12 +2280,9 @@ const PressManager=class PressManager {
     destroy() {
         if (this.element) {
             this.element.removeEventListener("pointerdown", this.functionsBinded.downAction);
-            this.element.removeEventListener("trigger_pointer_press", this.functionsBinded.childPress);
             this.element.removeEventListener("trigger_pointer_pressstart", this.functionsBinded.childPressStart);
             this.element.removeEventListener("trigger_pointer_pressend", this.functionsBinded.childPressEnd);
-            this.element.removeEventListener("trigger_pointer_dblpress", this.functionsBinded.childDblPress);
-            this.element.removeEventListener("trigger_pointer_longpress", this.functionsBinded.childLongPress);
-            this.element.removeEventListener("trigger_pointer_dragstart", this.functionsBinded.childDragStart);
+            this.element.removeEventListener("trigger_pointer_pressmove", this.functionsBinded.childPressMove);
             document.removeEventListener("pointerup", this.functionsBinded.upAction);
             document.removeEventListener("pointercancel", this.functionsBinded.upAction);
             document.removeEventListener("pointermove", this.functionsBinded.moveAction);
@@ -2172,9 +2290,9 @@ const PressManager=class PressManager {
     }
 }
 PressManager.Namespace=`Aventus`;
-
 _.PressManager=PressManager;
-const Uri=class Uri {
+
+let Uri=class Uri {
     static prepare(uri) {
         let params = [];
         let i = 0;
@@ -2250,9 +2368,9 @@ const Uri=class Uri {
     }
 }
 Uri.Namespace=`Aventus`;
-
 _.Uri=Uri;
-const State=class State {
+
+let State=class State {
     /**
      * Activate a custom state inside a specific manager
      * It ll be a generic state with no information inside exept name
@@ -2275,9 +2393,9 @@ const State=class State {
     }
 }
 State.Namespace=`Aventus`;
-
 _.State=State;
-const EmptyState=class EmptyState extends State {
+
+let EmptyState=class EmptyState extends State {
     localName;
     constructor(stateName) {
         super();
@@ -2291,9 +2409,9 @@ const EmptyState=class EmptyState extends State {
     }
 }
 EmptyState.Namespace=`Aventus`;
-
 _.EmptyState=EmptyState;
-const StateManager=class StateManager {
+
+let StateManager=class StateManager {
     subscribers = {};
     static canBeActivate(statePattern, stateName) {
         let stateInfo = Uri.prepare(statePattern);
@@ -2527,21 +2645,24 @@ const StateManager=class StateManager {
                         let oldSlug = Uri.getParams(subscriber, oldState.name);
                         if (oldSlug) {
                             let oldSlugNotNull = oldSlug;
-                            [...subscriber.callbacks.inactive].forEach(callback => {
+                            let callbacks = [...subscriber.callbacks.inactive];
+                            for (let callback of callbacks) {
                                 callback(oldState, stateToUse, oldSlugNotNull);
-                            });
+                            }
                         }
                     }
                     for (let trigger of triggerActive) {
-                        [...trigger.subscriber.callbacks.active].forEach(callback => {
+                        let callbacks = [...trigger.subscriber.callbacks.active];
+                        for (let callback of callbacks) {
                             callback(stateToUse, trigger.params);
-                        });
+                        }
                     }
                     for (let trigger of inactiveToActive) {
                         trigger.subscriber.isActive = true;
-                        [...trigger.subscriber.callbacks.active].forEach(callback => {
+                        let callbacks = [...trigger.subscriber.callbacks.active];
+                        for (let callback of callbacks) {
                             callback(stateToUse, trigger.params);
-                        });
+                        }
                     }
                     stateToUse.onActivate();
                 }
@@ -2553,9 +2674,10 @@ const StateManager=class StateManager {
                     if (slugs) {
                         let slugsNotNull = slugs;
                         this.subscribers[key].isActive = true;
-                        [...this.subscribers[key].callbacks.active].forEach(callback => {
+                        let callbacks = [...this.subscribers[key].callbacks.active];
+                        for (let callback of callbacks) {
                             callback(stateToUse, slugsNotNull);
-                        });
+                        }
                     }
                 }
                 stateToUse.onActivate();
@@ -2597,9 +2719,9 @@ const StateManager=class StateManager {
     }
 }
 StateManager.Namespace=`Aventus`;
-
 _.StateManager=StateManager;
-const TemplateContext=class TemplateContext {
+
+let TemplateContext=class TemplateContext {
     data = {};
     comp;
     computeds = [];
@@ -2803,9 +2925,9 @@ const TemplateContext=class TemplateContext {
     }
 }
 TemplateContext.Namespace=`Aventus`;
-
 _.TemplateContext=TemplateContext;
-const TemplateInstance=class TemplateInstance {
+
+let TemplateInstance=class TemplateInstance {
     context;
     content;
     actions;
@@ -3054,7 +3176,7 @@ const TemplateInstance=class TemplateInstance {
                 return change.fct(this.context);
             }
             catch (e) {
-                if (e instanceof TypeError && e.message.startsWith("Cannot read properties of undefined")) {
+                if (e instanceof TypeError && e.message.includes("undefined")) {
                     if (computed instanceof ComputedNoRecomputed) {
                         computed.isInit = false;
                     }
@@ -3089,7 +3211,7 @@ const TemplateInstance=class TemplateInstance {
                 return injection.inject(this.context);
             }
             catch (e) {
-                if (e instanceof TypeError && e.message.startsWith("Cannot read properties of undefined")) {
+                if (e instanceof TypeError && e.message.includes("undefined")) {
                     if (computed instanceof ComputedNoRecomputed) {
                         computed.isInit = false;
                     }
@@ -3122,7 +3244,7 @@ const TemplateInstance=class TemplateInstance {
                 return binding.inject(this.context);
             }
             catch (e) {
-                if (e instanceof TypeError && e.message.startsWith("Cannot read properties of undefined")) {
+                if (e instanceof TypeError && e.message.includes("undefined")) {
                     if (computed instanceof ComputedNoRecomputed) {
                         computed.isInit = false;
                     }
@@ -3493,9 +3615,9 @@ const TemplateInstance=class TemplateInstance {
     }
 }
 TemplateInstance.Namespace=`Aventus`;
-
 _.TemplateInstance=TemplateInstance;
-const Template=class Template {
+
+let Template=class Template {
     static validatePath(path, pathToCheck) {
         if (pathToCheck.startsWith(path)) {
             return true;
@@ -3631,9 +3753,9 @@ const Template=class Template {
     }
 }
 Template.Namespace=`Aventus`;
-
 _.Template=Template;
-const WebComponent=class WebComponent extends HTMLElement {
+
+let WebComponent=class WebComponent extends HTMLElement {
     /**
      * Add attributes informations
      */
@@ -4348,9 +4470,9 @@ const WebComponent=class WebComponent extends HTMLElement {
     }
 }
 WebComponent.Namespace=`Aventus`;
-
 _.WebComponent=WebComponent;
-const WebComponentInstance=class WebComponentInstance {
+
+let WebComponentInstance=class WebComponentInstance {
     static __allDefinitions = [];
     static __allInstances = [];
     /**
@@ -4421,9 +4543,9 @@ const WebComponentInstance=class WebComponentInstance {
     }
 }
 WebComponentInstance.Namespace=`Aventus`;
-
 _.WebComponentInstance=WebComponentInstance;
-const ResourceLoader=class ResourceLoader {
+
+let ResourceLoader=class ResourceLoader {
     static headerLoaded = {};
     static headerWaiting = {};
     /**
@@ -4591,9 +4713,9 @@ const ResourceLoader=class ResourceLoader {
     }
 }
 ResourceLoader.Namespace=`Aventus`;
-
 _.ResourceLoader=ResourceLoader;
-const ResizeObserver=class ResizeObserver {
+
+let ResizeObserver=class ResizeObserver {
     callback;
     targets;
     fpsInterval = -1;
@@ -4719,9 +4841,9 @@ const ResizeObserver=class ResizeObserver {
     }
 }
 ResizeObserver.Namespace=`Aventus`;
-
 _.ResizeObserver=ResizeObserver;
-const Animation=class Animation {
+
+let Animation=class Animation {
     /**
      * Default FPS for all Animation if not set inside options
      */
@@ -4807,9 +4929,9 @@ const Animation=class Animation {
     }
 }
 Animation.Namespace=`Aventus`;
-
 _.Animation=Animation;
-const DragAndDrop=class DragAndDrop {
+
+let DragAndDrop=class DragAndDrop {
     /**
      * Default offset before drag element
      */
@@ -4932,7 +5054,7 @@ const DragAndDrop=class DragAndDrop {
     onDragStart(e) {
         this.isEnable = this.options.isDragEnable();
         if (!this.isEnable) {
-            return;
+            return false;
         }
         let draggableElement = this.options.element;
         this.startCursorPosition = {
@@ -4960,7 +5082,7 @@ const DragAndDrop=class DragAndDrop {
             this.options.shadow.container.appendChild(draggableElement);
         }
         this.draggableElement = draggableElement;
-        this.options.onStart(e);
+        return this.options.onStart(e);
     }
     onDrag(e) {
         if (!this.isEnable) {
@@ -5098,9 +5220,9 @@ const DragAndDrop=class DragAndDrop {
     }
 }
 DragAndDrop.Namespace=`Aventus`;
-
 _.DragAndDrop=DragAndDrop;
-const Json=class Json {
+
+let Json=class Json {
     /**
      * Converts a JavaScript class instance to a JSON object.
      * @template T - The type of the object to convert.
@@ -5187,9 +5309,9 @@ const Json=class Json {
     }
 }
 Json.Namespace=`Aventus`;
-
 _.Json=Json;
-const ConverterTransform=class ConverterTransform {
+
+let ConverterTransform=class ConverterTransform {
     transform(data) {
         return this.transformLoop(data);
     }
@@ -5223,6 +5345,14 @@ const ConverterTransform=class ConverterTransform {
         if (typeof data === 'object' && !/^\s*class\s+/.test(data.toString())) {
             let objTemp = this.createInstance(data);
             if (objTemp) {
+                if (objTemp instanceof Map) {
+                    if (data.values) {
+                        for (const keyValue of data.values) {
+                            objTemp.set(this.transformLoop(keyValue[0]), this.transformLoop(keyValue[1]));
+                        }
+                    }
+                    return objTemp;
+                }
                 let obj = objTemp;
                 this.beforeTransformObject(obj);
                 if (obj.fromJSON) {
@@ -5234,8 +5364,8 @@ const ConverterTransform=class ConverterTransform {
                             if (obj[key] instanceof Date) {
                                 return value ? new Date(value) : null;
                             }
-                            else if (typeof obj[key] == 'string' && /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.(\d{3})Z$/.exec(obj[key])) {
-                                return value ? new Date(value) : null;
+                            else if (typeof value == 'string' && DateConverter.converter.isStringDate(value)) {
+                                return value ? DateConverter.converter.fromString(value) : null;
                             }
                             else if (obj[key] instanceof Map) {
                                 let map = new Map();
@@ -5309,13 +5439,13 @@ const ConverterTransform=class ConverterTransform {
     }
 }
 ConverterTransform.Namespace=`Aventus`;
-
 _.ConverterTransform=ConverterTransform;
-const Converter=class Converter {
+
+let Converter=class Converter {
     /**
     * Map storing information about registered types.
     */
-    static info = new Map();
+    static info = new Map([["Aventus.Map", Map]]);
     /**
     * Map storing schemas for registered types.
     */
@@ -5379,9 +5509,9 @@ const Converter=class Converter {
     }
 }
 Converter.Namespace=`Aventus`;
-
 _.Converter=Converter;
-const Data=class Data {
+
+let Data=class Data {
     /**
      * The schema for the class
      */
@@ -5429,8 +5559,8 @@ const Data=class Data {
     }
 }
 Data.Namespace=`Aventus`;
-
 _.Data=Data;
+
 
 for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
@@ -5451,7 +5581,7 @@ const Icon = class Icon extends Aventus.WebComponent {
     set 'type'(val) { this.setStringAttr('type', val) }    static defaultType = 'outlined';
     __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("icon", ((target) => {
     if (target.isReady) {
-        // target.shadowRoot.innerHTML = target.icon;
+        target.init();
     }
 }));this.__addPropertyActions("type", ((target) => {
     if (target.isReady)
@@ -5495,19 +5625,20 @@ const Icon = class Icon extends Aventus.WebComponent {
             'Material Symbols ' + name,
             '"Material Symbols ' + name + '"',
         ];
-        for (let font of document.fonts) {
-            if (fontsName.includes(font.family)) {
-                this.is_hidden = false;
-                return;
-            }
-        }
-        const cb = (e) => {
-            for (let font of e.fontfaces) {
+        const check = () => {
+            for (let font of document.fonts) {
                 if (fontsName.includes(font.family)) {
                     this.is_hidden = false;
-                    break;
+                    return true;
                 }
             }
+            return false;
+        };
+        if (check()) {
+            return;
+        }
+        const cb = (e) => {
+            check();
             document.fonts.removeEventListener("loadingdone", cb);
         };
         document.fonts.addEventListener("loadingdone", cb);
@@ -5516,6 +5647,9 @@ const Icon = class Icon extends Aventus.WebComponent {
             type: "css",
             url: url
         });
+        setTimeout(() => {
+            check();
+        }, 100);
     }
     async init() {
         await this.loadFont();
@@ -5540,10 +5674,10 @@ var Aventus;
 const moduleName = `Aventus`;
 const _ = {};
 
-const Layout = {};
-_.Layout = {};
-const Navigation = {};
-_.Navigation = {};
+let Layout = {};
+_.Layout = Aventus.Layout ?? {};
+let Navigation = {};
+_.Navigation = Aventus.Navigation ?? {};
 let _n;
 const Img = class Img extends Aventus.WebComponent {
     static get observedAttributes() {return ["src", "mode"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
@@ -5822,7 +5956,7 @@ Layout.DynamicRow.Tag=`av-dynamic-row`;
 _.Layout.DynamicRow=Layout.DynamicRow;
 if(!window.customElements.get('av-dynamic-row')){window.customElements.define('av-dynamic-row', Layout.DynamicRow);Aventus.WebComponentInstance.registerDefinition(Layout.DynamicRow);}
 
-const Tracker=class Tracker {
+let Tracker=class Tracker {
     velocityMultiplier = window.devicePixelRatio;
     updateTime = Date.now();
     delta = { x: 0, y: 0 };
@@ -5860,16 +5994,16 @@ const Tracker=class Tracker {
     }
 }
 Tracker.Namespace=`Aventus`;
-
 _.Tracker=Tracker;
-const RouterStateManager=class RouterStateManager extends Aventus.StateManager {
+
+let RouterStateManager=class RouterStateManager extends Aventus.StateManager {
     static getInstance() {
         return Aventus.Instance.get(RouterStateManager);
     }
 }
 RouterStateManager.Namespace=`Aventus`;
-
 _.RouterStateManager=RouterStateManager;
+
 Navigation.RouterLink = class RouterLink extends Aventus.WebComponent {
     get 'state'() { return this.getStringAttr('state') }
     set 'state'(val) { this.setStringAttr('state', val) }get 'active_state'() { return this.getStringAttr('active_state') }
@@ -6188,7 +6322,7 @@ Navigation.Router = class Router extends Aventus.WebComponent {
 Navigation.Router.Namespace=`Aventus.Navigation`;
 _.Navigation.Router=Navigation.Router;
 
-const TouchRecord=class TouchRecord {
+let TouchRecord=class TouchRecord {
     _activeTouchID;
     _touchList = {};
     get _primitiveValue() {
@@ -6218,35 +6352,39 @@ const TouchRecord=class TouchRecord {
             y: 0,
         };
         const vel = this.getVelocity();
-        Object.keys(vel).forEach(dir => {
+        const dirs = Object.keys(vel);
+        for (let dir of dirs) {
             let v = Math.abs(vel[dir]) <= 10 ? 0 : vel[dir];
             while (v !== 0) {
                 distance[dir] += v;
                 v = (v * deAcceleration) | 0;
             }
-        });
+        }
         return distance;
     }
     track(evt) {
         const { targetTouches, } = evt;
-        Array.from(targetTouches).forEach(touch => {
+        const touches = Array.from(targetTouches);
+        for (let touch of touches) {
             this._add(touch);
-        });
+        }
         return this._touchList;
     }
     update(evt) {
         const { touches, changedTouches, } = evt;
-        Array.from(touches).forEach(touch => {
+        const touchesArray = Array.from(touches);
+        for (let touch of touchesArray) {
             this._renew(touch);
-        });
+        }
         this._setActiveID(changedTouches);
         return this._touchList;
     }
     release(evt) {
         delete this._activeTouchID;
-        Array.from(evt.changedTouches).forEach(touch => {
+        const touchesArray = Array.from(evt.changedTouches);
+        for (let touch of touchesArray) {
             this._delete(touch);
-        });
+        }
     }
     _add(touch) {
         if (this._has(touch)) {
@@ -6280,8 +6418,8 @@ const TouchRecord=class TouchRecord {
     }
 }
 TouchRecord.Namespace=`Aventus`;
-
 _.TouchRecord=TouchRecord;
+
 Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
     static get observedAttributes() {return ["zoom"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
     get 'y_scroll_visible'() { return this.getBoolAttr('y_scroll_visible') }
@@ -7231,7 +7369,7 @@ DocLibAnimationEditor1Example.Tag=`av-doc-lib-animation-editor-1-example`;
 _.DocLibAnimationEditor1Example=DocLibAnimationEditor1Example;
 if(!window.customElements.get('av-doc-lib-animation-editor-1-example')){window.customElements.define('av-doc-lib-animation-editor-1-example', DocLibAnimationEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocLibAnimationEditor1Example);}
 
-const DocWcStateEditor2StateManager=class DocWcStateEditor2StateManager extends Aventus.StateManager {
+let DocWcStateEditor2StateManager=class DocWcStateEditor2StateManager extends Aventus.StateManager {
     /**
      * Get the instance of the StateManager
      */
@@ -7240,9 +7378,9 @@ const DocWcStateEditor2StateManager=class DocWcStateEditor2StateManager extends 
     }
 }
 DocWcStateEditor2StateManager.Namespace=`AventusWebsite`;
-
 _.DocWcStateEditor2StateManager=DocWcStateEditor2StateManager;
-const DocWcStateEditor1StateManager=class DocWcStateEditor1StateManager extends Aventus.StateManager {
+
+let DocWcStateEditor1StateManager=class DocWcStateEditor1StateManager extends Aventus.StateManager {
     /**
      * Get the instance of the StateManager
      */
@@ -7251,8 +7389,8 @@ const DocWcStateEditor1StateManager=class DocWcStateEditor1StateManager extends 
     }
 }
 DocWcStateEditor1StateManager.Namespace=`AventusWebsite`;
-
 _.DocWcStateEditor1StateManager=DocWcStateEditor1StateManager;
+
 const DocWcEventEditor2Button = class DocWcEventEditor2Button extends Aventus.WebComponent {
     onCustomClick = new Aventus.Callback();
     static __style = ``;
@@ -7401,7 +7539,7 @@ DocWcConditionEditor1Example.Tag=`av-doc-wc-condition-editor-1-example`;
 _.DocWcConditionEditor1Example=DocWcConditionEditor1Example;
 if(!window.customElements.get('av-doc-wc-condition-editor-1-example')){window.customElements.define('av-doc-wc-condition-editor-1-example', DocWcConditionEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocWcConditionEditor1Example);}
 
-const DocWcLoopEditor1Todo=class DocWcLoopEditor1Todo extends Aventus.Data {
+let DocWcLoopEditor1Todo=class DocWcLoopEditor1Todo extends Aventus.Data {
     id = 0;
     name = "";
     tasks = [];
@@ -7409,8 +7547,8 @@ const DocWcLoopEditor1Todo=class DocWcLoopEditor1Todo extends Aventus.Data {
 DocWcLoopEditor1Todo.Namespace=`AventusWebsite`;
 DocWcLoopEditor1Todo.$schema={...(Aventus.Data?.$schema ?? {}), "id":"number","name":"string","tasks":"string"};
 Aventus.Converter.register(DocWcLoopEditor1Todo.Fullname, DocWcLoopEditor1Todo);
-
 _.DocWcLoopEditor1Todo=DocWcLoopEditor1Todo;
+
 const DocWcLoopEditor4TodoList = class DocWcLoopEditor4TodoList extends Aventus.WebComponent {
     get 'todos'() {
 						return this.__watch["todos"];
@@ -8108,7 +8246,7 @@ DocWcStyleEditor1Result.Tag=`av-doc-wc-style-editor-1-result`;
 _.DocWcStyleEditor1Result=DocWcStyleEditor1Result;
 if(!window.customElements.get('av-doc-wc-style-editor-1-result')){window.customElements.define('av-doc-wc-style-editor-1-result', DocWcStyleEditor1Result);Aventus.WebComponentInstance.registerDefinition(DocWcStyleEditor1Result);}
 
-const DocWcWatchEditor1Person=class DocWcWatchEditor1Person extends Aventus.Data {
+let DocWcWatchEditor1Person=class DocWcWatchEditor1Person extends Aventus.Data {
     id = 0;
     name = "John Doe";
     children = [{ name: "Mini John Doe" }];
@@ -8116,8 +8254,8 @@ const DocWcWatchEditor1Person=class DocWcWatchEditor1Person extends Aventus.Data
 DocWcWatchEditor1Person.Namespace=`AventusWebsite`;
 DocWcWatchEditor1Person.$schema={...(Aventus.Data?.$schema ?? {}), "id":"number","name":"string","children":"literal"};
 Aventus.Converter.register(DocWcWatchEditor1Person.Fullname, DocWcWatchEditor1Person);
-
 _.DocWcWatchEditor1Person=DocWcWatchEditor1Person;
+
 const DocWcPropertyEditor1Example = class DocWcPropertyEditor1Example extends Aventus.WebComponent {
     static get observedAttributes() {return ["label"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
     get 'label'() { return this.getStringProp('label') }
@@ -9407,7 +9545,7 @@ About.Tag=`av-about`;
 _.About=About;
 if(!window.customElements.get('av-about')){window.customElements.define('av-about', About);Aventus.WebComponentInstance.registerDefinition(About);}
 
-const IconLib=class IconLib {
+let IconLib=class IconLib {
     static iconList = {
         "0": '"\\30"',
         "1": '"\\31"',
@@ -11868,8 +12006,8 @@ const IconLib=class IconLib {
     }
 }
 IconLib.Namespace=`AventusWebsite`;
-
 _.IconLib=IconLib;
+
 const Icon = class Icon extends Aventus.WebComponent {
     static get observedAttributes() {return ["icon"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
     get 'icon'() { return this.getStringProp('icon') }
@@ -11918,7 +12056,7 @@ if(!window.customElements.get('av-icon')){window.customElements.define('av-icon'
 const Navbar = class Navbar extends Aventus.WebComponent {
     get 'open'() { return this.getBoolAttr('open') }
     set 'open'(val) { this.setBoolAttr('open', val) }get 'is_dark'() { return this.getBoolAttr('is_dark') }
-    set 'is_dark'(val) { this.setBoolAttr('is_dark', val) }    static __style = `:host{background-color:var(--primary-color);height:50px;width:100%}:host .container{display:flex;height:100%;justify-content:space-between;margin:auto;max-width:1200px}:host .container .left{height:100%;justify-self:start}:host .container .left av-router-link{user-select:none;display:inline-block;height:100%}:host .container .left av-router-link av-img{--img-color: var(--aventus-color);cursor:pointer;height:100%;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right{align-items:center;color:var(--primary-font-color);display:flex;justify-self:end}:host .container .right .menu{user-select:none;border-radius:5px;cursor:pointer;margin:0 5px;padding:5px 10px;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0);transition:color .5s var(--bezier-curve),background-color .5s var(--bezier-curve)}:host .container .right .menu:hover{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu.active{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu-title{color:var(--aventus-color);display:none;font-size:2.4rem;margin:16px 0;text-align:center;width:100%}:host .container .right .menu-close-icon{display:none}:host .container .right .mode{align-items:center;cursor:pointer;display:flex;margin-left:30px;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right .mode mi-icon{font-size:1em}:host .container .right .mode .slider{user-select:none;align-items:center;transition:background-color .5s;background-color:var(--secondary-color);border:1px solid var(--primary-font-color);border-radius:15px;display:flex;height:15px;margin:0 10px;width:30px}:host .container .right .mode .slider .button{transition:inherit;background-color:var(--text-color);border-radius:13px;height:9px;margin-left:2px;transition:margin-left .2s linear;width:9px}:host .container .icon{align-items:center;color:var(--aventus-color);display:none;font-size:22px;height:100%;margin-right:16px}:host .container .hider{display:none}@media screen and (max-width: 1100px){:host .container .right{align-items:self-start;background-color:var(--primary-color);box-shadow:0 -10px 5px var(--aventus-color);color:var(--primary-font-color);flex-direction:column;height:100%;position:fixed;right:-300px;top:0px;transition:.4s right var(--bezier-curve);width:250px;z-index:90}:host .container .right .menu-title{display:block}:host .container .right .menu{margin:5px 0;margin-left:24px}:host .container .right .menu-close-icon{color:var(--aventus-color);display:block;font-size:21px;left:16px;position:absolute;top:13px}:host .container .right .mode{justify-content:center;margin:20px 0;width:100%}:host .container .icon{display:flex}:host .container .hider{background-color:rgba(0,0,0,0);display:none;height:100%;left:0;position:fixed;top:0;width:100%;z-index:9}:host([open]) .container .right{right:0}:host([open]) .container .hider{display:block}}:host([is_dark]) .container .right .mode .slider .button{margin-left:calc(100% - 11px)}`;
+    set 'is_dark'(val) { this.setBoolAttr('is_dark', val) }    static __style = `:host{background-color:var(--primary-color);height:50px;width:100%}:host .container{display:flex;height:100%;justify-content:space-between;margin:auto;max-width:1200px}:host .container .left{height:100%;justify-self:start}:host .container .left av-router-link{display:inline-block;height:100%;user-select:none}:host .container .left av-router-link av-img{--img-color: var(--aventus-color);cursor:pointer;height:100%;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right{align-items:center;color:var(--primary-font-color);display:flex;justify-self:end}:host .container .right .menu{border-radius:5px;color:var(--primary-font-color);cursor:pointer;margin:0 5px;padding:5px 10px;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0);transition:color .5s var(--bezier-curve),background-color .5s var(--bezier-curve);user-select:none;text-decoration:none}:host .container .right .menu:hover{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu.active{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu-title{color:var(--aventus-color);display:none;font-size:2.4rem;margin:16px 0;text-align:center;width:100%}:host .container .right .menu-close-icon{display:none}:host .container .right .icon-links{display:flex;gap:10px;margin-left:30px}:host .container .right .icon-links a{height:24px;width:24px}:host .container .right .icon-links a svg{fill:var(--primary-font-color);height:100%;transition:fill .5s var(--bezier-curve);width:100%}:host .container .right .icon-links a:hover svg{fill:var(--aventus-color)}:host .container .right .mode{align-items:center;cursor:pointer;display:flex;margin-left:30px;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right .mode mi-icon{font-size:1em}:host .container .right .mode .slider{align-items:center;background-color:var(--secondary-color);border:1px solid var(--primary-font-color);border-radius:15px;display:flex;height:15px;margin:0 10px;transition:background-color .5s;user-select:none;width:30px}:host .container .right .mode .slider .button{background-color:var(--text-color);border-radius:13px;height:9px;margin-left:2px;transition:inherit;transition:margin-left .2s linear;width:9px}:host .container .icon{align-items:center;color:var(--aventus-color);display:none;font-size:22px;height:100%;margin-right:16px}:host .container .hider{display:none}@media screen and (max-width: 1100px){:host .container .right{align-items:self-start;background-color:var(--primary-color);box-shadow:0 -10px 5px var(--aventus-color);color:var(--primary-font-color);flex-direction:column;height:100%;position:fixed;right:-300px;top:0px;transition:.4s right var(--bezier-curve);width:250px;z-index:90}:host .container .right .menu-title{display:block}:host .container .right .menu{margin:5px 0;margin-left:24px}:host .container .right .menu-close-icon{color:var(--aventus-color);display:block;font-size:21px;left:16px;position:absolute;top:13px}:host .container .right .mode{justify-content:center;margin:20px 0;width:100%}:host .container .icon{display:flex}:host .container .hider{background-color:rgba(0,0,0,0);display:none;height:100%;left:0;position:fixed;top:0;width:100%;z-index:9}:host([open]) .container .right{right:0}:host([open]) .container .hider{display:block}}:host([is_dark]) .container .right .mode .slider .button{margin-left:calc(100% - 11px)}`;
     constructor() {        super();        let mode = localStorage.getItem("mode");        if(mode == 'dark') {            document.querySelector("html")?.classList.add("dark");            this.is_dark = true;        }    }
     __getStatic() {
         return Navbar;
@@ -11930,7 +12068,7 @@ const Navbar = class Navbar extends Aventus.WebComponent {
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<div class="container">    <div class="left">        <av-router-link state="/"><av-img src="/img/icon.png"></av-img></av-router-link>    </div>    <div class="right">        <av-icon class="menu-close-icon" icon="close" _id="navbar_0"></av-icon>        <div class="menu-title">Aventus</div>        <av-router-link state="/" class="menu">Home</av-router-link>        <av-router-link state="/docs/installation" active_state="^/docs/installation*$" class="menu">Install</av-router-link>        <av-router-link state="/docs/introduction" active_state="^/docs/(?!installation)*$" class="menu">Docs</av-router-link>        <av-router-link state="/tutorial/introduction" active_state="^/tutorial/.*$" class="menu">Tutorial</av-router-link>        <av-router-link state="/about" class="menu">About</av-router-link>        <div class="mode" _id="navbar_1">            <mi-icon icon="light_mode"></mi-icon>            <div class="slider">                <div class="button"></div>            </div>            <mi-icon icon="dark_mode"></mi-icon>        </div>    </div>    <av-icon icon="navicon" class="icon" _id="navbar_2"></av-icon>    <div class="hider" _id="navbar_3"></div></div>` }
+        blocks: { 'default':`<div class="container">    <div class="left">        <av-router-link state="/"><av-img src="/img/icon.png"></av-img></av-router-link>    </div>    <div class="right">        <av-icon class="menu-close-icon" icon="close" _id="navbar_0"></av-icon>        <div class="menu-title">Aventus</div>        <av-router-link state="/" class="menu">Home</av-router-link>        <av-router-link state="/docs/installation" active_state="^/docs/installation*$" class="menu">Install</av-router-link>        <av-router-link state="/docs/introduction" active_state="^/docs/(?!installation)*$" class="menu">Docs</av-router-link>        <av-router-link state="/tutorial/introduction" active_state="^/tutorial/.*$" class="menu">Tutorial</av-router-link>        <av-router-link state="/about" class="menu">About</av-router-link>        <a href="https://sharp.aventusjs.com" target="_blank" class="menu" style="color:#368832">Sharp</a>        <div class="icon-links">            <a href="https://discord.gg/rzgtDNkZhd" target="_blank" class="link">                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 -28.5 256 256" version="1.1" preserveAspectRatio="xMidYMid">                    <path d="M216.856339,16.5966031 C200.285002,8.84328665 182.566144,3.2084988 164.041564,0 C161.766523,4.11318106 159.108624,9.64549908 157.276099,14.0464379 C137.583995,11.0849896 118.072967,11.0849896 98.7430163,14.0464379 C96.9108417,9.64549908 94.1925838,4.11318106 91.8971895,0 C73.3526068,3.2084988 55.6133949,8.86399117 39.0420583,16.6376612 C5.61752293,67.146514 -3.4433191,116.400813 1.08711069,164.955721 C23.2560196,181.510915 44.7403634,191.567697 65.8621325,198.148576 C71.0772151,190.971126 75.7283628,183.341335 79.7352139,175.300261 C72.104019,172.400575 64.7949724,168.822202 57.8887866,164.667963 C59.7209612,163.310589 61.5131304,161.891452 63.2445898,160.431257 C105.36741,180.133187 151.134928,180.133187 192.754523,160.431257 C194.506336,161.891452 196.298154,163.310589 198.110326,164.667963 C191.183787,168.842556 183.854737,172.420929 176.223542,175.320965 C180.230393,183.341335 184.861538,190.991831 190.096624,198.16893 C211.238746,191.588051 232.743023,181.531619 254.911949,164.955721 C260.227747,108.668201 245.831087,59.8662432 216.856339,16.5966031 Z M85.4738752,135.09489 C72.8290281,135.09489 62.4592217,123.290155 62.4592217,108.914901 C62.4592217,94.5396472 72.607595,82.7145587 85.4738752,82.7145587 C98.3405064,82.7145587 108.709962,94.5189427 108.488529,108.914901 C108.508531,123.290155 98.3405064,135.09489 85.4738752,135.09489 Z M170.525237,135.09489 C157.88039,135.09489 147.510584,123.290155 147.510584,108.914901 C147.510584,94.5396472 157.658606,82.7145587 170.525237,82.7145587 C183.391518,82.7145587 193.761324,94.5189427 193.539891,108.914901 C193.539891,123.290155 183.391518,135.09489 170.525237,135.09489 Z" fill-rule="nonzero">                    </path>                </svg>            </a>            <a href="https://github.com/Cobwebsite/Aventus" target="_blank" class="link">                <svg data-v-a71028e4="" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" viewBox="0 0 24 24" class="social-icon">                    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12">                    </path>                </svg>            </a>        </div>        <div class="mode" _id="navbar_1">            <mi-icon icon="light_mode"></mi-icon>            <div class="slider">                <div class="button"></div>            </div>            <mi-icon icon="dark_mode"></mi-icon>        </div>    </div>    <av-icon icon="navicon" class="icon" _id="navbar_2"></av-icon>    <div class="hider" _id="navbar_3"></div></div>` }
     });
 }
     __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
@@ -12218,6 +12356,15 @@ const DocLibWatcher = class DocLibWatcher extends DocGenericPage {
     getClassName() {
         return "DocLibWatcher";
     }
+    Title() {
+        return 'AventusJs - Watcher';
+    }
+    Description() {
+        return 'Implement reactivity inside your application with Watcher';
+    }
+    Keywords() {
+        return ["Watcher", "Reactivity", "Proxy", "Computed", "Effect"];
+    }
 }
 DocLibWatcher.Namespace=`AventusWebsite`;
 DocLibWatcher.Tag=`av-doc-lib-watcher`;
@@ -12241,6 +12388,15 @@ const DocLibResourceLoader = class DocLibResourceLoader extends DocGenericPage {
 }
     getClassName() {
         return "DocLibResourceLoader";
+    }
+    Title() {
+        return "AventusJs - Resource Loader";
+    }
+    Description() {
+        return "Load resource inside your code to avoid duplication";
+    }
+    Keywords() {
+        return ['resource', "duplication", "url", "uri"];
     }
 }
 DocLibResourceLoader.Namespace=`AventusWebsite`;
@@ -12266,6 +12422,15 @@ const DocLibInstance = class DocLibInstance extends DocGenericPage {
     getClassName() {
         return "DocLibInstance";
     }
+    Title() {
+        return "AventusJs - Instance";
+    }
+    Description() {
+        return "AventusJs - Create singleton";
+    }
+    Keywords() {
+        return ["Singleton", "Instance", "GetInstance"];
+    }
 }
 DocLibInstance.Namespace=`AventusWebsite`;
 DocLibInstance.Tag=`av-doc-lib-instance`;
@@ -12290,6 +12455,15 @@ const DocLibCreate = class DocLibCreate extends DocGenericPage {
     getClassName() {
         return "DocLibCreate";
     }
+    Title() {
+        return "AventusJs - Lib file";
+    }
+    Description() {
+        return "Understand how to create lib file and use it";
+    }
+    Keywords() {
+        return ["Lib file", "Library", "Custom code", "Function", "Const"];
+    }
 }
 DocLibCreate.Namespace=`AventusWebsite`;
 DocLibCreate.Tag=`av-doc-lib-create`;
@@ -12313,6 +12487,15 @@ const DocWcElement = class DocWcElement extends DocGenericPage {
 }
     getClassName() {
         return "DocWcElement";
+    }
+    Title() {
+        return "AventusJs - Element";
+    }
+    Description() {
+        return "Reference your view element inside your class";
+    }
+    Keywords() {
+        return ["View", "Element", "Reference", "ref"];
     }
 }
 DocWcElement.Namespace=`AventusWebsite`;
@@ -15116,6 +15299,15 @@ const DocWcCreate = class DocWcCreate extends DocGenericPage {
     getClassName() {
         return "DocWcCreate";
     }
+    Title() {
+        return "AventusJs - Webcomponent create";
+    }
+    Description() {
+        return "Create your first webcomponent with AventusJs";
+    }
+    Keywords() {
+        return ["Webcomponent", "Custom element", "Creation"];
+    }
 }
 DocWcCreate.Namespace=`AventusWebsite`;
 DocWcCreate.Tag=`av-doc-wc-create`;
@@ -15354,6 +15546,15 @@ const DocWcInheritance = class DocWcInheritance extends DocGenericPage {
     getClassName() {
         return "DocWcInheritance";
     }
+    Title() {
+        return "AventusJs - Inheritance";
+    }
+    Description() {
+        return "Use inheritance inside your webcomponent";
+    }
+    Keywords() {
+        return ["OOP", "Inheritance", "Generic", "Class", "Interface", "Webcomponent"];
+    }
 }
 DocWcInheritance.Namespace=`AventusWebsite`;
 DocWcInheritance.Tag=`av-doc-wc-inheritance`;
@@ -15412,6 +15613,15 @@ const DocWcAttribute = class DocWcAttribute extends DocGenericPage {
     getClassName() {
         return "DocWcAttribute";
     }
+    Title() {
+        return "AventusJs - Attribute";
+    }
+    Description() {
+        return "Use attribute on your webcomponent";
+    }
+    Keywords() {
+        return ["Html", "Webcomponent", "Attribute", "Tag"];
+    }
 }
 DocWcAttribute.Namespace=`AventusWebsite`;
 DocWcAttribute.Tag=`av-doc-wc-attribute`;
@@ -15463,6 +15673,15 @@ const DocWcProperty = class DocWcProperty extends DocGenericPage {
 }
     getClassName() {
         return "DocWcProperty";
+    }
+    Title() {
+        return "AventusJs - Property";
+    }
+    Description() {
+        return "Create property to watch change on tag attribute";
+    }
+    Keywords() {
+        return ["Property", "Tag", "Attribute", "Dynamic"];
     }
 }
 DocWcProperty.Namespace=`AventusWebsite`;
@@ -15564,6 +15783,15 @@ const DocWcWatch = class DocWcWatch extends DocGenericPage {
 }
     getClassName() {
         return "DocWcWatch";
+    }
+    Title() {
+        return "AventusJs - Watch";
+    }
+    Description() {
+        return "Add dyamic variable into your webcomponent";
+    }
+    Keywords() {
+        return ["Watch", "Reactivity", "Dynamic", "Watcher", "Webcomponent"];
     }
 }
 DocWcWatch.Namespace=`AventusWebsite`;
@@ -15721,6 +15949,15 @@ const DocWcStyle = class DocWcStyle extends DocGenericPage {
     getClassName() {
         return "DocWcStyle";
     }
+    Title() {
+        return "AventusJs - Style";
+    }
+    Description() {
+        return "How to manage style inside AventusJs to design your component";
+    }
+    Keywords() {
+        return ["css", "style", "design", "scss", "Webcomponent"];
+    }
 }
 DocWcStyle.Namespace=`AventusWebsite`;
 DocWcStyle.Tag=`av-doc-wc-style`;
@@ -15744,6 +15981,15 @@ const DocWcInterpolation = class DocWcInterpolation extends DocGenericPage {
 }
     getClassName() {
         return "DocWcInterpolation";
+    }
+    Title() {
+        return "AventusJs - Interpolation";
+    }
+    Description() {
+        return "Interpolate your variable inside your view to make them dynamic";
+    }
+    Keywords() {
+        return ['Dynamic', "interpolation", "view", "Webcomponent"];
     }
 }
 DocWcInterpolation.Namespace=`AventusWebsite`;
@@ -16037,6 +16283,15 @@ const DocWcBinding = class DocWcBinding extends DocGenericPage {
     getClassName() {
         return "DocWcBinding";
     }
+    Title() {
+        return "AventusJs - Binding";
+    }
+    Description() {
+        return "Bind you data in 2 way";
+    }
+    Keywords() {
+        return ["2 way", "bidirectional", "bind", "binding"];
+    }
 }
 DocWcBinding.Namespace=`AventusWebsite`;
 DocWcBinding.Tag=`av-doc-wc-binding`;
@@ -16116,6 +16371,15 @@ const DocWcInjection = class DocWcInjection extends DocGenericPage {
 }
     getClassName() {
         return "DocWcInjection";
+    }
+    Title() {
+        return "AventusJs - Injection";
+    }
+    Description() {
+        return "Injection value inside children tags";
+    }
+    Keywords() {
+        return ["Injection", "Webcomponent", "single way"];
     }
 }
 DocWcInjection.Namespace=`AventusWebsite`;
@@ -16337,6 +16601,15 @@ const DocWcLoop = class DocWcLoop extends DocGenericPage {
     getClassName() {
         return "DocWcLoop";
     }
+    Title() {
+        return "AventusJs - Loop";
+    }
+    Description() {
+        return "Use loop inside your view";
+    }
+    Keywords() {
+        return ["Loop", "for", "for in", "for of", "View", "Webcomponent"];
+    }
 }
 DocWcLoop.Namespace=`AventusWebsite`;
 DocWcLoop.Tag=`av-doc-wc-loop`;
@@ -16391,6 +16664,15 @@ const DocWcCondition = class DocWcCondition extends DocGenericPage {
 }
     getClassName() {
         return "DocWcCondition";
+    }
+    Title() {
+        return "AventusJs - Condition";
+    }
+    Description() {
+        return "Use if / else if / else to render your view";
+    }
+    Keywords() {
+        return ["if", "else if", "else", "condition", "Dynamic", "view", "html"];
     }
 }
 DocWcCondition.Namespace=`AventusWebsite`;
@@ -16520,6 +16802,15 @@ const DocWcEvent = class DocWcEvent extends DocGenericPage {
 }
     getClassName() {
         return "DocWcEvent";
+    }
+    Title() {
+        return "AventusJs - Event";
+    }
+    Description() {
+        return "Manage events inside your webcomponent";
+    }
+    Keywords() {
+        return ["Webcomponent", "Custom element", "Event", "Callback"];
     }
 }
 DocWcEvent.Namespace=`AventusWebsite`;
@@ -16737,6 +17028,15 @@ const DocWcState = class DocWcState extends DocGenericPage {
     getClassName() {
         return "DocWcState";
     }
+    Title() {
+        return "AventusJs - State";
+    }
+    Description() {
+        return "Use state inside your aventus app to centralize your data";
+    }
+    Keywords() {
+        return ['State', "Centralization", "active", "inactive", "askChange"];
+    }
 }
 DocWcState.Namespace=`AventusWebsite`;
 DocWcState.Tag=`av-doc-wc-state`;
@@ -16788,6 +17088,15 @@ const DocLibAnimation = class DocLibAnimation extends DocGenericPage {
 }
     getClassName() {
         return "DocLibAnimation";
+    }
+    Title() {
+        return "AventusJs - Animation";
+    }
+    Description() {
+        return "Manage animation inside AventusJs";
+    }
+    Keywords() {
+        return ['Animation', 'requestAnimationFrame'];
     }
 }
 DocLibAnimation.Namespace=`AventusWebsite`;
@@ -16887,6 +17196,15 @@ const DocLibCallback = class DocLibCallback extends DocGenericPage {
     getClassName() {
         return "DocLibCallback";
     }
+    Title() {
+        return "AventusJs - Callback";
+    }
+    Description() {
+        return "How to manage events inside AventusJs";
+    }
+    Keywords() {
+        return ['Callback', 'Events', 'CallbackGroup'];
+    }
 }
 DocLibCallback.Namespace=`AventusWebsite`;
 DocLibCallback.Tag=`av-doc-lib-callback`;
@@ -16938,6 +17256,15 @@ const DocLibDragAndDrop = class DocLibDragAndDrop extends DocGenericPage {
 }
     getClassName() {
         return "DocLibDragAndDrop";
+    }
+    Title() {
+        return "AventusJs - Drag and Drop";
+    }
+    Description() {
+        return "Use drag and drop inside AventusJs";
+    }
+    Keywords() {
+        return ["Drag", "Drop", "Touch", "Action", "Library"];
     }
 }
 DocLibDragAndDrop.Namespace=`AventusWebsite`;
@@ -16991,6 +17318,15 @@ const DocLibPressManager = class DocLibPressManager extends DocGenericPage {
     getClassName() {
         return "DocLibPressManager";
     }
+    Title() {
+        return "AventusJs - PressManager";
+    }
+    Description() {
+        return "Manage press to trigger single action";
+    }
+    Keywords() {
+        return ["Press", "Mouse", "Pen", "Action", "Single", "Event", "Trigger"];
+    }
 }
 DocLibPressManager.Namespace=`AventusWebsite`;
 DocLibPressManager.Tag=`av-doc-lib-press-manager`;
@@ -17043,6 +17379,15 @@ const DocLibResizeObserver = class DocLibResizeObserver extends DocGenericPage {
     getClassName() {
         return "DocLibResizeObserver";
     }
+    Title() {
+        return "AventusJs - Resize observer";
+    }
+    Description() {
+        return "Use aventus ResizeObserver to improve performance";
+    }
+    Keywords() {
+        return ["ResizeObserver", "Resize"];
+    }
 }
 DocLibResizeObserver.Namespace=`AventusWebsite`;
 DocLibResizeObserver.Tag=`av-doc-lib-resize-observer`;
@@ -17066,6 +17411,15 @@ const DocLibTools = class DocLibTools extends DocGenericPage {
 }
     getClassName() {
         return "DocLibTools";
+    }
+    Title() {
+        return "AventusJs - Tools";
+    }
+    Description() {
+        return "Use predefined function to simplify code";
+    }
+    Keywords() {
+        return ['compareObject', 'getValueFromObject', 'setValueToObject', 'Json', 'Converter', 'Mutex', 'sleep', 'UUID', 'Error'];
     }
 }
 DocLibTools.Namespace=`AventusWebsite`;

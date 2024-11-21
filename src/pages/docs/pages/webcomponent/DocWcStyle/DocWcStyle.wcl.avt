@@ -28,6 +28,24 @@ export class DocWcStyle extends DocGenericPage implements Aventus.DefaultCompone
 	
 	
 	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+		return "AventusJs - Style"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+		return "How to manage style inside AventusJs to design your component"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return ["css", "style", "design", "scss", "Webcomponent"]
+	}
 	
 	//#endregion
 	

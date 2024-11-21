@@ -2,33 +2,51 @@ import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocWcBinding extends DocGenericPage implements Aventus.DefaultComponent {
 
-	//#region static
-	
-	//#endregion
-	
-	
-	//#region props
-	
-	//#endregion
-	
-	
-	//#region variables
-	
-	//#endregion
-	
-	
-	//#region states
-	
-	//#endregion
-	
-	
-	//#region constructor
-	
-	//#endregion
-	
-	
-	//#region methods
-	
-	//#endregion
-	
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region states
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "AventusJs - Binding";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Bind you data in 2 way";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return ["2 way", "bidirectional", "bind", "binding"];
+    }
+
+    //#endregion
+
 }

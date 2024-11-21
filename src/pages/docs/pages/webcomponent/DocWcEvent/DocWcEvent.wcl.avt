@@ -28,6 +28,24 @@ export class DocWcEvent extends DocGenericPage implements Aventus.DefaultCompone
 	
 	
 	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+		return "AventusJs - Event"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+		return "Manage events inside your webcomponent"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return ["Webcomponent", "Custom element", "Event", "Callback"]
+	}
 	
 	//#endregion
 	

@@ -23,6 +23,24 @@ export class DocLibPressManager extends DocGenericPage implements Aventus.Defaul
 	
 	
 	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "AventusJs - PressManager"
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+		return "Manage press to trigger single action"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return ["Press", "Mouse", "Pen", "Action", "Single", "Event", "Trigger"]
+	}
 	
 	//#endregion
 	

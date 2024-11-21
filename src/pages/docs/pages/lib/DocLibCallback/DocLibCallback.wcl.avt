@@ -23,6 +23,24 @@ export class DocLibCallback extends DocGenericPage implements Aventus.DefaultCom
 	
 	
 	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "AventusJs - Callback"
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+		return "How to manage events inside AventusJs"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return ['Callback', 'Events', 'CallbackGroup']
+    }
 	
 	//#endregion
 	

@@ -28,6 +28,24 @@ export class DocWcCreate extends DocGenericPage implements Aventus.DefaultCompon
 	
 	
 	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "AventusJs - Webcomponent create"
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+		return "Create your first webcomponent with AventusJs"
+	}
+	/**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return ["Webcomponent", "Custom element", "Creation"]
+	}
 	
 	//#endregion
 	

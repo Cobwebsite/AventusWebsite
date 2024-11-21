@@ -15,9 +15,9 @@
 			justify-self: start;
 
 			av-router-link {
-				user-select: none;
 				display: inline-block;
 				height: 100%;
+				user-select: none;
 
 				av-img {
 					--img-color: var(--aventus-color);
@@ -35,14 +35,16 @@
 			justify-self: end;
 
 			.menu {
-				user-select: none;
 				border-radius: 5px;
+				color: var(--primary-font-color);
 				cursor: pointer;
 				margin: 0 5px;
 				padding: 5px 10px;
 				position: relative;
 				-webkit-tap-highlight-color: transparent;
 				transition: color 0.5s var(--bezier-curve), background-color 0.5s var(--bezier-curve);
+				user-select: none;
+				text-decoration: none;
 			}
 
 			.menu:hover {
@@ -68,6 +70,30 @@
 				display: none;
 			}
 
+			.icon-links {
+				display: flex;
+				gap: 10px;
+				margin-left: 30px;
+
+				a {
+					height: 24px;
+					width: 24px;
+
+					svg {
+						fill: var(--primary-font-color);
+						height: 100%;
+						transition: fill 0.5s var(--bezier-curve);
+						width: 100%;
+					}
+				}
+
+				a:hover {
+					svg {
+						fill: var(--aventus-color);
+					}
+				}
+			}
+
 			.mode {
 				align-items: center;
 				cursor: pointer;
@@ -80,23 +106,23 @@
 				}
 
 				.slider {
-					user-select: none;
 					align-items: center;
-					transition: background-color 0.5s;
 					background-color: var(--secondary-color);
 					border: 1px solid var(--primary-font-color);
 					border-radius: 15px;
 					display: flex;
 					height: 15px;
 					margin: 0 10px;
+					transition: background-color 0.5s;
+					user-select: none;
 					width: 30px;
 
 					.button {
-						transition: inherit;
 						background-color: var(--text-color);
 						border-radius: 13px;
 						height: 9px;
 						margin-left: 2px;
+						transition: inherit;
 						transition: margin-left 0.2s linear;
 						width: 9px;
 					}
