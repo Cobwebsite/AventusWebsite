@@ -17653,7 +17653,6 @@ if(!window.customElements.get('av-doc-app')){window.customElements.define('av-do
 const DocPage = class DocPage extends Page {
     get 'open'() { return this.getBoolAttr('open') }
     set 'open'(val) { this.setBoolAttr('open', val) }    static __style = `:host{position:100%}:host av-doc-sidenav{transition:left .4s var(--bezier-curve)}:host .hider{background-color:rgba(0,0,0,0);display:none;height:100%;left:0;position:absolute;top:0;width:100%;z-index:99}:host>.container{width:calc(100% - 300px);max-width:none}:host([visible]){display:flex}@media screen and (max-width: 1100px){:host>.container{width:100%}:host av-doc-sidenav{height:calc(100% - 50px);left:-300px;position:absolute;top:50px;z-index:100}:host([open]) av-doc-sidenav{left:0px}:host([open]) .hider{display:block}}`;
-    constructor() { super(); if (this.constructor == DocPage) { throw "can't instanciate an abstract class"; } }
     __getStatic() {
         return DocPage;
     }
@@ -17689,6 +17688,15 @@ const DocPage = class DocPage extends Page {
     __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('open')) { this.attributeChangedCallback('open', false, false); } }
     __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('open'); }
     __listBoolProps() { return ["open"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    Title() {
+        return "Aventus - Documentation";
+    }
+    Description() {
+        return "Documentation for Aventus";
+    }
+    Keywords() {
+        return [];
+    }
     getNextAndPrevious(state) {
         return this.sidenavEl.getNextAndPrevious(state);
     }
@@ -17700,7 +17708,9 @@ const DocPage = class DocPage extends Page {
     }
 }
 DocPage.Namespace=`AventusWebsite`;
+DocPage.Tag=`av-doc-page`;
 _.DocPage=DocPage;
+if(!window.customElements.get('av-doc-page')){window.customElements.define('av-doc-page', DocPage);Aventus.WebComponentInstance.registerDefinition(DocPage);}
 
 const TutorialGenericPage = class TutorialGenericPage extends Page {
     get 'fade'() { return this.getBoolAttr('fade') }
