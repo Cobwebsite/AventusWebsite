@@ -42,9 +42,9 @@
 				padding: 5px 10px;
 				position: relative;
 				-webkit-tap-highlight-color: transparent;
+				text-decoration: none;
 				transition: color 0.5s var(--bezier-curve), background-color 0.5s var(--bezier-curve);
 				user-select: none;
-				text-decoration: none;
 			}
 
 			.menu:hover {
@@ -76,14 +76,21 @@
 				margin-left: 30px;
 
 				a {
-					height: 24px;
-					width: 24px;
+					height: 18px;
+					width: 18px;
 
 					svg {
 						fill: var(--primary-font-color);
 						height: 100%;
 						transition: fill 0.5s var(--bezier-curve);
 						width: 100%;
+					}
+
+					.reddit-logo {
+						height: 28px;
+						width: 28px;
+						margin-top: -5px;
+						margin-left: -5px;
 					}
 				}
 

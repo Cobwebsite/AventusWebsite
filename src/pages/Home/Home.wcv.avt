@@ -2,16 +2,16 @@
     <div class="height-wrapper">
         <div class="main">
             <av-dynamic-row class="icon-text">
-                <av-dynamic-col size="6">
-                    <av-img src="/img/logo.svg"></av-img>
-                    <!-- <div class="ventus">
-                    <span>ventus</span>
-                </div> -->
-                </av-dynamic-col>
-                <av-dynamic-col size="4">
+                <av-dynamic-col size="5" class="title-container">
                     <div class="title">
+                        AventusJs
+                    </div>
+                    <div class="sub-title">
                         The Webcomponent Javascript Framework
                     </div>
+                </av-dynamic-col>
+                <av-dynamic-col size="5">
+                    <av-img src="/img/logo_fox.svg"></av-img>
                 </av-dynamic-col>
             </av-dynamic-row>
             <av-dynamic-row class="btn-container">
