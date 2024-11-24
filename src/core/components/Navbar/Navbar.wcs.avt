@@ -88,9 +88,9 @@
 
 					.reddit-logo {
 						height: 28px;
-						width: 28px;
-						margin-top: -5px;
 						margin-left: -5px;
+						margin-top: -5px;
+						width: 28px;
 					}
 				}
 
@@ -177,6 +177,7 @@
 				.menu {
 					margin: 5px 0;
 					margin-left: 24px;
+					order: 1;
 				}
 
 				.menu-close-icon {
@@ -188,9 +189,34 @@
 					top: 13px;
 				}
 
-				.mode {
+
+				.icon-links {
+					gap: 20px;
 					justify-content: center;
 					margin: 20px 0;
+					margin-top: 40px;
+					order: 3;
+					width: 100%;
+
+					a {
+						height: 24px;
+						width: 24px;
+
+						.reddit-logo {
+							height: 34px;
+							margin-left: -8px;
+							margin-top: -6px;
+							width: 34px;
+						}
+					}
+
+				}
+
+				.mode {
+					justify-content: center;
+					margin: 0;
+					margin-top: 20px;
+					order: 2;
 					width: 100%;
 				}
 			}

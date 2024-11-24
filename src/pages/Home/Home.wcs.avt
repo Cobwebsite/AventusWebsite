@@ -192,7 +192,9 @@
 				}
 
 				av-img {
-					margin-right: 0;
+					margin: 20px 0px;
+					height: 200px;
+					width: 200px;
 				}
 
 				/* av-dynamic-col:nth-child(2) {*/
