@@ -2021,7 +2021,7 @@ let PressManager=class PressManager {
         this.element.addEventListener("trigger_pointer_pressmove", this.functionsBinded.childPressMove);
     }
     identifyEvent(touch) {
-        if (touch instanceof Touch)
+        if ('Touch' in window && touch instanceof Touch)
             return touch.identifier;
         return touch.pointerId;
     }
@@ -3836,6 +3836,9 @@ let WebComponent=class WebComponent extends HTMLElement {
         this.__registerSignalsActions();
         this.__createStates();
         this.__subscribeState();
+        if (this.constructor == WebComponent) {
+            throw "can't instanciate an abstract class";
+        }
     }
     /**
      * Remove all listeners
@@ -6089,7 +6092,7 @@ Navigation.Page = class Page extends Aventus.WebComponent {
     }
 })); }
     static __style = `:host{display:none}:host([visible]){display:block}`;
-    constructor() { super(); if (this.constructor == Page) { throw "can't instanciate an abstract class"; } }
+    constructor() { super(); if (this.constructor == Page) { throw "can't instanciate an abstract class"; } }
     __getStatic() {
         return Page;
     }
@@ -6147,7 +6150,7 @@ Navigation.Router = class Router extends Aventus.WebComponent {
     }
     page404;
     static __style = `:host{display:block}`;
-    constructor() {            super();            this.validError404 = this.validError404.bind(this);            this.canChangeState = this.canChangeState.bind(this);            this.stateManager.canChangeState(this.canChangeState);if (this.constructor == Router) { throw "can't instanciate an abstract class"; } }
+    constructor() {            super();            this.validError404 = this.validError404.bind(this);            this.canChangeState = this.canChangeState.bind(this);            this.stateManager.canChangeState(this.canChangeState);if (this.constructor == Router) { throw "can't instanciate an abstract class"; }}
     __getStatic() {
         return Router;
     }
@@ -8351,7 +8354,7 @@ const DocWcInheritanceEditor3Fillable = class DocWcInheritanceEditor3Fillable ex
 }));    super.__registerWatchesActions();
 }
     static __style = ``;
-    constructor() { super(); if (this.constructor == DocWcInheritanceEditor3Fillable) { throw "can't instanciate an abstract class"; } }
+    constructor() { super(); if (this.constructor == DocWcInheritanceEditor3Fillable) { throw "can't instanciate an abstract class"; } }
     __getStatic() {
         return DocWcInheritanceEditor3Fillable;
     }
@@ -8455,7 +8458,7 @@ const DocWcInheritanceEditor2Fillable = class DocWcInheritanceEditor2Fillable ex
 }));    super.__registerWatchesActions();
 }
     static __style = ``;
-    constructor() { super(); if (this.constructor == DocWcInheritanceEditor2Fillable) { throw "can't instanciate an abstract class"; } }
+    constructor() { super(); if (this.constructor == DocWcInheritanceEditor2Fillable) { throw "can't instanciate an abstract class"; } }
     __getStatic() {
         return DocWcInheritanceEditor2Fillable;
     }
@@ -9350,7 +9353,7 @@ if(!window.customElements.get('av-button')){window.customElements.define('av-but
 
 const Page = class Page extends Aventus.Navigation.Page {
     static __style = `:host{background-color:var(--secondary-color);height:100%;width:100%}:host .container{display:inline-block;height:100%;margin:auto;max-width:1000px;width:100%}`;
-    constructor() { super(); if (this.constructor == Page) { throw "can't instanciate an abstract class"; } }
+    constructor() { super(); if (this.constructor == Page) { throw "can't instanciate an abstract class"; } }
     __getStatic() {
         return Page;
     }
@@ -12291,7 +12294,7 @@ if(!window.customElements.get('av-doc-sidenav')){window.customElements.define('a
 const DocGenericPage = class DocGenericPage extends Page {
     get 'fade'() { return this.getBoolAttr('fade') }
     set 'fade'(val) { this.setBoolAttr('fade', val) }    static __style = `:host{color:var(--text-color);opacity:0;transition:visibility .3s ease-in,opacity .3s ease-in;visibility:hidden}:host .container{max-width:none;width:100%}:host .container img{border-radius:5px}:host .container av-scrollable{--scroller-right: 10px}:host .container .page-content{font-size:1.6rem;margin:auto;padding:0 50px}:host .icon-menu{color:var(--text-color);cursor:pointer;display:none;font-size:25px;left:16px;position:absolute;-webkit-tap-highlight-color:rgba(0,0,0,0);top:28px;z-index:9999}:host h1{color:var(--title-color);font-size:3.2rem;margin:2.3rem 0;text-align:center}:host a{color:var(--link-color);text-decoration:none}:host p{line-height:1.7;text-align:justify}:host av-router-link,:host av-router-link{color:var(--link-color);cursor:pointer;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host av-img,:host av-docu-img{max-height:300px;width:100%}:host ul li,:host ol li{margin:5px 0}:host .table{margin:15px 0}:host .table .header{font-size:20px;font-weight:700;letter-spacing:1px;padding:0px}:host .table .header av-dynamic-col{text-align:center}:host .table .header::after{background:linear-gradient(90deg, transparent 0%, var(--text-color) 50%, transparent 100%);content:"";height:1px;margin:5px auto;width:100%}:host .table av-dynamic-row{align-items:center;padding:10px}:host .table av-dynamic-row av-dynamic-col{padding:0 15px;text-align:center}:host .cn{background-color:#cfd1d4;background-color:var(--light-primary-color);border-radius:5px;color:var(--aventus-color);font-size:14px;padding:2px 8px}:host([fade]){opacity:1;visibility:visible}@media screen and (max-width: 1100px){:host .container av-scrollable{--scroller-right: 3px}:host .container .page-content{padding:0px 16px}:host h1{padding:0 32px}:host .icon-menu{display:block}}`;
-    constructor() { super(); if (this.constructor == DocGenericPage) { throw "can't instanciate an abstract class"; } }
+    constructor() { super(); if (this.constructor == DocGenericPage) { throw "can't instanciate an abstract class"; } }
     __getStatic() {
         return DocGenericPage;
     }
