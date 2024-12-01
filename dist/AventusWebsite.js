@@ -13023,7 +13023,7 @@ if(!window.customElements.get('av-code-editor')){window.customElements.define('a
 
 const BaseEditor = class BaseEditor extends Aventus.WebComponent {
     editorEl;
-    static __style = `:host{width:100%;display:none}:host iframe{border:none;height:400px;width:100%}`;
+    static __style = `:host{width:100%}:host iframe{border:none;height:400px;width:100%}`;
     __getStatic() {
         return BaseEditor;
     }
