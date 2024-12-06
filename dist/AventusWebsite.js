@@ -349,6 +349,20 @@ let Style=class Style {
     static load(name, url) {
         return this.getInstance().load(name, url);
     }
+    static appendToHead(name) {
+        if (!document.head.querySelector(`style[data-name="${name}"]`)) {
+            const styleNode = document.createElement('style');
+            styleNode.setAttribute(`data-name`, name);
+            styleNode.innerHTML = Aventus.Style.getAsString(name);
+            document.getElementsByTagName('head')[0].appendChild(styleNode);
+        }
+    }
+    static refreshHead(name) {
+        const styleNode = document.head.querySelector(`style[data-name="${name}"]`);
+        if (styleNode) {
+            styleNode.innerHTML = Aventus.Style.getAsString(name);
+        }
+    }
     static getInstance() {
         if (!this.instance) {
             this.instance = new Style();
@@ -384,6 +398,7 @@ let Style=class Style {
         }
         else {
             style.replaceSync(content);
+            Style.refreshHead(name);
             return style;
         }
     }
@@ -3399,13 +3414,20 @@ let TemplateInstance=class TemplateInstance {
                 elements = this.context.getValueFromItem(currentPath);
             }
             if (!elements && onThis) {
-                elements = this.component.__watch;
+                const splittedPath = basePath.split(".");
+                const firstPart = splittedPath.length > 0 ? splittedPath[0] : null;
+                if (firstPart && this.component.__signals[firstPart]) {
+                    elements = this.component.__signals[firstPart];
+                }
+                else {
+                    elements = this.component.__watch;
+                }
             }
-            if (!elements || !elements.__isProxy) {
+            if (!elements || !(elements.__isProxy || elements instanceof Signal)) {
                 debugger;
             }
             const subTemp = (action, path, value) => {
-                if (basePath.startsWith(path)) {
+                if (basePath.startsWith(path) || path == "*") {
                     elements.unsubscribe(subTemp);
                     this.renderLoopSimple(loop, simple);
                     return;
@@ -4286,14 +4308,14 @@ let WebComponent=class WebComponent extends HTMLElement {
         }
     }
     getStringAttr(name) {
-        return this.getAttribute(name) ?? undefined;
+        return this.getAttribute(name)?.replace(/&avquot;/g, '"') ?? undefined;
     }
     setStringAttr(name, val) {
         if (val === undefined || val === null) {
             this.removeAttribute(name);
         }
         else {
-            this.setAttribute(name, val);
+            this.setAttribute(name, (val + "").replace(/"/g, '&avquot;'));
         }
     }
     getStringProp(name) {
