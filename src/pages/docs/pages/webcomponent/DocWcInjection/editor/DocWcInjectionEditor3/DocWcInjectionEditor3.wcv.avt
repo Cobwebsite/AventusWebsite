@@ -1,0 +1,91 @@
+<av-code-editor name="Injection">
+    <av-code language="typescript" filename="Injection/aventus.conf.avt">
+        <pre>
+            {
+            	"module": "Injection",
+            	"componentPrefix": "av",
+            	"build": [
+            		{
+            			"name": "Main",
+            			"src": [
+            				"./src/*"
+            			],
+            			"compile": [{
+            				"output": "./dist/demo.js"
+            			}]
+            		}
+            	],
+            	"static": [
+            		{
+            			"name": "Main",
+            			"input": "./src/static/*",
+            			"output": "./dist/"
+            		}
+            	]
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Injection/src/Btn/Btn.wcl.avt">
+        <pre>
+            export class Btn extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+                @Watch()
+                @Injectable() // this will provide autocompletion on tag
+                public name: string = "";
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+            &nbsp;
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="Injection/src/Btn/Btn.wcs.avt">
+        <pre>
+            :host {
+            	
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Injection/src/Btn/Btn.wcv.avt">
+        <pre>
+            &lt;span&gt;\{{ this.name }}&lt;/span&gt;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Injection/src/Test.wc.avt">
+        <pre>
+            &lt;script&gt;
+            	export class Test extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            		private name:string = 'John';
+            	}
+            &lt;/script&gt;
+            &nbsp;
+            &lt;template&gt;
+            	&lt;av-btn :name="this.name"&gt;&lt;/av-btn&gt;
+            &lt;/template&gt;
+            &nbsp;
+            &lt;style&gt;&lt;/style&gt;
+            &nbsp;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

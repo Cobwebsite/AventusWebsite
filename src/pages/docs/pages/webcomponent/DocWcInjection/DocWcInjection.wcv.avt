@@ -8,3 +8,5 @@
 <av-doc-wc-injection-editor-1></av-doc-wc-injection-editor-1>
 <p>The injected value will be refreshed only if you use a <span class="cn">Property</span> or any <span class="cn">watchables variables</span></p>
 <av-doc-wc-injection-editor-2></av-doc-wc-injection-editor-2>
+<p>To help the user find out which fields are injectable into your component, you can use the <span class="cn">@Injectable</span> decorator.</p>
+<av-doc-wc-injection-editor-3></av-doc-wc-injection-editor-3>
