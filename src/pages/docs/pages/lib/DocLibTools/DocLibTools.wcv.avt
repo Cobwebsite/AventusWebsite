@@ -133,6 +133,18 @@
 
 <av-doc-lib-tools-editor-1></av-doc-lib-tools-editor-1>
 
+<p>By default, <span class="cn">Aventus.Data</span> is convertible. You can also create custom convertible class by adding the decorator <span class="cn">@Convertible</span>. You must define an unique key so that the converter can transform your json into the object.</p>
+
+<av-code language="typescript">
+    <pre>
+        @Convertible()
+        export class Test {
+            public static get Fullname(): string { return "MyNamespace.Test"; }
+            public get $type(): string { return Test.Fullname; }
+        }
+    </pre>
+</av-code>
+
 <h2>Mutex</h2>
 <p>A Mutex (short for Mutual Exclusion) is a synchronization mechanism used in concurrent programming to control access
     to a shared resource, ensuring that only one thread or process can access the resource at a time. This prevents race
