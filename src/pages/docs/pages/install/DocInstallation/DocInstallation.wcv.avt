@@ -12,7 +12,8 @@
     <li><b>Developer: Reload Window</b> <av-icon icon="arrow-right"></av-icon> To reload the vscode instance</li>
     <li><b>Aventus : Compile</b> <av-icon icon="arrow-right"></av-icon> To compile a build</li>
     <li><b>Aventus : Copy static</b> <av-icon icon="arrow-right"></av-icon> To export a static a folder</li>
-    <li><b>Aventus : Import template</b> <av-icon icon="arrow-right"></av-icon> To import Aventus templates</li>
+    <li><b>Aventus : Import templates</b> <av-icon icon="arrow-right"></av-icon> To import Aventus templates</li>
+    <li><b>Aventus : Import projects</b> <av-icon icon="arrow-right"></av-icon> To import Aventus projects</li>
     <li><b>Aventus : Open storage</b> <av-icon icon="arrow-right"></av-icon> To open the folder where Aventus store data</li>
 </ul>
 

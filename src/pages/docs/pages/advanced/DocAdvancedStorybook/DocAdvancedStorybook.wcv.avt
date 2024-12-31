@@ -112,9 +112,53 @@
 
 <p>As you can see, the variable has now a type and a description. Furthermore, inside the <span class="cn">Live section</span>, you can see that the control change to be a color picker.</p>
 
-<h2>Write custom stories</h2>
 
-<p>If you need to write custom stories, you can add the decorator <span class="cn">@Storybook</span> with the configuration <span class="cn">onlyMeta: true</span>. Now only the meta is created. No more documentation is created for your button</p>
+
+<h2>Customize storybook</h2>
+
+<p>To customize export you can add the decorator <span class="cn">@Storybook</span> or edit <span class="cn">aventus.conf.avt</span>.</p>
+
+<h3>General configuration</h3>
+
+<ul>
+    <li>
+        <div><span class="cn">Format</span> : Define how to export.</div>
+        <ul>
+            <li>All : Export public, protected and private</li>
+            <li>Protected : Export public, protected</li>
+            <li>Public : Export public</li>
+            <li>Manual : Export only elements with decorator @Storybook</li>
+        </ul>
+    </li>
+    <li>
+        <span class="cn">Live</span> : Define if storybook must be recompiled when source code is saved.
+    </li>
+    <li>
+        <span class="cn">Output</span> : Define where to export stories.
+    </li>
+    <li>
+        <span class="cn">Prefix</span> : Define a prefix for all your stories.
+    </li>
+    <li>
+        <span class="cn">SrcBaseUrl</span> : Define the link to your repo so that Aventus can create link to source code (only tested on github).
+    </li>
+    <li>
+        <span class="cn">Workspace</span> : Define where the folder .storybook must be added
+    </li>
+</ul>
+
+<h3>Override general configuration</h3>
+
+<p>You can override general configuration inside the decorator <span class="cn">@Storybook</span>. This is useful to change value of :</p>
+<ul>
+    <li><span class="cn">Export</span></li>
+    <li><span class="cn">Prefix</span></li>
+</ul>
+
+<h3>Write custom stories</h3>
+
+<p>If you need to write custom stories, you can add the decorator <span class="cn">@Storybook</span> with the configuration <span class="cn">noDefaultStory: true</span>. Now only the meta is created. No more documentation is created for your button</p>
+
 
 <av-code language="typescript" filename="test/src/Button/Button.wcl.avt">
     <pre>
@@ -123,7 +167,7 @@
          * @slot default - Content for your button
          */
         @Storybook({
-            onlyMeta: true
+            noDefaultStory: true
         })
         export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {
         }
@@ -166,6 +210,91 @@
         &nbsp;
         &nbsp;
         export const MyCustomStory: Story = {}
+    </pre>
+</av-code>
+
+<h3>Live section</h3>
+
+<p>You can disable live section for your webcomponent by adding the decorator <span class="cn">@Storybook</span> and define the configuration as <span class="cn">noLive : true</span>.</p>
+
+<av-code language="typescript" filename="test/src/Button/Button.wcl.avt">
+    <pre>
+        /**
+         * This is an aventus button
+         * @slot default - Content for your button
+         */
+        @Storybook({
+            noLive: true
+        })
+        export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {
+        }
+    </pre>
+</av-code>
+
+<p>Now the documentation will be generated but the live section won't exist anymore.</p>
+
+<h3>Grouping story</h3>
+
+<p>You can customize how stories are grouped by adding the <span class="cn">@Storybook</span> decorator with the configuration <span class="cn">group: "..."</span>.</p>
+
+<p>By default, the group will be the current namespace.</p>
+
+<av-code language="typescript" filename="test/src/Button/Button.wcl.avt">
+    <pre>
+        /**
+         * This is an aventus button
+         * @slot default - Content for your button
+         */
+        @Storybook({
+            group: "UI"
+        })
+        export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {
+        }
+    </pre>
+</av-code>
+
+<av-img src="/img/doc/advanced/storybook/group.png" style="max-height:500px"></av-img>
+
+<h3>Slot content</h3>
+
+<p>If you need to render content inside your slots for your stories, you can use the <span class="cn">slots</span> configuration.</p>
+
+<av-code language="typescript" filename="test/src/Button/Button.wcl.avt">
+    <pre>
+        /**
+         * This is an aventus button
+         * @slot default - Content for your button
+         */
+        @Storybook({
+            slots: {
+                values: {
+                    default: "Click me"
+                }
+            }
+        })
+        export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {
+        }
+    </pre>
+</av-code>
+
+<p>You can also write html inside your configuration. If you use others customs elements, you have to inject them inside the configuration.</p>
+
+<av-code language="typescript" filename="test/src/Button/Button.wcl.avt">
+    <pre>
+        /**
+         * This is an aventus button
+         * @slot default - Content for your button
+         */
+        @Storybook({
+            slots: {
+                values: {
+                    default: "<av-icon icon=\"home\"></av-icon>"
+                },
+                inject: [Icon]
+            }
+        })
+        export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {
+        }
     </pre>
 </av-code>
 
@@ -217,33 +346,3 @@
 </av-code>
 
 <av-img src="/img/doc/advanced/storybook/custom.png" style="max-height:500px"></av-img>
-
-<h2>Configure export</h2>
-
-<p>You can configure how stories must be exported from Aventus. If you want a public documentation maybe you don't want that private and protected methods / properties are displayed inside your storybook. You can add the property <span class="cn">format</span> inside the <span class="cn">stories section</span> of your <span class="cn">aventus.conf.avt</span> with one of this value :</p>
-
-<ul>
-    <li><span class="cn">all</span> : export all elements</li>
-    <li><span class="cn">public</span> : only public elements will be exported</li>
-    <li><span class="cn">manual</span> : only elements with tag Storybook will be exported</li>
-</ul>
-
-<p>You can always override the default behaviour by using the decorator <span class="cn">@Storybook</span>.</p>
-
-<p>You can also prefix your stories in the aventus.conf.avt or with the decorator @Storybook to group your stories.</p>
-
-<av-code language="typescript" filename="test/src/Button/Button.wcl.avt">
-    <pre>
-        /**
-         * This is an aventus button
-         * @slot default - Content for your button
-         */
-        @Storybook({
-            prefix: "UI"
-        })
-        export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {
-        }
-    </pre>
-</av-code>
-
-<av-img src="/img/doc/advanced/storybook/group.png" style="max-height:500px"></av-img>
