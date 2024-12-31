@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 68">
+  <path id="Chemin1" fill="#368832" stroke-width="0" fill-rule="evenodd" d="M 19,32 L 29,32 L 25.5,14 L 22.5,14 Z
+    M 4,51 L 15,51 L 18,39 L 30,39 L 33,51 L 44,51 L 31,4 L 17,4 Z" />
+  <path id="Chemin2" fill="#368832" stroke-width="0" d="M 4,55 L 4,62 L 44,62 L 44,55 Z" />
+</svg>
