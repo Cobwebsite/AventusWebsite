@@ -62,6 +62,12 @@ let sleep=function sleep(ms) {
 }
 _.sleep=sleep;
 
+let DragElementXYType= [SVGGElement, SVGRectElement, SVGEllipseElement, SVGTextElement];
+_.DragElementXYType=DragElementXYType;
+
+let DragElementLeftTopType= [HTMLElement, SVGSVGElement];
+_.DragElementLeftTopType=DragElementLeftTopType;
+
 let ElementExtension=class ElementExtension {
     /**
      * Find a parent by tagname if exist Static.findParentByTag(this, "av-img")
@@ -491,7 +497,7 @@ let Callback=class Callback {
     /**
      * Trigger all callbacks
      */
-    trigger(args) {
+    trigger(...args) {
         let result = [];
         let cbs = [...this.callbacks];
         for (let [cb, scope] of cbs) {
@@ -2713,7 +2719,7 @@ let StateManager=class StateManager {
                 }
                 stateToUse.onActivate();
             }
-            this.afterStateChanged.trigger([]);
+            this.afterStateChanged.trigger();
             return true;
         });
         return result ?? false;
@@ -5024,6 +5030,8 @@ let DragAndDrop=class DragAndDrop {
             targets: [],
             usePercent: false,
             stopPropagation: true,
+            useMouseFinalPosition: false,
+            useTransform: false,
             isDragEnable: () => true,
             getZoom: () => 1,
             getOffsetX: () => 0,
@@ -5054,6 +5062,8 @@ let DragAndDrop=class DragAndDrop {
         this.defaultMerge(options, "targets");
         this.defaultMerge(options, "usePercent");
         this.defaultMerge(options, "stopPropagation");
+        this.defaultMerge(options, "useMouseFinalPosition");
+        this.defaultMerge(options, "useTransform");
         if (options.shadow !== void 0) {
             this.options.shadow.enable = options.shadow.enable;
             if (options.shadow.container !== void 0) {
@@ -5108,10 +5118,7 @@ let DragAndDrop=class DragAndDrop {
             x: e.pageX,
             y: e.pageY
         };
-        this.startElementPosition = {
-            x: draggableElement.offsetLeft,
-            y: draggableElement.offsetTop
-        };
+        this.startElementPosition = this.getBoundingBoxRelative(draggableElement);
         if (this.options.shadow.enable) {
             draggableElement = this.options.element.cloneNode(true);
             let elBox = this.options.element.getBoundingClientRect();
@@ -5124,9 +5131,9 @@ let DragAndDrop=class DragAndDrop {
                 draggableElement.style.position = "absolute";
                 draggableElement.style.top = this.positionShadowRelativeToElement.y + this.options.getOffsetY() + 'px';
                 draggableElement.style.left = this.positionShadowRelativeToElement.x + this.options.getOffsetX() + 'px';
+                this.options.shadow.transform(draggableElement);
+                this.options.shadow.container.appendChild(draggableElement);
             }
-            this.options.shadow.transform(draggableElement);
-            this.options.shadow.container.appendChild(draggableElement);
         }
         this.draggableElement = draggableElement;
         return this.options.onStart(e);
@@ -5159,7 +5166,10 @@ let DragAndDrop=class DragAndDrop {
         if (!this.isEnable) {
             return;
         }
-        let targets = this.getMatchingTargets();
+        let targets = this.options.useMouseFinalPosition ? this.getMatchingTargetsWithMousePosition({
+            x: e.clientX,
+            y: e.clientY
+        }) : this.getMatchingTargets();
         let draggableElement = this.draggableElement;
         if (this.options.shadow.enable && this.options.shadow.removeOnStop) {
             this.options.shadow.delete(draggableElement);
@@ -5172,26 +5182,50 @@ let DragAndDrop=class DragAndDrop {
     setPosition(position) {
         let draggableElement = this.draggableElement;
         if (this.options.usePercent) {
-            let elementParent = draggableElement.offsetParent;
-            let percentPosition = {
-                x: (position.x / elementParent.offsetWidth) * 100,
-                y: (position.y / elementParent.offsetHeight) * 100
-            };
-            percentPosition = this.options.correctPosition(percentPosition);
-            if (this.options.applyDrag) {
-                draggableElement.style.left = percentPosition.x + '%';
-                draggableElement.style.top = percentPosition.y + '%';
+            let elementParent = this.getOffsetParent(draggableElement);
+            if (elementParent instanceof HTMLElement) {
+                let percentPosition = {
+                    x: (position.x / elementParent.offsetWidth) * 100,
+                    y: (position.y / elementParent.offsetHeight) * 100
+                };
+                percentPosition = this.options.correctPosition(percentPosition);
+                if (this.options.applyDrag) {
+                    draggableElement.style.left = percentPosition.x + '%';
+                    draggableElement.style.top = percentPosition.y + '%';
+                }
+                return percentPosition;
             }
-            return percentPosition;
+            else {
+                console.error("Can't find parent. Contact an admin", draggableElement);
+            }
         }
         else {
             position = this.options.correctPosition(position);
             if (this.options.applyDrag) {
-                draggableElement.style.left = position.x + 'px';
-                draggableElement.style.top = position.y + 'px';
+                if (this.isLeftTopElement(draggableElement)) {
+                    draggableElement.style.left = position.x + 'px';
+                    draggableElement.style.top = position.y + 'px';
+                }
+                else {
+                    if (this.options.useTransform) {
+                        draggableElement.setAttribute("transform", `translate(${position.x},${position.y})`);
+                    }
+                    else {
+                        draggableElement.style.left = position.x + 'px';
+                        draggableElement.style.top = position.y + 'px';
+                    }
+                }
             }
         }
         return position;
+    }
+    getTargets() {
+        if (typeof this.options.targets == "function") {
+            return this.options.targets();
+        }
+        else {
+            return this.options.targets;
+        }
     }
     /**
      * Get targets within the current element position is matching
@@ -5199,16 +5233,10 @@ let DragAndDrop=class DragAndDrop {
     getMatchingTargets() {
         let draggableElement = this.draggableElement;
         let matchingTargets = [];
-        let srcTargets;
-        if (typeof this.options.targets == "function") {
-            srcTargets = this.options.targets();
-        }
-        else {
-            srcTargets = this.options.targets;
-        }
+        let srcTargets = this.getTargets();
         for (let target of srcTargets) {
-            const elementCoordinates = draggableElement.getBoundingClientRect();
-            const targetCoordinates = target.getBoundingClientRect();
+            let elementCoordinates = this.getBoundingBoxAbsolute(draggableElement);
+            let targetCoordinates = this.getBoundingBoxAbsolute(target);
             let offsetX = this.options.getOffsetX();
             let offsetY = this.options.getOffsetY();
             let zoom = this.options.getZoom();
@@ -5242,6 +5270,43 @@ let DragAndDrop=class DragAndDrop {
         return matchingTargets;
     }
     /**
+     * This function will return the targets that are matching with the mouse position
+     * @param mouse The mouse position
+     */
+    getMatchingTargetsWithMousePosition(mouse) {
+        let matchingTargets = [];
+        if (this.options.shadow.enable == false || this.options.shadow.container == null) {
+            console.warn("DragAndDrop : To use useMouseFinalPosition=true, you must enable shadow and set a container");
+            return matchingTargets;
+        }
+        const container = this.options.shadow.container;
+        let xCorrected = mouse.x - container.getBoundingClientRect().left;
+        let yCorrected = mouse.y - container.getBoundingClientRect().top;
+        for (let target of this.getTargets()) {
+            if (this.isLeftTopElement(target)) {
+                if (this.matchPosition(target, { x: mouse.x, y: mouse.y })) {
+                    matchingTargets.push(target);
+                }
+            }
+            else {
+                if (this.matchPosition(target, { x: xCorrected, y: yCorrected })) {
+                    matchingTargets.push(target);
+                }
+            }
+        }
+        return matchingTargets;
+    }
+    matchPosition(element, point) {
+        let elementCoordinates = this.getBoundingBoxAbsolute(element);
+        if (point.x >= elementCoordinates.x &&
+            point.x <= elementCoordinates.x + elementCoordinates.width &&
+            point.y >= elementCoordinates.y &&
+            point.y <= elementCoordinates.y + elementCoordinates.height) {
+            return true;
+        }
+        return false;
+    }
+    /**
      * Get element currently dragging
      */
     getElementDrag() {
@@ -5264,6 +5329,216 @@ let DragAndDrop=class DragAndDrop {
      */
     destroy() {
         this.pressManager.destroy();
+    }
+    isLeftTopElement(element) {
+        for (let Type of DragElementLeftTopType) {
+            if (element instanceof Type) {
+                return true;
+            }
+        }
+        return false;
+    }
+    isXYElement(element) {
+        for (let Type of DragElementXYType) {
+            if (element instanceof Type) {
+                return true;
+            }
+        }
+        return false;
+    }
+    getCoordinateFromAttribute(element) {
+        if (this.options.useTransform) {
+            const transform = element.getAttribute("transform");
+            const tvalue = transform?.match(/translate\(([^,]+),([^,]+)\)/);
+            const x = tvalue ? parseFloat(tvalue[1]) : 0;
+            const y = tvalue ? parseFloat(tvalue[2]) : 0;
+            return {
+                x: x,
+                y: y
+            };
+        }
+        return {
+            x: parseFloat(element.getAttribute("x")),
+            y: parseFloat(element.getAttribute("y"))
+        };
+    }
+    XYElementToRelativeBox(element) {
+        let coordinates = this.getCoordinateFromAttribute(element);
+        const width = parseFloat(element.getAttribute("width"));
+        const height = parseFloat(element.getAttribute("height"));
+        return {
+            x: coordinates.x,
+            y: coordinates.y,
+            width: width,
+            height: height,
+            bottom: coordinates.y + height,
+            right: coordinates.x + width,
+            top: coordinates.y,
+            left: coordinates.x,
+            toJSON() {
+                return JSON.stringify(this);
+            }
+        };
+    }
+    XYElementToAbsoluteBox(element) {
+        let coordinates = this.getCoordinateFromAttribute(element);
+        const parent = this.getOffsetParent(element);
+        if (parent) {
+            const box = parent.getBoundingClientRect();
+            coordinates = {
+                x: coordinates.x + box.x,
+                y: coordinates.y + box.y
+            };
+        }
+        const width = parseFloat(element.getAttribute("width"));
+        const height = parseFloat(element.getAttribute("height"));
+        return {
+            x: coordinates.x,
+            y: coordinates.y,
+            width: width,
+            height: height,
+            bottom: coordinates.y + height,
+            right: coordinates.x + width,
+            top: coordinates.y,
+            left: coordinates.x,
+            toJSON() {
+                return JSON.stringify(this);
+            }
+        };
+    }
+    getBoundingBoxAbsolute(element) {
+        if (this.isLeftTopElement(element)) {
+            if (element instanceof HTMLElement) {
+                const bounds = element.getBoundingClientRect();
+                return {
+                    x: bounds.x,
+                    y: bounds.y,
+                    width: bounds.width,
+                    height: bounds.height,
+                    bottom: bounds.bottom,
+                    right: bounds.right,
+                    top: bounds.top,
+                    left: bounds.left,
+                    toJSON() {
+                        return JSON.stringify(this);
+                    }
+                };
+            }
+        }
+        else if (this.isXYElement(element)) {
+            return this.XYElementToAbsoluteBox(element);
+        }
+        const parent = this.getOffsetParent(element);
+        if (parent instanceof HTMLElement) {
+            const rect = element.getBoundingClientRect();
+            const rectParent = parent.getBoundingClientRect();
+            const x = rect.left - rectParent.left;
+            const y = rect.top - rectParent.top;
+            return {
+                x: x,
+                y: y,
+                width: rect.width,
+                height: rect.height,
+                bottom: y + rect.height,
+                right: x + rect.width,
+                left: rect.left - rectParent.left,
+                top: rect.top - rectParent.top,
+                toJSON() {
+                    return JSON.stringify(this);
+                }
+            };
+        }
+        console.error("Element type not supported");
+        return {
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0,
+            bottom: 0,
+            right: 0,
+            top: 0,
+            left: 0,
+            toJSON() {
+                return JSON.stringify(this);
+            }
+        };
+    }
+    getBoundingBoxRelative(element) {
+        if (this.isLeftTopElement(element)) {
+            if (element instanceof HTMLElement) {
+                return {
+                    x: element.offsetLeft,
+                    y: element.offsetTop,
+                    width: element.offsetWidth,
+                    height: element.offsetHeight,
+                    bottom: element.offsetTop + element.offsetHeight,
+                    right: element.offsetLeft + element.offsetWidth,
+                    top: element.offsetTop,
+                    left: element.offsetLeft,
+                    toJSON() {
+                        return JSON.stringify(this);
+                    }
+                };
+            }
+        }
+        else if (this.isXYElement(element)) {
+            return this.XYElementToRelativeBox(element);
+        }
+        const parent = this.getOffsetParent(element);
+        if (parent instanceof HTMLElement) {
+            const rect = element.getBoundingClientRect();
+            const rectParent = parent.getBoundingClientRect();
+            const x = rect.left - rectParent.left;
+            const y = rect.top - rectParent.top;
+            return {
+                x: x,
+                y: y,
+                width: rect.width,
+                height: rect.height,
+                bottom: y + rect.height,
+                right: x + rect.width,
+                left: rect.left - rectParent.left,
+                top: rect.top - rectParent.top,
+                toJSON() {
+                    return JSON.stringify(this);
+                }
+            };
+        }
+        console.error("Element type not supported");
+        return {
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0,
+            bottom: 0,
+            right: 0,
+            top: 0,
+            left: 0,
+            toJSON() {
+                return JSON.stringify(this);
+            }
+        };
+    }
+    getOffsetParent(element) {
+        if (element instanceof HTMLElement) {
+            return element.offsetParent;
+        }
+        let current = element.parentNode;
+        while (current) {
+            if (current instanceof Element) {
+                const style = getComputedStyle(current);
+                if (style.position !== 'static') {
+                    return current;
+                }
+            }
+            if (current instanceof ShadowRoot) {
+                current = current.host;
+            }
+            else {
+                current = current.parentNode;
+            }
+        }
+        return null;
     }
 }
 DragAndDrop.Namespace=`Aventus`;
@@ -5621,11 +5896,13 @@ const _ = {};
 
 let _n;
 const Icon = class Icon extends Aventus.WebComponent {
-    static get observedAttributes() {return ["icon", "type"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    static get observedAttributes() {return ["icon", "type", "fill"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
     get 'is_hidden'() { return this.getBoolAttr('is_hidden') }
-    set 'is_hidden'(val) { this.setBoolAttr('is_hidden', val) }    get 'icon'() { return this.getStringProp('icon') }
+    set 'is_hidden'(val) { this.setBoolAttr('is_hidden', val) }get 'no_check'() { return this.getBoolAttr('no_check') }
+    set 'no_check'(val) { this.setBoolAttr('no_check', val) }    get 'icon'() { return this.getStringProp('icon') }
     set 'icon'(val) { this.setStringAttr('icon', val) }get 'type'() { return this.getStringProp('type') }
-    set 'type'(val) { this.setStringAttr('type', val) }    static defaultType = 'outlined';
+    set 'type'(val) { this.setStringAttr('type', val) }get 'fill'() { return this.getBoolProp('fill') }
+    set 'fill'(val) { this.setBoolAttr('fill', val) }    static defaultType = 'outlined';
     __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("icon", ((target) => {
     if (target.isReady) {
         target.init();
@@ -5633,8 +5910,11 @@ const Icon = class Icon extends Aventus.WebComponent {
 }));this.__addPropertyActions("type", ((target) => {
     if (target.isReady)
         target.loadFont();
+}));this.__addPropertyActions("fill", ((target) => {
+    if (target.isReady)
+        target.loadFont();
 })); }
-    static __style = `:host{--_material-icon-animation-duration: var(--material-icon-animation-duration, 1.75s)}:host{direction:ltr;display:inline-block;font-family:"Material Symbols Outlined";-moz-font-feature-settings:"liga";font-size:24px;-moz-osx-font-smoothing:grayscale;font-style:normal;font-weight:normal;letter-spacing:normal;line-height:1;text-transform:none;white-space:nowrap;word-wrap:normal}:host .icon{direction:inherit;display:inline-block;font-family:inherit;-moz-font-feature-settings:inherit;font-size:inherit;-moz-osx-font-smoothing:inherit;font-style:inherit;font-weight:inherit;letter-spacing:inherit;line-height:inherit;text-transform:inherit;white-space:inherit;word-wrap:inherit}:host([is_hidden]){opacity:0}:host([type=sharp]){font-family:"Material Symbols Sharp"}:host([type=rounded]){font-family:"Material Symbols Rounded"}:host([type=outlined]){font-family:"Material Symbols Outlined"}:host([spin]){animation:spin var(--_material-icon-animation-duration) linear infinite}:host([reverse_spin]){animation:reverse-spin var(--_material-icon-animation-duration) linear infinite}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes reverse-spin{0%{transform:rotate(360deg)}100%{transform:rotate(0deg)}}`;
+    static __style = `:host{--_material-icon-animation-duration: var(--material-icon-animation-duration, 1.75s)}:host{direction:ltr;display:inline-block;font-family:"Material Symbols Outlined";-moz-font-feature-settings:"liga";font-size:24px;-moz-osx-font-smoothing:grayscale;font-style:normal;font-weight:normal;letter-spacing:normal;line-height:1;text-transform:none;white-space:nowrap;word-wrap:normal}:host .icon{direction:inherit;display:inline-block;font-family:inherit;-moz-font-feature-settings:inherit;font-size:inherit;-moz-osx-font-smoothing:inherit;font-style:inherit;font-weight:inherit;letter-spacing:inherit;line-height:inherit;text-transform:inherit;white-space:inherit;word-wrap:inherit}:host([is_hidden]){opacity:0}:host([type=sharp]){font-family:"Material Symbols Sharp"}:host([type=rounded]){font-family:"Material Symbols Rounded"}:host([type=outlined]){font-family:"Material Symbols Outlined"}:host([fill]){font-variation-settings:"FILL" 1}:host([spin]){animation:spin var(--_material-icon-animation-duration) linear infinite}:host([reverse_spin]){animation:reverse-spin var(--_material-icon-animation-duration) linear infinite}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes reverse-spin{0%{transform:rotate(360deg)}100%{transform:rotate(0deg)}}`;
     __getStatic() {
         return Icon;
     }
@@ -5661,9 +5941,9 @@ const Icon = class Icon extends Aventus.WebComponent {
     getClassName() {
         return "Icon";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('is_hidden')) {this.setAttribute('is_hidden' ,'true'); }if(!this.hasAttribute('icon')){ this['icon'] = "check_box_outline_blank"; }if(!this.hasAttribute('type')){ this['type'] = Icon.defaultType; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('is_hidden');this.__upgradeProperty('icon');this.__upgradeProperty('type'); }
-    __listBoolProps() { return ["is_hidden"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('is_hidden')) {this.setAttribute('is_hidden' ,'true'); }if(!this.hasAttribute('no_check')) { this.attributeChangedCallback('no_check', false, false); }if(!this.hasAttribute('icon')){ this['icon'] = "check_box_outline_blank"; }if(!this.hasAttribute('type')){ this['type'] = Icon.defaultType; }if(!this.hasAttribute('fill')) { this.attributeChangedCallback('fill', false, false); } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('is_hidden');this.__upgradeProperty('no_check');this.__upgradeProperty('icon');this.__upgradeProperty('type');this.__upgradeProperty('fill'); }
+    __listBoolProps() { return ["is_hidden","no_check","fill"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
     async loadFont() {
         if (!this.type)
             return;
@@ -5689,7 +5969,7 @@ const Icon = class Icon extends Aventus.WebComponent {
             document.fonts.removeEventListener("loadingdone", cb);
         };
         document.fonts.addEventListener("loadingdone", cb);
-        let url = 'https://fonts.googleapis.com/icon?family=Material+Symbols+' + name;
+        let url = 'https://fonts.googleapis.com/css2?family=Material+Symbols+' + name + ":FILL@0..1";
         await Aventus.ResourceLoader.loadInHead({
             type: "css",
             url: url
@@ -5699,7 +5979,12 @@ const Icon = class Icon extends Aventus.WebComponent {
         }, 100);
     }
     async init() {
-        await this.loadFont();
+        if (!this.no_check) {
+            await this.loadFont();
+        }
+        else {
+            this.is_hidden = false;
+        }
         this.iconEl.innerHTML = this.icon;
     }
     postCreation() {
@@ -7214,7 +7499,7 @@ const DocLibCallbackEditor2Emitter = class DocLibCallbackEditor2Emitter extends 
     }
     emitMyEvent() {
         setInterval(() => {
-            this.myEvent.trigger([Date.now()]);
+            this.myEvent.trigger(Date.now());
         }, 1000);
     }
     postCreation() {
@@ -7467,7 +7752,7 @@ const DocWcEventEditor2Button = class DocWcEventEditor2Button extends Aventus.We
         return "DocWcEventEditor2Button";
     }
     triggerCustomClick() {
-        this.onCustomClick.trigger([]);
+        this.onCustomClick.trigger();
     }
 }
 DocWcEventEditor2Button.Namespace=`AventusWebsite`;
@@ -8008,7 +8293,7 @@ const DocWcBindingEditor4Input = class DocWcBindingEditor4Input extends Aventus.
     __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('val'); }
     triggerChange() {
         this.val = this.inputEl.value;
-        this.onNewVal.trigger([]);
+        this.onNewVal.trigger();
     }
     __4060136e894455a3f998cfb126ecff6dmethod0() {
         return this.val;
@@ -8067,7 +8352,7 @@ const DocWcBindingEditor3Input = class DocWcBindingEditor3Input extends Aventus.
     __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('val'); }
     triggerChange() {
         this.val = this.inputEl.value;
-        this.onChange.trigger([]);
+        this.onChange.trigger();
     }
     __3a592eb2efc1924f0bd1b65901877093method0() {
         return this.val;
@@ -8789,7 +9074,7 @@ const AvCode = class AvCode extends Aventus.WebComponent {
         }
     }
 })); }
-    static __style = `:host{--_code-padding: var(--code-padding, 30px 10px)}:host{border-radius:5px;display:flex;margin:.5em 0;overflow:hidden;position:relative;box-shadow:var(--elevation-3)}:host .filename{background-color:rgba(255,255,255,.3);display:none;font-size:12px;padding:5px;position:absolute;right:0;top:5px}:host pre{margin:0;padding:var(--_code-padding);width:100%}:host .hided{display:none}:host .language-css{color:#ce9178}:host([filename]) .filename{display:block}`;
+    static __style = `:host{--_code-padding: var(--code-padding, 30px 10px)}:host{border-radius:5px;display:flex;margin:.5em 0;overflow:hidden;position:relative;box-shadow:var(--elevation-3)}:host .filename{background-color:hsla(0,0%,100%,.3);display:none;font-size:12px;padding:5px;position:absolute;right:0;top:5px}:host pre{margin:0;padding:var(--_code-padding);width:100%}:host .hided{display:none}:host .language-css{color:#ce9178}:host([filename]) .filename{display:block}`;
     __getStatic() {
         return AvCode;
     }
@@ -9003,7 +9288,7 @@ const CodeEditorFile = class CodeEditorFile extends Aventus.WebComponent {
     __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("name", ((target) => {
     target.prepareIcon();
 })); }
-    static __style = `:host{cursor:pointer;display:flex;font-size:1.4rem;margin-left:5px;margin-top:5px;padding:5px 15px;transition:.2s linear background-color}:host .name{align-items:center;display:flex;position:relative}:host .name mi-icon.icon{flex-shrink:0;font-size:1.4rem;margin-right:5px}:host .name av-img{--img-color: white;height:14px;margin-right:5px;width:14px}:host([active]){background-color:rgba(255,255,255,.2)}:host(:hover){background-color:rgba(255,255,255,.1)}:host([type=style]) .name av-img{--img-color: #E066DC}:host([type=view]) .name av-img{--img-color: #22AAEE}:host([type=logic]) .name av-img{--img-color: #E5540E}:host([highlight]) .name::after{content:"";position:absolute;right:-10px;top:2px;width:6px;height:6px;border-radius:3px;background-color:var(--aventus-color)}`;
+    static __style = `:host{cursor:pointer;display:flex;font-size:1.4rem;margin-left:5px;margin-top:5px;padding:5px 15px;transition:.2s linear background-color}:host .name{align-items:center;display:flex;position:relative}:host .name mi-icon.icon{flex-shrink:0;font-size:1.4rem;margin-right:5px}:host .name av-img{--img-color: white;height:14px;margin-right:5px;width:14px}:host([active]){background-color:hsla(0,0%,100%,.2)}:host(:hover){background-color:hsla(0,0%,100%,.1)}:host([type=style]) .name av-img{--img-color: #E066DC}:host([type=view]) .name av-img{--img-color: #22AAEE}:host([type=logic]) .name av-img{--img-color: #E5540E}:host([highlight]) .name::after{content:"";position:absolute;right:-10px;top:2px;width:6px;height:6px;border-radius:3px;background-color:var(--aventus-color)}`;
     __getStatic() {
         return CodeEditorFile;
     }
@@ -12056,14 +12341,7 @@ IconLib.Namespace=`AventusWebsite`;
 _.IconLib=IconLib;
 
 const Icon = class Icon extends Aventus.WebComponent {
-    static get observedAttributes() {return ["icon"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
-    get 'icon'() { return this.getStringProp('icon') }
-    set 'icon'(val) { this.setStringAttr('icon', val) }    static isFirstIcon = true;
-    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("icon", ((target) => {
-    if (target.icon) {
-        target.spanEl.style.setProperty("--icon-code", IconLib.getIcon(target.icon));
-    }
-})); }
+    static isFirstIcon = true;
     static __style = `:host span{display:var(--fa-display, inline-block);font-family:"Font Awesome 6 Free";-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;font-style:normal;font-variant:normal;font-weight:900;line-height:1;text-rendering:auto}:host span:before{content:var(--icon-code)}`;
     constructor() {        super();        if(Icon.isFirstIcon) {            Icon.isFirstIcon = false;            let tagEl = document.createElement("STYLE");            tagEl.innerHTML = `@font-face {	font-family: "Font Awesome 6 Free";	font-style: normal;	font-weight: 900;	font-display: block;	src: url(https://ka-f.fontawesome.com/releases/v6.2.1/webfonts/free-fa-solid-900.woff2) format("woff2"),		url(https://ka-f.fontawesome.com/releases/v6.2.1/webfonts/free-fa-solid-900.ttf) format("truetype");}`;            document.head.appendChild(tagEl);        }    }
     __getStatic() {
@@ -12092,8 +12370,6 @@ const Icon = class Icon extends Aventus.WebComponent {
     getClassName() {
         return "Icon";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('icon')){ this['icon'] = undefined; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('icon'); }
 }
 Icon.Namespace=`AventusWebsite`;
 Icon.Tag=`av-icon`;
@@ -12783,7 +13059,7 @@ const CodeEditor = class CodeEditor extends Aventus.WebComponent {
     files = {};
     folders = {};
     openedFile;
-    static __style = `:host{--_code-editor-menu-width: var(--code-editor-menu-width, 250px)}:host{--code-padding: 0;background-color:#1e1e1e;border-radius:5px;box-shadow:var(--elevation-3);color:#fff;display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;margin-bottom:15px;overflow:hidden;width:100%}:host .header{align-items:center;border-bottom:1px solid #414141;display:flex;flex-shrink:0;height:50px;justify-content:center;padding:10px;position:relative;width:100%}:host .header mi-icon.menu-icon{cursor:pointer;display:none;left:10px;position:absolute;transition:background-color .5s var(--bezier-curve)}:host .header mi-icon.download{cursor:pointer;position:absolute;right:10px;transition:background-color .5s var(--bezier-curve)}:host .header mi-icon.menu-icon:hover,:host .header mi-icon.download:hover{background-color:rgba(255,255,255,.1)}:host .header span{display:block;padding:0 50px;text-align:center;width:100%}:host .content{display:flex;flex-grow:1;height:calc(100% - 50px);max-height:550px;min-height:300px;padding:0 10px;position:relative}:host .content .menu{flex-shrink:0;height:100%;min-width:20px;min-width:20px;padding-bottom:10px;width:var(--_code-editor-menu-width)}:host .content .separator{cursor:col-resize;flex-grow:0;flex-shrink:0;inset:0;position:relative;width:5px}:host .content .separator::after{background-color:#414141;bottom:0;content:"";left:2px;position:absolute;top:0;width:1px}:host .content .display{--scrollbar-content-padding: 5px 15px;height:100%;padding-bottom:10px;width:100%}:host .content .display av-code{box-shadow:none}:host .result{border:1px solid #1e1e1e;border-top:1px solid #414141;display:none;padding:15px}:host .result .title{margin-bottom:15px}:host .hidden{display:none}:host([has_result]) .result{display:block}@media screen and (max-width: 768px){:host .header mi-icon.menu-icon{display:inline-block}:host .content .menu{background-color:#1e1e1e;border-right:1px solid #414141;left:0;position:absolute;top:0;transform:translate(-100%);transition:transform .4s var(--bezier-curve);width:250px !important;z-index:20}:host .content .separator{display:none}:host([show_menu]) .header mi-icon.menu-icon{background-color:rgba(255,255,255,.1)}:host([show_menu]) .content .menu{transform:translate(0)}}`;
+    static __style = `:host{--_code-editor-menu-width: var(--code-editor-menu-width, 250px)}:host{--code-padding: 0;background-color:#1e1e1e;border-radius:5px;box-shadow:var(--elevation-3);color:#fff;display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;margin-bottom:15px;overflow:hidden;width:100%}:host .header{align-items:center;border-bottom:1px solid #414141;display:flex;flex-shrink:0;height:50px;justify-content:center;padding:10px;position:relative;width:100%}:host .header mi-icon.menu-icon{cursor:pointer;display:none;left:10px;position:absolute;transition:background-color .5s var(--bezier-curve)}:host .header mi-icon.download{cursor:pointer;position:absolute;right:10px;transition:background-color .5s var(--bezier-curve)}:host .header mi-icon.menu-icon:hover,:host .header mi-icon.download:hover{background-color:hsla(0,0%,100%,.1)}:host .header span{display:block;padding:0 50px;text-align:center;width:100%}:host .content{display:flex;flex-grow:1;height:calc(100% - 50px);max-height:550px;min-height:300px;padding:0 10px;position:relative}:host .content .menu{flex-shrink:0;height:100%;min-width:20px;min-width:20px;padding-bottom:10px;width:var(--_code-editor-menu-width)}:host .content .separator{cursor:col-resize;flex-grow:0;flex-shrink:0;inset:0;position:relative;width:5px}:host .content .separator::after{background-color:#414141;bottom:0;content:"";left:2px;position:absolute;top:0;width:1px}:host .content .display{--scrollbar-content-padding: 5px 15px;height:100%;padding-bottom:10px;width:100%}:host .content .display av-code{box-shadow:none}:host .result{border:1px solid #1e1e1e;border-top:1px solid #414141;display:none;padding:15px}:host .result .title{margin-bottom:15px}:host .hidden{display:none}:host([has_result]) .result{display:block}@media screen and (max-width: 768px){:host .header mi-icon.menu-icon{display:inline-block}:host .content .menu{background-color:#1e1e1e;border-right:1px solid #414141;left:0;position:absolute;top:0;transform:translate(-100%);transition:transform .4s var(--bezier-curve);width:250px !important;z-index:20}:host .content .separator{display:none}:host([show_menu]) .header mi-icon.menu-icon{background-color:hsla(0,0%,100%,.1)}:host([show_menu]) .content .menu{transform:translate(0)}}`;
     __getStatic() {
         return CodeEditor;
     }
@@ -13735,7 +14011,7 @@ const DocLibCallbackEditor3 = class DocLibCallbackEditor3 extends BaseEditor {
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Callback">    <av-code language="json" filename="Callback/aventus.conf.avt">        <pre>            {            	"module": "Callback",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Callback/src/LogEmitter/LogEmitter.wcl.avt">        <pre>            export enum LogLvl {                Info,                Warning,                Error            }            &nbsp;            export class LogEmitter extends Aventus.WebComponent implements Aventus.DefaultComponent {                public readonly onNewLog: Aventus.CallbackGroup&lt;(msg: string) =&gt; void&gt; = new Aventus.CallbackGroup();            &nbsp;                /**                * Trigger the log callback only &#102;or the lvl concerned                */                public addLog(msg: string, lvl: LogLvl) {                    this.onNewLog.trigger(lvl, [msg]);                }            &nbsp;                public readError() {                    this.onNewLog.add(LogLvl.Error, (msg) =&gt; {            			console.error(msg);                    });                }            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Callback/src/LogEmitter/LogEmitter.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/src/LogEmitter/LogEmitter.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Callback&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-emitter&gt;&lt;/av-emitter&gt;                &lt;av-receiver&gt;&lt;/av-receiver&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+        blocks: { 'default':`<av-code-editor name="Callback">    <av-code language="json" filename="Callback/aventus.conf.avt">        <pre>            {            	"module": "Callback",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Callback/src/LogEmitter/LogEmitter.wcl.avt">        <pre>            export enum LogLvl {                Info,                Warning,                Error            }            &nbsp;            export class LogEmitter extends Aventus.WebComponent implements Aventus.DefaultComponent {                public readonly onNewLog: Aventus.CallbackGroup&lt;(msg: string) =&gt; void&gt; = new Aventus.CallbackGroup();            &nbsp;                /**                * Trigger the log callback only &#102;or the lvl concerned                */                public addLog(msg: string, lvl: LogLvl) {                    this.onNewLog.trigger(lvl, msg);                }            &nbsp;                public readError() {                    this.onNewLog.add(LogLvl.Error, (msg) =&gt; {            			console.error(msg);                    });                }            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Callback/src/LogEmitter/LogEmitter.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/src/LogEmitter/LogEmitter.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Callback&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-emitter&gt;&lt;/av-emitter&gt;                &lt;av-receiver&gt;&lt;/av-receiver&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
     });
 }
     getClassName() {
@@ -15429,7 +15705,7 @@ const DocWcInheritanceEditor2Input = class DocWcInheritanceEditor2Input extends 
     }
     triggerChange() {
         this.value = this.inputEl.value;
-        this.onChange.trigger([this.value]);
+        this.onChange.trigger(this.value);
     }
     onValueChange() {
         this.inputEl.value = this.value ?? '&nbsp;';
@@ -15453,7 +15729,7 @@ const DocWcInheritanceEditor2 = class DocWcInheritanceEditor2 extends DocWcInher
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code language="typescript" filename="Inheritance/src/TextInput/TextInput.wcl.avt">    <pre>        import { Fillable } from "../Fillable/Fillable.wcl.avt";        &nbsp;        // write the TextInput.wcv.avt first then use ctrl+. to correct errors and auto create missing code        export class TextInput extends Fillable&lt;string&gt; implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables            @ViewElement()            protected inputEl!: HTMLInputElement;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            /**             * When the user use the input, this function will update the value and emit an event             */            protected triggerChange() {                this.value = this.inputEl.value;                this.onChange.trigger([this.value]);            }        &nbsp;            /**             * @inheritdoc             */            protected override onValueChange(): void {                this.inputEl.value = this.value ?? '';            }            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Inheritance/src/TextInput/TextInput.wcs.avt">    <pre>        :host {        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Inheritance/src/TextInput/TextInput.wcv.avt">    <pre>        &lt;!-- this will replace the parent slot --&gt;        &lt;input @input="triggerChange" @element="inputEl"/&gt;    </pre></av-code></av-code><av-code language="html" filename="Inheritance/static/index.html">    <pre>        &lt;!DOCTYPE html&gt;        &lt;html lang="en"&gt;        &lt;head&gt;            &lt;meta charset="UTF-8"&gt;            &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;            &lt;title&gt;Inheritance&lt;/title&gt;            &lt;script src="/demo.js"&gt;&lt;/script&gt;        &lt;/head&gt;        &lt;body&gt;            &lt;av-text-input label="salut"&gt;&lt;/av-text-input&gt;        &lt;/body&gt;        &lt;/html&gt;    </pre></av-code></av-code><slot></slot>` }
+        blocks: { 'default':`<av-code language="typescript" filename="Inheritance/src/TextInput/TextInput.wcl.avt">    <pre>        import { Fillable } from "../Fillable/Fillable.wcl.avt";        &nbsp;        // write the TextInput.wcv.avt first then use ctrl+. to correct errors and auto create missing code        export class TextInput extends Fillable&lt;string&gt; implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region variables            @ViewElement()            protected inputEl!: HTMLInputElement;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods            /**             * When the user use the input, this function will update the value and emit an event             */            protected triggerChange() {                this.value = this.inputEl.value;                this.onChange.trigger(this.value);            }        &nbsp;            /**             * @inheritdoc             */            protected override onValueChange(): void {                this.inputEl.value = this.value ?? '';            }            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Inheritance/src/TextInput/TextInput.wcs.avt">    <pre>        :host {        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Inheritance/src/TextInput/TextInput.wcv.avt">    <pre>        &lt;!-- this will replace the parent slot --&gt;        &lt;input @input="triggerChange" @element="inputEl"/&gt;    </pre></av-code></av-code><av-code language="html" filename="Inheritance/static/index.html">    <pre>        &lt;!DOCTYPE html&gt;        &lt;html lang="en"&gt;        &lt;head&gt;            &lt;meta charset="UTF-8"&gt;            &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;            &lt;title&gt;Inheritance&lt;/title&gt;            &lt;script src="/demo.js"&gt;&lt;/script&gt;        &lt;/head&gt;        &lt;body&gt;            &lt;av-text-input label="salut"&gt;&lt;/av-text-input&gt;        &lt;/body&gt;        &lt;/html&gt;    </pre></av-code></av-code><slot></slot>` }
     });
 }
     getClassName() {
@@ -15516,7 +15792,7 @@ const DocWcInheritanceEditor3Input = class DocWcInheritanceEditor3Input extends 
     }
     triggerChange() {
         this.value = this.inputEl.value;
-        this.onChange.trigger([this.value]);
+        this.onChange.trigger(this.value);
     }
     onValueChange() {
         this.inputEl.value = this.value ?? '&nbsp;';
@@ -16219,7 +16495,7 @@ const DocWcBindingEditor3 = class DocWcBindingEditor3 extends BaseEditor {
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Binding">    <av-code language="json" filename="Binding/aventus.conf.avt">        <pre>            {            	"module": "Binding",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Binding/src/Example/Example.wcl.avt">        <pre>            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                @Watch()                public value: string = "My value";                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Binding/src/Example/Example.wcs.avt">        <pre>            :host {                &nbsp;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Binding/src/Example/Example.wcv.avt">        <pre>            &lt;av-input @bind:val="this.value"&gt;&lt;/av-input&gt;            &nbsp;            &lt;p&gt;&#123;&#123; this.value &#125;&#125;&lt;/p&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Binding/src/Input/Input.wcl.avt">        <pre>            export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props                @Property()                public val: string = "";                //#endregion            &nbsp;            &nbsp;                //#region variables                @ViewElement()                protected inputEl!: HTMLInputElement;            &nbsp;                public onChange: Aventus.Callback&lt;() =&gt; void&gt; = new Aventus.Callback();                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 *                  */                protected triggerChange() {                    this.val = this.inputEl.value;                    this.onChange.trigger([]);                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Binding/src/Input/Input.wcs.avt">        <pre>            :host {            	background-color: lightcoral;            &nbsp;            	input {            		background-color: transparent;            	}            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Binding/src/Input/Input.wcv.avt">        <pre>            &lt;input value="&#123;&#123; this.val &#125;&#125;" @input="triggerChange" @element="inputEl"/&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="Binding/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Binding&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-example&gt;&lt;/av-example&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+        blocks: { 'default':`<av-code-editor name="Binding">    <av-code language="json" filename="Binding/aventus.conf.avt">        <pre>            {            	"module": "Binding",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Binding/src/Example/Example.wcl.avt">        <pre>            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                @Watch()                public value: string = "My value";                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Binding/src/Example/Example.wcs.avt">        <pre>            :host {                &nbsp;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Binding/src/Example/Example.wcv.avt">        <pre>            &lt;av-input @bind:val="this.value"&gt;&lt;/av-input&gt;            &nbsp;            &lt;p&gt;&#123;&#123; this.value &#125;&#125;&lt;/p&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Binding/src/Input/Input.wcl.avt">        <pre>            export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props                @Property()                public val: string = "";                //#endregion            &nbsp;            &nbsp;                //#region variables                @ViewElement()                protected inputEl!: HTMLInputElement;            &nbsp;                public onChange: Aventus.Callback&lt;() =&gt; void&gt; = new Aventus.Callback();                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 *                  */                protected triggerChange() {                    this.val = this.inputEl.value;                    this.onChange.trigger();                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Binding/src/Input/Input.wcs.avt">        <pre>            :host {            	background-color: lightcoral;            &nbsp;            	input {            		background-color: transparent;            	}            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Binding/src/Input/Input.wcv.avt">        <pre>            &lt;input value="&#123;&#123; this.val &#125;&#125;" @input="triggerChange" @element="inputEl"/&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="Binding/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Binding&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-example&gt;&lt;/av-example&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
     });
 }
     getClassName() {
@@ -16322,7 +16598,7 @@ const DocWcBindingEditor4 = class DocWcBindingEditor4 extends BaseEditor {
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Binding">    <av-code language="json" filename="Binding/aventus.conf.avt">        <pre>            {            	"module": "Binding",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Binding/src/Example/Example.wcl.avt">        <pre>            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                @Watch()                public value: string = "My value";                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Binding/src/Example/Example.wcs.avt">        <pre>            :host {                &nbsp;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Binding/src/Example/Example.wcv.avt">        <pre>            &lt;av-input @bind_newVal:val="this.value"&gt;&lt;/av-input&gt;            &nbsp;            &lt;p&gt;&#123;&#123; this.value &#125;&#125;&lt;/p&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Binding/src/Input/Input.wcl.avt">        <pre>            export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props                @Property()                public val: string = "";                //#endregion            &nbsp;            &nbsp;                //#region variables                @ViewElement()                protected inputEl!: HTMLInputElement;            &nbsp;                public onNewVal: Aventus.Callback&lt;() =&gt; void&gt; = new Aventus.Callback();                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 *                  */                protected triggerChange() {                    this.val = this.inputEl.value;                    this.onNewVal.trigger([]);                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Binding/src/Input/Input.wcs.avt">        <pre>            :host {            	background-color: lightcoral;            &nbsp;            	input {            		background-color: transparent;            	}            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Binding/src/Input/Input.wcv.avt">        <pre>            &lt;input value="&#123;&#123; this.val &#125;&#125;" @input="triggerChange" @element="inputEl"/&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="Binding/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Binding&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-example&gt;&lt;/av-example&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+        blocks: { 'default':`<av-code-editor name="Binding">    <av-code language="json" filename="Binding/aventus.conf.avt">        <pre>            {            	"module": "Binding",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Binding/src/Example/Example.wcl.avt">        <pre>            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                @Watch()                public value: string = "My value";                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Binding/src/Example/Example.wcs.avt">        <pre>            :host {                &nbsp;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Binding/src/Example/Example.wcv.avt">        <pre>            &lt;av-input @bind_newVal:val="this.value"&gt;&lt;/av-input&gt;            &nbsp;            &lt;p&gt;&#123;&#123; this.value &#125;&#125;&lt;/p&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Binding/src/Input/Input.wcl.avt">        <pre>            export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props                @Property()                public val: string = "";                //#endregion            &nbsp;            &nbsp;                //#region variables                @ViewElement()                protected inputEl!: HTMLInputElement;            &nbsp;                public onNewVal: Aventus.Callback&lt;() =&gt; void&gt; = new Aventus.Callback();                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 *                  */                protected triggerChange() {                    this.val = this.inputEl.value;                    this.onNewVal.trigger();                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Binding/src/Input/Input.wcs.avt">        <pre>            :host {            	background-color: lightcoral;            &nbsp;            	input {            		background-color: transparent;            	}            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Binding/src/Input/Input.wcv.avt">        <pre>            &lt;input value="&#123;&#123; this.val &#125;&#125;" @input="triggerChange" @element="inputEl"/&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="Binding/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Binding&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-example&gt;&lt;/av-example&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
     });
 }
     getClassName() {
@@ -16839,7 +17115,7 @@ const DocWcEventEditor2 = class DocWcEventEditor2 extends BaseEditor {
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Event">    <av-code language="json" filename="Event/aventus.conf.avt">        <pre>            {            	"module": "Event",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Event/src/Button/Button.wcl.avt">        <pre>            export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                public onCustomClick: Aventus.Callback&lt;() =&gt; void&gt; = new Aventus.Callback();                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                private triggerCustomClick() {                    this.onCustomClick.trigger([]);                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Event/src/Button/Button.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Event/src/Button/Button.wcv.avt">        <pre>            &lt;button @click="triggerCustomClick"&gt;Custom click&lt;/button&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Event/src/Example/Example.wcl.avt">        <pre>            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 *                  */                protected sayHello() {                    alert("Hello");                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Event/src/Example/Example.wcs.avt">        <pre>            :host {                &nbsp;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Event/src/Example/Example.wcv.avt">        <pre>            &lt;av-button @customClick="sayHello"&gt;Say hello&lt;/av-button&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="Event/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Event&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-example&gt;&lt;/av-example&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+        blocks: { 'default':`<av-code-editor name="Event">    <av-code language="json" filename="Event/aventus.conf.avt">        <pre>            {            	"module": "Event",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Event/src/Button/Button.wcl.avt">        <pre>            export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                public onCustomClick: Aventus.Callback&lt;() =&gt; void&gt; = new Aventus.Callback();                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                private triggerCustomClick() {                    this.onCustomClick.trigger();                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Event/src/Button/Button.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Event/src/Button/Button.wcv.avt">        <pre>            &lt;button @click="triggerCustomClick"&gt;Custom click&lt;/button&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Event/src/Example/Example.wcl.avt">        <pre>            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 *                  */                protected sayHello() {                    alert("Hello");                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Event/src/Example/Example.wcs.avt">        <pre>            :host {                &nbsp;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Event/src/Example/Example.wcv.avt">        <pre>            &lt;av-button @customClick="sayHello"&gt;Say hello&lt;/av-button&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="Event/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Event&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-example&gt;&lt;/av-example&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
     });
 }
     getClassName() {
@@ -17232,7 +17508,7 @@ const DocLibCallbackEditor2 = class DocLibCallbackEditor2 extends BaseEditor {
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Callback">    <av-code language="json" filename="Callback/aventus.conf.avt">        <pre>            {            	"module": "Callback",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Callback/src/Emitter/Emitter.wcl.avt">        <pre>            export class Emitter extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                public readonly myEvent: Aventus.Callback&lt;(time: number) =&gt; void&gt; = new Aventus.Callback();                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                private emitMyEvent() {                    setInterval(() =&gt; {                        this.myEvent.trigger([Date.now()]);                    }, 1000);                }                protected override postCreation(): void {                    this.emitMyEvent();                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Callback/src/Emitter/Emitter.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/src/Emitter/Emitter.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Callback/src/Receiver/Receiver.wcl.avt">        <pre>            import { Emitter } from "../Emitter/Emitter.wcl.avt";            &nbsp;            export class Receiver extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                protected override postCreation(): void {                    let emitter = document.querySelector&lt;Emitter&gt;("av-emitter");                    &#105;f(emitter) {                        emitter.myEvent.add((time: number) =&gt; {                            this.shadowRoot.innerHTML = 'Time is ' + time;                        });                    }                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Callback/src/Receiver/Receiver.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/src/Receiver/Receiver.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Callback&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-emitter&gt;&lt;/av-emitter&gt;                &lt;av-receiver&gt;&lt;/av-receiver&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+        blocks: { 'default':`<av-code-editor name="Callback">    <av-code language="json" filename="Callback/aventus.conf.avt">        <pre>            {            	"module": "Callback",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Callback/src/Emitter/Emitter.wcl.avt">        <pre>            export class Emitter extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                public readonly myEvent: Aventus.Callback&lt;(time: number) =&gt; void&gt; = new Aventus.Callback();                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                private emitMyEvent() {                    setInterval(() =&gt; {                        this.myEvent.trigger(Date.now());                    }, 1000);                }                protected override postCreation(): void {                    this.emitMyEvent();                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Callback/src/Emitter/Emitter.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/src/Emitter/Emitter.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Callback/src/Receiver/Receiver.wcl.avt">        <pre>            import { Emitter } from "../Emitter/Emitter.wcl.avt";            &nbsp;            export class Receiver extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                protected override postCreation(): void {                    let emitter = document.querySelector&lt;Emitter&gt;("av-emitter");                    &#105;f(emitter) {                        emitter.myEvent.add((time: number) =&gt; {                            this.shadowRoot.innerHTML = 'Time is ' + time;                        });                    }                }                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Callback/src/Receiver/Receiver.wcs.avt">        <pre>            :host {            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/src/Receiver/Receiver.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="Callback/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Callback&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-emitter&gt;&lt;/av-emitter&gt;                &lt;av-receiver&gt;&lt;/av-receiver&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
     });
 }
     getClassName() {
@@ -18522,7 +18798,7 @@ const TutorialCreateTodoEditor3 = class TutorialCreateTodoEditor3 extends Tutori
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt">    <pre>        &lt;div class="card"&gt;            &lt;td-input label="Todo name" @bind="this.todo.name"&gt;&lt;/td-input&gt;            &lt;div&gt;&#123;&#123; this.todo.name &#125;&#125;&lt;/div&gt;        &lt;/div&gt;    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/components/Input/Input.wcl.avt">    <pre>        export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props            /**             * Label &#102;or the input             */            @Property()            public label?: string;        &nbsp;            /**             * Current value of the input             */            @Property((target: Input) =&gt; {                // When something change the td-input value property, we must update the input element value                target.inputEl.value = target.value;            })            public value: string = "";            //#endregion        &nbsp;        &nbsp;            //#region variables            private _onChange: Aventus.Callback&lt;(value: string) =&gt; void&gt; = new Aventus.Callback();            /**             * A function trigger when the input value change             * Only trigger when a manual input change the vaue             */            public get onChange(): Aventus.Callback&lt;(value: string) =&gt; void&gt; {                return this._onChange;            }        &nbsp;            /**             * A reference to the input element             */            @ViewElement()            protected inputEl!: HTMLInputElement;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods        &nbsp;            /**             * A function to emit refresh value and emit event when the value changed             */            protected updateValue() {                this.value = this.inputEl.value;                this.onChange.trigger([this.value]);            }            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/components/Input/Input.wcs.avt">    <pre>        :host {            background-color: var(--color-surface-mixed-600);            border-radius: 10px;            display: flex;            flex-direction: column;            height: fit-content;            overflow: hidden;            width: 100%;        &nbsp;            label {                background-color: var(--color-surface-mixed-500);                padding: 5px 15px;                width: 100%;            }        &nbsp;            input {                background-color: transparent;                border: none;                box-shadow: none;                color: var(--font-color);                height: 100%;                margin: 0;                outline: none;                padding: 15px 25px;                width: 100%;            }        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/components/Input/Input.wcv.avt">    <pre>        &lt;label &#102;or="input"&gt;&#123;&#123; this.label &#125;&#125;&lt;/label&gt;        &lt;input id="input" type="text" @element="inputEl" @input="updateValue"&gt;    </pre></av-code></av-code><slot></slot>` }
+        blocks: { 'default':`<av-code language="html" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcv.avt">    <pre>        &lt;div class="card"&gt;            &lt;td-input label="Todo name" @bind="this.todo.name"&gt;&lt;/td-input&gt;            &lt;div&gt;&#123;&#123; this.todo.name &#125;&#125;&lt;/div&gt;        &lt;/div&gt;    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/components/Input/Input.wcl.avt">    <pre>        export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {        &nbsp;            //#region static        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region props            /**             * Label &#102;or the input             */            @Property()            public label?: string;        &nbsp;            /**             * Current value of the input             */            @Property((target: Input) =&gt; {                // When something change the td-input value property, we must update the input element value                target.inputEl.value = target.value;            })            public value: string = "";            //#endregion        &nbsp;        &nbsp;            //#region variables            private _onChange: Aventus.Callback&lt;(value: string) =&gt; void&gt; = new Aventus.Callback();            /**             * A function trigger when the input value change             * Only trigger when a manual input change the vaue             */            public get onChange(): Aventus.Callback&lt;(value: string) =&gt; void&gt; {                return this._onChange;            }        &nbsp;            /**             * A reference to the input element             */            @ViewElement()            protected inputEl!: HTMLInputElement;            //#endregion        &nbsp;        &nbsp;            //#region constructor        &nbsp;            //#endregion        &nbsp;        &nbsp;            //#region methods        &nbsp;            /**             * A function to emit refresh value and emit event when the value changed             */            protected updateValue() {                this.value = this.inputEl.value;                this.onChange.trigger(this.value);            }            //#endregion        &nbsp;        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/components/Input/Input.wcs.avt">    <pre>        :host {            background-color: var(--color-surface-mixed-600);            border-radius: 10px;            display: flex;            flex-direction: column;            height: fit-content;            overflow: hidden;            width: 100%;        &nbsp;            label {                background-color: var(--color-surface-mixed-500);                padding: 5px 15px;                width: 100%;            }        &nbsp;            input {                background-color: transparent;                border: none;                box-shadow: none;                color: var(--font-color);                height: 100%;                margin: 0;                outline: none;                padding: 15px 25px;                width: 100%;            }        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/components/Input/Input.wcv.avt">    <pre>        &lt;label &#102;or="input"&gt;&#123;&#123; this.label &#125;&#125;&lt;/label&gt;        &lt;input id="input" type="text" @element="inputEl" @input="updateValue"&gt;    </pre></av-code></av-code><slot></slot>` }
     });
 }
     getClassName() {
@@ -18612,7 +18888,7 @@ const TutorialCreateTodo = class TutorialCreateTodo extends TutorialGenericPage 
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Create Todo</h1><p>To create a todo, we'll utilize a new concept within Aventus called <span class="cn">state</span>. If you've been    using the router, you've    already encountered this concept, even if you don't know it. Using states within your application offers several    advantages.</p><p> Firstly, states help manage the various states of your application at different moments. This includes    managing data, UI components, user interactions, and more. By encapsulating the state within a state manager like    Aventus, you can efficiently manage and transition between different states of your application.</p><p>Additionally,    states ensure data consistency across your application, promote modularity and reusability, enable separation of    concerns, and manage the lifecycle of your application.</p><p>In summary, leveraging states within your application    architecture contributes to a more organized, maintainable, and predictable development process.</p><h2>Code it</h2><p>First of all we need a to create a new state named <span class="cn">TodoDisplay</span> : </p><ul>    <li>        Over the folder <span class="cn">states</span> you can right click and select <span class="cn">Aventus :            Create...</span>.    </li>    <li>You can select <span class="cn">State</span></li>    <li>You can fill the input with <span class="cn">TodoCreateState</span></li></ul><av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">    <pre>        export class TodoCreateState extends Aventus.State implements Aventus.IState {            /**             * @inheritdoc             */            public override get name(): string {                return ;            }        }    </pre></av-code></av-code><p>Now, we must enhance the <span class="cn">TodoCreateState</span> class by incorporating functionality to identify the    state's name and    initialize a new todo each time the state is activated. This ensures that the state is properly configured to manage    the    creation of new todo items within the application.</p><av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">    <pre>        import { Todo } from "../data/Todo.data.avt";        &nbsp;        export class TodoCreateState extends Aventus.State implements Aventus.IState {        &nbsp;            /**            * This is the Todo that is currently created            */            public newTodo?: Todo;        &nbsp;            /**            * @inheritdoc            */            public override get name(): string {                // we must define what will be the state name                // in our example we will use '/create' because it's the url of the page TodoCreatePage                return '/create';            }        &nbsp;            /**            * This function is called when the current state is activated            */            public override onActivate(): void {                // You can init custom value for you todo here                this.newTodo = new Todo();            }        }    </pre></av-code></av-code><p>    In the <span class="cn">MainApp.wcv.avt</span> file, we need to replace the navigation button responsible for    setting the state to <span class="cn">"/create"</span> with a function that will activate our new <span class="cn">TodoCreateState</span>. Additionally, we must ensure that the <span class="cn">active_state</span>    property is set to maintain the <span class="cn">"active"</span> class on the <span class="cn">av-router-link</span>    element when the URL is <span class="cn">"/create"</span>.</p><av-code language="html" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">    <pre>        &lt;!-- The router has a slot name "before": we use it to define the sidenav --&gt;        &lt;block name="before"&gt;            &lt;div class="nav"&gt;                &lt;av-router-link class="nav-item" state="/"&gt;                    &lt;span class="name"&gt;Todo list&lt;/span&gt;                &lt;/av-router-link&gt;                &lt;av-router-link class="nav-item" @press="setCreateState" active_state="/create"&gt;                     &lt;span class="name"&gt;Create todo&lt;/span&gt;                &lt;/av-router-link&gt;            &lt;/div&gt;        &lt;/block&gt;        &lt;slot&gt;&lt;/slot&gt;    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">    <pre>        import { TodoCreateState } from "../../states/TodoCreateState.state.avt";        ...        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {            ...            /**             * Set the create state             */            protected setCreateState() {                this.stateManager.setState(new TodoCreateState());            }            ...        }    </pre></av-code></av-code><p>At this point, nothing changed for the navigation process.</p><av-tutorial-create-todo-editor-1></av-tutorial-create-todo-editor-1><p>    To retrieve the state within the <span class="cn">TodoCreatePage</span>, we can override the <span class="cn">onShow</span> method, which is triggered each time the page is displayed. Since we are utilizing    <span class="cn">Aventus.Navigation.Router</span>, the URL corresponds to the state. This implies that the state    <span class="cn">"/create"</span> can be triggered without necessarily being a <span class="cn">TodoCreateState</span>. In such instances, we need to redirect the user to the home page.</p><av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt">    <pre>        import { MainApp } from "../../MainApp.wcl.avt";        import type { Todo } from "../../../../data/Todo.data.avt";        import { TodoCreateState } from "../../../../states/TodoCreateState.state.avt";        ...        &nbsp;        export class TodoCreatePage extends GenericPage implements Aventus.DefaultComponent {            ...            //#region variables            @Watch()            public todo!: Todo; // create a watch variable for later            //#endregion            ...            &nbsp;            public override onShow(): void {                // check if the state if the TodoCreateState                &#105;f(this.currentState instanceof TodoCreateState && this.currentState.newTodo) {                    this.todo = this.currentState.newTodo;                }                &#101;lse {                    // else redirect to the Home page                    // MainApp.instance don't exist yet, don't worry                    MainApp.instance.navigate("/");                }            }            ...        }    </pre></av-code></av-code><p>We're currently utilizing a property, <span class="cn">MainApp.instance</span>, which doesn't exist yet. However,    since we're aware that only one instance of <span class="cn">MainApp</span> exists within the app, we can define a    static instance property on the <span class="cn">MainApp</span> class.</p><av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">    <pre>        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {            //#region static            private static _instance: MainApp;            public static get instance(): MainApp {                return this._instance;            }            //#endregion            ...            protected override postCreation(): void {                super.postCreation();                MainApp._instance = this;            }            ...        }    </pre></av-code></av-code><p>Let's initiate the design of our form. As an example, we'll create a <span class="cn">.card</span> class that will be    accessible within each web component. To accomplish this, we'll need to create a file named <span class="cn">@default.wcs.avt</span> to override the default style for all web components. Within this file, we    can define the new class <span class="cn">.card</span>. <av-router-link state="/docs/wc/style">More        info</av-router-link></p><av-code language="css" filename="Demo/src/apps/@default.wcs.avt">    <pre>        // this is the default style &#102;or all components        :host {            box-sizing: border-box;            display: inline-block;        }        &nbsp;        :host * {            box-sizing: border-box;        }        &nbsp;        .card {            background-color: var(--color-surface-mixed-200);            border-radius: 10px;            display: flex;            flex-direction: column;            gap: 10px;            margin: auto;            max-width: 500px;            padding: 15px;        }        &nbsp;    </pre></av-code></av-code><p>Inside your page <span class="cn">TodoCreatePage.wcv.avt</span> you can add a <span class="cn">div.card</span></p><av-tutorial-create-todo-editor-2></av-tutorial-create-todo-editor-2><p>Before proceeding with the creation of our form, we require a component capable of managing user input, such as    filling in the todo name. Let's create this component. The input consists of a label and an input field with a    value. Additionally, it should emit an event whenever the input value changes.</p><p>You can create a new <span class="cn">Input</span> inside the folder <span class="cn">components</span>.</p><av-code language="typescript" filename="Demo/src/components/Input/Input.wcl.avt">    <pre>        export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {            //#region props            /**             * Label &#102;or the input             */            @Property()            public label?: string;            /**             * Current value of the input             */            @Property((target: Input) =&gt; {                // When something change the td-input value property, we must update the input element value                target.inputEl.value = target.value;            })            public value: string = "";            //#endregion        &nbsp;            //#region variables            private _onChange: Aventus.Callback&lt;(value: string) =&gt; void&gt; = new Aventus.Callback();            /**             * A function trigger when the input value change             * Only trigger when a manual input change the vaue             */            public get onChange(): Aventus.Callback&lt;(value: string) =&gt; void&gt; {                return this._onChange;            }            /**             * A reference to the input element             */            @ViewElement()            protected inputEl!: HTMLInputElement;            //#endregion        &nbsp;            //#region methods            /**             * A function to emit refresh value and emit event when the value changed             */            protected updateValue() {                this.value = this.inputEl.value;                this.onChange.trigger([this.value]);            }            //#endregion        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/components/Input/Input.wcs.avt">    <pre>        :host {            background-color: var(--color-surface-mixed-600);            border-radius: 10px;            display: flex;            flex-direction: column;            height: fit-content;            overflow: hidden;            width: 100%;        &nbsp;            label {                background-color: var(--color-surface-mixed-500);                padding: 5px 15px;                width: 100%;            }        &nbsp;            input {                background-color: transparent;                border: none;                box-shadow: none;                color: var(--font-color);                height: 100%;                margin: 0;                outline: none;                padding: 15px 25px;                width: 100%;            }        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/components/Input/Input.wcv.avt">    <pre>        &lt;label &#102;or="input"&gt;&#123;&#123; this.label &#125;&#125;&lt;/label&gt;        &lt;input id="input" type="text" @element="inputEl" @input="updateValue"&gt;    </pre></av-code></av-code><p>By now, you should have a comprehensive understanding of each component within the provided source code. However,    we'll focus on two key aspects:</p><ul>    <li><span class="cn">@ViewElement()</span>: This decorator marks a property as a reference to an element found        within the component's view. It establishes a connection between the view and the component's logic, enabling        seamless interaction between the two. <av-router-link state="/docs/wc/element">More info</av-router-link></li>    <li><span class="cn">onChange: Aventus.Callback void></span>: This property represents a callback        mechanism that facilitates subscription from external sources. It allows other parts of the application to        subscribe to value changes within the component. Additionally, it can be triggered, passing along a value of a        specified generic type, ensuring efficient communication between different components or modules within the        application. <av-router-link state="/docs/wc/event">More info</av-router-link></li></ul><p>We can now using this <span class="cn">Input</span> with a <span class="cn">@bind</span> to create a bidrectional    interaction between the name of the todo and the input.</p><av-tutorial-create-todo-editor-3></av-tutorial-create-todo-editor-3><p>When performing the following sequence of actions: navigating to the "Create todo" page, filling in the input field,    then navigating to the "Todo list" page, and finally returning to the "Create todo" page, you may observe that the    input field is cleared. This behavior is expected because a new todo is created each time you visit the "Create    todo" page.</p><p>To mitigate the risk of data loss due to inadvertent actions, we can implement a confirmation prompt when the user    attempts to navigate to the "Todo list" page. This can be achieved by overriding the askChange method within the    TodoCreateState state and checking the value of todo name.</p><av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">    <pre>        export class TodoCreateState extends Aventus.State implements Aventus.IState {            ...            /**            * This function is called when the state will change            */            public override async askChange(state: Aventus.State, nextState: Aventus.State): Promise&lt;boolean&gt; {                &#105;f(this.newTodo?.name) {                    // ask the question                    return confirm("Changes are currently in progress. Are you sure you want to leave this page?")                }                // no change we can leave                return true;            }        }    </pre></av-code></av-code><p>Ultimately, we can enhance the functionality of the TodoCreatePage by introducing features to add tasks and save the todo within the RAM.</p><av-tutorial-create-todo-editor-4></av-tutorial-create-todo-editor-4>` }
+        blocks: { 'default':`<h1>Create Todo</h1><p>To create a todo, we'll utilize a new concept within Aventus called <span class="cn">state</span>. If you've been    using the router, you've    already encountered this concept, even if you don't know it. Using states within your application offers several    advantages.</p><p> Firstly, states help manage the various states of your application at different moments. This includes    managing data, UI components, user interactions, and more. By encapsulating the state within a state manager like    Aventus, you can efficiently manage and transition between different states of your application.</p><p>Additionally,    states ensure data consistency across your application, promote modularity and reusability, enable separation of    concerns, and manage the lifecycle of your application.</p><p>In summary, leveraging states within your application    architecture contributes to a more organized, maintainable, and predictable development process.</p><h2>Code it</h2><p>First of all we need a to create a new state named <span class="cn">TodoDisplay</span> : </p><ul>    <li>        Over the folder <span class="cn">states</span> you can right click and select <span class="cn">Aventus :            Create...</span>.    </li>    <li>You can select <span class="cn">State</span></li>    <li>You can fill the input with <span class="cn">TodoCreateState</span></li></ul><av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">    <pre>        export class TodoCreateState extends Aventus.State implements Aventus.IState {            /**             * @inheritdoc             */            public override get name(): string {                return ;            }        }    </pre></av-code></av-code><p>Now, we must enhance the <span class="cn">TodoCreateState</span> class by incorporating functionality to identify the    state's name and    initialize a new todo each time the state is activated. This ensures that the state is properly configured to manage    the    creation of new todo items within the application.</p><av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">    <pre>        import { Todo } from "../data/Todo.data.avt";        &nbsp;        export class TodoCreateState extends Aventus.State implements Aventus.IState {        &nbsp;            /**            * This is the Todo that is currently created            */            public newTodo?: Todo;        &nbsp;            /**            * @inheritdoc            */            public override get name(): string {                // we must define what will be the state name                // in our example we will use '/create' because it's the url of the page TodoCreatePage                return '/create';            }        &nbsp;            /**            * This function is called when the current state is activated            */            public override onActivate(): void {                // You can init custom value for you todo here                this.newTodo = new Todo();            }        }    </pre></av-code></av-code><p>    In the <span class="cn">MainApp.wcv.avt</span> file, we need to replace the navigation button responsible for    setting the state to <span class="cn">"/create"</span> with a function that will activate our new <span class="cn">TodoCreateState</span>. Additionally, we must ensure that the <span class="cn">active_state</span>    property is set to maintain the <span class="cn">"active"</span> class on the <span class="cn">av-router-link</span>    element when the URL is <span class="cn">"/create"</span>.</p><av-code language="html" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">    <pre>        &lt;!-- The router has a slot name "before": we use it to define the sidenav --&gt;        &lt;block name="before"&gt;            &lt;div class="nav"&gt;                &lt;av-router-link class="nav-item" state="/"&gt;                    &lt;span class="name"&gt;Todo list&lt;/span&gt;                &lt;/av-router-link&gt;                &lt;av-router-link class="nav-item" @press="setCreateState" active_state="/create"&gt;                     &lt;span class="name"&gt;Create todo&lt;/span&gt;                &lt;/av-router-link&gt;            &lt;/div&gt;        &lt;/block&gt;        &lt;slot&gt;&lt;/slot&gt;    </pre></av-code></av-code><av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">    <pre>        import { TodoCreateState } from "../../states/TodoCreateState.state.avt";        ...        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {            ...            /**             * Set the create state             */            protected setCreateState() {                this.stateManager.setState(new TodoCreateState());            }            ...        }    </pre></av-code></av-code><p>At this point, nothing changed for the navigation process.</p><av-tutorial-create-todo-editor-1></av-tutorial-create-todo-editor-1><p>    To retrieve the state within the <span class="cn">TodoCreatePage</span>, we can override the <span class="cn">onShow</span> method, which is triggered each time the page is displayed. Since we are utilizing    <span class="cn">Aventus.Navigation.Router</span>, the URL corresponds to the state. This implies that the state    <span class="cn">"/create"</span> can be triggered without necessarily being a <span class="cn">TodoCreateState</span>. In such instances, we need to redirect the user to the home page.</p><av-code language="typescript" filename="Demo/src/apps/MainApp/pages/TodoCreatePage/TodoCreatePage.wcl.avt">    <pre>        import { MainApp } from "../../MainApp.wcl.avt";        import type { Todo } from "../../../../data/Todo.data.avt";        import { TodoCreateState } from "../../../../states/TodoCreateState.state.avt";        ...        &nbsp;        export class TodoCreatePage extends GenericPage implements Aventus.DefaultComponent {            ...            //#region variables            @Watch()            public todo!: Todo; // create a watch variable for later            //#endregion            ...            &nbsp;            public override onShow(): void {                // check if the state if the TodoCreateState                &#105;f(this.currentState instanceof TodoCreateState && this.currentState.newTodo) {                    this.todo = this.currentState.newTodo;                }                &#101;lse {                    // else redirect to the Home page                    // MainApp.instance don't exist yet, don't worry                    MainApp.instance.navigate("/");                }            }            ...        }    </pre></av-code></av-code><p>We're currently utilizing a property, <span class="cn">MainApp.instance</span>, which doesn't exist yet. However,    since we're aware that only one instance of <span class="cn">MainApp</span> exists within the app, we can define a    static instance property on the <span class="cn">MainApp</span> class.</p><av-code language="typescript" filename="Demo/src/apps/MainApp/MainApp.wcl.avt">    <pre>        export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {            //#region static            private static _instance: MainApp;            public static get instance(): MainApp {                return this._instance;            }            //#endregion            ...            protected override postCreation(): void {                super.postCreation();                MainApp._instance = this;            }            ...        }    </pre></av-code></av-code><p>Let's initiate the design of our form. As an example, we'll create a <span class="cn">.card</span> class that will be    accessible within each web component. To accomplish this, we'll need to create a file named <span class="cn">@default.wcs.avt</span> to override the default style for all web components. Within this file, we    can define the new class <span class="cn">.card</span>. <av-router-link state="/docs/wc/style">More        info</av-router-link></p><av-code language="css" filename="Demo/src/apps/@default.wcs.avt">    <pre>        // this is the default style &#102;or all components        :host {            box-sizing: border-box;            display: inline-block;        }        &nbsp;        :host * {            box-sizing: border-box;        }        &nbsp;        .card {            background-color: var(--color-surface-mixed-200);            border-radius: 10px;            display: flex;            flex-direction: column;            gap: 10px;            margin: auto;            max-width: 500px;            padding: 15px;        }        &nbsp;    </pre></av-code></av-code><p>Inside your page <span class="cn">TodoCreatePage.wcv.avt</span> you can add a <span class="cn">div.card</span></p><av-tutorial-create-todo-editor-2></av-tutorial-create-todo-editor-2><p>Before proceeding with the creation of our form, we require a component capable of managing user input, such as    filling in the todo name. Let's create this component. The input consists of a label and an input field with a    value. Additionally, it should emit an event whenever the input value changes.</p><p>You can create a new <span class="cn">Input</span> inside the folder <span class="cn">components</span>.</p><av-code language="typescript" filename="Demo/src/components/Input/Input.wcl.avt">    <pre>        export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {            //#region props            /**             * Label &#102;or the input             */            @Property()            public label?: string;            /**             * Current value of the input             */            @Property((target: Input) =&gt; {                // When something change the td-input value property, we must update the input element value                target.inputEl.value = target.value;            })            public value: string = "";            //#endregion        &nbsp;            //#region variables            private _onChange: Aventus.Callback&lt;(value: string) =&gt; void&gt; = new Aventus.Callback();            /**             * A function trigger when the input value change             * Only trigger when a manual input change the vaue             */            public get onChange(): Aventus.Callback&lt;(value: string) =&gt; void&gt; {                return this._onChange;            }            /**             * A reference to the input element             */            @ViewElement()            protected inputEl!: HTMLInputElement;            //#endregion        &nbsp;            //#region methods            /**             * A function to emit refresh value and emit event when the value changed             */            protected updateValue() {                this.value = this.inputEl.value;                this.onChange.trigger(this.value);            }            //#endregion        }    </pre></av-code></av-code><av-code language="css" filename="Demo/src/components/Input/Input.wcs.avt">    <pre>        :host {            background-color: var(--color-surface-mixed-600);            border-radius: 10px;            display: flex;            flex-direction: column;            height: fit-content;            overflow: hidden;            width: 100%;        &nbsp;            label {                background-color: var(--color-surface-mixed-500);                padding: 5px 15px;                width: 100%;            }        &nbsp;            input {                background-color: transparent;                border: none;                box-shadow: none;                color: var(--font-color);                height: 100%;                margin: 0;                outline: none;                padding: 15px 25px;                width: 100%;            }        }        &nbsp;    </pre></av-code></av-code><av-code language="html" filename="Demo/src/components/Input/Input.wcv.avt">    <pre>        &lt;label &#102;or="input"&gt;&#123;&#123; this.label &#125;&#125;&lt;/label&gt;        &lt;input id="input" type="text" @element="inputEl" @input="updateValue"&gt;    </pre></av-code></av-code><p>By now, you should have a comprehensive understanding of each component within the provided source code. However,    we'll focus on two key aspects:</p><ul>    <li><span class="cn">@ViewElement()</span>: This decorator marks a property as a reference to an element found        within the component's view. It establishes a connection between the view and the component's logic, enabling        seamless interaction between the two. <av-router-link state="/docs/wc/element">More info</av-router-link></li>    <li><span class="cn">onChange: Aventus.Callback void></span>: This property represents a callback        mechanism that facilitates subscription from external sources. It allows other parts of the application to        subscribe to value changes within the component. Additionally, it can be triggered, passing along a value of a        specified generic type, ensuring efficient communication between different components or modules within the        application. <av-router-link state="/docs/wc/event">More info</av-router-link></li></ul><p>We can now using this <span class="cn">Input</span> with a <span class="cn">@bind</span> to create a bidrectional    interaction between the name of the todo and the input.</p><av-tutorial-create-todo-editor-3></av-tutorial-create-todo-editor-3><p>When performing the following sequence of actions: navigating to the "Create todo" page, filling in the input field,    then navigating to the "Todo list" page, and finally returning to the "Create todo" page, you may observe that the    input field is cleared. This behavior is expected because a new todo is created each time you visit the "Create    todo" page.</p><p>To mitigate the risk of data loss due to inadvertent actions, we can implement a confirmation prompt when the user    attempts to navigate to the "Todo list" page. This can be achieved by overriding the askChange method within the    TodoCreateState state and checking the value of todo name.</p><av-code language="typescript" filename="Demo/src/states/TodoCreateState.state.avt">    <pre>        export class TodoCreateState extends Aventus.State implements Aventus.IState {            ...            /**            * This function is called when the state will change            */            public override async askChange(state: Aventus.State, nextState: Aventus.State): Promise&lt;boolean&gt; {                &#105;f(this.newTodo?.name) {                    // ask the question                    return confirm("Changes are currently in progress. Are you sure you want to leave this page?")                }                // no change we can leave                return true;            }        }    </pre></av-code></av-code><p>Ultimately, we can enhance the functionality of the TodoCreatePage by introducing features to add tasks and save the todo within the RAM.</p><av-tutorial-create-todo-editor-4></av-tutorial-create-todo-editor-4>` }
     });
 }
     getClassName() {

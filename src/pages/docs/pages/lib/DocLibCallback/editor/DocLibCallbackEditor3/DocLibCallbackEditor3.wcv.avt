@@ -40,7 +40,7 @@
                 * Trigger the log callback only \for the lvl concerned
                 */
                 public addLog(msg: string, lvl: LogLvl) {
-                    this.onNewLog.trigger(lvl, [msg]);
+                    this.onNewLog.trigger(lvl, msg);
                 }
             &nbsp;
                 public readError() {

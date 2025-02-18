@@ -268,7 +268,7 @@
              */
             protected updateValue() {
                 this.value = this.inputEl.value;
-                this.onChange.trigger([this.value]);
+                this.onChange.trigger(this.value);
             }
             //#endregion
         }
