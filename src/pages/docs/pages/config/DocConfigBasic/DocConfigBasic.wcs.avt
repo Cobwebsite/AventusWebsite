@@ -11,6 +11,10 @@
 			}
 		}
 
+		av-dynamic-row:not(.header):nth-child(odd) {
+			background-color: rgba(0, 0, 0, 0.2);
+		}
+
 		.constraint {
 			display: block;
 			font-size: 14px;
@@ -20,7 +24,7 @@
 
 	.mandatory::after {
 		content: "*";
-		margin-left: 5px;
 		font-weight: bold;
+		margin-left: 5px;
 	}
 }

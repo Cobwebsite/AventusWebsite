@@ -1,6 +1,22 @@
 <h1>Configuration - Libraries</h1>
 <p>When you create a build, you might like to import a library to reuse some code parts. Here you are going to learn how
-    to define all libs that must be imported inside a build.</p>
+    to define all libs that must be imported inside a build. You can find package to download by searching inside the
+    aventusjs store : <span class="cn"><a href="https://store.aventusjs.com">https://store.aventusjs.com</a></span></p>
+
+<p>The easiest format is the following : </p>
+
+<av-code language="json">
+    <pre>
+    {
+        "dependances": {
+            "MaterialIcon": "1.0.0",
+        }
+    }
+    </pre>
+</av-code>
+
+<p>By default, this will search inside the store. If you need to import other package you can define an object to have
+    more options.</p>
 
 <h2>Properties</h2>
 <div class="table">
@@ -17,11 +33,17 @@
     <av-dynamic-row>
         <av-dynamic-col size="4" center>version</av-dynamic-col>
         <av-dynamic-col size="8" center>
-            <div>This is a string to define which version of the code is needed. Instead of
-                number you can use a <span class="cn">x</span> to say any number. The default value is <span
-                    class="cn">x.x.x</span>.
-                <span class="constraint">Must satisfy: <span class="cn">^[0-9x]+\\.[0-9x]+\\.[0-9x]+$</span></span>
+            <div>This is a string to define which version of the code is needed.
+                <span class="constraint">Must satisfy: <span class="cn">^[0-9]+\\.[0-9]+\\.[0-9]+$</span></span>
             </div>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>isLocal</av-dynamic-col>
+        <av-dynamic-col size="8" center>
+            <div>This will search a package matching the name inside your locals projects. You can find all these
+                librairies by typing the command <span class="cn">Aventus : Open aventus storage</span> and then
+                navigate inside your file explorer under the <span class="cn">packages>@locals</span>. If you use a local package, you don't need to define a version.</div>
         </av-dynamic-col>
     </av-dynamic-row>
     <av-dynamic-row>
@@ -49,108 +71,58 @@
     </av-dynamic-row>
 </div>
 
-<h2>Libraries uri</h2>
-<p>You can use a few uri kinds to load a library.</p>
-<h3>Predefined</h3>
-<p>There are 2 libs with predefined uri:</p>
+<h2>Libraries name</h2>
+<p>You can use a few name kinds to load a library. If you use a predefined name you don't need version. There are 5 libs
+    with predefined uri:</p>
 <ul>
-    <li>Aventus@Main : uri is <span class="cn">@Aventus</span>. This is the core of Aventus, if you omit this lib inside
-        your build, it
-        will be
-        automaticaly added.</li>
-    <li>Aventus@UI : uri is <span class="cn">@AventusUI</span>. This lib contains some useful webcomponent to create
-        interface.</li>
+    <li>Aventus@Main : This is the core of Aventus, if you omit this lib inside your build, it will be automaticaly
+        added.</li>
+    <li>Aventus@UI : This lib contains some useful webcomponent to create interface.</li>
+    <li>Aventus@I18n : This lib contains i18n tools. If you define <span class="cn">i18n</span> inside your configuration file, this lib will be automaticaly loaded.</li>
+    <li>Aventus@Php : This lib contains Aventus code base for project <span class="cn">Laraventus</span>.</li>
+    <li>Aventus@Sharp : This lib contains Aventus code base for project <span class="cn">AventusSharp</span>.</li>
 </ul>
-<h3>Local</h3>
-<p>Every package you have build will be accessible by typing <span class="cn">@local:$module@$build</span> (ex:
-    @local:Aventus@Main). You
-    can find all these librairies by typing the command Aventus : Open aventus storage and then navigate inside your
-    file explorer under the packages&gt;@locals. You should find all package files you build on your computer.</p>
-<av-img src="/img/doc/config/lib/lib_example.png"></av-img>
-<av-code language="json" filename="aventus.conf.avt">
+<av-code language="json">
+    <pre>
     {
-    \tbuild: [{
-    \t\tname: "Main",
-    \t\tdependances: [{
-    \t\t\turi: "@local:HelloAventus@Main"
-    \t\t\}]
-    \t\t...
-    \t}]
+        "dependances": {
+            "Aventus@UI": {},
+        }
     }
+    </pre>
 </av-code>
-<p>This is useful if you are alone on a project or if you need to debug something, but this way is strongly discouraged
-    because it means that you have to open all your projects at least one time which is not really scalable friendly.</p>
-<h3>Same module</h3>
-<p>To include a build inside another build on the same <span class="cn">aventus.conf.avt</span>, you can type the uri
-    <span class="cn">&:$build</span>
-    (ex: &:Main) to include the main part of your module.</p>
-<av-code language="json" filename="aventus.conf.avt">
-    {
-    \tbuild: [{
-    \t\tname:"Main",
-    \t\t...
-    \t}, {
-    \t\tname: "Test",
-    \t\tdependances: [{
-    \t\t\turi: "&:Main"
-    \t\t}]
-    \t}]
-    }
-</av-code>
-<h3>File uri</h3>
+
+<h2>Store</h2>
+<p>You can search packages inside the aventus store. This is the recommanded way to load package.</p>
+<p><a href="https://store.aventusjs.com/packages"><av-button>Open the store</av-button></a></p>
+
+
+<h2>File uri</h2>
 <p>You can add directly an uri that resolve a <span class="cn">.package.avt</span> file to import it.</p>
 <av-code language="json" filename="aventus.conf.avt">
-    {
-    \tbuild: [{
-    \t\tname: "Main",
-    \t\tdependances: [{
-    \t\t\turi: "./myLibs/Lib1@Main.package.avt"
-    \t\t}, {
-    \t\t\turi: "C:\\\\myLibs\\\\Lib2@Main.package.avt"
-    \t\t}],
-    \t}]
-    }
+    <pre>
+        {
+            dependances: {
+                "Lib1@Main": {
+                    "uri": "./myLibs/Lib1@Main.package.avt"
+                },
+                "Lib2@Main": {
+                    "uri": "C:\\\\myLibs\\\\Lib2@Main.package.avt"
+                }
+            }
+        }
+    </pre>
 </av-code>
-<h3>File via http</h3>
-<p>You can resolve dependance via http. There are 2 kinds of file that you can include. A <span
-        class="cn">.package.avt</span> file or a
-    json file. Both will be stored inside the Aventus <span class="cn">storage&gt;packages&gt;http</span>. In this
+<h2>File via http</h2>
+<p>You can resolve dependance via http. Package will be stored inside the Aventus <span class="cn">storage&gt;packages&gt;http</span>. In this
     folder, you must find
     a list
     of subfolder where the name is the md5 value of the uri that you set as uri. The entry point is a json named
     <span class="cn">info.json</span>
 </p>
-<av-code language="json" filename="info.json">
-    {
-    \t"name": "Aventus@Main",
-    \t"versions": {
-    \t\t"1": {
-    \t\t\t"0": {
-    \t\t\t\t"0": {
-    \t\t\t\t\t"uri": "http://mydomain.com/version/1_0_0/Aventus@Main.package.avt",
-    \t\t\t\t}
-    \t\t\t}
-    \t\t}
-    \t}
-    }
-</av-code>
+
 <p>When a specific version is required, Aventus will use the uri to download the file and save it inside the folder as
     <span class="cn">$name</span>#<span class="cn">$version</span> (ex: Aventus@Main#1.0.0.package.avt) and add a <span
         class="cn">localUri</span> property that will be
     used inside the build.
 </p>
-<av-code language="json" filename="info.json">
-    {
-    \t"name": "Aventus@Main",
-    \t"versions": {
-    \t\t"1": {
-    \t\t\t"0": {
-    \t\t\t\t"0": {
-    \t\t\t\t\t"uri": "http://mydomain.com/version/1_0_0/Aventus@Main.package.avt",
-    \t\t\t\t\t"localUri": "C:\\\\(...)\\\\Aventus@Main#1.0.0.package.avt",
-    \t\t\t\t}
-    \t\t\t}
-    \t\t}
-    \t}
-    }
-</av-code>

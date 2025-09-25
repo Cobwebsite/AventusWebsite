@@ -25,6 +25,32 @@
         </av-dynamic-col>
     </av-dynamic-row>
     <av-dynamic-row>
+        <av-dynamic-col size="4" center>organization</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is the name of organization for the module you are building. This is usefull if you want to publish your package under a specific organization.
+            <span class="constraint">Must satisfy: <span class="cn">^[a-zA-Z0-9_@]+$</span></span>
+        </av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>description</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is the description of the module you are building. This is usefull if you want to publish your package.</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>documentation</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is the documentation link for the module you are building. This is usefull if you want to publish your package.</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>repository</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is the repository link for the module you are building. This is usefull if you want to publish your package.</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>tags</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is an array of string to tag your project on the store. This is usefull if you want to publish your package.</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
+        <av-dynamic-col size="4" center>readme</av-dynamic-col>
+        <av-dynamic-col size="8" center>This is the path to the readme. By default, Aventus check Readme in the same folder as the configuration. This is usefull if you want to publish your package.</av-dynamic-col>
+    </av-dynamic-row>
+    <av-dynamic-row>
         <av-dynamic-col size="4" center>componentPrefix</av-dynamic-col>
         <av-dynamic-col size="8" center>This is the prefix that are going to be used by all your webcomponents inside the module. For example if my class is named "Test" and my prefix is "av", the final tag will be "av-test". By default, it will use the module name as prefix.
             <span class="constraint">Must satisfy: <span class="cn">^[a-z]{2,}$</span></span>
@@ -42,6 +68,7 @@
             <span class="constraint">Each string must satisfy: <span class="cn">^[a-z\-]+$</span></span>
         </av-dynamic-col>
     </av-dynamic-row>
+    
     <av-dynamic-row>
         <av-dynamic-col size="4" center>aliases</av-dynamic-col>
         <av-dynamic-col size="8" center>This is an object of string that allows replacement of code. For example { "@root": "./"} will replace any @root to resolve the root folder</av-dynamic-col>

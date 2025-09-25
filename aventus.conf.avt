@@ -12,19 +12,14 @@
                 "./src/core/*",
                 "./src/pages/*"
             ],
-            "dependances": [
-                {
-                    "uri": "@AventusUI",
-                    "include": "need"
+            "dependances": {
+                "Aventus@UI": {},
+                "Aventus@Sharp":{},
+                "TodoDemo@Main": {
+                    "isLocal": true
                 },
-                {
-                    "uri": "@local:TodoDemo@Main"
-                },
-                {
-                    "uri": "https://store.aventusjs.com/libs/MaterialIcon/1_0_0/MaterialIcon@Main.package.avt",
-                    "version": "1.0.0"
-                }
-            ],
+                "MaterialIcon": "1.0.0"
+            },
             "compile": [
                 {
                     "output": "./dist/AventusWebsite.js"

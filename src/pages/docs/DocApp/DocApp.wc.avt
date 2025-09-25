@@ -44,6 +44,7 @@ import { Page404 } from "../../Page404/Page404.wcl.avt";
 import { DocWcCondition } from "../pages/webcomponent/DocWcCondition/DocWcCondition.wcl.avt";
 import { DocAdvancedNpmExport } from "../pages/advanced/DocAdvancedNpmExport/DocAdvancedNpmExport.wcl.avt";
 import { DocAdvancedStorybook } from "../pages/advanced/DocAdvancedStorybook/DocAdvancedStorybook.wcl.avt";
+import { DocAdvancedStore } from "../pages/advanced/DocAdvancedStore/DocAdvancedStore.wcl.avt";
 
 
 	export class DocApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
@@ -111,6 +112,7 @@ import { DocAdvancedStorybook } from "../pages/advanced/DocAdvancedStorybook/Doc
 	        //#endregion
 
 	        //#region doc advanced
+	        this.addRoute("/docs/advanced/store", DocAdvancedStore);
 	        this.addRoute("/docs/advanced/template", DocAdvancedTemplate);
 	        this.addRoute("/docs/advanced/npm_export", DocAdvancedNpmExport);
 	        this.addRoute("/docs/advanced/storybook", DocAdvancedStorybook);
