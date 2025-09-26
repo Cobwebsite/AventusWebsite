@@ -1,0 +1,47 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocWcSignal extends DocGenericPage implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "AventusJs - Signal";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Add single dyamic variable into your webcomponent";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return ["Signal", "Reactivity", "Dynamic", "Watcher", "Webcomponent"];
+    }
+	
+	//#endregion
+	
+}

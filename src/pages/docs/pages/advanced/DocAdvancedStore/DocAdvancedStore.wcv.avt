@@ -1,3 +1,170 @@
 <h1>Advanced - Store</h1>
 
-<p>Using AventusJs store allows you to save your creation and share them with the world. You can also download templates or packages to increase your producitvity.</p>
+<p>The AventusJS Store gives you a central place to save your own creations and share them with others. You can also
+    explore and download templates or packages from the community to speed up your development and boost productivity.
+</p>
+
+
+<h2>Using the Store - Package</h2>
+<p>The AventusJS Store is available at <a href="https://store.aventusjs.com" target="_blank"><span
+            class="cn">store.aventusjs.com</span></a>. From there, you can browse and search for available packages
+    created by the community.</p>
+
+<h3>Searching for Packages</h3>
+<p>You can use the search feature on the store website to quickly find the package you need. Each package has a name and
+    version that you will use in your project configuration.</p>
+
+<h3>Installing a Package</h3>
+<p>To install a package, you need to declare it inside your project configuration file <span
+        class="cn">aventus.conf.avt</span>.</p>
+<p>For example, if you want to use the <span class="cn">MaterialIcon</span> package in version <span
+        class="cn">1.0.0</span>, your configuration file should include the following:</p>
+
+<av-code language="json">
+    <pre>
+        {
+            dependencies: {
+                "MaterialIcon": "1.0.0"
+            }
+        }
+    </pre>
+</av-code>
+
+<p>Once declared, Aventus will automatically download and link the package so you can use it directly in your project.
+    This makes it quick and easy to integrate community-driven code and assets into your own work.</p>
+
+<h3>Updating a Package</h3>
+<p>Packages are not updated automatically.</p>
+<p>If a new version is available on the store, you can update your project simply by changing the version number in your
+    <span class="cn">aventus.conf.avt</span> file.
+</p>
+<p>For example, to update the MaterialIcon package from version <span class="cn">1.0.0</span> to <span
+        class="cn">1.1.0</span>, your configuration should look like this:</p>
+
+<av-code language="json">
+    <pre>
+        {
+            dependencies: {
+                "MaterialIcon": "1.1.0"
+            }
+        }
+    </pre>
+</av-code>
+
+<p>After saving the configuration, Aventus will fetch the new version and replace the old one in your project.</p>
+
+
+<h2>Using the Store - Template</h2>
+
+<p>Templates in AventusJS allow you to quickly generate files and boilerplate code for your projects. They are
+    especially useful when you want to maintain consistency across components or projects. Full documentation for
+    templates can be found in the <av-router-link state="/docs/advanced/template">template section</av-router-link>.</p>
+
+<h3>Finding and Downloading Templates</h3>
+<p>You can search for templates directly on the AventusJS Store website.</p>
+<p>If you want to download a template, click the Download button. This will open a link directly in VSCode, which will
+    automatically download the template into your workspace.</p>
+
+<h3>Removing Templates</h3>
+<p>If you need to remove a downloaded template, you can use the following Aventus commands:</p>
+<ul>
+    <li><span class="cn">Aventus : Uninstall Templates</span> : use this if the template is a template that require an
+        Aventus project.</li>
+    <li><span class="cn">Aventus : Uninstall Projects</span> : use this if the template is a template that doesn't
+        require an Aventus project.</li>
+</ul>
+
+<p>These commands ensure that your workspace stays clean and that old templates do not interfere with new ones.</p>
+
+
+<h2>Publishing to the Store - Package</h2>
+<p>Publishing a package to the AventusJS Store allows you to share reusable pieces of code with the community while
+    keeping your code modular and easy to integrate.</p>
+
+<h3>Prerequisites</h3>
+<p>To publish a package, you need:</p>
+
+<ul>
+    <li>A registered account on <a href="https://store.aventusjs.com">store.aventusjs.com</a>.</li>
+</ul>
+
+<h3>Connecting to the Store</h3>
+<ul>
+    <li>Run the command <span class="cn">Aventus : Connect to the store</span> in VSCode.</li>
+    <li>Enter your credentials to log in.</li>
+</ul>
+<p>Once connected, you can publish packages directly from your workspace.</p>
+
+<h3>Publishing a Package</h3>
+<ul>
+    <li>Run the command <span class="cn">Aventus : Publish package to the store</span></li>
+    <li>If there is only one package in your workspace, it will be published automatically.</li>
+    <li>If multiple packages are available, you will be asked to select the package you want to publish.</li>
+    <li>
+        <div>You can also publish under an organization if:</div>
+        <ul>
+            <li>The organization exists on the store.</li>
+            <li>Your user account is linked to that organization.</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>Configuration Fields</h3>
+<p>During publication, Aventus will use metadata defined in your <span class="cn">aventus.conf.avt</span> file. The
+    following fields are recommended:</p>
+<ul>
+    <li><span class="cn">version</span>: The package version on the store. Each version can only be published once.
+        Default is <span class="cn">1.0.0</span></li>
+    <li><span class="cn">description</span>: A short description displayed under the package (max 255 characters).</li>
+    <li><span class="cn">organization</span>: If defined, the package will be published under this organization;
+        otherwise, it will be published under your account.</li>
+    <li><span class="cn">documentation</span>: HTTP link to the package documentation.</li>
+    <li><span class="cn">repository</span>: Link to the repository.</li>
+    <li><span class="cn">readme</span>: Local link to the README file. If not defined, Aventus will attempt to find a
+        README in the current folder.</li>
+    <li><span class="cn">tags</span>: Labels to help identify the package (maximum 5).</li>
+</ul>
+<p>None of these fields are mandatory, but providing them makes your package more attractive and discoverable.</p>
+
+<h3>Managing Package</h3>
+<p>You can edit the README content directly from the store website.</p>
+<p>If needed, you can delete a package from the store if you are the owner.</p>
+
+<h2>Publishing to the Store - Template</h2>
+<p>Publishing a template to the AventusJS Store allows you to share reusable project or component templates with the
+    community, making it easier for others to create consistent and modular code.</p>
+
+<h3>Publishing a Template</h3>
+<ul>
+    <li>Open the <span class="cn">template.avt.ts</span> file of your template in VSCode.</li>
+    <li>Right-click anywhere in the file and select <span class="cn">Aventus: Publish Template to the store</span>.</li>
+</ul>
+
+<h3>Template Metadata</h3>
+<p>Templates can include the same metadata as packages, defined in the <span class="cn">meta()</span> function.
+    Recommended fields include:</p>
+<ul>
+    <li><span class="cn">version</span>: The template version on the store. Each version can only be published once.
+        Default is <span class="cn">1.0.0</span></li>
+    <li><span class="cn">description</span>: A short description displayed under the template (max 255 characters).</li>
+    <li><span class="cn">organization</span>: If defined, the template will be published under this organization;
+        otherwise, it will be published under your account.</li>
+    <li><span class="cn">documentation</span>: HTTP link to the template documentation.</li>
+    <li><span class="cn">repository</span>: Link to the repository.</li>
+    <li><span class="cn">readme</span>: Local link to the README file. If not defined, Aventus will attempt to find a
+        README in the current folder.</li>
+    <li><span class="cn">tags</span>: Labels to help identify the template (maximum 5).</li>
+</ul>
+<p>Additionally, templates have unique fields:</p>
+<ul>
+    <li>
+        <div><span class="cn">installationFolder</span>: Defines the folder where the template will be installed.</div>
+        <div class="sub-info">Example: if the template is a project and <span class="cn">installationFolder</span> is set to <span class="cn">Cobwebsite/Test</span>, the template will be installed in <span class="cn">$storage/projects/Cobwebsite/Test</span>.</div>
+        <div class="sub-info">If there are conflicts with existing folders, the new installation will overwrite the old one.</div>
+    </li>
+    <li><span class="cn">isProject</span>: Defines if the template need a <span class="cn">aventus.conf.avt</span></li>
+</ul>
+
+<h3>Managing Template</h3>
+<p>You can edit the README content directly from the store website.</p>
+<p>Templates can also be deleted from the store if you are the owner.</p>

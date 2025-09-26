@@ -239,7 +239,8 @@
 
 <h2>Download from the store</h2>
 <p>
-    You can download amazing templates directly from the store just by clicking on the download button on a package details page. 
+    You can download amazing templates directly from the store just by clicking on the download button on a package
+    details page.
 </p>
 <p>
     <a href="https://store.aventusjs.com/templates" target="_blank"><av-button>Open the store</av-button></a>
@@ -252,5 +253,31 @@
         class="cn">init a new project</span>. So can you create your own template to init new project or download some
     from the web. You must know that if a <span class="cn">aventus.conf.avt</span> file is at the same level of a <span
         class="cn">template.avt</span> file, the project will not be created. It means no autocompletion, no output
-    files, etc. You can also name the file <span class="cn">!aventus.conf.avt</span> to avoid error. 
+    files, etc. You can also name the file <span class="cn">!aventus.conf.avt</span> to avoid error.
 </p>
+
+<h2>Quick template</h2>
+<p>
+    If a template supports quick creation via a meta tag, you can register it to run without right-clicking on a folder.
+</p>
+<p>This is especially useful for creating files in a specific location. For example, in <a
+        href="https://laraventus.aventusjs.com" target="_blank">Laraventus</a>, there is a template
+    for creating a Controller, which should always be placed in the <span class="cn">app/Http/Controller</span> folder.
+</p>
+
+<h3>Setting up Quick Creation</h3>
+<p>To configure quick creation:</p>
+<ul>
+    <li>Open the Command Palette and search for <span class="cn">Aventus: Edit Quick Creation</span></li>
+    <li>or use the shortcut <span class="cn">Ctrl + K</span>, <span class="cn">Ctrl + Shift + V</span>.</li>
+</ul>
+<p>If Aventus finds compatible templates, you can enable or disable them for quick creation.</p>
+
+
+<h3>Running Quick Creation</h3>
+<p>To run a quick creation:</p>
+<ul>
+    <li>Open the Command Palette and search for <span class="cn">Aventus: Run Quick Creation</span></li>
+    <li>or use the shortcut <span class="cn">Ctrl + K</span>, <span class="cn">Ctrl + V</span>.</li>
+</ul>
+<p>If only one template is registered, it will run immediately. Otherwise, you can select which quick template to execute.</p>

@@ -55,6 +55,11 @@
             &nbsp;
             &nbsp;
                 //#region methods
+                protected change() {
+                    if(this.person)
+                        this.person.name = "Changed Name";
+                }
+                &nbsp;
                 protected override postCreation(): void {
                     this.person = new Person()
                 }
@@ -73,6 +78,7 @@
     <av-code language="html" filename="Watch/src/Example/Example.wcv.avt">
         <pre>
             &lt;div&gt;Person : \{{ this.person?.name }}&lt;/div&gt;
+            &lt;button @press="change"&gt;Change&lt;/button&gt;
         </pre>
     </av-code>
     <av-code language="typescript" filename="Watch/src/Person.data.avt">

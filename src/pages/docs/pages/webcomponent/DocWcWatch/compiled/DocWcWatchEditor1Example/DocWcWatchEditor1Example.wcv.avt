@@ -1,1 +1,2 @@
 <div>Person : {{ this.person?.name }}</div>
+<button @press="change">Change</button>

@@ -55,6 +55,7 @@
             <li><av-router-link state="/docs/wc/attribute">Attribute</av-router-link></li>
             <li><av-router-link state="/docs/wc/property">Property</av-router-link></li>
             <li><av-router-link state="/docs/wc/watch">Watch</av-router-link></li>
+            <li><av-router-link state="/docs/wc/signal">Signal</av-router-link></li>
             <li><av-router-link state="/docs/wc/interpolation">Interpolation</av-router-link></li>
             <li><av-router-link state="/docs/wc/element">Select element</av-router-link></li>
             <li><av-router-link state="/docs/wc/injection">Injection</av-router-link></li>

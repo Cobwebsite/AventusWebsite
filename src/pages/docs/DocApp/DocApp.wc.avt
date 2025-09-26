@@ -45,6 +45,7 @@ import { DocWcCondition } from "../pages/webcomponent/DocWcCondition/DocWcCondit
 import { DocAdvancedNpmExport } from "../pages/advanced/DocAdvancedNpmExport/DocAdvancedNpmExport.wcl.avt";
 import { DocAdvancedStorybook } from "../pages/advanced/DocAdvancedStorybook/DocAdvancedStorybook.wcl.avt";
 import { DocAdvancedStore } from "../pages/advanced/DocAdvancedStore/DocAdvancedStore.wcl.avt";
+import { DocWcSignal } from "../pages/webcomponent/DocWcSignal/DocWcSignal.wcl.avt";
 
 
 	export class DocApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
@@ -87,6 +88,7 @@ import { DocAdvancedStore } from "../pages/advanced/DocAdvancedStore/DocAdvanced
 	        this.addRoute("/docs/wc/attribute", DocWcAttribute);
 	        this.addRoute("/docs/wc/property", DocWcProperty);
 	        this.addRoute("/docs/wc/watch", DocWcWatch);
+	        this.addRoute("/docs/wc/signal", DocWcSignal);
 	        this.addRoute("/docs/wc/style", DocWcStyle);
 	        this.addRoute("/docs/wc/interpolation", DocWcInterpolation);
 	        this.addRoute("/docs/wc/element", DocWcElement);
