@@ -1,0 +1,58 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocI18nUsage extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "How to Use Translations in Your Application";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to use AventusJs's i18n module to manage translations in your app. Explore global and component-level translation files, autocompletion, variable support, Deepl API integration, and dynamic locale switching with Aventus.I18n.setLocale().";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs",
+            "i18n usage",
+            "translation management",
+            "multilingual web app",
+            "global translations",
+            "component translations",
+            "Deepl API",
+            "JSON translations",
+            "web development",
+            "t() function",
+        ];
+    }
+
+    //#endregion
+
+}

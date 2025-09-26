@@ -1,0 +1,63 @@
+<h1>I18n - Usage</h1>
+
+<p>Once you have completed all the configuration steps, you can start using I18n in your application. Since Aventus automatically adds <span class="cn">Aventus@Main</span>, a global function <span class="cn">t()</span> is available throughout your code.</p>
+
+<av-code language="ts" filename="Demo.lib.avt">
+    <pre>
+        export class Demo {
+            public static test() {
+                // The function t() is available
+                // Note: "test" will be underlined because no translation has been provided yet
+                t("test")
+            }
+        }
+    </pre>
+</av-code>
+
+<p>In the code above, the string <span class="cn">"test"</span> will be flagged as an error because no translation exists yet.</p>
+<p>If there is an error, autocompletion is available. Once everything is set up, you can easily find translation keys using autocompletion.</p>
+
+<h2>Global file</h2>
+<p>To register global translations, create a file anywhere Aventus is watching. The file name must start with <span class="cn">@</span> and end with <span class="cn">.i18n.avt</span>.</p>
+<p>When you open the file, Aventus will display a custom I18n editor. This editor allows you to:</p>
+<ul>
+    <li>Quickly see missing translations</li>
+    <li>Automatically translate your file using Deepl API (need a Deepl API key configured in settings)</li>
+    <li>And more</li>
+</ul>
+<p>In the top-right corner, there is a button labeled <span class="cn">Aventus: Open i18n file</span>. Clicking it switches from the custom editor to the standard text editor. These <span class="cn">*.i18n.avt</span> files are actually JSON files that can be edited directly. Pressing the button again will switch back to the custom editor.</p>
+
+<p>Translations consist of a key and a list of locale/value pairs for that key. You can also use variables in your text by adding <span class="cn">{variable}</span> inside the string.</p>
+
+<av-code language="json" filename="@Default.18n.avt">
+    <pre>
+        {
+            "{qty} liters": {
+                "en-gb": "{qty} liters",
+                "fr-fr": "{qty} litres"
+            }
+        }
+    </pre>
+</av-code>
+<av-code language="ts" filename="Demo.lib.avt">
+    <pre>
+        export class Demo {
+            public static test() {
+                t("{qty} liters", { qty: "5" });
+            }
+        }
+    </pre>
+</av-code>
+
+<h2>WebComponent File</h2>
+<p>To add translations for a specific component, create a file with the same name as the component, ending with <span class="cn">.i18n.avt</span>. For example, for the component <span class="cn">Test.wcl.avt</span>, create a file named <span class="cn">Test.i18n.avt</span>.</p>
+<p>Translations from this file can be accessed inside the component using the function <span class="cn">this.t()</span>. Do not use <span class="cn">t()</span> here, as it will refer to the global translations.</p>
+
+<h2>Change locale</h2>
+<p>To change the locale during runtime, call the following function:</p>
+<av-code language="typescript">
+    <pre>
+        Aventus.I18n.setLocale(locale: string)
+    </pre>
+</av-code>
+<p>This will load the necessary translation files and update the translations accordingly.</p>

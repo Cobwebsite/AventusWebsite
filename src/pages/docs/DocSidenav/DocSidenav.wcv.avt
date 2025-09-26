@@ -83,6 +83,13 @@
         </ul>
     </av-collapse>
     <av-collapse>
+        <div class="title" slot="header">i18n</div>
+        <ul>
+            <li><av-router-link state="/docs/i18n/config">Config</av-router-link></li>
+            <li><av-router-link state="/docs/i18n/usage">Usage</av-router-link></li>
+        </ul>
+    </av-collapse>
+    <av-collapse>
         <div class="title" slot="header">advanced</div>
         <ul>
             <li><av-router-link state="/docs/advanced/template">Template</av-router-link></li>

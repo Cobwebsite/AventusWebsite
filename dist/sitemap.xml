@@ -29,12 +29,12 @@
     </url>
     <url>
         <loc>https://aventusjs.com/docs/config/basic_prop</loc>
-        <lastmod>2023-06-16</lastmod>
+        <lastmod>2025-09-26</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
         <loc>https://aventusjs.com/docs/config/build</loc>
-        <lastmod>2023-06-16</lastmod>
+        <lastmod>2025-09-26</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
@@ -44,7 +44,7 @@
     </url>
     <url>
         <loc>https://aventusjs.com/docs/config/lib</loc>
-        <lastmod>2023-06-16</lastmod>
+        <lastmod>2025-09-26</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
@@ -124,7 +124,12 @@
     </url>
     <url>
         <loc>https://aventusjs.com/docs/wc/watch</loc>
-        <lastmod>2023-06-16</lastmod>
+        <lastmod>2025-09-26</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/wc/signal</loc>
+        <lastmod>2025-09-26</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
@@ -209,7 +214,7 @@
     </url>
     <url>
         <loc>https://aventusjs.com/docs/lib/watcher</loc>
-        <lastmod>2023-06-16</lastmod>
+        <lastmod>2025-09-26</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
@@ -218,8 +223,23 @@
         <priority>0.5</priority>
     </url>
     <url>
+        <loc>https://aventusjs.com/docs/i18n/config</loc>
+        <lastmod>2025-09-26</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/i18n/usage</loc>
+        <lastmod>2025-09-26</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
         <loc>https://aventusjs.com/docs/advanced/template</loc>
-        <lastmod>2023-06-16</lastmod>
+        <lastmod>2025-09-26</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/advanced/store</loc>
+        <lastmod>2025-09-26</lastmod>
         <priority>0.5</priority>
     </url>
      <url>
