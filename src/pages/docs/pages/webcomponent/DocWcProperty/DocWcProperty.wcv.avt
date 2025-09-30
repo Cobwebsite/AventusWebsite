@@ -27,7 +27,7 @@
     &lt;av-example label="Hello"&gt;&lt;/av-example&gt;
 </av-code>
 <p>A property can be used like an <span class="cn">attribute</span> but the main advantage of property is <span
-        class="cn"><av-router-link state="/docs/wc/interpolation">interpolation</av-router-link></span> and <span class="cn">callback</span>.</p>
+        class="cn"><av-link to="/docs/wc/interpolation">interpolation</av-link></span> and <span class="cn">callback</span>.</p>
 <av-code language="typescript" filename="Example.wcl.avt">
     export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
     &nbsp;

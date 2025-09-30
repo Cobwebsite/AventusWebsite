@@ -45,7 +45,9 @@ export class Icon extends Aventus.WebComponent implements Aventus.DefaultCompone
 
 
     //#region methods
-
+    protected override postCreation(): void {
+        super.postCreation();
+    }
     //#endregion
 
 }

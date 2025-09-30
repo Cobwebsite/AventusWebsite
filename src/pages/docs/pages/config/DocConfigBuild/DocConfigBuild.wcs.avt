@@ -1,26 +1,26 @@
 :host {
 	.table {
-		av-dynamic-row:not(.header) {
+		av-row:not(.header) {
 
-			av-dynamic-col {
+			av-col {
 				padding: 3px;
 				text-align: left;
 			}
 
-			av-dynamic-col:nth-child(2) {
+			av-col:nth-child(2) {
 				text-align: justify;
 			}
 
 
 
-			av-router-link,
+			av-link,
 			b,
 			i {
 				display: contents;
 			}
 		}
 
-		av-dynamic-row:not(.header):nth-child(odd) {
+		av-row:not(.header):nth-child(odd) {
 			background-color: rgba(0, 0, 0, 0.2);
 		}
 
@@ -39,7 +39,7 @@
 			position: relative;
 			width: calc(100% - 30px);
 
-			av-dynamic-col:first-child {
+			av-col:first-child {
 				// padding-left: 30px;
 			}
 		}
@@ -50,13 +50,13 @@
 			position: relative;
 			width: calc(100% - 50px);
 
-			av-dynamic-col:first-child {
+			av-col:first-child {
 				// padding-left: 40px;
 			}
 		}
 
 		.lvl-3 {
-			av-dynamic-col:first-child {
+			av-col:first-child {
 				padding-left: 50px;
 			}
 		}

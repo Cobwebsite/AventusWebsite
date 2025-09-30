@@ -16,89 +16,89 @@
 <p>For the future explanations, only the functions in normal format will be explained</p>
 <h3>Read</h3>
 <div class="table">
-    <av-dynamic-row class="header">
-        <av-dynamic-col size="4" center>Function</av-dynamic-col>
-        <av-dynamic-col size="8" center>Description</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>getAll</av-dynamic-col>
-        <av-dynamic-col size="8" center>Return all items stored inside the RAM like {[index: Index] : T}
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>getList</av-dynamic-col>
-        <av-dynamic-col size="8" center>Return all items stored inside the RAM like T[]
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>getById</av-dynamic-col>
-        <av-dynamic-col size="8" center>Return the item where the index is egal to the parameter
-            provide</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>get</av-dynamic-col>
-        <av-dynamic-col size="8" center><span>Alias for <span class="cn">getById</span></span></av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>getByIds</av-dynamic-col>
-        <av-dynamic-col size="8" center>Return all items where the index is inside the first parameter
-            provide</av-dynamic-col>
-    </av-dynamic-row>
+    <av-row class="header">
+        <av-col size="4" center>Function</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>getAll</av-col>
+        <av-col size="8" center>Return all items stored inside the RAM like {[index: Index] : T}
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>getList</av-col>
+        <av-col size="8" center>Return all items stored inside the RAM like T[]
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>getById</av-col>
+        <av-col size="8" center>Return the item where the index is egal to the parameter
+            provide</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>get</av-col>
+        <av-col size="8" center><span>Alias for <span class="cn">getById</span></span></av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>getByIds</av-col>
+        <av-col size="8" center>Return all items where the index is inside the first parameter
+            provide</av-col>
+    </av-row>
 </div>
 <av-doc-ram-crud-editor-2></av-doc-ram-crud-editor-2>
 <h3>Create</h3>
 <div class="table">
-    <av-dynamic-row class="header">
-        <av-dynamic-col size="4" center>Function</av-dynamic-col>
-        <av-dynamic-col size="8" center>Description</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>create</av-dynamic-col>
-        <av-dynamic-col size="8" center>Store an item inside the RAM and return the element stored.</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>createList</av-dynamic-col>
-        <av-dynamic-col size="8" center>Store a set of items inside the RAM and return the elements
-            stored.</av-dynamic-col>
-    </av-dynamic-row>
+    <av-row class="header">
+        <av-col size="4" center>Function</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>create</av-col>
+        <av-col size="8" center>Store an item inside the RAM and return the element stored.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>createList</av-col>
+        <av-col size="8" center>Store a set of items inside the RAM and return the elements
+            stored.</av-col>
+    </av-row>
 </div>
 <av-doc-ram-crud-editor-3></av-doc-ram-crud-editor-3>
 <h3>Update</h3>
 <div class="table">
-    <av-dynamic-row class="header">
-        <av-dynamic-col size="4" center>Function</av-dynamic-col>
-        <av-dynamic-col size="8" center>Description</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>update</av-dynamic-col>
-        <av-dynamic-col size="8" center>Update an item inside the RAM and return the element updated.</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>updateList</av-dynamic-col>
-        <av-dynamic-col size="8" center>Update a set of items inside the RAM and return the elements
-            stored.</av-dynamic-col>
-    </av-dynamic-row>
+    <av-row class="header">
+        <av-col size="4" center>Function</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>update</av-col>
+        <av-col size="8" center>Update an item inside the RAM and return the element updated.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>updateList</av-col>
+        <av-col size="8" center>Update a set of items inside the RAM and return the elements
+            stored.</av-col>
+    </av-row>
 </div>
 <av-doc-ram-crud-editor-4></av-doc-ram-crud-editor-4>
 <h3>Delete</h3>
 <div class="table">
-    <av-dynamic-row class="header">
-        <av-dynamic-col size="4" center>Function</av-dynamic-col>
-        <av-dynamic-col size="8" center>Description</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>delete</av-dynamic-col>
-        <av-dynamic-col size="8" center>Delete an item inside the RAM and return the element updated.</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>deleteById</av-dynamic-col>
-        <av-dynamic-col size="8" center>Delete an item inside the RAM and return the element updated.</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>deleteList</av-dynamic-col>
-        <av-dynamic-col size="8" center>Delete a set of items inside the RAM and return the elements
-            stored.</av-dynamic-col>
-    </av-dynamic-row>
+    <av-row class="header">
+        <av-col size="4" center>Function</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>delete</av-col>
+        <av-col size="8" center>Delete an item inside the RAM and return the element updated.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>deleteById</av-col>
+        <av-col size="8" center>Delete an item inside the RAM and return the element updated.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>deleteList</av-col>
+        <av-col size="8" center>Delete a set of items inside the RAM and return the elements
+            stored.</av-col>
+    </av-row>
 </div>
 <av-doc-ram-crud-editor-5></av-doc-ram-crud-editor-5>
 <p>The last thing to know is that once an item a stored inside the ram, the item reference is always the same.</p>

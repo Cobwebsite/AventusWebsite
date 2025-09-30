@@ -36,8 +36,8 @@
 </ul>
 
 <p>This time, the tag attribute must trigger a change event when its value is altered to refresh the icon displayed. We
-    are going to use <span class="cn">Property</span> (<av-router-link state="/docs/wc/property">More
-        info</av-router-link>).</p>
+    are going to use <span class="cn">Property</span> (<av-link to="/docs/wc/property">More
+        info</av-link>).</p>
 
 <p>You can set your cursor inside the region <span class="cn">props</span> and <span class="cn">right
         click > Aventus: Create property</span> or use the shortcut <span class="cn">ctrl + k ctrl + numpad2</span>.

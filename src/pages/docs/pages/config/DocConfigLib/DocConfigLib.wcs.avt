@@ -1,12 +1,12 @@
 :host {
 	.table {
-        av-dynamic-row:not(.header) {
+        av-row:not(.header) {
 
-			av-dynamic-col:nth-child(2) {
+			av-col:nth-child(2) {
 				text-align: justify;
 			}
 
-			av-router-link, b, i {
+			av-link, b, i {
 				display: contents;
 			}
 		}

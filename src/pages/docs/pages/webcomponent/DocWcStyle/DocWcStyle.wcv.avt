@@ -124,8 +124,7 @@
 <h2>Creating theme</h2>
 <p>A good pratice when you developing application is to create theme file where you can declare globals properties for
     the project. Inside Aventus you can achieve it by creating a new file named <span class="cn">*.gs.avt</span> for
-    Global Style. This file must be set inside a <span class="cn"><av-router-link
-            state="/docs/config/static">static</av-router-link></span> part of your project. This allows you to have
+    Global Style. This file must be set inside a <span class="cn"><av-link to="/docs/config/static">static</av-link></span> part of your project. This allows you to have
     auto-completion for all your global variables that must be declared inside the <span class="cn">:root</span>
     selector.</p>
 <av-doc-wc-style-editor-5></av-doc-wc-style-editor-5>

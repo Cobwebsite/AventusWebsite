@@ -58,7 +58,7 @@
 
 <p>Templates in AventusJS allow you to quickly generate files and boilerplate code for your projects. They are
     especially useful when you want to maintain consistency across components or projects. Full documentation for
-    templates can be found in the <av-router-link state="/docs/advanced/template">template section</av-router-link>.</p>
+    templates can be found in the <av-link to="/docs/advanced/template">template section</av-link>.</p>
 
 <h3>Finding and Downloading Templates</h3>
 <p>You can search for templates directly on the AventusJS Store website.</p>

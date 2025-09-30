@@ -15,8 +15,8 @@
     <li><b>Library</b><av-icon icon="arrow-right"></av-icon> Create a file to write any code</li>
     <li><b>Socket</b><av-icon icon="arrow-right"></av-icon> Create a socket</li>
     <li><b>State</b><av-icon icon="arrow-right"></av-icon> Create a state or a state manager</li>
-    <li><b>Custom</b><av-icon icon="arrow-right"></av-icon> Use one of your <av-router-link
-            state="/advanced/templates">templates</av-router-link></li>
+    <li><b>Custom</b><av-icon icon="arrow-right"></av-icon> Use one of your <av-link
+            to="/advanced/templates">templates</av-link></li>
 </ul>
 
 <h3>The compilation informations</h3>

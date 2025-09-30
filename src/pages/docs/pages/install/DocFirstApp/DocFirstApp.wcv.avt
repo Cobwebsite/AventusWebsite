@@ -25,7 +25,7 @@
 <p>When you save the config file a new file is created inside your workspace : <i>/dist/helloaventus.js</i>. The js file
     is your code compiled. Actually the file is empty because we didn't write any code.
 </p>
-<p>There are more options for the config file that you can read <av-router-link>here</av-router-link></p>
+<p>There are more options for the config file that you can read <av-link to="/docs/config/basic_prop">here</av-link></p>
 <p>Now you can create a new folder named <span class="cn">src</span> and edit the field build.src like that</p>
 <av-doc-first-app-editor-2></av-doc-first-app-editor-2>
 <p>This means that any <span class="cn">*.avt</span> file found will be compiled inside this build.</p>

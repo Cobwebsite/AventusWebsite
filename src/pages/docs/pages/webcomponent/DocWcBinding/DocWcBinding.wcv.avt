@@ -1,8 +1,8 @@
 <h1>Webcomponent - Binding</h1>
 <p>In this section you are going to learn how to bind data between parent and child component.</p>
 
-<p>The data binding is a mix between <av-router-link state="/docs/wc/injection">Injection</av-router-link> and
-    <av-router-link state="/docs/wc/event">Event</av-router-link>. It will inject the data from parent to the child and
+<p>The data binding is a mix between <av-link to="/docs/wc/injection">Injection</av-link> and
+    <av-link to="/docs/wc/event">Event</av-link>. It will inject the data from parent to the child and
     when the child trigger a specific event, it will take value from child to assign it to the parent.
 </p>
 
@@ -15,7 +15,7 @@
     the field value will be changed. The default binding order is the following : </p>
 <ul>
     <li>input or textarea will listen on <span class="cn">change</span> and <span class="cn">input</span> event</li>
-    <li>other tag will check if a <av-router-link state="/docs/lib/callback">Aventus.Callback</av-router-link> named <span
+    <li>other tag will check if a <av-link to="/docs/lib/callback">Aventus.Callback</av-link> named <span
             class="cn">change</span> exists on the child.</li>
     <li>if no Callback, a listener for the event <span class="cn">change</span> will be added</li>
     <p></p>

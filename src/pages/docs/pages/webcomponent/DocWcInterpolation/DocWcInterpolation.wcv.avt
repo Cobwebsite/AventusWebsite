@@ -4,8 +4,8 @@
 <p>Interpolation refers to embedding expressions into marked up text. You can notify an interpolation by using <span
         class="cn">\{{ myCode }}</span>. Interpolation can be written anywhere inside a <span
         class="cn">*.wcv.avt</span>. If the variable is a <span
-        class="cn"><av-router-link state="/docs/wc/property">Property</av-router-link></span> or a <span
-        class="cn"><av-router-link state="/docs/wc/watch">Watch</av-router-link></span> the view will be auto refreshed when the value changed.</p>
+        class="cn"><av-link to="/docs/wc/property">Property</av-link></span> or a <span
+        class="cn"><av-link to="/docs/wc/watch">Watch</av-link></span> the view will be auto refreshed when the value changed.</p>
 
 <av-doc-wc-interpolation-editor-1></av-doc-wc-interpolation-editor-1>
 <p>Because Aventus is using a <span class="cn">Signal</span> like system, any function that is using watchable variable will be auto refreshed when a value changed</p>

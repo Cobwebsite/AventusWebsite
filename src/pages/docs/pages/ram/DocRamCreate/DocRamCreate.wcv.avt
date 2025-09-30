@@ -3,7 +3,7 @@
 
 
 <h2>Definition</h2>
-<p>A RAM is a class that store all your <av-router-link state="/data/create">data instances</av-router-link>. This class
+<p>A RAM is a class that store all your <av-link to="/data/create">data instances</av-link>. This class
     is most of the time a singleton because we want only one storage by type. This piece of code is in charge of all
     CRUD (Create / Read / Update / Delete) operations.</p>
 

@@ -10,4 +10,12 @@
 		max-width: 1000px;
 		width: 100%;
 	}
+
+	av-col {
+		--col-padding: 8px;
+		flex-direction: column;
+	}
+	av-link {
+		display: inline-block;
+	}
 }

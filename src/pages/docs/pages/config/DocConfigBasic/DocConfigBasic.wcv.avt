@@ -5,86 +5,86 @@
 
 
 <div class="table">
-    <av-dynamic-row class="header">
-        <av-dynamic-col size="4" center>Name</av-dynamic-col>
-        <av-dynamic-col size="8" center>Description</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center><span class="mandatory">module</span></av-dynamic-col>
-        <av-dynamic-col size="8" center>This is the name of the module you are building. All your code will be inside
+    <av-row class="header">
+        <av-col size="4" center>Name</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center><span class="mandatory">module</span></av-col>
+        <av-col size="8" center>This is the name of the module you are building. All your code will be inside
             the module to avoid global variables.
             <span class="constraint">Must satisfy: <span class="cn">^[a-zA-Z0-9_]+$</span></span>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>version</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is the version of the module you are building. The first number is the
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>version</av-col>
+        <av-col size="8" center>This is the version of the module you are building. The first number is the
             major version, the second is the minor version and the last is the patch version. By default the value is
             1.0.0
             <span class="constraint">Must satisfy: <span class="cn">^[0-9]+\\.[0-9]+\\.[0-9]+$</span></span>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>organization</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is the name of organization for the module you are building. This is usefull if you want to publish your package under a specific organization.
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>organization</av-col>
+        <av-col size="8" center>This is the name of organization for the module you are building. This is usefull if you want to publish your package under a specific organization.
             <span class="constraint">Must satisfy: <span class="cn">^[a-zA-Z0-9_@]+$</span></span>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>description</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is the description of the module you are building. This is usefull if you want to publish your package.</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>documentation</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is the documentation link for the module you are building. This is usefull if you want to publish your package.</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>repository</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is the repository link for the module you are building. This is usefull if you want to publish your package.</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>tags</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is an array of string to tag your project on the store. This is usefull if you want to publish your package.</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>readme</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is the path to the readme. By default, Aventus check Readme in the same folder as the configuration. This is usefull if you want to publish your package.</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>componentPrefix</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is the prefix that are going to be used by all your webcomponents inside the module. For example if my class is named "Test" and my prefix is "av", the final tag will be "av-test". By default, it will use the module name as prefix.
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>description</av-col>
+        <av-col size="8" center>This is the description of the module you are building. This is usefull if you want to publish your package.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>documentation</av-col>
+        <av-col size="8" center>This is the documentation link for the module you are building. This is usefull if you want to publish your package.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>repository</av-col>
+        <av-col size="8" center>This is the repository link for the module you are building. This is usefull if you want to publish your package.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>tags</av-col>
+        <av-col size="8" center>This is an array of string to tag your project on the store. This is usefull if you want to publish your package.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>readme</av-col>
+        <av-col size="8" center>This is the path to the readme. By default, Aventus check Readme in the same folder as the configuration. This is usefull if you want to publish your package.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>componentPrefix</av-col>
+        <av-col size="8" center>This is the prefix that are going to be used by all your webcomponents inside the module. For example if my class is named "Test" and my prefix is "av", the final tag will be "av-test". By default, it will use the module name as prefix.
             <span class="constraint">Must satisfy: <span class="cn">^[a-z]{2,}$</span></span>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>hideWarnings</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is a boolean to hide warnings inside Aventus. This is useful when you are developing an app but your aren't in production. If you set it to false, you need to document all your methods
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>hideWarnings</av-col>
+        <av-col size="8" center>This is a boolean to hide warnings inside Aventus. This is useful when you are developing an app but your aren't in production. If you set it to false, you need to document all your methods
             <span class="constraint">Must satisfy: <span class="cn">true|false</span></span>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>avoidParsingInsideTags</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is an array of string that the HTML compiler must avoid parsing. For example on this website, the tag av-code isn't parsed by the compiler to avoid detecting some Aventus features inside the HTML code like @element.
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>avoidParsingInsideTags</av-col>
+        <av-col size="8" center>This is an array of string that the HTML compiler must avoid parsing. For example on this website, the tag av-code isn't parsed by the compiler to avoid detecting some Aventus features inside the HTML code like @element.
             <span class="constraint">Each string must satisfy: <span class="cn">^[a-z\-]+$</span></span>
-        </av-dynamic-col>
-    </av-dynamic-row>
+        </av-col>
+    </av-row>
     
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>aliases</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is an object of string that allows replacement of code. For example { "@root": "./"} will replace any @root to resolve the root folder</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center><span class="mandatory">build</span></av-dynamic-col>
-        <av-dynamic-col size="8" center>This is an array of <av-router-link state="/docs/config/build">build options</av-router-link>. Each build is defined by a list of input and will output a .js file and / or a package.avt file
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>dependances</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is an array of <av-router-link state="/docs/config/lib">dependances options</av-router-link>.</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>static</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is an array of <av-router-link state="/docs/config/static">static options</av-router-link>.
-        </av-dynamic-col>
-    </av-dynamic-row>
+    <av-row>
+        <av-col size="4" center>aliases</av-col>
+        <av-col size="8" center>This is an object of string that allows replacement of code. For example { "@root": "./"} will replace any @root to resolve the root folder</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center><span class="mandatory">build</span></av-col>
+        <av-col size="8" center>This is an array of <av-link to="/docs/config/build">build options</av-link>. Each build is defined by a list of input and will output a .js file and / or a package.avt file
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>dependances</av-col>
+        <av-col size="8" center>This is an array of <av-link to="/docs/config/lib">dependances options</av-link>.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>static</av-col>
+        <av-col size="8" center>This is an array of <av-link to="/docs/config/static">static options</av-link>.
+        </av-col>
+    </av-row>
 </div>

@@ -3,26 +3,26 @@
 
 <h2>Properties</h2>
 <div class="table">
-    <av-dynamic-row class="header">
-        <av-dynamic-col size="4" center>Name</av-dynamic-col>
-        <av-dynamic-col size="8" center>Description</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>name</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is the name for the static part. This name is only use if you use the command "Aventus : Copy static" to allow the user to choose the right folder to export.
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>input</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is a string to define which folder Aventus will watch. For
+    <av-row class="header">
+        <av-col size="4" center>Name</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>name</av-col>
+        <av-col size="8" center>This is the name for the static part. This name is only use if you use the command "Aventus : Copy static" to allow the user to choose the right folder to export.
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>input</av-col>
+        <av-col size="8" center>This is a string to define which folder Aventus will watch. For
             example, if you set "./src/static/*", all files inside the folder "src/static" will be exported.
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>output</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is string to define where the static files will be exported.
-        </av-dynamic-col>
-    </av-dynamic-row>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>output</av-col>
+        <av-col size="8" center>This is string to define where the static files will be exported.
+        </av-col>
+    </av-row>
 </div>
 
 <h2>Special files</h2>

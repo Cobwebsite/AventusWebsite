@@ -20,46 +20,46 @@
 
 <h2>Properties</h2>
 <div class="table">
-    <av-dynamic-row class="header">
-        <av-dynamic-col size="4" center>Name</av-dynamic-col>
-        <av-dynamic-col size="8" center>Description</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>uri</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is a string to define where to find the file to import. To have more
+    <av-row class="header">
+        <av-col size="4" center>Name</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>uri</av-col>
+        <av-col size="8" center>This is a string to define where to find the file to import. To have more
             informations about this path, you can read the next chapter.
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>version</av-dynamic-col>
-        <av-dynamic-col size="8" center>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>version</av-col>
+        <av-col size="8" center>
             <div>This is a string to define which version of the code is needed.
                 <span class="constraint">Must satisfy: <span class="cn">^[0-9]+\\.[0-9]+\\.[0-9]+$</span></span>
             </div>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>isLocal</av-dynamic-col>
-        <av-dynamic-col size="8" center>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>isLocal</av-col>
+        <av-col size="8" center>
             <div>This will search a package matching the name inside your locals projects. You can find all these
                 librairies by typing the command <span class="cn">Aventus : Open aventus storage</span> and then
                 navigate inside your file explorer under the <span class="cn">packages>@locals</span>. If you use a local package, you don't need to define a version.</div>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>include</av-dynamic-col>
-        <av-dynamic-col size="8" center>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>include</av-col>
+        <av-col size="8" center>
             <span>This is a string to define how the lib must be included inside output js file.</span>
             <ul>
                 <li>none: No need to include the lib inside the output file.</li>
                 <li>need: Include only the needed code inside the output file. (This is the default value)</li>
                 <li>full: Include all the code of the lib inside the ouput file.</li>
             </ul>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>subDependancesInclude</av-dynamic-col>
-        <av-dynamic-col size="8" center>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>subDependancesInclude</av-col>
+        <av-col size="8" center>
             <span>This is a object where the key is the sub library name and the value is the inclusion pattern. The
                 will define how the library of the library must be included inside output js file.</span>
             <ul>
@@ -67,8 +67,8 @@
                 <li>need: Include only the needed code inside the output file. (This is the default value)</li>
                 <li>full: Include all the code of the sub lib inside the ouput file.</li>
             </ul>
-        </av-dynamic-col>
-    </av-dynamic-row>
+        </av-col>
+    </av-row>
 </div>
 
 <h2>Libraries name</h2>

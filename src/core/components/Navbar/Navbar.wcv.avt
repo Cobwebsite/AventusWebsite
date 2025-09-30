@@ -1,19 +1,48 @@
 <div class="container">
     <div class="left">
-        <av-router-link state="/"><av-img src="/img/icon.png"></av-img></av-router-link>
+        <av-link to="/"><av-img src="/img/icon.png"></av-img></av-link>
     </div>
     <div class="right">
         <av-icon class="menu-close-icon" icon="close" @press="closeMenu"></av-icon>
         <div class="menu-title">Aventus</div>
-        <av-router-link state="/" class="menu">Home</av-router-link>
-        <av-router-link state="/docs/installation" active_state="^/docs/installation*$"
-            class="menu">Install</av-router-link>
-        <av-router-link state="/docs/introduction" active_state="^/docs/(?!installation)*$"
-            class="menu">Docs</av-router-link>
-        <av-router-link state="/tutorial/introduction" active_state="^/tutorial/.*$"
-            class="menu">Tutorial</av-router-link>
-        <av-router-link state="/about" class="menu">About</av-router-link>
-        <a href="https://sharp.aventusjs.com" target="_blank" class="menu" style="color:#368832">Sharp</a>
+        <av-link to="/" class="menu">Home</av-link>
+        <av-link to="/docs/installation" active_state="^/docs/installation*$"
+            class="menu">Install</av-link>
+        <av-link to="/docs/introduction" active_state="^/docs/(?!installation)*$"
+            class="menu">Docs</av-link>
+        <av-link to="/tutorial/introduction" active_state="^/tutorial/.*$"
+            class="menu">Tutorial</av-link>
+        <av-link to="/about" class="menu">About</av-link>
+        <div class="menu drop">
+            <div class="drop-title">Others</div>
+            <div class="drop-content">
+                <div class="drop-item">
+                    <a href="https://sharp.aventusjs.com" target="_blank">
+                        <div class="drop-icon">
+                            <av-img src="/img/aventus_sharp.svg"></av-img>
+                        </div>
+                        <div class="drop-name" style="color:#368832">AventusSharp</div>
+                    </a>
+                </div>
+                <div class="drop-item">
+                    <a href="https://laraventus.aventusjs.com" target="_blank">
+                        <div class="drop-icon">
+                            <av-img src="/img/laraventus.svg"></av-img>
+                        </div>
+                        <div class="drop-name" style="color:#C72620">Laraventus</div>
+                    </a>
+                </div>
+                <div class="drop-item">
+                    <a href="https://store.aventusjs.com" target="_blank">
+                        <div class="drop-icon">
+                            <mi-icon icon="store"></mi-icon>
+                        </div>
+                        <div class="drop-name">Store</div>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- <a href="https://sharp.aventusjs.com" target="_blank" class="menu" style="color:#368832">Sharp</a> -->
         <div class="icon-links">
             <a href="https://www.reddit.com/r/aventusjs/" target="_blank" class="link">
                 <svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" class="reddit-logo">

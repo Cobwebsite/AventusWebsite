@@ -38,20 +38,20 @@
 					position: relative;
 					-webkit-tap-highlight-color: transparent;
 
-					av-router-link {
+					av-link {
 						user-select: none;
 						transition: opacity 0.3s var(--bezier-curve);
 					}
 
-					av-router-link:not(.active):hover {
+					av-link:not(.active):hover {
 						opacity: 0.7;
 					}
 
-					av-router-link.active {
+					av-link.active {
 						color: var(--aventus-color);
 					}
 
-					av-router-link.active::before {
+					av-link.active::before {
 						background-color: var(--aventus-color);
 						bottom: 0;
 						content: "";
