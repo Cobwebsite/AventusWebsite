@@ -1,0 +1,60 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocUIShortcut extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+	 * @inheritdoc
+	 */
+    protected override Title(): string {
+        return "How to Use the ShortcutManager Library in AventusJs";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to use the ShortcutManager library in AventusJs to manage keyboard shortcuts. This guide covers subscribing to key combinations, handling special keys, preventing default browser behavior, and centralizing shortcut logic for your application.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs ShortcutManager",
+            "keyboard shortcuts AventusJs",
+            "special keys handling",
+            "shortcut subscription AventusJs",
+            "preventDefault shortcuts",
+            "centralized key handling",
+            "frontend keyboard management",
+            "shortcut combinations AventusJs",
+            "SpecialTouch AventusJs",
+            "Aventus keyboard events",
+        ];
+    }
+
+    //#endregion
+
+}

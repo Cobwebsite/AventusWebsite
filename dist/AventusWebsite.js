@@ -11085,7 +11085,7 @@ const DocSidenav = class DocSidenav extends Aventus.WebComponent {
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<av-icon icon="close" class="close-icon" _id="docsidenav_0"></av-icon><av-scrollable class="menu">    <av-collapse>        <div class="title" slot="header">install</div>        <ul>            <li><av-link to="/docs/introduction">Introduction</av-link></li>            <li><av-link to="/docs/installation">Install Aventus</av-link></li>            <li><av-link to="/docs/experience">Dev experience</av-link></li>            <li><av-link to="/docs/first_app">Your first app</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">configuration</div>        <ul>            <li><av-link to="/docs/config/basic_prop">Generic properties</av-link></li>            <li><av-link to="/docs/config/build">Builds</av-link></li>            <li><av-link to="/docs/config/static">Statics</av-link></li>            <li><av-link to="/docs/config/lib">Import libs</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">data</div>        <ul>            <li><av-link to="/docs/data/create">Create</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">ram</div>        <ul>            <li><av-link to="/docs/ram/create">Create</av-link></li>            <li><av-link to="/docs/ram/crud">CRUD operation</av-link></li>            <li><av-link to="/docs/ram/listen_changes">Listen changes</av-link></li>            <li><av-link to="/docs/ram/mixin">Extend data</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">state</div>        <ul>            <li><av-link to="/docs/state/create">Create</av-link></li>            <li><av-link to="/docs/state/change">Change to</av-link></li>            <li><av-link to="/docs/state/listen_changes">Listen to change</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">webcomponent</div>        <ul>            <li><av-link to="/docs/wc/create">Create</av-link></li>            <li><av-link to="/docs/wc/style">Style</av-link></li>            <li><av-link to="/docs/wc/inheritance">Inhertiance</av-link></li>            <li><av-link to="/docs/wc/attribute">Attribute</av-link></li>            <li><av-link to="/docs/wc/property">Property</av-link></li>            <li><av-link to="/docs/wc/watch">Watch</av-link></li>            <li><av-link to="/docs/wc/signal">Signal</av-link></li>            <li><av-link to="/docs/wc/interpolation">Interpolation</av-link></li>            <li><av-link to="/docs/wc/element">Select element</av-link></li>            <li><av-link to="/docs/wc/injection">Injection</av-link></li>            <li><av-link to="/docs/wc/event">Event</av-link></li>            <li><av-link to="/docs/wc/binding">Binding</av-link></li>            <li><av-link to="/docs/wc/state">State</av-link></li>            <li><av-link to="/docs/wc/loop">Loop</av-link></li>            <li><av-link to="/docs/wc/condition">Condition</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">lib</div>        <ul>            <li><av-link to="/docs/lib/create">Create</av-link></li>            <li><av-link to="/docs/lib/animation">Animation</av-link></li>            <li><av-link to="/docs/lib/callback">Callback</av-link></li>            <li><av-link to="/docs/lib/press_manager">PressManager</av-link></li>            <li><av-link to="/docs/lib/drag_and_drop">Drag&Drop</av-link></li>            <li><av-link to="/docs/lib/instance">Instance</av-link></li>            <li><av-link to="/docs/lib/resize_observer">ResizeObserver</av-link></li>            <li><av-link to="/docs/lib/resource_loader">ResourceLoader</av-link></li>            <li><av-link to="/docs/lib/watcher">Watcher</av-link></li>            <li><av-link to="/docs/lib/tools">Tools</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">i18n</div>        <ul>            <li><av-link to="/docs/i18n/config">Config</av-link></li>            <li><av-link to="/docs/i18n/usage">Usage</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">UI</div>        <ul>            <li><av-link to="/docs/ui/introduction">Introduction</av-link></li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Form</div>                    <ul>                        <li><av-link to="/docs/ui/button">Button</av-link></li>                        <li><av-link to="/docs/ui/form">Form</av-link></li>                        <li><av-link to="/docs/ui/form_element">FormElement</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Layout</div>                    <ul>                        <li><av-link to="/docs/ui/col_row">Col / Row</av-link></li>                        <li><av-link to="/docs/ui/collapse">Collapse</av-link></li>                        <li><av-link to="/docs/ui/gride_helper">GrideHelper</av-link></li>                        <li><av-link to="/docs/ui/image">Image</av-link></li>                        <li><av-link to="/docs/ui/scrollable">Scrollable</av-link></li>                        <li><av-link to="/docs/ui/tabs">Tabs</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Interaction</div>                    <ul>                        <li><av-link to="/docs/ui/modal">Modal</av-link></li>                        <li><av-link to="/docs/ui/toast">Toast</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Navigation</div>                    <ul>                        <li><av-link to="/docs/ui/link">Link</av-link></li>                        <li><av-link to="/docs/ui/page">Page</av-link></li>                        <li><av-link to="/docs/ui/router">Router</av-link></li>                    </ul>                </av-collapse>            </li>             <li>                <av-collapse>                    <div class="sub-title" slot="header">Lib</div>                    <ul>                        <li><av-link to="/docs/ui/process">Process</av-link></li>                        <li><av-link to="/docs/ui/shortcut">Shortcut</av-link></li>                    </ul>                </av-collapse>            </li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">advanced</div>        <ul>            <li><av-link to="/docs/advanced/template">Template</av-link></li>            <li><av-link to="/docs/advanced/store">Store</av-link></li>            <li><av-link to="/docs/advanced/npm_export">Npm Export</av-link></li>            <li><av-link to="/docs/advanced/storybook">Storybook</av-link></li>        </ul>    </av-collapse></av-scrollable>` }
+        blocks: { 'default':`<av-icon icon="close" class="close-icon" _id="docsidenav_0"></av-icon><av-scrollable class="menu">    <av-collapse>        <div class="title" slot="header">install</div>        <ul>            <li><av-link to="/docs/introduction">Introduction</av-link></li>            <li><av-link to="/docs/installation">Install Aventus</av-link></li>            <li><av-link to="/docs/experience">Dev experience</av-link></li>            <li><av-link to="/docs/first_app">Your first app</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">configuration</div>        <ul>            <li><av-link to="/docs/config/basic_prop">Generic properties</av-link></li>            <li><av-link to="/docs/config/build">Builds</av-link></li>            <li><av-link to="/docs/config/static">Statics</av-link></li>            <li><av-link to="/docs/config/lib">Import libs</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">data</div>        <ul>            <li><av-link to="/docs/data/create">Create</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">ram</div>        <ul>            <li><av-link to="/docs/ram/create">Create</av-link></li>            <li><av-link to="/docs/ram/crud">CRUD operation</av-link></li>            <li><av-link to="/docs/ram/listen_changes">Listen changes</av-link></li>            <li><av-link to="/docs/ram/mixin">Extend data</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">state</div>        <ul>            <li><av-link to="/docs/state/create">Create</av-link></li>            <li><av-link to="/docs/state/change">Change to</av-link></li>            <li><av-link to="/docs/state/listen_changes">Listen to change</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">webcomponent</div>        <ul>            <li><av-link to="/docs/wc/create">Create</av-link></li>            <li><av-link to="/docs/wc/style">Style</av-link></li>            <li><av-link to="/docs/wc/inheritance">Inhertiance</av-link></li>            <li><av-link to="/docs/wc/attribute">Attribute</av-link></li>            <li><av-link to="/docs/wc/property">Property</av-link></li>            <li><av-link to="/docs/wc/watch">Watch</av-link></li>            <li><av-link to="/docs/wc/signal">Signal</av-link></li>            <li><av-link to="/docs/wc/interpolation">Interpolation</av-link></li>            <li><av-link to="/docs/wc/element">Select element</av-link></li>            <li><av-link to="/docs/wc/injection">Injection</av-link></li>            <li><av-link to="/docs/wc/event">Event</av-link></li>            <li><av-link to="/docs/wc/binding">Binding</av-link></li>            <li><av-link to="/docs/wc/state">State</av-link></li>            <li><av-link to="/docs/wc/loop">Loop</av-link></li>            <li><av-link to="/docs/wc/condition">Condition</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">lib</div>        <ul>            <li><av-link to="/docs/lib/create">Create</av-link></li>            <li><av-link to="/docs/lib/animation">Animation</av-link></li>            <li><av-link to="/docs/lib/callback">Callback</av-link></li>            <li><av-link to="/docs/lib/press_manager">PressManager</av-link></li>            <li><av-link to="/docs/lib/drag_and_drop">Drag&Drop</av-link></li>            <li><av-link to="/docs/lib/instance">Instance</av-link></li>            <li><av-link to="/docs/lib/resize_observer">ResizeObserver</av-link></li>            <li><av-link to="/docs/lib/resource_loader">ResourceLoader</av-link></li>            <li><av-link to="/docs/lib/watcher">Watcher</av-link></li>            <li><av-link to="/docs/lib/tools">Tools</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">i18n</div>        <ul>            <li><av-link to="/docs/i18n/config">Config</av-link></li>            <li><av-link to="/docs/i18n/usage">Usage</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">UI</div>        <ul>            <li><av-link to="/docs/ui/introduction">Introduction</av-link></li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Form</div>                    <ul>                        <li><av-link to="/docs/ui/button">Button</av-link></li>                        <li><av-link to="/docs/ui/form">Form</av-link></li>                        <li><av-link to="/docs/ui/form_element">FormElement</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Layout</div>                    <ul>                        <li><av-link to="/docs/ui/col_row">Col / Row</av-link></li>                        <li><av-link to="/docs/ui/collapse">Collapse</av-link></li>                        <li><av-link to="/docs/ui/grid_helper">Grid Helper</av-link></li>                        <li><av-link to="/docs/ui/image">Image</av-link></li>                        <li><av-link to="/docs/ui/scrollable">Scrollable</av-link></li>                        <li><av-link to="/docs/ui/tabs">Tabs</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Interaction</div>                    <ul>                        <li><av-link to="/docs/ui/modal">Modal</av-link></li>                        <li><av-link to="/docs/ui/toast">Toast</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Navigation</div>                    <ul>                        <li><av-link to="/docs/ui/link">Link</av-link></li>                        <li><av-link to="/docs/ui/page">Page</av-link></li>                        <li><av-link to="/docs/ui/router">Router</av-link></li>                    </ul>                </av-collapse>            </li>             <li>                <av-collapse>                    <div class="sub-title" slot="header">Lib</div>                    <ul>                        <li><av-link to="/docs/ui/process">Process</av-link></li>                        <li><av-link to="/docs/ui/shortcut">Shortcut</av-link></li>                    </ul>                </av-collapse>            </li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">advanced</div>        <ul>            <li><av-link to="/docs/advanced/template">Template</av-link></li>            <li><av-link to="/docs/advanced/store">Store</av-link></li>            <li><av-link to="/docs/advanced/npm_export">Npm Export</av-link></li>            <li><av-link to="/docs/advanced/storybook">Storybook</av-link></li>        </ul>    </av-collapse></av-scrollable>` }
     });
 }
     __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
@@ -11345,6 +11345,758 @@ const DocGenericPage = class DocGenericPage extends Page {
 }
 DocGenericPage.Namespace=`AventusWebsite`;
 __as1(_, 'DocGenericPage', DocGenericPage);
+
+const DocUIToast = class DocUIToast extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIToast;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIToast.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUIToast";
+    }
+    Title() {
+        return "How to Use the Toast Component in AventusJs";
+    }
+    Description() {
+        return "Learn how to use the abstract Toast component in AventusJs to manage temporary notifications and alert logic without predefined styles. This guide covers displaying, dismissing, and handling events for toasts within your application.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Toast",
+            "abstract Toast component",
+            "notification logic AventusJs",
+            "temporary alerts AventusJs",
+            "Aventus abstract components",
+            "toast state management",
+            "un-styled toast component",
+            "frontend notification handling",
+            "Aventus alert system",
+            "UI toast logic AventusJs",
+        ];
+    }
+}
+DocUIToast.Namespace=`AventusWebsite`;
+DocUIToast.Tag=`av-doc-u-i-toast`;
+__as1(_, 'DocUIToast', DocUIToast);
+if(!window.customElements.get('av-doc-u-i-toast')){window.customElements.define('av-doc-u-i-toast', DocUIToast);Aventus.WebComponentInstance.registerDefinition(DocUIToast);}
+
+const DocUITabs = class DocUITabs extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUITabs;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUITabs.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUITabs";
+    }
+    Title() {
+        return "How to Use the Tabs Component in AventusJs";
+    }
+    Description() {
+        return "Learn how to use the abstract Tabs component in AventusJs to manage tab logic and active states without predefined styles. This guide explains how to switch between tabs, handle events, and integrate tabbed content within your own UI.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Tabs",
+            "abstract Tabs component",
+            "tab logic AventusJs",
+            "active tab management",
+            "Aventus abstract components",
+            "tab switching logic",
+            "un-styled tabs",
+            "frontend tab architecture",
+            "Aventus content organization",
+            "UI tab logic AventusJs",
+        ];
+    }
+}
+DocUITabs.Namespace=`AventusWebsite`;
+DocUITabs.Tag=`av-doc-u-i-tabs`;
+__as1(_, 'DocUITabs', DocUITabs);
+if(!window.customElements.get('av-doc-u-i-tabs')){window.customElements.define('av-doc-u-i-tabs', DocUITabs);Aventus.WebComponentInstance.registerDefinition(DocUITabs);}
+
+const DocUIShortcut = class DocUIShortcut extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIShortcut;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIShortcut.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUIShortcut";
+    }
+    Title() {
+        return "How to Use the ShortcutManager Library in AventusJs";
+    }
+    Description() {
+        return "Learn how to use the ShortcutManager library in AventusJs to manage keyboard shortcuts. This guide covers subscribing to key combinations, handling special keys, preventing default browser behavior, and centralizing shortcut logic for your application.";
+    }
+    Keywords() {
+        return [
+            "AventusJs ShortcutManager",
+            "keyboard shortcuts AventusJs",
+            "special keys handling",
+            "shortcut subscription AventusJs",
+            "preventDefault shortcuts",
+            "centralized key handling",
+            "frontend keyboard management",
+            "shortcut combinations AventusJs",
+            "SpecialTouch AventusJs",
+            "Aventus keyboard events",
+        ];
+    }
+}
+DocUIShortcut.Namespace=`AventusWebsite`;
+DocUIShortcut.Tag=`av-doc-u-i-shortcut`;
+__as1(_, 'DocUIShortcut', DocUIShortcut);
+if(!window.customElements.get('av-doc-u-i-shortcut')){window.customElements.define('av-doc-u-i-shortcut', DocUIShortcut);Aventus.WebComponentInstance.registerDefinition(DocUIShortcut);}
+
+const DocUIScrollable = class DocUIScrollable extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIScrollable;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIScrollable.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUIScrollable";
+    }
+    Title() {
+        return "How to Use the Scrollable Component in AventusJs";
+    }
+    Description() {
+        return "Learn how to use the styled Scrollable component in AventusJs to display scrollbars when needed. This guide covers both horizontal and vertical scrolling, automatic overflow handling, and integrating scrollable areas within your UI.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Scrollable",
+            "scrollbar component AventusJs",
+            "horizontal scroll AventusJs",
+            "vertical scroll AventusJs",
+            "Aventus UI components",
+            "styled scrollable area",
+            "overflow management",
+            "frontend scrolling AventusJs",
+            "scrollable container",
+            "Aventus scroll handling",
+        ];
+    }
+}
+DocUIScrollable.Namespace=`AventusWebsite`;
+DocUIScrollable.Tag=`av-doc-u-i-scrollable`;
+__as1(_, 'DocUIScrollable', DocUIScrollable);
+if(!window.customElements.get('av-doc-u-i-scrollable')){window.customElements.define('av-doc-u-i-scrollable', DocUIScrollable);Aventus.WebComponentInstance.registerDefinition(DocUIScrollable);}
+
+const DocUIRouter = class DocUIRouter extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIRouter;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIRouter.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUIRouter";
+    }
+    Title() {
+        return "How to Use the Router Component in AventusJs";
+    }
+    Description() {
+        return "Learn how to use the abstract Router component in AventusJs to control page navigation and display logic. This guide explains how to manage routes, switch between pages, and integrate navigation logic without imposing any visual rendering.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Router",
+            "page navigation AventusJs",
+            "abstract Router component",
+            "routing logic AventusJs",
+            "frontend navigation management",
+            "Aventus page display",
+            "un-styled routing component",
+            "dynamic page rendering",
+            "Aventus abstract components",
+            "Aventus navigation guide",
+        ];
+    }
+}
+DocUIRouter.Namespace=`AventusWebsite`;
+DocUIRouter.Tag=`av-doc-u-i-router`;
+__as1(_, 'DocUIRouter', DocUIRouter);
+if(!window.customElements.get('av-doc-u-i-router')){window.customElements.define('av-doc-u-i-router', DocUIRouter);Aventus.WebComponentInstance.registerDefinition(DocUIRouter);}
+
+const DocUIProcess = class DocUIProcess extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIProcess;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIProcess.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUIProcess";
+    }
+    Title() {
+        return "How to Use the Process Library in AventusJs";
+    }
+    Description() {
+        return "Learn how to use the Process library in AventusJs to manage asynchronous operations with automatic error handling. This guide explains how to configure global error handling, execute promises safely, and extract results while handling errors consistently.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Process",
+            "asynchronous process management",
+            "error handling AventusJs",
+            "execute promises safely",
+            "ExtractFromError Aventus",
+            "GenericError handling",
+            "Aventus async operations",
+            "Process.execute guide",
+            "global error handling AventusJs",
+            "frontend backend error management",
+        ];
+    }
+}
+DocUIProcess.Namespace=`AventusWebsite`;
+DocUIProcess.Tag=`av-doc-u-i-process`;
+__as1(_, 'DocUIProcess', DocUIProcess);
+if(!window.customElements.get('av-doc-u-i-process')){window.customElements.define('av-doc-u-i-process', DocUIProcess);Aventus.WebComponentInstance.registerDefinition(DocUIProcess);}
+
+const DocUIPage = class DocUIPage extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIPage;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIPage.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUIPage";
+    }
+    Title() {
+        return "How to Use the Page Component in AventusJs";
+    }
+    Description() {
+        return "Discover how to use the abstract Page component in AventusJs to structure page-level logic. This guide covers managing titles, descriptions, keywords, and other page metadata, without enforcing any visual rendering.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Page",
+            "abstract page component",
+            "page metadata AventusJs",
+            "page logic structure",
+            "Aventus web development",
+            "title description management",
+            "frontend page architecture",
+            "Aventus abstract components",
+            "un-styled page logic",
+            "Aventus page guide",
+        ];
+    }
+}
+DocUIPage.Namespace=`AventusWebsite`;
+DocUIPage.Tag=`av-doc-u-i-page`;
+__as1(_, 'DocUIPage', DocUIPage);
+if(!window.customElements.get('av-doc-u-i-page')){window.customElements.define('av-doc-u-i-page', DocUIPage);Aventus.WebComponentInstance.registerDefinition(DocUIPage);}
+
+const DocUIModal = class DocUIModal extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIModal;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIModal.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUIModal";
+    }
+    Title() {
+        return "How to Use the Modal Component in AventusJs";
+    }
+    Description() {
+        return "Learn how to use the abstract Modal component in AventusJs to manage modal display logic without predefined styles. This guide explains how to handle opening, closing, and state control for modals, enabling integration with your custom UI design.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Modal",
+            "modal logic AventusJs",
+            "Aventus abstract components",
+            "modal state management",
+            "Aventus UI logic",
+            "open close modal AventusJs",
+            "modal visibility control",
+            "un-styled modal component",
+            "Aventus component architecture",
+            "frontend modal handling",
+        ];
+    }
+}
+DocUIModal.Namespace=`AventusWebsite`;
+DocUIModal.Tag=`av-doc-u-i-modal`;
+__as1(_, 'DocUIModal', DocUIModal);
+if(!window.customElements.get('av-doc-u-i-modal')){window.customElements.define('av-doc-u-i-modal', DocUIModal);Aventus.WebComponentInstance.registerDefinition(DocUIModal);}
+
+const DocUILink = class DocUILink extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUILink;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUILink.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUILink";
+    }
+    Title() {
+        return "How to Use the Link Component in AventusJs";
+    }
+    Description() {
+        return "Discover how to use the Link component in AventusJs to navigate between pages efficiently. This guide covers internal routing, dynamic paths, active states, and how to integrate links seamlessly within your Aventus applications.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Link",
+            "navigation AventusJs",
+            "Aventus routing",
+            "link component AventusJs",
+            "Aventus navigation system",
+            "page transition AventusJs",
+            "Aventus UI components",
+            "client-side routing",
+            "Aventus dynamic routes",
+            "frontend link handling",
+        ];
+    }
+}
+DocUILink.Namespace=`AventusWebsite`;
+DocUILink.Tag=`av-doc-u-i-link`;
+__as1(_, 'DocUILink', DocUILink);
+if(!window.customElements.get('av-doc-u-i-link')){window.customElements.define('av-doc-u-i-link', DocUILink);Aventus.WebComponentInstance.registerDefinition(DocUILink);}
+
+const DocUIIntroduction = class DocUIIntroduction extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIIntroduction;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIIntroduction.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUIIntroduction";
+    }
+    Title() {
+        return "How and why to use AventusJs UI";
+    }
+    Description() {
+        return "Learn how and why to use UI package in AventusJs. This guide covers how to include Aventus@UI in your web application.";
+    }
+    Keywords() {
+        return [
+            "AventusJs UI",
+            "Use component",
+        ];
+    }
+}
+DocUIIntroduction.Namespace=`AventusWebsite`;
+DocUIIntroduction.Tag=`av-doc-u-i-introduction`;
+__as1(_, 'DocUIIntroduction', DocUIIntroduction);
+if(!window.customElements.get('av-doc-u-i-introduction')){window.customElements.define('av-doc-u-i-introduction', DocUIIntroduction);Aventus.WebComponentInstance.registerDefinition(DocUIIntroduction);}
+
+const DocUIImage = class DocUIImage extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIImage;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIImage.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUIImage";
+    }
+    Title() {
+        return "How to Use the Image Component in AventusJs";
+    }
+    Description() {
+        return "Learn how to use the Image component in AventusJs to efficiently display images with built-in caching and SVG support. This guide explains how to load images dynamically, handle fallbacks, and optimize rendering in your web applications.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Image",
+            "image component AventusJs",
+            "Aventus styled components",
+            "image caching AventusJs",
+            "SVG image loading",
+            "optimized image rendering",
+            "Aventus UI components",
+            "dynamic image loading",
+            "frontend image performance",
+            "Aventus image guide",
+        ];
+    }
+}
+DocUIImage.Namespace=`AventusWebsite`;
+DocUIImage.Tag=`av-doc-u-i-image`;
+__as1(_, 'DocUIImage', DocUIImage);
+if(!window.customElements.get('av-doc-u-i-image')){window.customElements.define('av-doc-u-i-image', DocUIImage);Aventus.WebComponentInstance.registerDefinition(DocUIImage);}
+
+const DocUIGridHelper = class DocUIGridHelper extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIGridHelper;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIGridHelper.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUIGridHelper";
+    }
+    Title() {
+        return "How to Use the GridHelper Component in AventusJs";
+    }
+    Description() {
+        return "Explore how to use the GridHelper component in AventusJs to manage logical grid overlays and alignment guides for interface design. This guide explains how to control grid visibility, spacing, and behavior.";
+    }
+    Keywords() {
+        return [
+            "AventusJs GridHelper",
+            "grid logic AventusJs",
+            "interface alignment guide",
+            "Aventus layout tools",
+            "Aventus abstract components",
+            "grid overlay logic",
+            "UI grid system AventusJs",
+            "design alignment helper",
+            "Aventus interface structure",
+        ];
+    }
+}
+DocUIGridHelper.Namespace=`AventusWebsite`;
+DocUIGridHelper.Tag=`av-doc-u-i-grid-helper`;
+__as1(_, 'DocUIGridHelper', DocUIGridHelper);
+if(!window.customElements.get('av-doc-u-i-grid-helper')){window.customElements.define('av-doc-u-i-grid-helper', DocUIGridHelper);Aventus.WebComponentInstance.registerDefinition(DocUIGridHelper);}
+
+const DocUIFormElement = class DocUIFormElement extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIFormElement;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIFormElement.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUIFormElement";
+    }
+    Title() {
+        return "How to Use the FormElement Component in AventusJs";
+    }
+    Description() {
+        return "Learn how to use the abstract FormElement component in AventusJs to manage individual form field logic. This guide covers data binding, validation handling, error propagation, and integration within the Form component, without predefined styles.";
+    }
+    Keywords() {
+        return [
+            "AventusJs FormElement",
+            "form field logic",
+            "Aventus abstract components",
+            "form validation AventusJs",
+            "Aventus data binding",
+            "form element synchronization",
+            "Aventus form architecture",
+            "Form and FormElement integration",
+            "frontend logic framework",
+        ];
+    }
+}
+DocUIFormElement.Namespace=`AventusWebsite`;
+DocUIFormElement.Tag=`av-doc-u-i-form-element`;
+__as1(_, 'DocUIFormElement', DocUIFormElement);
+if(!window.customElements.get('av-doc-u-i-form-element')){window.customElements.define('av-doc-u-i-form-element', DocUIFormElement);Aventus.WebComponentInstance.registerDefinition(DocUIFormElement);}
+
+const DocUIForm = class DocUIForm extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIForm;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIForm.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUIForm";
+    }
+    Title() {
+        return "How to Use the Form Component in AventusJs";
+    }
+    Description() {
+        return "Discover how to use the abstract Form component in AventusJs to manage form logic, data binding, and validation. This guide explains how to handle inputs, synchronize data models, and trigger actions based on form events.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Form",
+            "form logic AventusJs",
+            "Aventus abstract components",
+            "form data binding",
+            "form validation AventusJs",
+            "Aventus form events",
+            "Aventus data synchronization",
+            "frontend form architecture",
+            "Aventus web development guide",
+        ];
+    }
+}
+DocUIForm.Namespace=`AventusWebsite`;
+DocUIForm.Tag=`av-doc-u-i-form`;
+__as1(_, 'DocUIForm', DocUIForm);
+if(!window.customElements.get('av-doc-u-i-form')){window.customElements.define('av-doc-u-i-form', DocUIForm);Aventus.WebComponentInstance.registerDefinition(DocUIForm);}
+
+const DocUICollapse = class DocUICollapse extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUICollapse;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUICollapse.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUICollapse";
+    }
+    Title() {
+        return "How to Use the Collapse Component in AventusJs";
+    }
+    Description() {
+        return "Learn how to use the abstract Collapse component in AventusJs to manage toggle and visibility logic without predefined styles. This guide covers state management, event handling, and integration with your own UI framework for expandable sections.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Collapse",
+            "Aventus toggle logic",
+            "Aventus abstract components",
+            "collapse state management",
+            "expand collapse behavior",
+            "Aventus event handling",
+            "visibility control AventusJs",
+            "un-styled collapse component",
+            "Aventus UI logic framework",
+            "Aventus frontend components",
+        ];
+    }
+}
+DocUICollapse.Namespace=`AventusWebsite`;
+DocUICollapse.Tag=`av-doc-u-i-collapse`;
+__as1(_, 'DocUICollapse', DocUICollapse);
+if(!window.customElements.get('av-doc-u-i-collapse')){window.customElements.define('av-doc-u-i-collapse', DocUICollapse);Aventus.WebComponentInstance.registerDefinition(DocUICollapse);}
+
+const DocUICol = class DocUICol extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUICol;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUICol.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUICol";
+    }
+    Title() {
+        return "How to Use Row and Col Components in AventusJs";
+    }
+    Description() {
+        return "Understand how to use the Row and Col components in AventusJs to manage logical layout structures. This guide explains how to organize components hierarchically, handle responsive logic, and integrate your own visual system.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Row",
+            "AventusJs Col",
+            "Aventus layout logic",
+            "Aventus components",
+            "layout structure AventusJs",
+            "Row Col framework",
+            "responsive logic AventusJs",
+            "Aventus container components",
+            "Aventus frontend architecture",
+        ];
+    }
+}
+DocUICol.Namespace=`AventusWebsite`;
+DocUICol.Tag=`av-doc-u-i-col`;
+__as1(_, 'DocUICol', DocUICol);
+if(!window.customElements.get('av-doc-u-i-col')){window.customElements.define('av-doc-u-i-col', DocUICol);Aventus.WebComponentInstance.registerDefinition(DocUICol);}
+
+const DocUIButton = class DocUIButton extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIButton;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIButton.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUIButton";
+    }
+    Title() {
+        return "How to Use the Button Component in AventusJs";
+    }
+    Description() {
+        return "Learn how to use the abstract Button component in AventusJs to handle user interactions and logic without predefined styles. This guide covers event handling, custom implementations, and integration with your own UI design system.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Button",
+            "Aventus abstract components",
+            "button logic AventusJs",
+            "custom button implementation",
+            "Aventus event handling",
+            "UI logic framework",
+            "Aventus component architecture",
+            "frontend logic abstraction",
+            "Aventus web development guide",
+        ];
+    }
+}
+DocUIButton.Namespace=`AventusWebsite`;
+DocUIButton.Tag=`av-doc-u-i-button`;
+__as1(_, 'DocUIButton', DocUIButton);
+if(!window.customElements.get('av-doc-u-i-button')){window.customElements.define('av-doc-u-i-button', DocUIButton);Aventus.WebComponentInstance.registerDefinition(DocUIButton);}
 
 const DocAdvancedStorybook = class DocAdvancedStorybook extends DocGenericPage {
     static __style = ``;

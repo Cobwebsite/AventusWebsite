@@ -109,7 +109,7 @@
                     <ul>
                         <li><av-link to="/docs/ui/col_row">Col / Row</av-link></li>
                         <li><av-link to="/docs/ui/collapse">Collapse</av-link></li>
-                        <li><av-link to="/docs/ui/gride_helper">GrideHelper</av-link></li>
+                        <li><av-link to="/docs/ui/grid_helper">Grid Helper</av-link></li>
                         <li><av-link to="/docs/ui/image">Image</av-link></li>
                         <li><av-link to="/docs/ui/scrollable">Scrollable</av-link></li>
                         <li><av-link to="/docs/ui/tabs">Tabs</av-link></li>

@@ -1,0 +1,59 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocUIGridHelper extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+	 * @inheritdoc
+	 */
+    protected override Title(): string {
+        return "How to Use the GridHelper Component in AventusJs";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Explore how to use the GridHelper component in AventusJs to manage logical grid overlays and alignment guides for interface design. This guide explains how to control grid visibility, spacing, and behavior.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs GridHelper",
+            "grid logic AventusJs",
+            "interface alignment guide",
+            "Aventus layout tools",
+            "Aventus abstract components",
+            "grid overlay logic",
+            "UI grid system AventusJs",
+            "design alignment helper",
+            "Aventus interface structure",
+        ];
+    }
+
+    //#endregion
+
+}

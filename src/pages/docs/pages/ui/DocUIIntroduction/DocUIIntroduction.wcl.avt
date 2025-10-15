@@ -1,0 +1,50 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocUIIntroduction extends DocGenericPage implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "How and why to use AventusJs UI";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how and why to use UI package in AventusJs. This guide covers how to include Aventus@UI in your web application.";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return [
+            "AventusJs UI",
+            "Use component",
+        ];
+    }
+	
+	//#endregion
+	
+}
