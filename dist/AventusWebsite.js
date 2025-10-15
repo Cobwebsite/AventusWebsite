@@ -376,33 +376,6 @@ let ElementExtension=class ElementExtension {
 ElementExtension.Namespace=`Aventus`;
 __as1(_, 'ElementExtension', ElementExtension);
 
-let Instance=class Instance {
-    static elements = new Map();
-    static get(type) {
-        let result = this.elements.get(type);
-        if (!result) {
-            let cst = type.prototype['constructor'];
-            result = new cst();
-            this.elements.set(type, result);
-        }
-        return result;
-    }
-    static set(el) {
-        let cst = el.constructor;
-        if (this.elements.get(cst)) {
-            return false;
-        }
-        this.elements.set(cst, el);
-        return true;
-    }
-    static destroy(el) {
-        let cst = el.constructor;
-        return this.elements.delete(cst);
-    }
-}
-Instance.Namespace=`Aventus`;
-__as1(_, 'Instance', Instance);
-
 let Style=class Style {
     static instance;
     static noAnimation;
@@ -1094,6 +1067,9 @@ let Watcher=class Watcher {
             if (data instanceof Object && !data.__isProxy) {
                 for (let key in reservedName) {
                     delete data[key];
+                }
+                for (let key in data) {
+                    clearReservedNames(data[key]);
                 }
             }
         };
@@ -3905,6 +3881,33 @@ let Template=class Template {
 Template.Namespace=`Aventus`;
 __as1(_, 'Template', Template);
 
+let Instance=class Instance {
+    static elements = new Map();
+    static get(type) {
+        let result = this.elements.get(type);
+        if (!result) {
+            let cst = type.prototype['constructor'];
+            result = new cst();
+            this.elements.set(type, result);
+        }
+        return result;
+    }
+    static set(el) {
+        let cst = el.constructor;
+        if (this.elements.get(cst)) {
+            return false;
+        }
+        this.elements.set(cst, el);
+        return true;
+    }
+    static destroy(el) {
+        let cst = el.constructor;
+        return this.elements.delete(cst);
+    }
+}
+Instance.Namespace=`Aventus`;
+__as1(_, 'Instance', Instance);
+
 let WebComponent=class WebComponent extends HTMLElement {
     /**
      * Add attributes informations
@@ -5268,6 +5271,9 @@ let DragAndDrop=class DragAndDrop {
         const result = this.options.onStart(e);
         if (result !== false) {
             document.body.style.userSelect = 'none';
+            if (window.getSelection) {
+                window.getSelection()?.removeAllRanges();
+            }
         }
         return result;
     }
@@ -6505,7 +6511,7 @@ Navigation.Link.Tag=`av-link`;
 __as1(_.Navigation, 'Link', Navigation.Link);
 if(!window.customElements.get('av-link')){window.customElements.define('av-link', Navigation.Link);Aventus.WebComponentInstance.registerDefinition(Navigation.Link);}
 
-_n = Navigation.Page;Navigation.Page = class Page extends Aventus.WebComponent {
+Navigation.Page = class Page extends Aventus.WebComponent {
     static get observedAttributes() {return ["visible"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
     get 'visible'() { return this.getBoolProp('visible') }
     set 'visible'(val) { this.setBoolAttr('visible', val) }    router;
@@ -6563,7 +6569,7 @@ _n = Navigation.Page;Navigation.Page = class Page extends Aventus.WebComponent 
 }
 Navigation.Page.Namespace=`Aventus.Navigation`;
 __as1(_.Navigation, 'Page', Navigation.Page);
-Object.assign(Navigation.Page, _n);
+
 Navigation.Default404 = class Default404 extends Navigation.Page {
     static __style = `:host{align-items:center;height:100%;justify-content:center;width:100%}:host h1{font-size:48px;text-align:center}:host([visible]){display:flex}`;
     __getStatic() {
@@ -11068,7 +11074,7 @@ __as1(_, 'Home', Home);
 if(!window.customElements.get('av-home')){window.customElements.define('av-home', Home);Aventus.WebComponentInstance.registerDefinition(Home);}
 
 const DocSidenav = class DocSidenav extends Aventus.WebComponent {
-    static __style = `:host{background-color:var(--light-primary-color);font-size:14px;padding:30px;padding-right:5px;width:300px}:host .menu{height:100%;width:100%;z-index:2}:host .menu av-collapse{width:100%}:host .menu av-collapse .title{color:var(--aventus-color);font-size:18px;font-variant:small-caps;font-weight:bold;margin-bottom:5px;margin-top:15px}:host .menu av-collapse ul{margin:0;padding:0}:host .menu av-collapse ul li{color:var(--primary-font-color);cursor:pointer;font-size:12px;letter-spacing:1px;list-style:none;margin:6px;margin-left:15px;padding:0;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .menu av-collapse ul li av-link{user-select:none;transition:opacity .3s var(--bezier-curve)}:host .menu av-collapse ul li av-link:not(.active):hover{opacity:.7}:host .menu av-collapse ul li av-link.active{color:var(--aventus-color)}:host .menu av-collapse ul li av-link.active::before{background-color:var(--aventus-color);bottom:0;content:"";left:-15px;position:absolute;top:0;width:5px}:host .close-icon{color:var(--aventus-color);font-size:24px;position:absolute;right:24px;top:12px;display:none}@media screen and (max-width: 1100px){:host .menu av-collapse ul li{margin:12px;margin-left:15px;font-size:16px}:host .close-icon{display:block}}`;
+    static __style = `:host{background-color:var(--light-primary-color);font-size:14px;padding:30px;padding-right:5px;width:300px}:host .menu{height:100%;width:100%;z-index:2}:host .menu av-collapse{width:100%}:host .menu av-collapse .title{color:var(--aventus-color);font-size:18px;font-variant:small-caps;font-weight:bold;margin-bottom:5px;margin-top:15px}:host .menu av-collapse av-collapse .sub-title{display:flex;align-items:center;gap:3px}:host .menu av-collapse av-collapse .sub-title::before{content:"▼";display:inline-block;transform:rotate(-90deg);transition:.5s var(--bezier-curve) transform}:host .menu av-collapse av-collapse[open] .sub-title::before{transform:rotate(0deg)}:host .menu av-collapse ul{margin:0;padding:0}:host .menu av-collapse ul li{color:var(--primary-font-color);cursor:pointer;font-size:12px;letter-spacing:1px;list-style:none;margin:6px;margin-left:15px;padding:0;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .menu av-collapse ul li av-link{transition:opacity .3s var(--bezier-curve);user-select:none}:host .menu av-collapse ul li av-link:not(.active):hover{opacity:.7}:host .menu av-collapse ul li av-link.active{color:var(--aventus-color)}:host .menu av-collapse ul li av-link.active::before{background-color:var(--aventus-color);bottom:0;content:"";left:-15px;position:absolute;top:0;width:5px}:host .close-icon{color:var(--aventus-color);display:none;font-size:24px;position:absolute;right:24px;top:12px}@media screen and (max-width: 1100px){:host .menu av-collapse ul li{font-size:16px;margin:12px;margin-left:15px}:host .close-icon{display:block}}`;
     __getStatic() {
         return DocSidenav;
     }
@@ -11079,7 +11085,7 @@ const DocSidenav = class DocSidenav extends Aventus.WebComponent {
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<av-icon icon="close" class="close-icon" _id="docsidenav_0"></av-icon><av-scrollable class="menu">    <av-collapse>        <div class="title" slot="header">install</div>        <ul>            <li><av-link to="/docs/introduction">Introduction</av-link></li>            <li><av-link to="/docs/installation">Install Aventus</av-link></li>            <li><av-link to="/docs/experience">Dev experience</av-link></li>            <li><av-link to="/docs/first_app">Your first app</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">configuration</div>        <ul>            <li><av-link to="/docs/config/basic_prop">Generic properties</av-link></li>            <li><av-link to="/docs/config/build">Builds</av-link></li>            <li><av-link to="/docs/config/static">Statics</av-link></li>            <li><av-link to="/docs/config/lib">Import libs</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">data</div>        <ul>            <li><av-link to="/docs/data/create">Create</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">ram</div>        <ul>            <li><av-link to="/docs/ram/create">Create</av-link></li>            <li><av-link to="/docs/ram/crud">CRUD operation</av-link></li>            <li><av-link to="/docs/ram/listen_changes">Listen changes</av-link></li>            <li><av-link to="/docs/ram/mixin">Extend data</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">state</div>        <ul>            <li><av-link to="/docs/state/create">Create</av-link></li>            <li><av-link to="/docs/state/change">Change to</av-link></li>            <li><av-link to="/docs/state/listen_changes">Listen to change</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">webcomponent</div>        <ul>            <li><av-link to="/docs/wc/create">Create</av-link></li>            <li><av-link to="/docs/wc/style">Style</av-link></li>            <li><av-link to="/docs/wc/inheritance">Inhertiance</av-link></li>            <li><av-link to="/docs/wc/attribute">Attribute</av-link></li>            <li><av-link to="/docs/wc/property">Property</av-link></li>            <li><av-link to="/docs/wc/watch">Watch</av-link></li>            <li><av-link to="/docs/wc/signal">Signal</av-link></li>            <li><av-link to="/docs/wc/interpolation">Interpolation</av-link></li>            <li><av-link to="/docs/wc/element">Select element</av-link></li>            <li><av-link to="/docs/wc/injection">Injection</av-link></li>            <li><av-link to="/docs/wc/event">Event</av-link></li>            <li><av-link to="/docs/wc/binding">Binding</av-link></li>            <li><av-link to="/docs/wc/state">State</av-link></li>            <li><av-link to="/docs/wc/loop">Loop</av-link></li>            <li><av-link to="/docs/wc/condition">Condition</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">lib</div>        <ul>            <li><av-link to="/docs/lib/create">Create</av-link></li>            <li><av-link to="/docs/lib/animation">Animation</av-link></li>            <li><av-link to="/docs/lib/callback">Callback</av-link></li>            <li><av-link to="/docs/lib/press_manager">PressManager</av-link></li>            <li><av-link to="/docs/lib/drag_and_drop">Drag&Drop</av-link></li>            <li><av-link to="/docs/lib/instance">Instance</av-link></li>            <li><av-link to="/docs/lib/resize_observer">ResizeObserver</av-link></li>            <li><av-link to="/docs/lib/resource_loader">ResourceLoader</av-link></li>            <li><av-link to="/docs/lib/watcher">Watcher</av-link></li>            <li><av-link to="/docs/lib/tools">Tools</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">i18n</div>        <ul>            <li><av-link to="/docs/i18n/config">Config</av-link></li>            <li><av-link to="/docs/i18n/usage">Usage</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">advanced</div>        <ul>            <li><av-link to="/docs/advanced/template">Template</av-link></li>            <li><av-link to="/docs/advanced/store">Store</av-link></li>            <li><av-link to="/docs/advanced/npm_export">Npm Export</av-link></li>            <li><av-link to="/docs/advanced/storybook">Storybook</av-link></li>        </ul>    </av-collapse></av-scrollable>` }
+        blocks: { 'default':`<av-icon icon="close" class="close-icon" _id="docsidenav_0"></av-icon><av-scrollable class="menu">    <av-collapse>        <div class="title" slot="header">install</div>        <ul>            <li><av-link to="/docs/introduction">Introduction</av-link></li>            <li><av-link to="/docs/installation">Install Aventus</av-link></li>            <li><av-link to="/docs/experience">Dev experience</av-link></li>            <li><av-link to="/docs/first_app">Your first app</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">configuration</div>        <ul>            <li><av-link to="/docs/config/basic_prop">Generic properties</av-link></li>            <li><av-link to="/docs/config/build">Builds</av-link></li>            <li><av-link to="/docs/config/static">Statics</av-link></li>            <li><av-link to="/docs/config/lib">Import libs</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">data</div>        <ul>            <li><av-link to="/docs/data/create">Create</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">ram</div>        <ul>            <li><av-link to="/docs/ram/create">Create</av-link></li>            <li><av-link to="/docs/ram/crud">CRUD operation</av-link></li>            <li><av-link to="/docs/ram/listen_changes">Listen changes</av-link></li>            <li><av-link to="/docs/ram/mixin">Extend data</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">state</div>        <ul>            <li><av-link to="/docs/state/create">Create</av-link></li>            <li><av-link to="/docs/state/change">Change to</av-link></li>            <li><av-link to="/docs/state/listen_changes">Listen to change</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">webcomponent</div>        <ul>            <li><av-link to="/docs/wc/create">Create</av-link></li>            <li><av-link to="/docs/wc/style">Style</av-link></li>            <li><av-link to="/docs/wc/inheritance">Inhertiance</av-link></li>            <li><av-link to="/docs/wc/attribute">Attribute</av-link></li>            <li><av-link to="/docs/wc/property">Property</av-link></li>            <li><av-link to="/docs/wc/watch">Watch</av-link></li>            <li><av-link to="/docs/wc/signal">Signal</av-link></li>            <li><av-link to="/docs/wc/interpolation">Interpolation</av-link></li>            <li><av-link to="/docs/wc/element">Select element</av-link></li>            <li><av-link to="/docs/wc/injection">Injection</av-link></li>            <li><av-link to="/docs/wc/event">Event</av-link></li>            <li><av-link to="/docs/wc/binding">Binding</av-link></li>            <li><av-link to="/docs/wc/state">State</av-link></li>            <li><av-link to="/docs/wc/loop">Loop</av-link></li>            <li><av-link to="/docs/wc/condition">Condition</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">lib</div>        <ul>            <li><av-link to="/docs/lib/create">Create</av-link></li>            <li><av-link to="/docs/lib/animation">Animation</av-link></li>            <li><av-link to="/docs/lib/callback">Callback</av-link></li>            <li><av-link to="/docs/lib/press_manager">PressManager</av-link></li>            <li><av-link to="/docs/lib/drag_and_drop">Drag&Drop</av-link></li>            <li><av-link to="/docs/lib/instance">Instance</av-link></li>            <li><av-link to="/docs/lib/resize_observer">ResizeObserver</av-link></li>            <li><av-link to="/docs/lib/resource_loader">ResourceLoader</av-link></li>            <li><av-link to="/docs/lib/watcher">Watcher</av-link></li>            <li><av-link to="/docs/lib/tools">Tools</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">i18n</div>        <ul>            <li><av-link to="/docs/i18n/config">Config</av-link></li>            <li><av-link to="/docs/i18n/usage">Usage</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">UI</div>        <ul>            <li><av-link to="/docs/ui/introduction">Introduction</av-link></li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Form</div>                    <ul>                        <li><av-link to="/docs/ui/button">Button</av-link></li>                        <li><av-link to="/docs/ui/form">Form</av-link></li>                        <li><av-link to="/docs/ui/form_element">FormElement</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Layout</div>                    <ul>                        <li><av-link to="/docs/ui/col_row">Col / Row</av-link></li>                        <li><av-link to="/docs/ui/collapse">Collapse</av-link></li>                        <li><av-link to="/docs/ui/gride_helper">GrideHelper</av-link></li>                        <li><av-link to="/docs/ui/image">Image</av-link></li>                        <li><av-link to="/docs/ui/scrollable">Scrollable</av-link></li>                        <li><av-link to="/docs/ui/tabs">Tabs</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Interaction</div>                    <ul>                        <li><av-link to="/docs/ui/modal">Modal</av-link></li>                        <li><av-link to="/docs/ui/toast">Toast</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Navigation</div>                    <ul>                        <li><av-link to="/docs/ui/link">Link</av-link></li>                        <li><av-link to="/docs/ui/page">Page</av-link></li>                        <li><av-link to="/docs/ui/router">Router</av-link></li>                    </ul>                </av-collapse>            </li>             <li>                <av-collapse>                    <div class="sub-title" slot="header">Lib</div>                    <ul>                        <li><av-link to="/docs/ui/process">Process</av-link></li>                        <li><av-link to="/docs/ui/shortcut">Shortcut</av-link></li>                    </ul>                </av-collapse>            </li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">advanced</div>        <ul>            <li><av-link to="/docs/advanced/template">Template</av-link></li>            <li><av-link to="/docs/advanced/store">Store</av-link></li>            <li><av-link to="/docs/advanced/npm_export">Npm Export</av-link></li>            <li><av-link to="/docs/advanced/storybook">Storybook</av-link></li>        </ul>    </av-collapse></av-scrollable>` }
     });
 }
     __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
@@ -19252,14 +19258,7 @@ IconLib.Namespace=`AventusWebsite`;
 __as1(_, 'IconLib', IconLib);
 
 const Icon = class Icon extends Aventus.WebComponent {
-    static get observedAttributes() {return ["icon"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
-    get 'icon'() { return this.getStringProp('icon') }
-    set 'icon'(val) { this.setStringAttr('icon', val) }    static isFirstIcon = true;
-    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("icon", ((target) => {
-    if (target.icon) {
-        target.spanEl.style.setProperty("--icon-code", IconLib.getIcon(target.icon));
-    }
-})); }
+    static isFirstIcon = true;
     static __style = `:host span{display:var(--fa-display, inline-block);font-family:"Font Awesome 6 Free";-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;font-style:normal;font-variant:normal;font-weight:900;line-height:1;text-rendering:auto}:host span:before{content:var(--icon-code)}`;
     constructor() {
         super();
@@ -19296,8 +19295,6 @@ const Icon = class Icon extends Aventus.WebComponent {
     getClassName() {
         return "Icon";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('icon')){ this['icon'] = undefined; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('icon'); }
     postCreation() {
         super.postCreation();
     }

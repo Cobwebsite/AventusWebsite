@@ -26,7 +26,7 @@
             <li><av-link to="/docs/data/create">Create</av-link></li>
         </ul>
     </av-collapse>
-    
+
     <av-collapse>
         <div class="title" slot="header">ram</div>
         <ul>
@@ -87,6 +87,63 @@
         <ul>
             <li><av-link to="/docs/i18n/config">Config</av-link></li>
             <li><av-link to="/docs/i18n/usage">Usage</av-link></li>
+        </ul>
+    </av-collapse>
+    <av-collapse>
+        <div class="title" slot="header">UI</div>
+        <ul>
+            <li><av-link to="/docs/ui/introduction">Introduction</av-link></li>
+            <li>
+                <av-collapse>
+                    <div class="sub-title" slot="header">Form</div>
+                    <ul>
+                        <li><av-link to="/docs/ui/button">Button</av-link></li>
+                        <li><av-link to="/docs/ui/form">Form</av-link></li>
+                        <li><av-link to="/docs/ui/form_element">FormElement</av-link></li>
+                    </ul>
+                </av-collapse>
+            </li>
+            <li>
+                <av-collapse>
+                    <div class="sub-title" slot="header">Layout</div>
+                    <ul>
+                        <li><av-link to="/docs/ui/col_row">Col / Row</av-link></li>
+                        <li><av-link to="/docs/ui/collapse">Collapse</av-link></li>
+                        <li><av-link to="/docs/ui/gride_helper">GrideHelper</av-link></li>
+                        <li><av-link to="/docs/ui/image">Image</av-link></li>
+                        <li><av-link to="/docs/ui/scrollable">Scrollable</av-link></li>
+                        <li><av-link to="/docs/ui/tabs">Tabs</av-link></li>
+                    </ul>
+                </av-collapse>
+            </li>
+            <li>
+                <av-collapse>
+                    <div class="sub-title" slot="header">Interaction</div>
+                    <ul>
+                        <li><av-link to="/docs/ui/modal">Modal</av-link></li>
+                        <li><av-link to="/docs/ui/toast">Toast</av-link></li>
+                    </ul>
+                </av-collapse>
+            </li>
+            <li>
+                <av-collapse>
+                    <div class="sub-title" slot="header">Navigation</div>
+                    <ul>
+                        <li><av-link to="/docs/ui/link">Link</av-link></li>
+                        <li><av-link to="/docs/ui/page">Page</av-link></li>
+                        <li><av-link to="/docs/ui/router">Router</av-link></li>
+                    </ul>
+                </av-collapse>
+            </li>
+             <li>
+                <av-collapse>
+                    <div class="sub-title" slot="header">Lib</div>
+                    <ul>
+                        <li><av-link to="/docs/ui/process">Process</av-link></li>
+                        <li><av-link to="/docs/ui/shortcut">Shortcut</av-link></li>
+                    </ul>
+                </av-collapse>
+            </li>
         </ul>
     </av-collapse>
     <av-collapse>
