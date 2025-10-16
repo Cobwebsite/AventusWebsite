@@ -1,1 +1,119 @@
-<slot></slot>
+<h1>UI - Button</h1>
+<p>The <span class="cn">ButtonElement</span> class provides the core logic for button components in Aventus.
+    Just like other UI elements in the framework, it focuses purely on behavior and interaction, leaving style and
+    presentation entirely up to you.</p>
+
+<h2>Overview</h2>
+
+<p>Buttons are one of the most fundamental interactive elements in any UI.
+    In Aventus, a ButtonElement is not a styled component. It's a behavioral foundation that handles:</p>
+
+<ul>
+    <li>Different button types (button, submit, reset, menu)</li>
+    <li>Form association and submission logic</li>
+    <li>Keyboard and mouse interactions</li>
+    <li>Optional loading state handling</li>
+</ul>
+
+<p>This allows you to design your own visual button components with custom HTML, CSS, or frameworks like Tailwind while
+    relying on a robust, consistent behavior layer.</p>
+
+<h2>Core Concepts</h2>
+
+<h3>1. Form Association</h3>
+<p>The <span class="cn">ButtonElement</span> integrates seamlessly with the <span class="cn">Form</span> system in
+    Aventus. By default, it's form-associated, meaning it automatically connects to the nearest parent <span
+        class="cn">Form</span> element.</p>
+<p>This enables:</p>
+<ul>
+    <li>Automatic form registration</li>
+    <li>Form submission handling via the <span class="cn">requestSubmit()</span> API</li>
+    <li>Compatibility with both standard and custom forms</li>
+</ul>
+<p>If no native HTML form is detected, the button uses the Aventus Form handler system to trigger submissions
+    programmatically.</p>
+
+<h3>2. Button Types</h3>
+
+<p>Aventus supports the four standard button types:</p>
+
+<ul>
+    <li><span class="cn">button</span>: Default; performs no automatic action.</li>
+    <li><span class="cn">submit</span>: Triggers form submission logic.</li>
+    <li><span class="cn">reset</span>: (Future extension) Designed to reset form state.</li>
+    <li><span class="cn">menu</span>: For custom interactive UI controls.</li>
+</ul>
+
+<p>The type is declared using the <span class="cn">@Property()</span> decorator:</p>
+
+<av-code language="typescript">
+    <pre>
+@Property()
+public type: 'button' | 'submit' | 'reset' | 'menu' = 'button';
+    </pre>
+</av-code>
+
+<h3>3. Press and Keyboard Handling</h3>
+<p>User interactions are managed through the <span class="cn">PressManager</span> utility, which standardizes press
+    events across devices (mouse, touch, keyboard).</p>
+<p>For submit buttons:</p>
+
+<ul>
+    <li>A click or touch event triggers <span class="cn">triggerSubmit().</span></li>
+    <li>Pressing the <span class="cn">Enter</span> key also triggers submission.</li>
+</ul>
+<p>This ensures accessibility and consistent behavior across all input methods.</p>
+
+<h3>4. Loading State Integration</h3>
+
+<p>If your custom button class includes a loading property, ButtonElement will automatically respect it:</p>
+<ul>
+    <li>Prevents double submissions when already loading.</li>
+    <li>Resets loading state once the form submission completes.</li>
+</ul>
+<p>This makes it easy to integrate visual feedback such as spinners or disabled states</p>
+
+
+
+<h2>Why It Matters</h2>
+<p>By abstracting out repetitive button behavior (submission, keyboard handling, and event management) the ButtonElement
+    lets you:</p>
+
+<ul>
+    <li>Build consistent, accessible buttons across your UI.</li>
+    <li>Focus entirely on design and UX, not low-level logic.</li>
+    <li>Extend behavior easily for custom needs (async actions, tooltips, etc.).</li>
+</ul>
+<p>Every Aventus button you create inherits reliable interaction patterns without any extra boilerplate.</p>
+
+<h2>Summary</h2>
+
+<div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Feature</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>Behavior-first</av-col>
+        <av-col size="8" center>Handles logic, not style</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>Form-aware</av-col>
+        <av-col size="8" center>Automatically connects to forms</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>Keyboard-friendly</av-col>
+        <av-col size="8" center>Submits with Enter</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>Extensible</av-col>
+        <av-col size="8" center>Add custom logic and visuals</av-col>
+    </av-row> <av-row>
+        <av-col size="4" center>Reusable</av-col>
+        <av-col size="8" center>Core logic shared across all projects</av-col>
+    </av-row>
+</div>
+
+<div><strong>In short:</strong></div>
+<p>The ButtonElement provides all the behavioral logic you expect from a modern button, while giving you complete
+    freedom over how it looks.</p>

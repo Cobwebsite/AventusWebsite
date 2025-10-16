@@ -1,1 +1,55 @@
-<slot></slot>
+<h1>UI - Collapse</h1>
+<p>The <span class="cn">Collapse</span> component provides a lightweight expandable/collapsible container that hides or reveals its content with a smooth grid-based transition.
+It's designed to handle open/close logic automatically while letting you define your own layout and header appearance.</p>
+<p>Unlike pre-styled accordions, this component handles only the logic and transitions, leaving full styling control to you.</p>
+
+<h2>Concept</h2>
+<p>&lt;av-collapse&gt; consists of two main parts:</p>
+<ul>
+    <li>A header slot (<span class="cn">slot="header"</span>) that acts as the clickable trigger.</li>
+    <li>A content area that expands or collapses depending on the <span class="cn">open</span> state.</li>
+</ul>
+
+<p>By default, clicking the header toggles the open state with an animated transition.</p>
+
+<h2>Attributes</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4">Attribute</av-col>
+        <av-col size="4">Type</av-col>
+        <av-col size="4">Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">open</av-col>
+        <av-col size="4">boolean</av-col>
+        <av-col size="4">Whether the collapse is currently expanded.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">no_animation</av-col>
+        <av-col size="4">boolean</av-col>
+        <av-col size="4">Disables the transition animation.</av-col>
+    </av-row>
+</div>
+
+<h2>CSS Variables</h2>
+<p>You can customize the animation behavior using these CSS variables:</p>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4">Attribute</av-col>
+        <av-col size="4">Type</av-col>
+        <av-col size="4">Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">--collapse-transition-duration</av-col>
+        <av-col size="4">Duration of the open/close transition</av-col>
+        <av-col size="4">0.5s</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">--collapse-transition-timing-function</av-col>
+        <av-col size="4">Timing function for the transition</av-col>
+        <av-col size="4">cubic-bezier(0.65, 0, 0.15, 1)</av-col>
+    </av-row>
+</div>
+
+<h2>Example</h2>
+<av-doc-u-i-collapse-editor-1></av-doc-u-i-collapse-editor-1>

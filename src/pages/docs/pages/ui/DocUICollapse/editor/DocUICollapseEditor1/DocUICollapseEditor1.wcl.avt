@@ -1,0 +1,37 @@
+import { BaseEditor } from "../../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
+import { DocUICollapseEditor1Example } from "../../compiled/DocUICollapseEditor1Example/DocUICollapseEditor1Example.wcl.avt";
+
+export class DocUICollapseEditor1 extends BaseEditor implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override defineResult(): HTMLElement | null {
+		const cont = document.createElement("DIV");
+
+		const ex1 = new DocUICollapseEditor1Example();
+		cont.appendChild(ex1);
+
+		return cont;
+	}
+	//#endregion
+	
+}

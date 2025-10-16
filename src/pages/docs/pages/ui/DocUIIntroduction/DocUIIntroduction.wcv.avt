@@ -1,1 +1,89 @@
-<slot></slot>
+<h1>UI - Introduction</h1>
+<p>The UI layer of Aventus is designed around one simple philosophy: <span class="cn">Provide all the logic you need for
+        building powerful interfaces without enforcing any visual style.</span></p>
+
+<h2>Philosophy</h2>
+
+<p>Modern UI frameworks often mix logic and style, forcing developers to adapt their design to predefined components.
+    Aventus takes the opposite approach.
+    It separates UI behavior (modals, inputs, events, states, keyboard shortcuts, etc.) from UI presentation (CSS,
+    animations, layout).</p>
+
+<p>This separation ensures:</p>
+
+<ul>
+    <li>Full control over design : No default styling or opinionated CSS.</li>
+    <li>Reusable logic : The same behavior can be reused across projects or customized easily.</li>
+    <li>Reduced boilerplate : Core patterns like event handling, keyboard shortcuts, or asynchronous UI responses are
+        already managed.</li>
+</ul>
+
+<h2>Example: The Modal System</h2>
+
+<p>The ModalElement class is a perfect example of this philosophy.</p>
+<p>It provides all the necessary behavior to manage modal dialogs (open, close, resolve, reject, keyboard shortcuts, and
+    click-to-close) without enforcing any design.</p>
+
+<av-code language="ts">
+    <pre>
+import { PressManager } from "Aventus@Main:Aventus.package.avt";
+import { ShortcutManager, SpecialTouch } from "../../../lib/ShortcutManager.lib.avt";
+    &nbsp;
+namespace Modal {
+    export interface ModalOptions&lt;T = any&gt; {
+        closeWithEsc?: boolean;
+        closeWithClick?: boolean;
+        rejectValue?: T | null;
+    }
+    &nbsp;
+    export abstract class ModalElement&lt;T, U extends ModalOptions&lt;T&gt; = ModalOptions&lt;T&gt;&gt;
+        extends Aventus.WebComponent
+        implements Aventus.DefaultComponent {
+    &nbsp;
+        // Full logic for modal lifecycle and event handling...
+    }
+}
+    </pre>
+</av-code>
+
+<p>With this foundation, you can create your own modal UI library while relying on a consistent and tested interaction
+    logic.</p>
+
+<p>For example:</p>
+
+<ul>
+    <li>Decide whether the modal should close when pressing Escape or clicking outside.</li>
+    <li>Manage user confirmation and rejection through a unified promise-based API.</li>
+    <li>Avoid repeating boilerplate code like event cleanup or state management.</li>
+</ul>
+
+
+<h2>Key Benefits</h2>
+
+<ul>
+    <li>
+        Logic-first approach: You focus on what your component does, not how it looks.
+    </li>
+    <li>
+        Style freedom: Apply your own design system, Tailwind setup, or raw CSS.
+    </li>
+    <li>
+        Extensible foundation: Build and publish your own component libraries using Aventus logic.
+    </li>
+    <li>
+        Developer efficiency: Handle repetitive interaction logic once — reuse it everywhere.
+    </li>
+</ul>
+
+<h2>Vision</h2>
+
+<p>Aventus UI aims to be a neutral, behavior-oriented foundation for building user interfaces.
+Instead of dictating design, it empowers you to:</p>
+
+<ul>
+    <li>Prototype quickly without reimplementing interaction logic.</li>
+    <li>Customize deeply to fit your brand or style.</li>
+    <li>Scale consistently by reusing the same behavioral patterns across projects.</li>
+</ul>
+
+<p>In short, Aventus provides the logic. You provide the design.</p>

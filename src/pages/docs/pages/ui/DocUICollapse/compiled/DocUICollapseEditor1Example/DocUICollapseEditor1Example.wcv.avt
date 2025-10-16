@@ -1,0 +1,6 @@
+<av-collapse>
+  <div slot="header">Show details</div>
+  <div>
+    <p>This is the hidden content that appears when open.</p>
+  </div>
+</av-collapse>

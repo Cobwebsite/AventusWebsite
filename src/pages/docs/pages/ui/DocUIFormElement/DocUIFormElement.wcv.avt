@@ -1,1 +1,215 @@
-<slot></slot>
+<h1>UI - FormElement</h1>
+<p><span class="cn">FormElement</span> is the foundation of all input components in Aventus.
+    It bridges the gap between your UI (the visible input field) and the form logic managed by <span
+        class="cn">FormHandler</span>.</p>
+
+<p>Just like the rest of the Aventus UI framework, it is completely design-agnostic: you define how your input looks and
+    behaves. Aventus handles the logic, validation, and data synchronization.</p>
+
+<h2>Philosophy</h2>
+<p>Traditional form systems often couple validation, layout, and styling.
+    Aventus takes a different route: logic and UI are separate, but synchronized.</p>
+<p>Each <span class="cn">FormElement</span>:</p>
+
+<ul>
+    <li>Knows its current value</li>
+    <li>Syncs automatically with its parent <span class="cn">FormHandler</span></li>
+    <li>Reacts to validation events</li>
+    <li>Exposes change and error callbacks</li>
+    <li>Integrates natively with browser forms through <span class="cn">ElementInternals</span></li>
+</ul>
+
+<p>This design allows developers to create fully custom input components, from simple text fields to rich custom
+    widgets, without rewriting boilerplate logic.</p>
+
+<h2>Overview</h2>
+<p><span class="cn">FormElement&lt;T&gt;</span> is an abstract class that provides:</p>
+<ul>
+    <li>Automatic registration inside a Form</li>
+    <li>Two-way binding with the FormHandler</li>
+    <li>Integrated validation and error reporting</li>
+    <li>Native form association (formAssociated = true)</li>
+    <li>Built-in event callbacks (onChange, onFormValidation)</li>
+    <li>Internal state management (via ElementInternals)</li>
+</ul>
+
+
+<h2>Core Behavior</h2>
+<h3>Automatic Registration</h3>
+<p>When a <span class="cn">FormElement</span> is created, it automatically registers itself with its nearest parent
+    <span class="cn">Form</span>. This ensures that the form knows about all inputs and can include them in validation
+    or submission processes.
+</p>
+
+<h3>Value and Error Binding</h3>
+<p>Aventus provides two-way synchronization between:</p>
+<ul>
+    <li>The field's value</li>
+    <li>The associated FormHandler's internal state</li>
+    <li>The browser's native form API (<span class="cn">ElementInternals</span>)</li>
+</ul>
+
+<h3>Validation Flow</h3>
+<p>Every <span class="cn">FormElement</span> can:</p>
+<ul>
+    <li>Define custom validation rules through the <span class="cn">validation()</span> method</li>
+    <li>Participate in form-wide validation triggered by the <span class="cn">FormHandler</span></li>
+</ul>
+<p>When a validation occurs:</p>
+<ul>
+    <li>The element checks its own <span class="cn">validation()</span> rules.</li>
+    <li>The form merges its result with any global validation errors.</li>
+    <li>The element updates its <span class="cn">errors</span> array and sets the proper validity state.</li>
+</ul>
+<p>You can override <span class="cn">validation()</span> in your custom components:</p>
+<av-code language="ts">
+    <pre>
+protected async validation(): Promise&lt;string[]&gt; {
+    const errors: string[] = [];
+    if (!this.value) errors.push("This field is required");
+    return errors;
+}
+    </pre>
+</av-code>
+
+<h3>Native Form Integration</h3>
+<p>Aventus elements are natively compatible with browser <span class="cn">&lt;form&gt;</span> elements using
+    ElementInternals.
+    This means:</p>
+
+<ul>
+    <li>You can use them directly inside standard HTML forms.</li>
+    <li>The <span class="cn">form.submit()</span> and <span class="cn">form.reset()</span> methods will behave normally.
+    </li>
+    <li>Validation states (<span class="cn">setValidity</span>) and disabled states are managed automatically.</li>
+</ul>
+
+
+<h3>Creating a Custom Form Element</h3>
+<p>Creating a custom form element is simple: extend <span class="cn">FormElement</span> and implement the rendering
+    logic.</p>
+
+
+<h2>Lifecycle Hooks</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Feature</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>postCreation()</av-col>
+        <av-col size="8" center>Called after the element is initialized. Registers to the parent Form.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>postDestruction()</av-col>
+        <av-col size="8" center>Called when the element is removed. Unregisters from the form.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>formAssociatedCallback(form)</av-col>
+        <av-col size="8" center>Invoked when linked to a native HTML form.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>formDisabledCallback(disabled)</av-col>
+        <av-col size="8" center>Called when the form or element is disabled.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>onFormValidation(errors)</av-col>
+        <av-col size="8" center>Receives and merges validation results.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>validation()</av-col>
+        <av-col size="8" center>Define your own validation logic here.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>triggerChange(value)</av-col>
+        <av-col size="8" center>Emits value change and updates the handler.</av-col>
+    </av-row>
+</div>
+
+<h2>Key Features</h2>
+
+<ul>
+    <li>Two-way data binding between the UI and the FormHandler</li>
+    <li>Integrated validation system with custom and shared rules</li>
+    <li>Automatic registration inside forms</li>
+    <li>Extendable: build any input component</li>
+    <li>Smart error handling and ElementInternals integration</li>
+    <li>Design freedom: full control over rendering and layout</li>
+</ul>
+
+<h2>Example Integration</h2>
+<av-code language="ts">
+    <pre>
+const loginForm = Form.FormHandler.create({
+    email: [Form.Validators.Required, Form.Validators.Email],
+});
+    </pre>
+</av-code>
+<av-code language="html">
+    <pre>
+    &lt;form-element :form="loginForm"&gt;
+        &lt;text-input name="email"&gt;&lt;/text-input&gt;
+        &lt;button-element type="submit"&gt;Submit&lt;/button-element&gt;
+    &lt;/form-element&gt;
+    </pre>
+</av-code>
+<p>Each text-input updates and validates through the shared handler. No glue code required.</p>
+
+<h2>Injectable form part (manual wiring)</h2>
+<p>If your input is used outside of the <span class="cn">Form</span> web component, you can still connect it to a <span class="cn">FormHandler</span> by injecting the form part directly. FormElement exposes an <span class="cn">form property</span> of type <span class="cn">InternalFormPart&lt;T&gt;</span> that you can set to link the element with the <span class="cn">FormHandler's</span> field.</p>
+<p>When a <span class="cn">form</span> is injected:</p>
+<ul>
+    <li>The element registers itself into the <span class="cn">InternalFormPart</span> (<span class="cn">register</span>) so the handler knows about it.</li>
+    <li>The element subscribes to <span class="cn">onValueChange</span> and <span class="cn">onValidation</span> callbacks from the part.</li>
+    <li>Value and error synchronization work the same way as when the element is registered via the <span class="cn">Form</span> container.</li>
+</ul>
+
+<p>If your framework templating supports binding (example follows AventusJS syntax), you can bind the element directly to the FormHandler part:</p>
+<av-code language="ts">
+    <pre>
+const loginForm = Avenuts.Form.FormHandler.create({
+  email: [Avenuts.Form.Validators.Required, Avenuts.Form.Validators.Email],
+});
+    </pre>
+</av-code>
+<av-code language="html">
+    <pre>
+&lt;div&gt;
+  &lt;!-- declarative injection of the email form part --&gt;
+  &lt;text-input name="email" :form="loginForm.parts.email"&gt;&lt;/text-input&gt;
+&lt;/div&gt;
+    </pre>
+</av-code>
+<p>After assignment input will:</p>
+
+<ul>
+    <li>receive the current value (onValueChange → refreshValueFromForm)</li>
+    <li>receive validation callbacks (onFormValidation)</li>
+    <li>push value changes back to loginForm.item when triggerChange() is called</li>
+</ul>
+
+<p>Manual wiring is useful when:</p>
+
+<ul>
+    <li>You need to place inputs outside a &lt;form&gt; container (e.g. component composition, portal, popovers).</li>
+    <li>You want fine-grained control over which elements are bound to which field.</li>
+    <li>You build dynamic forms where fields are created programmatically.</li>
+</ul>
+
+
+<h2>Summary</h2>
+<p><span class="cn">FormElement</span> is the bridge between visual components and logical form management. It encapsulates:</p>
+
+<ul>
+    <li>Value and error synchronization</li>
+    <li>Form registration</li>
+    <li>Validation behavior</li>
+    <li>Native browser integration</li>
+</ul>
+
+<p>It's the building block for all input components in Aventus : logic-driven, design-free, and extensible by design.</p>
+
+
+
+
+

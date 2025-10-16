@@ -1,5 +1,6 @@
 import { DocPage } from "../DocPage/DocPage.wcl.avt";
 import { Collapse } from "../../../core/components/Collapse/Collapse.wcl.avt";
+import type { WebComponent } from "Aventus@Main:Aventus.package.avt";
 
 export class DocSidenav extends Aventus.WebComponent implements Aventus.DefaultComponent {
 
@@ -41,13 +42,13 @@ export class DocSidenav extends Aventus.WebComponent implements Aventus.DefaultC
             if(index > 0) {
                 let state = all[index - 1].to;
                 if(state) {
-                    result.previous = state
+                    result.previous = state;
                 }
             }
             if(index < all.length - 1) {
                 let state = all[index + 1].to;
                 if(state) {
-                    result.next = state
+                    result.next = state;
                 }
             }
         }
@@ -63,15 +64,22 @@ export class DocSidenav extends Aventus.WebComponent implements Aventus.DefaultC
     private addActiveWatchItem(item: Aventus.Navigation.Link) {
         item.onActiveChange.add((isActive) => {
             if(isActive) {
-                let coll = item.findParentByType(Collapse);
-                if(coll) {
-                    coll.open = true;
+                let coll: WebComponent | null = item;
+                while(coll) {
+                    coll = coll.findParentByType(Collapse);
+                    if(coll instanceof Collapse) {
+                        coll.open = true;
+                    }
                 }
+
             }
             else {
-                let coll = item.findParentByType(Collapse);
-                if(coll) {
-                    coll.open = false;
+                let coll: WebComponent | null = item;
+                while(coll) {
+                    coll = coll.findParentByType(Collapse);
+                    if(coll instanceof Collapse) {
+                        coll.open = false;
+                    }
                 }
             }
         });

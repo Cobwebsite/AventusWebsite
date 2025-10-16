@@ -48,6 +48,23 @@ import { DocAdvancedStore } from "../pages/advanced/DocAdvancedStore/DocAdvanced
 import { DocWcSignal } from "../pages/webcomponent/DocWcSignal/DocWcSignal.wcl.avt";
 import { DocI18nConfig } from "../pages/i18n/DocI18nConfig/DocI18nConfig.wcl.avt";
 import { DocI18nUsage } from "../pages/i18n/DocI18nUsage/DocI18nUsage.wcl.avt";
+import { DocUIButton } from "../pages/ui/DocUIButton/DocUIButton.wcl.avt";
+import { DocUIForm } from "../pages/ui/DocUIForm/DocUIForm.wcl.avt";
+import { DocUIFormElement } from "../pages/ui/DocUIFormElement/DocUIFormElement.wcl.avt";
+import { DocUICollapse } from "../pages/ui/DocUICollapse/DocUICollapse.wcl.avt";
+import { DocUIGridHelper } from "../pages/ui/DocUIGridHelper/DocUIGridHelper.wcl.avt";
+import { DocUICol } from "../pages/ui/DocUICol/DocUICol.wcl.avt";
+import { DocUIImage } from "../pages/ui/DocUIImage/DocUIImage.wcl.avt";
+import { DocUIScrollable } from "../pages/ui/DocUIScrollable/DocUIScrollable.wcl.avt";
+import { DocUITabs } from "../pages/ui/DocUITabs/DocUITabs.wcl.avt";
+import { DocUIModal } from "../pages/ui/DocUIModal/DocUIModal.wcl.avt";
+import { DocUIToast } from "../pages/ui/DocUIToast/DocUIToast.wcl.avt";
+import { DocUILink } from "../pages/ui/DocUILink/DocUILink.wcl.avt";
+import { DocUIPage } from "../pages/ui/DocUIPage/DocUIPage.wcl.avt";
+import { DocUIRouter } from "../pages/ui/DocUIRouter/DocUIRouter.wcl.avt";
+import { DocUIProcess } from "../pages/ui/DocUIProcess/DocUIProcess.wcl.avt";
+import { DocUIShortcut } from "../pages/ui/DocUIShortcut/DocUIShortcut.wcl.avt";
+import { DocUIIntroduction } from "../pages/ui/DocUIIntroduction/DocUIIntroduction.wcl.avt";
 
 
 	export class DocApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
@@ -115,9 +132,29 @@ import { DocI18nUsage } from "../pages/i18n/DocI18nUsage/DocI18nUsage.wcl.avt";
 	        this.addRoute("/docs/lib/tools", DocLibTools);
 	        //#endregion
 
-			//#region doc lib
+			//#region doc i18n
 	        this.addRoute("/docs/i18n/config", DocI18nConfig);
 	        this.addRoute("/docs/i18n/usage", DocI18nUsage);
+	        //#endregion
+
+			//#region doc ui
+	        this.addRoute("/docs/ui/introduction", DocUIIntroduction);
+	        this.addRoute("/docs/ui/button", DocUIButton);
+	        this.addRoute("/docs/ui/form", DocUIForm);
+	        this.addRoute("/docs/ui/form_element", DocUIFormElement);
+	        this.addRoute("/docs/ui/col_row", DocUICol);
+	        this.addRoute("/docs/ui/collapse", DocUICollapse);
+	        this.addRoute("/docs/ui/grid_helper", DocUIGridHelper);
+	        this.addRoute("/docs/ui/image", DocUIImage);
+	        this.addRoute("/docs/ui/scrollable", DocUIScrollable);
+	        this.addRoute("/docs/ui/tabs", DocUITabs);
+	        this.addRoute("/docs/ui/modal", DocUIModal);
+	        this.addRoute("/docs/ui/toast", DocUIToast);
+	        this.addRoute("/docs/ui/link", DocUILink);
+	        this.addRoute("/docs/ui/page", DocUIPage);
+	        this.addRoute("/docs/ui/router", DocUIRouter);
+	        this.addRoute("/docs/ui/process", DocUIProcess);
+	        this.addRoute("/docs/ui/shortcut", DocUIShortcut);
 	        //#endregion
 
 	        //#region doc advanced
