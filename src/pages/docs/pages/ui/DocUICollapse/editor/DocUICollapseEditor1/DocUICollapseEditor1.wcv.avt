@@ -1,5 +1,5 @@
 <av-code-editor name="Collapse">
-    <av-code language="html" filename="Example.wcv.avt">
+    <av-code language="html" filename="index.html">
         <pre>
             &lt;av-collapse&gt;
                 &lt;div slot="header">Show details&lt;/div&gt;

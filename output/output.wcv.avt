@@ -1,0 +1,216 @@
+<av-code-editor name="FormElement">
+    <av-code language="typescript" filename="FormElement/src/pages/docs/pages/ui/DocUIFormElement/compiled/DocUIFormElementEditor1Compiled/DocUIFormElementEditor1Compiled.wcl.avt">
+        <pre>
+            export class DocUIFormElementEditor1Compiled extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+            	//#region static
+            	
+            	//#endregion
+            	
+            	
+            	//#region props
+            	
+            	//#endregion
+            	
+            	
+            	//#region variables
+            	
+            	//#endregion
+            	
+            	
+            	//#region constructor
+            	
+            	//#endregion
+            	
+            	
+            	//#region methods
+            	
+            	//#endregion
+            	
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="FormElement/src/pages/docs/pages/ui/DocUIFormElement/compiled/DocUIFormElementEditor1Compiled/DocUIFormElementEditor1Compiled.wcs.avt">
+        <pre>
+            :host {
+                &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="html" filename="FormElement/src/pages/docs/pages/ui/DocUIFormElement/compiled/DocUIFormElementEditor1Compiled/DocUIFormElementEditor1Compiled.wcv.avt">
+        <pre>
+            &lt;av-doc-u-i-form-element-editor-1-input label="test"&gt;&lt;/av-doc-u-i-form-element-editor-1-input&gt;
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="FormElement/src/pages/docs/pages/ui/DocUIFormElement/compiled/DocUIFormElementEditor1Input/DocUIFormElementEditor1Input.wcl.avt">
+        <pre>
+            import { FormElement } from "Aventus@UI:Aventus.Form.package.avt";
+            &nbsp;
+            export class DocUIFormElementEditor1Input extends FormElement&lt;string&gt; implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+                @Property()
+                public name?: string;
+                @Property()
+                public label?: string;
+                @Attribute()
+                public type: string = "text";
+                @Attribute()
+                public placeholder?: string;
+            &nbsp;
+                @Property((target: DocUIFormElementEditor1Input) =&gt; {
+                    target.inputEl.value = target.value ?? "";
+                })
+                public override value: string = "";
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+                @ViewElement()
+                protected inputEl!: HTMLInputElement;
+                private focusValue: string = "";
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+            &nbsp;
+                /**
+                 * 
+                 */
+                protected focusInput() {
+                    this.inputEl.focus();
+                }
+            &nbsp;
+                /**
+                 * 
+                 */
+                public select() {
+                    this.inputEl.select();
+                }
+            &nbsp;
+                /**
+                 * 
+                 */
+                protected onFocus() {
+                    this.clearErrors();
+                    this.focusValue = this.inputEl.value;
+                }
+                /**
+                * 
+                */
+                protected onBlur() {
+                    \if(this.inputEl.value == this.focusValue) {
+                        this.validate();
+                    }
+                }
+                /**
+                * 
+                */
+                protected onInput() {
+                    this.triggerChange(this.inputEl.value);
+                }
+            &nbsp;
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="FormElement/src/pages/docs/pages/ui/DocUIFormElement/compiled/DocUIFormElementEditor1Input/DocUIFormElementEditor1Input.wcs.avt">
+        <pre>
+            :host {
+            	color: black;
+            	width: 100%;
+            &nbsp;
+            	.label {
+            		color: #eee;
+            		cursor: pointer;
+            		display: block;
+            		font-size: 14px;
+            		margin-bottom: 6px;
+            	}
+            &nbsp;
+            	.input {
+            		background-color: #eee;
+            		border: 1px solid gray;
+            		border-radius: 4px;
+            		cursor: pointer;
+            		display: flex;
+            		padding: 0 8px;
+            		width: 100%;
+            &nbsp;
+            &nbsp;
+            		input {
+            			-webkit-appearance: none;
+            			-moz-appearance: none;
+            			appearance: none;
+            			background-color: transparent;
+            			border: none;
+            			color: inherit;
+            			flex-grow: 1;
+            			font-size: 15px;
+            			outline: none;
+            			outline-style: none;
+            			padding: 8px 0;
+            		}
+            	}
+            &nbsp;
+            	.errors {
+            		color: red;
+            		font-size: 13px;
+            		margin-top: 6px;
+            	}
+            }
+            &nbsp;
+            :host(:not([label])),
+            :host([label=""]) {
+            	.label {
+            		display: none;
+            	}
+            }
+            &nbsp;
+            :host(:not([has_errors])) {
+            	.errors {
+            		display: none;
+            	}
+            }
+            &nbsp;
+            :host([disabled]) {
+            	.input {
+            		input {
+            			background-color: #9e9e9e;
+            			border-color: #888888;
+            			box-shadow: none;
+            			cursor: not-allowed;
+            		}
+            	}
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="FormElement/src/pages/docs/pages/ui/DocUIFormElement/compiled/DocUIFormElementEditor1Input/DocUIFormElementEditor1Input.wcv.avt">
+        <pre>
+            &lt;label \for="\{{ this.name }}" class="label" @press="focusInput"&gt;\{{ this.label }}&lt;/label&gt;
+            &lt;div class="input"&gt;
+                &lt;slot name="before"&gt;&lt;/slot&gt;
+                &lt;input @element="inputEl" type="\{{ this.type }}" name="\{{ this.name }}" id="\{{ this.name }}" placeholder="\{{ this.placeholder }}" @focus="onFocus" @blur="onBlur" @input="onInput"&gt;
+                &lt;slot name="after"&gt;&lt;/slot&gt;
+            &lt;/div&gt;
+            &lt;div class="errors"&gt;
+                \for(let error of this.errors) { 
+                    &lt;div&gt;\{{ error }}&lt;/div&gt;
+                }
+            &lt;/div&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

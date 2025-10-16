@@ -1,1 +1,260 @@
-<slot></slot>
+<h1>UI - Scrollable</h1>
+<p>The <span class="cn">av-scrollable</span> component provides a custom, fully-featured scrollable container with
+    support for:</p>
+<ul>
+    <li>Horizontal and vertical scrolling</li>
+    <li>Smooth momentum-based scrolling</li>
+    <li>Floating or static scrollbars</li>
+    <li>Auto-hide scrollbars</li>
+    <li>Mouse dragging</li>
+    <li>Touch and pinch-zoom support</li>
+    <li>Zooming on a point</li>
+    <li>Programmatic scrolling</li>
+</ul>
+
+<p>It's ideal for applications that need precise control over scroll behavior, including drag-to-scroll, zoomable
+    content, and custom scrollbars.</p>
+
+<h2>Concept</h2>
+<p><span class="cn">av-scrollable</span> wraps content in a scrollable container with custom scrollbars. Unlike native
+    scroll elements, it supports momentum, pinch zoom, and dragging, with fully customizable styling.</p>
+
+<p>Example:</p>
+<av-doc-u-i-scrollable-editor-1></av-doc-u-i-scrollable-editor-1>
+
+<h2>Attributes</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4">Attribute</av-col>
+        <av-col size="4">Type</av-col>
+        <av-col size="4">Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">x_scroll</av-col>
+        <av-col size="4">boolean</av-col>
+        <av-col size="4">Enable horizontal scrolling. Default: false.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">y_scroll</av-col>
+        <av-col size="4">boolean</av-col>
+        <av-col size="4">Enable vertical scrolling. Default: true. </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">floating_scroll</av-col>
+        <av-col size="4">boolean</av-col>
+        <av-col size="4">If true, scrollbars float over content instead of pushing it. </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">auto_hide</av-col>
+        <av-col size="4">boolean</av-col>
+        <av-col size="4">Scrollbars hide automatically when not in use.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">disable</av-col>
+        <av-col size="4">boolean</av-col>
+        <av-col size="4">Disables all user interaction with scrolling.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">mouse_drag</av-col>
+        <av-col size="4">boolean</av-col>
+        <av-col size="4">Enables dragging content with a mouse.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">pinch</av-col>
+        <av-col size="4">boolean</av-col>
+        <av-col size="4">Enables pinch-to-zoom on touch devices.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">zoom</av-col>
+        <av-col size="4">number</av-col>
+        <av-col size="4">Current zoom level of the content. Default: 1. </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">min_zoom</av-col>
+        <av-col size="4">number</av-col>
+        <av-col size="4">Minimum allowed zoom level. Default: 1. </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">max_zoom</av-col>
+        <av-col size="4">number</av-col>
+        <av-col size="4">Maximum allowed zoom level. Default: unlimited. </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">break</av-col>
+        <av-col size="4">number</av-col>
+        <av-col size="4">Easing factor for momentum. Default: 0.1. </av-col>
+    </av-row>
+</div>
+
+<h2>Features</h2>
+<h3>1. Momentum-based scrolling</h3>
+<p><span class="cn">av-scrollable</span> applies smooth momentum when dragging or using the mouse wheel. The break
+    attribute controls easing.</p>
+<h3>2. Custom scrollbars</h3>
+<ul>
+    <li>Scrollbars are separate DOM elements, styled with CSS variables.</li>
+    <li>Floating scrollbars can auto-hide after inactivity.</li>
+    <li>Supports drag-to-scroll directly on the scrollbars.</li>
+</ul>
+<h3>3. Pinch-to-zoom</h3>
+<ul>
+    <li>Works on touch devices with two fingers.</li>
+    <li>Zoom is centered on a point for precise control.</li>
+    <li>Zoom boundaries respect min_zoom and max_zoom.</li>
+    <li>Triggers onZoomChange callback when zoom changes.</li>
+</ul>
+<h3>4. Mouse dragging</h3>
+<ul>
+    <li>Drag content with mouse if mouse_drag is enabled.</li>
+    <li>Momentum continues after release for a natural feel.</li>
+</ul>
+
+<h2>Callbacks</h2>
+
+<div class="table">
+    <av-row class="header">
+        <av-col size="4">Callback</av-col>
+        <av-col size="8">Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">onScrollChange</av-col>
+        <av-col size="8">Triggered whenever the scroll position changes. Returns (x: number, y: number).</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">onZoomChange</av-col>
+        <av-col size="8">Triggered when the zoom level changes. Returns the new zoom number.</av-col>
+    </av-row>
+</div>
+
+
+<h2>Methods</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="6">Method</av-col>
+        <av-col size="6">Description</av-col>
+        </av-row>
+    <av-row>
+        <av-col size="6">scrollToPosition(x, y)</av-col>
+        <av-col size="6">Scrolls to specific pixel positions.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">scrollX(x)</av-col>
+        <av-col size="6">Scroll horizontally to pixel position.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">scrollXPercent(percent)</av-col>
+        <av-col size="6">Scroll horizontally as a percentage of total width.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">scrollY(y)</av-col>
+        <av-col size="6">Scroll vertically to pixel position.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">scrollYPercent(percent)</av-col>
+        <av-col size="6">Scroll vertically as a percentage of total height.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">zoomOnPoint(clientX, clientY, newZoom)</av-col>
+        <av-col size="6">Zoom centered at a screen point (clientX, clientY) to a specific zoom value.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">autoScrollRight(percent)</av-col>
+        <av-col size="6">Automatically scrolls right at a speed relative to content size.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">stopAutoScrollRight()</av-col>
+        <av-col size="6">Stops auto-scroll right.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">autoScrollLeft(percent)</av-col>
+        <av-col size="6">Automatically scrolls left.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">stopAutoScrollLeft()</av-col>
+        <av-col size="6">Stops auto-scroll left.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">autoScrollTop(percent)</av-col>
+        <av-col size="6">Automatically scrolls up.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">stopAutoScrollTop()</av-col>
+        <av-col size="6">Stops auto-scroll up.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">autoScrollBottom(percent)</av-col>
+        <av-col size="6">Automatically scrolls down.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">stopAutoScrollBottom()</av-col>
+        <av-col size="6">Stops auto-scroll down.</av-col>
+    </av-row>
+</div>
+
+<h2>CSS Variables</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4">Variable</av-col>
+        <av-col size="4">Default</av-col>
+        <av-col size="4">Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">--scrollbar-container-color</av-col>
+        <av-col size="4">transparent</av-col>
+        <av-col size="4">Background color of scrollbar container.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">--scrollbar-color</av-col>
+        <av-col size="4">#757575</av-col>
+        <av-col size="4">Scrollbar color.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">--scrollbar-active-color</av-col>
+        <av-col size="4">#858585</av-col>
+        <av-col size="4">Scrollbar color when active/dragged.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">--scroller-width</av-col>
+        <av-col size="4">6px</av-col>
+        <av-col size="4">Width of scrollbar.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">--scroller-top</av-col>
+        <av-col size="4">3px</av-col>
+        <av-col size="4">Top padding of horizontal scrollbar.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">--scroller-bottom</av-col>
+        <av-col size="4">3px</av-col>
+        <av-col size="4">Bottom padding of horizontal scrollbar.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">--scroller-left</av-col>
+        <av-col size="4">3px</av-col>
+        <av-col size="4">Left padding of vertical scrollbar.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">--scroller-right</av-col>
+        <av-col size="4">3px</av-col>
+        <av-col size="4">Right padding of vertical scrollbar.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">--scrollbar-content-padding</av-col>
+        <av-col size="4">0</av-col>
+        <av-col size="4">Padding inside content-wrapper.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4">--scrollbar-container-display</av-col>
+        <av-col size="4">inline-block</av-col>
+        <av-col size="4">Display type of content-wrapper.</av-col>
+    </av-row>
+</div>
+
+<h2>Notes</h2>
+<ul>
+    <li>Scrollbars are automatically shown or hidden based on content size.</li>
+    <li><span class="cn">disable</span> temporarily locks scrolling and zooming.</li>
+    <li>Pinch zoom uses DOMMatrix transformations for smooth and accurate scaling.</li>
+    <li>Supports both pixel-based and percent-based scrolling.</li>
+    <li>Works in combination with Aventus PressManager for unified pointer/touch handling.</li>
+</ul>

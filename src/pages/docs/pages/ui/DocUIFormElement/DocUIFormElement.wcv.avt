@@ -33,6 +33,7 @@
     <li>Internal state management (via ElementInternals)</li>
 </ul>
 
+<av-doc-u-i-form-element-editor-1></av-doc-u-i-form-element-editor-1>
 
 <h2>Core Behavior</h2>
 <h3>Automatic Registration</h3>

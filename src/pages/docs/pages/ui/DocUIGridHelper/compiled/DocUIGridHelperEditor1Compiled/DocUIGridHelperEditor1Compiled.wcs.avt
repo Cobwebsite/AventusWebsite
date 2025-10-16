@@ -1,0 +1,16 @@
+:host {
+	width: 100%;
+
+	.page {
+		background-color: white;
+		height: 400px;
+		position: relative;
+		width: 100%;
+        overflow: hidden;
+
+		av-grid-helper {
+			--ruler-color: var(--secondary-color);
+			position: absolute;
+		}
+	}
+}

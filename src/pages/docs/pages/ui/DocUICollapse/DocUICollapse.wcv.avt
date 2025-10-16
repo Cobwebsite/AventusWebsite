@@ -36,8 +36,8 @@ It's designed to handle open/close logic automatically while letting you define 
 <div class="table">
     <av-row class="header">
         <av-col size="4">Attribute</av-col>
-        <av-col size="4">Type</av-col>
         <av-col size="4">Description</av-col>
+        <av-col size="4">Default value</av-col>
     </av-row>
     <av-row>
         <av-col size="4">--collapse-transition-duration</av-col>

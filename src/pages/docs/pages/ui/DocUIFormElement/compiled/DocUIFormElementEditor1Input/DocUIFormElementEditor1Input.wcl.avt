@@ -1,0 +1,79 @@
+import { FormElement } from "Aventus@UI:Aventus.Form.package.avt";
+
+export class DocUIFormElementEditor1Input extends FormElement<string> implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+    @Property()
+    public name?: string;
+    @Property()
+    public label?: string;
+    @Attribute()
+    public type: string = "text";
+    @Attribute()
+    public placeholder?: string;
+
+    @Property((target: DocUIFormElementEditor1Input) => {
+        target.inputEl.value = target.value ?? "";
+    })
+    public override value: string = "";
+    //#endregion
+
+
+    //#region variables
+    @ViewElement()
+    protected inputEl!: HTMLInputElement;
+    private focusValue: string = "";
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+
+    /**
+     * 
+     */
+    protected focusInput() {
+        this.inputEl.focus();
+    }
+
+    /**
+     * 
+     */
+    public select() {
+        this.inputEl.select();
+    }
+
+    /**
+     * 
+     */
+    protected onFocus() {
+        this.clearErrors();
+        this.focusValue = this.inputEl.value;
+    }
+    /**
+    * 
+    */
+    protected onBlur() {
+        if(this.inputEl.value == this.focusValue) {
+            this.validate();
+        }
+    }
+    /**
+    * 
+    */
+    protected onInput() {
+        this.triggerChange(this.inputEl.value);
+    }
+
+    //#endregion
+
+}

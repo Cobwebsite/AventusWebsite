@@ -64,6 +64,11 @@ const _ = {};
 
 
 let _n;
+let isClass=function isClass(v) {
+    return typeof v === 'function' && /^\s*class\s+/.test(v.toString());
+}
+__as1(_, 'isClass', isClass);
+
 let DateConverter=class DateConverter {
     static __converter = new DateConverter();
     static get converter() {
@@ -1038,6 +1043,46 @@ let Signal=class Signal {
 Signal.Namespace=`Aventus`;
 __as1(_, 'Signal', Signal);
 
+let Computed=class Computed extends Effect {
+    _value;
+    __path = "*";
+    get value() {
+        if (!this.isInit) {
+            this.init();
+        }
+        Watcher._register?.register(this, "*", Watcher._register.version, "*");
+        return this._value;
+    }
+    autoInit() {
+        return false;
+    }
+    constructor(fct) {
+        super(fct);
+    }
+    init() {
+        this.isInit = true;
+        this.computedValue();
+    }
+    computedValue() {
+        this._value = this.run();
+    }
+    onChange(action, changePath, value, dones) {
+        if (!this.checkCanChange(action, changePath, value, dones)) {
+            return;
+        }
+        let oldValue = this._value;
+        this.computedValue();
+        if (oldValue === this._value) {
+            return;
+        }
+        for (let fct of this.__subscribes) {
+            fct(action, changePath, value, dones);
+        }
+    }
+}
+Computed.Namespace=`Aventus`;
+__as1(_, 'Computed', Computed);
+
 let Watcher=class Watcher {
     constructor() { }
     ;
@@ -1879,46 +1924,6 @@ let Watcher=class Watcher {
 }
 Watcher.Namespace=`Aventus`;
 __as1(_, 'Watcher', Watcher);
-
-let Computed=class Computed extends Effect {
-    _value;
-    __path = "*";
-    get value() {
-        if (!this.isInit) {
-            this.init();
-        }
-        Watcher._register?.register(this, "*", Watcher._register.version, "*");
-        return this._value;
-    }
-    autoInit() {
-        return false;
-    }
-    constructor(fct) {
-        super(fct);
-    }
-    init() {
-        this.isInit = true;
-        this.computedValue();
-    }
-    computedValue() {
-        this._value = this.run();
-    }
-    onChange(action, changePath, value, dones) {
-        if (!this.checkCanChange(action, changePath, value, dones)) {
-            return;
-        }
-        let oldValue = this._value;
-        this.computedValue();
-        if (oldValue === this._value) {
-            return;
-        }
-        for (let fct of this.__subscribes) {
-            fct(action, changePath, value, dones);
-        }
-    }
-}
-Computed.Namespace=`Aventus`;
-__as1(_, 'Computed', Computed);
 
 let ComputedNoRecomputed=class ComputedNoRecomputed extends Computed {
     init() {
@@ -6026,6 +6031,83 @@ let Data=class Data {
 Data.Namespace=`Aventus`;
 __as1(_, 'Data', Data);
 
+let GenericError=class GenericError {
+    /**
+     * Code for the error
+     */
+    code;
+    /**
+     * Description of the error
+     */
+    message;
+    /**
+     * Additional details related to the error.
+     */
+    details = [];
+    /**
+     * Creates a new instance of GenericError.
+     * @param {EnumValue<T>} code - The error code.
+     * @param {string} message - The error message.
+     */
+    constructor(code, message) {
+        this.code = code;
+        this.message = message + '';
+    }
+}
+GenericError.Namespace=`Aventus`;
+__as1(_, 'GenericError', GenericError);
+
+let VoidWithError=class VoidWithError {
+    /**
+     * Determine if the action is a success
+     */
+    get success() {
+        return this.errors.length == 0;
+    }
+    /**
+     * List of errors
+     */
+    errors = [];
+    /**
+     * Converts the current instance to a VoidWithError object.
+     * @returns {VoidWithError} A new instance of VoidWithError with the same error list.
+     */
+    toGeneric() {
+        const result = new VoidWithError();
+        result.errors = this.errors;
+        return result;
+    }
+    /**
+    * Checks if the error list contains a specific error code.
+    * @template U - The type of error, extending GenericError.
+    * @template T - The type of the error code, which extends either number or Enum.
+    * @param {EnumValue<T>} code - The error code to check for.
+    * @param {new (...args: any[]) => U} [type] - Optional constructor function of the error type.
+    * @returns {boolean} True if the error list contains the specified error code, otherwise false.
+    */
+    containsCode(code, type) {
+        if (type) {
+            for (let error of this.errors) {
+                if (error instanceof type) {
+                    if (error.code == code) {
+                        return true;
+                    }
+                }
+            }
+        }
+        else {
+            for (let error of this.errors) {
+                if (error.code == code) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}
+VoidWithError.Namespace=`Aventus`;
+__as1(_, 'VoidWithError', VoidWithError);
+
 
 for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
@@ -6155,11 +6237,231 @@ const __as1 = (o, k, c) => { if (o[k] !== undefined) for (let w in o[k]) { c[w] 
 const moduleName = `Aventus`;
 const _ = {};
 
+let Form = {};
+_.Form = Aventus.Form ?? {};
+let Lib = {};
+_.Lib = Aventus.Lib ?? {};
 let Layout = {};
 _.Layout = Aventus.Layout ?? {};
 let Navigation = {};
 _.Navigation = Aventus.Navigation ?? {};
 let _n;
+Form.ButtonElement = class ButtonElement extends Aventus.WebComponent {
+    static get observedAttributes() {return ["type"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'type'() { return this.getStringProp('type') }
+    set 'type'(val) { this.setStringAttr('type', val) }    static get formAssociated() { return true; }
+    internals;
+    handler = undefined;
+    static __style = ``;
+    constructor() {
+        super();
+        this.internals = this.attachInternals();
+        if (this.constructor == ButtonElement) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return ButtonElement;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(ButtonElement.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "ButtonElement";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('type')){ this['type'] = 'button'; } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('type'); }
+    async triggerSubmit() {
+        if (this.type == "submit") {
+            if ("loading" in this) {
+                if (this.loading)
+                    return;
+                this.loading = true;
+            }
+            if (this.internals.form) {
+                this.internals.form.requestSubmit();
+            }
+            else if (this.handler) {
+                await this.handler.requestSubmit();
+                if ("loading" in this) {
+                    this.loading = false;
+                }
+            }
+        }
+    }
+    postCreation() {
+        super.postCreation();
+        this.handler = this.findParentByType(_.Form.Form.formElements)?.registerSubmit(this);
+        if (this.type == "submit") {
+            new Aventus.PressManager({
+                element: this,
+                onPress: () => {
+                    this.triggerSubmit();
+                }
+            });
+            this.addEventListener("keyup", (e) => {
+                if (e.key == 'Enter') {
+                    this.triggerSubmit();
+                }
+            });
+        }
+    }
+}
+Form.ButtonElement.Namespace=`Aventus.Form`;
+__as1(_.Form, 'ButtonElement', Form.ButtonElement);
+
+(function (SpecialTouch) {
+    SpecialTouch[SpecialTouch["Backspace"] = 0] = "Backspace";
+    SpecialTouch[SpecialTouch["Insert"] = 1] = "Insert";
+    SpecialTouch[SpecialTouch["End"] = 2] = "End";
+    SpecialTouch[SpecialTouch["PageDown"] = 3] = "PageDown";
+    SpecialTouch[SpecialTouch["PageUp"] = 4] = "PageUp";
+    SpecialTouch[SpecialTouch["Escape"] = 5] = "Escape";
+    SpecialTouch[SpecialTouch["AltGraph"] = 6] = "AltGraph";
+    SpecialTouch[SpecialTouch["Control"] = 7] = "Control";
+    SpecialTouch[SpecialTouch["Alt"] = 8] = "Alt";
+    SpecialTouch[SpecialTouch["Shift"] = 9] = "Shift";
+    SpecialTouch[SpecialTouch["CapsLock"] = 10] = "CapsLock";
+    SpecialTouch[SpecialTouch["Tab"] = 11] = "Tab";
+    SpecialTouch[SpecialTouch["Delete"] = 12] = "Delete";
+    SpecialTouch[SpecialTouch["ArrowRight"] = 13] = "ArrowRight";
+    SpecialTouch[SpecialTouch["ArrowLeft"] = 14] = "ArrowLeft";
+    SpecialTouch[SpecialTouch["ArrowUp"] = 15] = "ArrowUp";
+    SpecialTouch[SpecialTouch["ArrowDown"] = 16] = "ArrowDown";
+    SpecialTouch[SpecialTouch["Enter"] = 17] = "Enter";
+})(Lib.SpecialTouch || (Lib.SpecialTouch = {}));
+__as1(_.Lib, 'SpecialTouch', Lib.SpecialTouch);
+
+Layout.GridGuideHelper = class GridGuideHelper extends Aventus.WebComponent {
+    get 'direction'() { return this.getStringAttr('direction') }
+    set 'direction'(val) { this.setStringAttr('direction', val) }get 'moving'() { return this.getBoolAttr('moving') }
+    set 'moving'(val) { this.setBoolAttr('moving', val) }    container;
+    static __style = `:host{background-color:#c7c7c7;left:0;pointer-events:all;position:absolute;top:0;font-family:inherit}:host .position{background-color:#c7c7c7;border-radius:5px;padding:5px 15px;position:absolute;display:none;font-size:11px}:host(:hover){background-color:red}:host([direction=x]){cursor:ns-resize;height:2px;width:100%;transform:translateY(-50%)}:host([direction=x]) .position{bottom:10px}:host([direction=y]){cursor:ew-resize;height:100%;width:2px;transform:translateX(-50%)}:host([direction=y]) .position{left:10px}:host([moving]) .position{display:flex}`;
+    constructor() {
+        super();
+        this.onStart = this.onStart.bind(this);
+        this.onMoveX = this.onMoveX.bind(this);
+        this.onMoveY = this.onMoveY.bind(this);
+        this.onStop = this.onStop.bind(this);
+    }
+    __getStatic() {
+        return GridGuideHelper;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(GridGuideHelper.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<div class="position" _id="gridguidehelper_0"><slot></slot></div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "positionEl",
+      "ids": [
+        "gridguidehelper_0"
+      ]
+    }
+  ]
+}); }
+    getClassName() {
+        return "GridGuideHelper";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('direction')){ this['direction'] = "x"; }if(!this.hasAttribute('moving')) { this.attributeChangedCallback('moving', false, false); } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('direction');this.__upgradeProperty('moving'); }
+    __listBoolProps() { return ["moving"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    displayValue(v) {
+        this.innerHTML = this.container.fromPx(v) + this.container.unit;
+    }
+    onStart() {
+        this.moving = true;
+    }
+    applyMagnetic(valuePx) {
+        const m = this.container.inPx(this.container.magnetic);
+        if (m == 0)
+            return valuePx;
+        const step = this.container.inPx(this.container.step);
+        const div = Math.round(valuePx / step) * step;
+        return Math.abs(div - valuePx) < m ? div : valuePx;
+    }
+    onMoveX(e) {
+        const valuePx = this.applyMagnetic(e.pageY - this.container.getBoundingClientRect().y);
+        this.style.top = valuePx + 'px';
+        this.positionEl.style.left = e.pageX - this.container.getBoundingClientRect().x + 10 + 'px';
+        this.displayValue(valuePx);
+    }
+    onMoveY(e) {
+        const valuePx = this.applyMagnetic(e.pageX - this.container.getBoundingClientRect().x);
+        this.style.left = valuePx + 'px';
+        this.positionEl.style.top = e.pageY - this.container.getBoundingClientRect().y - 20 + 'px';
+        this.displayValue(valuePx);
+    }
+    onStop() {
+        this.moving = false;
+        this.container.save();
+    }
+    postCreation() {
+        if (!this.container)
+            this.container = this.findParentByType(_.Layout.GridHelper);
+        if (this.direction == "x") {
+            new Aventus.DragAndDrop({
+                element: this,
+                offsetDrag: 0,
+                applyDrag: false,
+                onStart: () => {
+                    this.onStart();
+                },
+                onMove: (e) => {
+                    this.onMoveX(e);
+                },
+                onStop: () => {
+                    this.onStop();
+                }
+            });
+        }
+        else {
+            new Aventus.DragAndDrop({
+                element: this,
+                offsetDrag: 0,
+                applyDrag: false,
+                onStart: () => {
+                    this.onStart();
+                },
+                onMove: (e) => {
+                    this.onMoveY(e);
+                },
+                onStop: () => {
+                    this.onStop();
+                }
+            });
+        }
+        new Aventus.PressManager({
+            element: this,
+            onDblPress: () => {
+                const helper = this.findParentByType(_.Layout.GridHelper);
+                this.remove();
+                helper?.save();
+            }
+        });
+    }
+}
+Layout.GridGuideHelper.Namespace=`Aventus.Layout`;
+Layout.GridGuideHelper.Tag=`av-grid-guide-helper`;
+__as1(_.Layout, 'GridGuideHelper', Layout.GridGuideHelper);
+if(!window.customElements.get('av-grid-guide-helper')){window.customElements.define('av-grid-guide-helper', Layout.GridGuideHelper);Aventus.WebComponentInstance.registerDefinition(Layout.GridGuideHelper);}
+
 const Img = class Img extends Aventus.WebComponent {
     static get observedAttributes() {return ["src", "mode"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
     get 'cache'() { return this.getBoolAttr('cache') }
@@ -6510,6 +6812,90 @@ Navigation.Link.Namespace=`Aventus.Navigation`;
 Navigation.Link.Tag=`av-link`;
 __as1(_.Navigation, 'Link', Navigation.Link);
 if(!window.customElements.get('av-link')){window.customElements.define('av-link', Navigation.Link);Aventus.WebComponentInstance.registerDefinition(Navigation.Link);}
+
+Form.Form = class Form extends Aventus.WebComponent {
+    static get defaultConfig() {
+        return _.Form.FormHandler._globalConfig;
+    }
+    static set formElements(value) {
+        _.Form.FormHandler._IFormElements = value;
+    }
+    static get formElements() {
+        return _.Form.FormHandler._IFormElements;
+    }
+    form;
+    request;
+    elements = [];
+    btns = [];
+    onSubmit = new Aventus.Callback();
+    static __style = ``;
+    constructor() {
+        super();
+        this.checkEnter = this.checkEnter.bind(this);
+    }
+    __getStatic() {
+        return Form;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Form.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "Form";
+    }
+    checkEnter(e) {
+        if (e.key == "Enter") {
+            this.requestSubmit();
+        }
+    }
+    registerElement(element) {
+        if (this.elements.length > 0) {
+            this.elements[this.elements.length - 1].removeEventListener("keyup", this.checkEnter);
+        }
+        this.elements.push(element);
+        element.addEventListener("keyup", this.checkEnter);
+        return this;
+    }
+    registerSubmit(element) {
+        this.btns.push(element);
+        return this;
+    }
+    async requestSubmit() {
+        if (!this.form) {
+            for (let element of this.elements) {
+                this.form = element.form?.handler;
+                if (this.form)
+                    break;
+            }
+        }
+        if (this.form) {
+            if (this.request) {
+                this.form.submit(this.request);
+            }
+            else if (await this.form.validate()) {
+                this.onSubmit.trigger();
+            }
+        }
+    }
+    static create(schema, config) {
+        let form = new _.Form.FormHandler(schema, config);
+        return form;
+    }
+    static configure(value) {
+        _.Form.FormHandler._globalConfig = value;
+    }
+}
+Form.Form.Namespace=`Aventus.Form`;
+Form.Form.Tag=`av-form`;
+__as1(_.Form, 'Form', Form.Form);
+if(!window.customElements.get('av-form')){window.customElements.define('av-form', Form.Form);Aventus.WebComponentInstance.registerDefinition(Form.Form);}
 
 Navigation.Page = class Page extends Aventus.WebComponent {
     static get observedAttributes() {return ["visible"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
@@ -7912,6 +8298,1278 @@ Layout.Col.Tag=`av-col`;
 __as1(_.Layout, 'Col', Layout.Col);
 if(!window.customElements.get('av-col')){window.customElements.define('av-col', Layout.Col);Aventus.WebComponentInstance.registerDefinition(Layout.Col);}
 
+Lib.ShortcutManager=class ShortcutManager {
+    static memory = {};
+    static autoPrevents = [];
+    static isInit = false;
+    static arrayKeys = [];
+    static options = new Map();
+    static replacingMemory = {};
+    static isTxt(touch) {
+        return touch.match(/[a-zA-Z0-9_\+\-]/g);
+    }
+    static getText(combinaison) {
+        let allTouches = [];
+        for (let touch of combinaison) {
+            let realTouch = "";
+            if (typeof touch == "number" && Lib.SpecialTouch[touch] !== undefined) {
+                realTouch = Lib.SpecialTouch[touch];
+            }
+            else if (this.isTxt(touch)) {
+                realTouch = touch;
+            }
+            else {
+                throw "I can't use " + touch + " to add a shortcut";
+            }
+            allTouches.push(realTouch);
+        }
+        allTouches.sort();
+        return allTouches.join("+");
+    }
+    static subscribe(combinaison, cb, options) {
+        if (!Array.isArray(combinaison)) {
+            combinaison = [combinaison];
+        }
+        let key = this.getText(combinaison);
+        if (options?.replaceTemp) {
+            if (Lib.ShortcutManager.memory[key]) {
+                if (!this.replacingMemory[key]) {
+                    this.replacingMemory[key] = [];
+                }
+                this.replacingMemory[key].push(Lib.ShortcutManager.memory[key]);
+                delete Lib.ShortcutManager.memory[key];
+            }
+        }
+        if (!Lib.ShortcutManager.memory[key]) {
+            Lib.ShortcutManager.memory[key] = [];
+        }
+        if (!Lib.ShortcutManager.memory[key].includes(cb)) {
+            Lib.ShortcutManager.memory[key].push(cb);
+            if (options) {
+                this.options.set(cb, options);
+            }
+        }
+        if (!Lib.ShortcutManager.isInit) {
+            Lib.ShortcutManager.init();
+        }
+    }
+    static unsubscribe(combinaison, cb) {
+        if (!Array.isArray(combinaison)) {
+            combinaison = [combinaison];
+        }
+        let key = this.getText(combinaison);
+        if (Lib.ShortcutManager.memory[key]) {
+            let index = Lib.ShortcutManager.memory[key].indexOf(cb);
+            if (index != -1) {
+                Lib.ShortcutManager.memory[key].splice(index, 1);
+                let options = this.options.get(cb);
+                if (options) {
+                    this.options.delete(cb);
+                }
+                if (Lib.ShortcutManager.memory[key].length == 0) {
+                    delete Lib.ShortcutManager.memory[key];
+                    if (options?.replaceTemp) {
+                        if (this.replacingMemory[key]) {
+                            if (this.replacingMemory[key].length > 0) {
+                                Lib.ShortcutManager.memory[key] = this.replacingMemory[key].pop();
+                                if (this.replacingMemory[key].length == 0) {
+                                    delete this.replacingMemory[key];
+                                }
+                            }
+                            else {
+                                delete this.replacingMemory[key];
+                            }
+                        }
+                    }
+                }
+                if (Object.keys(Lib.ShortcutManager.memory).length == 0 && Lib.ShortcutManager.isInit) {
+                    //ShortcutManager.uninit();
+                }
+            }
+        }
+    }
+    static onKeyDown(e) {
+        if (e.ctrlKey) {
+            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Control];
+            if (!this.arrayKeys.includes(txt)) {
+                this.arrayKeys.push(txt);
+            }
+        }
+        if (e.altKey) {
+            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Alt];
+            if (!this.arrayKeys.includes(txt)) {
+                this.arrayKeys.push(txt);
+            }
+        }
+        if (e.shiftKey) {
+            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Shift];
+            if (!this.arrayKeys.includes(txt)) {
+                this.arrayKeys.push(txt);
+            }
+        }
+        if (this.isTxt(e.key) && !this.arrayKeys.includes(e.key)) {
+            this.arrayKeys.push(e.key);
+        }
+        else if (Lib.SpecialTouch[e.key] !== undefined && !this.arrayKeys.includes(e.key)) {
+            this.arrayKeys.push(e.key);
+        }
+        this.arrayKeys.sort();
+        let key = this.arrayKeys.join("+");
+        if (Lib.ShortcutManager.memory[key]) {
+            let preventDefault = true;
+            for (let cb of Lib.ShortcutManager.memory[key]) {
+                let options = this.options.get(cb);
+                if (options && options.preventDefault === false) {
+                    preventDefault = false;
+                }
+            }
+            this.arrayKeys = [];
+            for (let cb of Lib.ShortcutManager.memory[key]) {
+                const result = cb();
+                if (result === false) {
+                    preventDefault = result;
+                }
+            }
+            if (preventDefault) {
+                e.preventDefault();
+            }
+        }
+        else if (Lib.ShortcutManager.autoPrevents.includes(key)) {
+            e.preventDefault();
+        }
+    }
+    static onKeyUp(e) {
+        let index = this.arrayKeys.indexOf(e.key);
+        if (index != -1) {
+            this.arrayKeys.splice(index, 1);
+        }
+    }
+    static init() {
+        if (Lib.ShortcutManager.isInit)
+            return;
+        Lib.ShortcutManager.isInit = true;
+        this.onKeyDown = this.onKeyDown.bind(this);
+        this.onKeyUp = this.onKeyUp.bind(this);
+        Lib.ShortcutManager.autoPrevents = [
+            this.getText([Lib.SpecialTouch.Control, "s"]),
+            this.getText([Lib.SpecialTouch.Control, "p"]),
+            this.getText([Lib.SpecialTouch.Control, "l"]),
+            this.getText([Lib.SpecialTouch.Control, "k"]),
+            this.getText([Lib.SpecialTouch.Control, "j"]),
+            this.getText([Lib.SpecialTouch.Control, "h"]),
+            this.getText([Lib.SpecialTouch.Control, "g"]),
+            this.getText([Lib.SpecialTouch.Control, "f"]),
+            this.getText([Lib.SpecialTouch.Control, "d"]),
+            this.getText([Lib.SpecialTouch.Control, "o"]),
+            this.getText([Lib.SpecialTouch.Control, "u"]),
+            this.getText([Lib.SpecialTouch.Control, "e"]),
+        ];
+        window.addEventListener("blur", () => {
+            this.arrayKeys = [];
+        });
+        document.body.addEventListener("keydown", this.onKeyDown);
+        document.body.addEventListener("keyup", this.onKeyUp);
+    }
+    static uninit() {
+        document.body.removeEventListener("keydown", this.onKeyDown);
+        document.body.removeEventListener("keyup", this.onKeyUp);
+        this.arrayKeys = [];
+        Lib.ShortcutManager.isInit = false;
+    }
+}
+Lib.ShortcutManager.Namespace=`Aventus.Lib`;
+__as1(_.Lib, 'ShortcutManager', Lib.ShortcutManager);
+
+Layout.GridHelper = class GridHelper extends Aventus.WebComponent {
+    static get observedAttributes() {return ["unit", "nb_col", "nb_row", "col_width", "row_height", "ruler_size", "step", "step_big", "magnetic"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'show_rulers'() { return this.getBoolAttr('show_rulers') }
+    set 'show_rulers'(val) { this.setBoolAttr('show_rulers', val) }get 'show_grid'() { return this.getBoolAttr('show_grid') }
+    set 'show_grid'(val) { this.setBoolAttr('show_grid', val) }get 'show_ruler'() { return this.getBoolAttr('show_ruler') }
+    set 'show_ruler'(val) { this.setBoolAttr('show_ruler', val) }get 'show_guides'() { return this.getBoolAttr('show_guides') }
+    set 'show_guides'(val) { this.setBoolAttr('show_guides', val) }get 'lock'() { return this.getBoolAttr('lock') }
+    set 'lock'(val) { this.setBoolAttr('lock', val) }get 'visible'() { return this.getBoolAttr('visible') }
+    set 'visible'(val) { this.setBoolAttr('visible', val) }    get 'unit'() { return this.getStringProp('unit') }
+    set 'unit'(val) { this.setStringAttr('unit', val) }get 'nb_col'() { return this.getNumberProp('nb_col') }
+    set 'nb_col'(val) { this.setNumberAttr('nb_col', val) }get 'nb_row'() { return this.getNumberProp('nb_row') }
+    set 'nb_row'(val) { this.setNumberAttr('nb_row', val) }get 'col_width'() { return this.getNumberProp('col_width') }
+    set 'col_width'(val) { this.setNumberAttr('col_width', val) }get 'row_height'() { return this.getNumberProp('row_height') }
+    set 'row_height'(val) { this.setNumberAttr('row_height', val) }get 'ruler_size'() { return this.getNumberProp('ruler_size') }
+    set 'ruler_size'(val) { this.setNumberAttr('ruler_size', val) }get 'step'() { return this.getNumberProp('step') }
+    set 'step'(val) { this.setNumberAttr('step', val) }get 'step_big'() { return this.getNumberProp('step_big') }
+    set 'step_big'(val) { this.setNumberAttr('step_big', val) }get 'magnetic'() { return this.getNumberProp('magnetic') }
+    set 'magnetic'(val) { this.setNumberAttr('magnetic', val) }    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("unit", ((target) => {
+    target.rulerLeftEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
+    target.rulerTopEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
+    target.lockEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
+}));this.__addPropertyActions("nb_row", ((target) => {
+}));this.__addPropertyActions("row_height", ((target) => {
+}));this.__addPropertyActions("ruler_size", ((target) => {
+    target.rulerLeftEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
+    target.rulerTopEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
+    target.lockEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
+})); }
+    static __style = `:host{--ruler-color: white;display:none;font-family:Arial,Helvetica,sans-serif;inset:0;pointer-events:none;position:fixed;user-select:none;z-index:9999}:host .grid{inset:0;position:absolute}:host .grid .cols,:host .grid .rows{display:flex;inset:0;position:absolute}:host .grid .rows{flex-direction:column}:host .grid .col{flex-shrink:0;height:100%;position:relative;width:var(--local-col-width)}:host .grid .col::after{background-color:#e78181;content:"";height:100%;position:absolute;right:-1px;top:0;width:2px}:host .grid .col:last-child::after{display:none}:host .grid .row{flex-shrink:0;height:var(--local-row-height);position:relative;width:100%}:host .grid .row::after{background-color:#e78181;bottom:-1px;content:"";height:2px;left:0;position:absolute;width:100%}:host .grid .row:last-child::after{display:none}:host .ruler-top{background-color:var(--ruler-color);height:var(--ruler-size);pointer-events:all;position:absolute;top:0;width:100%;z-index:3}:host .ruler-top::after{bottom:0;box-shadow:5px 0 5px #818181;content:"";height:100%;left:var(--ruler-size);pointer-events:none;position:absolute;width:calc(100% - var(--ruler-size))}:host .ruler-top .ruler-content{display:flex;flex-direction:row;height:100%;overflow:hidden;padding-left:var(--ruler-size)}:host .ruler-top .ruler-content .step{display:flex;flex-direction:column;flex-shrink:0;justify-content:space-between;text-align:left;width:var(--step-width)}:host .ruler-top .ruler-content .step span{align-items:center;display:flex;flex-grow:1;font-size:10px;transform:translateX(-50%);width:min-content}:host .ruler-top .ruler-content .step::after{background-color:#3d3d3d;content:"";display:inline-block;flex-shrink:0;height:3px;transform:translateX(-50%);width:2px}:host .ruler-top .ruler-content .step.big::after{background-color:#000;height:8px}:host .ruler-left{height:100%;pointer-events:all;position:absolute;top:0;width:var(--ruler-size);z-index:4}:host .ruler-left::after{box-shadow:0px 5px 5px #818181;content:"";height:calc(100% - var(--ruler-size));left:0;pointer-events:none;position:absolute;top:var(--ruler-size);width:100%}:host .ruler-left .ruler-content{display:flex;flex-direction:column;height:100%;overflow:hidden;padding-top:var(--ruler-size);position:relative;width:100%}:host .ruler-left .ruler-content::before{background-color:var(--ruler-color);content:"";inset:0;position:absolute;top:var(--ruler-size);z-index:2}:host .ruler-left .ruler-content .step{display:flex;flex-direction:row;flex-shrink:0;height:var(--step-height);justify-content:space-between;position:relative;text-align:left;z-index:3}:host .ruler-left .ruler-content .step span{display:flex;flex-grow:1;font-size:10px;height:min-content;justify-content:center;transform:translateY(-50%)}:host .ruler-left .ruler-content .step::after{background-color:#3d3d3d;content:"";display:inline-block;flex-shrink:0;height:2px;transform:translateY(-50%);width:3px}:host .ruler-left .ruler-content .step.big::after{background-color:#000;width:8px}:host .lock{align-items:center;cursor:pointer;display:flex;height:var(--ruler-size);justify-content:center;left:0;pointer-events:all;position:absolute;top:0;width:var(--ruler-size);z-index:5}:host .lock svg{aspect-ratio:1;display:inline-block;width:50%}:host .lock .close{display:none}:host([visible]){display:block}:host(:not([show_grid])) .grid{display:none}:host(:not([show_ruler])) .ruler-top{display:none}:host(:not([show_ruler])) .ruler-left{display:none}:host(:not([show_guides])) .guides{display:none}:host([lock]){--ruler-color: #eeeeee}:host([lock]) .ruler-top,:host([lock]) .ruler-left{cursor:not-allowed}:host([lock]) .guides av-grid-guide-helper{pointer-events:none}:host([lock]) .lock .open{display:none}:host([lock]) .lock .close{display:inline-block}`;
+    __getStatic() {
+        return GridHelper;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(GridHelper.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<div class="lock" _id="gridhelper_0">    <svg class="close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>    </svg>    <svg class="open" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>        <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>    </svg></div><div class="ruler-top" _id="gridhelper_1">    <div class="ruler-content" _id="gridhelper_2"></div></div><div class="ruler-left" _id="gridhelper_3">    <div class="ruler-content" _id="gridhelper_4"></div></div><div class="grid" _id="gridhelper_5">    <div class="cols" _id="gridhelper_6"></div>    <div class="rows" _id="gridhelper_7"></div></div><div class="guides" _id="gridhelper_8"></div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "lockEl",
+      "ids": [
+        "gridhelper_0"
+      ]
+    },
+    {
+      "name": "rulerTopEl",
+      "ids": [
+        "gridhelper_1"
+      ]
+    },
+    {
+      "name": "rulerTopContentEl",
+      "ids": [
+        "gridhelper_2"
+      ]
+    },
+    {
+      "name": "rulerLeftEl",
+      "ids": [
+        "gridhelper_3"
+      ]
+    },
+    {
+      "name": "rulerLeftContentEl",
+      "ids": [
+        "gridhelper_4"
+      ]
+    },
+    {
+      "name": "gridEl",
+      "ids": [
+        "gridhelper_5"
+      ]
+    },
+    {
+      "name": "colsEl",
+      "ids": [
+        "gridhelper_6"
+      ]
+    },
+    {
+      "name": "rowsEl",
+      "ids": [
+        "gridhelper_7"
+      ]
+    },
+    {
+      "name": "guidesEl",
+      "ids": [
+        "gridhelper_8"
+      ]
+    }
+  ],
+  "pressEvents": [
+    {
+      "id": "gridhelper_0",
+      "onPress": (e, pressInstance, c) => { c.comp.toggleLock(e, pressInstance); }
+    }
+  ]
+}); }
+    getClassName() {
+        return "GridHelper";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('show_rulers')) { this.attributeChangedCallback('show_rulers', false, false); }if(!this.hasAttribute('show_grid')) {this.setAttribute('show_grid' ,'true'); }if(!this.hasAttribute('show_ruler')) {this.setAttribute('show_ruler' ,'true'); }if(!this.hasAttribute('show_guides')) {this.setAttribute('show_guides' ,'true'); }if(!this.hasAttribute('lock')) {this.setAttribute('lock' ,'true'); }if(!this.hasAttribute('visible')) {this.setAttribute('visible' ,'true'); }if(!this.hasAttribute('unit')){ this['unit'] = 'px'; }if(!this.hasAttribute('nb_col')){ this['nb_col'] = 0; }if(!this.hasAttribute('nb_row')){ this['nb_row'] = 0; }if(!this.hasAttribute('col_width')){ this['col_width'] = undefined; }if(!this.hasAttribute('row_height')){ this['row_height'] = undefined; }if(!this.hasAttribute('ruler_size')){ this['ruler_size'] = 25; }if(!this.hasAttribute('step')){ this['step'] = 20; }if(!this.hasAttribute('step_big')){ this['step_big'] = undefined; }if(!this.hasAttribute('magnetic')){ this['magnetic'] = 0; } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('show_rulers');this.__upgradeProperty('show_grid');this.__upgradeProperty('show_ruler');this.__upgradeProperty('show_guides');this.__upgradeProperty('lock');this.__upgradeProperty('visible');this.__upgradeProperty('unit');this.__upgradeProperty('nb_col');this.__upgradeProperty('nb_row');this.__upgradeProperty('col_width');this.__upgradeProperty('row_height');this.__upgradeProperty('ruler_size');this.__upgradeProperty('step');this.__upgradeProperty('step_big');this.__upgradeProperty('magnetic'); }
+    __listBoolProps() { return ["show_rulers","show_grid","show_ruler","show_guides","lock","visible"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    inPx(nb) {
+        if (this.unit == 'px') {
+            return nb;
+        }
+        if (this.unit == 'rem') {
+            return nb * 16;
+        }
+        if (this.unit == 'mm') {
+            return nb * 3.7795275591;
+        }
+        if (this.unit == 'cm') {
+            return nb * 37.795275591;
+        }
+        if (this.unit == 'in') {
+            return nb * 96;
+        }
+        if (this.unit == 'pt') {
+            return nb * 1.33333333;
+        }
+        throw 'unit not supported';
+    }
+    fromPx(nbPx) {
+        if (this.unit == 'px') {
+            return nbPx;
+        }
+        if (this.unit == 'rem') {
+            return Math.round(nbPx / 16 * 100) / 100;
+        }
+        if (this.unit == 'mm') {
+            return Math.round(nbPx * 0.2645833333 * 100) / 100;
+        }
+        if (this.unit == 'cm') {
+            return Math.round(nbPx * 0.02645833333 * 100) / 100;
+        }
+        if (this.unit == 'in') {
+            return Math.round(nbPx / 96 * 100) / 100;
+        }
+        if (this.unit == 'pt') {
+            return Math.round(nbPx * 0.75 * 100) / 100;
+        }
+        throw 'unit not supported';
+    }
+    toggleLock() {
+        this.lock = !this.lock;
+    }
+    draw() {
+        let nbCol = 0;
+        if (this.nb_col) {
+            this.gridEl.style.setProperty('--local-col-width', `calc(100% / ${this.nb_col})`);
+            nbCol = this.nb_col;
+        }
+        else {
+            let width = this.col_width;
+            if (width == 0) {
+                width = this.fromPx(16);
+            }
+            this.gridEl.style.setProperty('--local-col-width', width + this.unit);
+            nbCol = Math.ceil(this.offsetWidth / this.inPx(width));
+        }
+        if (this.colsEl.children.length != nbCol) {
+            this.colsEl.innerHTML = '';
+            for (let i = 0; i < nbCol; i++) {
+                const col = document.createElement("DIV");
+                col.classList.add('col');
+                this.colsEl.appendChild(col);
+            }
+        }
+        let nbRow = 0;
+        if (this.nb_row) {
+            this.gridEl.style.setProperty('--local-row-height', `calc(100% / ${this.nb_row})`);
+            nbRow = this.nb_row;
+        }
+        else {
+            let height = this.row_height;
+            if (height == 0) {
+                height = this.fromPx(16);
+            }
+            this.gridEl.style.setProperty('--local-row-height', height + this.unit);
+            nbRow = Math.ceil(this.offsetHeight / this.inPx(height));
+        }
+        if (this.rowsEl.children.length != nbRow) {
+            this.rowsEl.innerHTML = '';
+            for (let i = 0; i < nbRow; i++) {
+                const row = document.createElement("DIV");
+                row.classList.add('row');
+                this.rowsEl.appendChild(row);
+            }
+        }
+    }
+    drawRulerTop() {
+        const step = this.step;
+        const bigStep = this.step_big == 0 ? this.step : this.step_big;
+        const rulerSize = this.ruler_size;
+        this.rulerTopEl.style.setProperty("--step-width", step + this.unit);
+        const nb = Math.ceil(this.offsetWidth / this.inPx(step));
+        const createStep = (nb, isBig, w) => {
+            const d = document.createElement('div');
+            d.classList.add("step");
+            if (w) {
+                d.style.width = w + this.unit;
+            }
+            if (isBig) {
+                d.classList.add("big");
+            }
+            const s = document.createElement("span");
+            if (isBig)
+                s.innerHTML = nb + '';
+            d.appendChild(s);
+            this.rulerTopContentEl.appendChild(d);
+        };
+        let i = 0;
+        while (step * i - rulerSize < 0) {
+            i++;
+        }
+        createStep(rulerSize, true, step * i - rulerSize);
+        for (; i < nb; i++) {
+            if (i * step <= rulerSize)
+                continue;
+            const isBig = (step * i) % bigStep == 0;
+            createStep(i * step, isBig);
+        }
+    }
+    drawRulerLeft() {
+        const step = this.step;
+        const bigStep = this.step_big == 0 ? this.step : this.step_big;
+        const rulerSize = this.ruler_size;
+        this.rulerLeftEl.style.setProperty("--step-height", step + this.unit);
+        const nb = Math.ceil(this.offsetHeight / this.inPx(step));
+        const createStep = (nb, isBig, h) => {
+            const d = document.createElement('div');
+            d.classList.add("step");
+            if (h) {
+                d.style.height = h + this.unit;
+            }
+            if (isBig) {
+                d.classList.add("big");
+            }
+            const s = document.createElement("span");
+            if (isBig)
+                s.innerHTML = nb + '';
+            d.appendChild(s);
+            this.rulerLeftContentEl.appendChild(d);
+        };
+        let i = 0;
+        while (step * i - rulerSize < 0) {
+            i++;
+        }
+        createStep(rulerSize, true, step * i - rulerSize);
+        for (; i < nb; i++) {
+            if (i * step <= rulerSize)
+                continue;
+            const isBig = (step * i) % bigStep == 0;
+            createStep(i * step, isBig);
+        }
+    }
+    addDragLeft() {
+        let el = undefined;
+        new Aventus.PressManager({
+            element: this.rulerLeftContentEl,
+            onDblPress: () => {
+                const nbtxt = prompt("Top Position");
+                if (nbtxt) {
+                    const nb = Number(nbtxt);
+                    if (!isNaN(nb)) {
+                        this.createGuideFromTop(nb);
+                    }
+                }
+            }
+        });
+        new Aventus.DragAndDrop({
+            element: this.rulerLeftContentEl,
+            applyDrag: false,
+            onStart: (e) => {
+                if (this.lock)
+                    return false;
+                el = new _.Layout.GridGuideHelper();
+                el.direction = 'y';
+                el.container = this;
+                this.guidesEl.appendChild(el);
+                el.onStart();
+                return true;
+            },
+            onMove: (e) => {
+                if (el) {
+                    el.onMoveY(e);
+                }
+            },
+            onStop: () => {
+                if (el) {
+                    el.onStop();
+                }
+            }
+        });
+    }
+    addDragTop() {
+        let el = undefined;
+        new Aventus.PressManager({
+            element: this.rulerTopContentEl,
+            onDblPress: () => {
+                const nbtxt = prompt("Left Position");
+                if (nbtxt) {
+                    const nb = Number(nbtxt);
+                    if (!isNaN(nb)) {
+                        this.createGuideFromLeft(nb);
+                    }
+                }
+            }
+        });
+        new Aventus.DragAndDrop({
+            element: this.rulerTopContentEl,
+            applyDrag: false,
+            onStart: (e) => {
+                if (this.lock)
+                    return false;
+                el = new _.Layout.GridGuideHelper();
+                el.container = this;
+                el.direction = 'x';
+                this.guidesEl.appendChild(el);
+                el.onStart();
+                return true;
+            },
+            onMove: (e) => {
+                if (el) {
+                    el.onMoveX(e);
+                }
+            },
+            onStop: () => {
+                if (el) {
+                    el.onStop();
+                }
+            }
+        });
+    }
+    createGuideFromLeft(left) {
+        const el = new _.Layout.GridGuideHelper();
+        el.direction = 'y';
+        el.container = this;
+        el.style.left = left + this.unit;
+        this.guidesEl.appendChild(el);
+        this.save();
+    }
+    createGuideFromTop(top) {
+        const el = new _.Layout.GridGuideHelper();
+        el.direction = 'x';
+        el.container = this;
+        el.style.top = top + this.unit;
+        this.guidesEl.appendChild(el);
+        this.save();
+    }
+    addShortCut() {
+        let isKActive = false;
+        let timeout = 0;
+        Lib.ShortcutManager.subscribe([Lib.SpecialTouch.Control, 'k'], () => {
+            isKActive = true;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                isKActive = false;
+            }, 1000);
+        });
+        const commande = (letter, cb) => {
+            Lib.ShortcutManager.subscribe([letter], () => {
+                if (!isKActive)
+                    return false;
+                isKActive = false;
+                cb();
+                return;
+            });
+            Lib.ShortcutManager.subscribe([Lib.SpecialTouch.Control, letter], () => {
+                if (!isKActive)
+                    return false;
+                isKActive = false;
+                cb();
+                return;
+            });
+        };
+        commande('v', () => { this.visible = !this.visible; });
+        commande('g', () => { this.show_grid = !this.show_grid; });
+        commande('r', () => { this.show_ruler = !this.show_ruler; });
+        commande('j', () => { this.show_guides = !this.show_guides; });
+        commande('l', () => { this.lock = !this.lock; });
+    }
+    addResize() {
+        new Aventus.ResizeObserver({
+            callback: () => {
+                this.draw();
+                this.drawRulerTop();
+                this.drawRulerLeft();
+            },
+            fps: 30
+        }).observe(this);
+    }
+    save() {
+        const data = { x: [], y: [] };
+        for (let child of this.guidesEl.children) {
+            if (child instanceof _.Layout.GridGuideHelper) {
+                if (child.direction == 'x') {
+                    data.x.push(child.offsetTop);
+                }
+                else {
+                    data.y.push(child.offsetLeft);
+                }
+            }
+        }
+        const id = this.id != '' ? this.id : 'grid-helper';
+        localStorage.setItem(id, JSON.stringify(data));
+    }
+    reload() {
+        const id = this.id != '' ? this.id : 'grid-helper';
+        const items = localStorage.getItem(id);
+        if (items) {
+            const data = JSON.parse(items);
+            for (let g of data.x) {
+                const el = new _.Layout.GridGuideHelper();
+                el.direction = 'x';
+                el.style.top = g + this.unit;
+                el.container = this;
+                this.guidesEl.appendChild(el);
+            }
+            for (let g of data.y) {
+                const el = new _.Layout.GridGuideHelper();
+                el.direction = 'y';
+                el.style.left = g + this.unit;
+                el.container = this;
+                this.guidesEl.appendChild(el);
+            }
+        }
+    }
+    postCreation() {
+        this.reload();
+        this.addResize();
+        this.addShortCut();
+        this.addDragLeft();
+        this.addDragTop();
+        this.draw();
+    }
+}
+Layout.GridHelper.Namespace=`Aventus.Layout`;
+Layout.GridHelper.Tag=`av-grid-helper`;
+__as1(_.Layout, 'GridHelper', Layout.GridHelper);
+if(!window.customElements.get('av-grid-helper')){window.customElements.define('av-grid-helper', Layout.GridHelper);Aventus.WebComponentInstance.registerDefinition(Layout.GridHelper);}
+
+Form.Validator=class Validator {
+    constructor() { this.validate = this.validate.bind(this); }
+    static async Test(validators, value, name, globalValidation) {
+        if (!Array.isArray(validators)) {
+            validators = [validators];
+        }
+        let result = [];
+        for (let validator of validators) {
+            let resultTemp = new validator();
+            const temp = await resultTemp.validate(value, name, globalValidation);
+            if (temp === false) {
+                result.push('Le champs n\'est pas valide');
+            }
+            else if (Array.isArray(temp)) {
+                for (let error of temp) {
+                    result.push(error);
+                }
+            }
+            else if (typeof temp == 'string') {
+                result.push(temp);
+            }
+        }
+        return result.length == 0 ? undefined : result;
+    }
+}
+Form.Validator.Namespace=`Aventus.Form`;
+__as1(_.Form, 'Validator', Form.Validator);
+
+Navigation.PageForm = class PageForm extends Navigation.Page {
+    _form;
+    get form() { return this._form; }
+    elements = [];
+    btns = [];
+    static __style = ``;
+    constructor() {
+        super();
+        this._form = new Form.FormHandler(this.formSchema(), this.formConfig());
+        if (this.constructor == PageForm) {
+            throw "can't instanciate an abstract class";
+        }
+        this.checkEnter = this.checkEnter.bind(this);
+    }
+    __getStatic() {
+        return PageForm;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(PageForm.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "PageForm";
+    }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('form'); }
+    formConfig() {
+        return {};
+    }
+    pageConfig() {
+        return {
+            submitWithEnter: true,
+            autoLoading: true
+        };
+    }
+    async submit() {
+        this.setLoading(true);
+        const result = await this.defineSubmit((fct) => this.form.submit(fct));
+        this.setLoading(false);
+        return result;
+    }
+    setLoading(isLoading) {
+        const autoLoading = this.pageConfig().autoLoading;
+        if (autoLoading) {
+            for (let btn of this.btns) {
+                if ("loading" in btn) {
+                    btn.loading = isLoading;
+                }
+            }
+        }
+    }
+    checkEnter(e) {
+        if (e.key == "Enter") {
+            this.submit();
+        }
+    }
+    registerElement(element) {
+        const submitWithEnter = this.pageConfig().submitWithEnter;
+        if (this.elements.length > 0) {
+            if (submitWithEnter)
+                this.elements[this.elements.length - 1].removeEventListener("keyup", this.checkEnter);
+        }
+        this.elements.push(element);
+        if (submitWithEnter)
+            element.addEventListener("keyup", this.checkEnter);
+        return this;
+    }
+    registerSubmit(element) {
+        this.btns.push(element);
+        return this;
+    }
+    async requestSubmit() {
+        await this.submit();
+    }
+}
+Navigation.PageForm.Namespace=`Aventus.Navigation`;
+__as1(_.Navigation, 'PageForm', Navigation.PageForm);
+
+Form.FormHandler=class FormHandler {
+    static _globalConfig;
+    static _IFormElements = [Form.Form, Navigation.PageForm];
+    __watcher;
+    get item() {
+        return this.__watcher.item;
+    }
+    set item(item) {
+        this.__watcher.item = item;
+    }
+    get parts() {
+        return this.__watcher.form;
+    }
+    _elements = {};
+    get elements() {
+        return { ...this._elements };
+    }
+    _globalValidation;
+    _validateOnChange = false;
+    _handleValidateNoInputError;
+    _handleExecuteNoInputError;
+    defaultValues;
+    onItemChange = new Aventus.Callback();
+    constructor(schema, config, defaultValues) {
+        this.writeValidationIntoConsole = this.writeValidationIntoConsole.bind(this);
+        this.writeErrorIntoConsole = this.writeErrorIntoConsole.bind(this);
+        this._globalValidation = config?.validate ?? Form.FormHandler._globalConfig?.validate;
+        this._validateOnChange = config?.validateOnChange ?? Form.FormHandler._globalConfig?.validateOnChange ?? false;
+        this._handleValidateNoInputError = config?.handleValidateNoInputError ?? Form.FormHandler._globalConfig?.handleValidateNoInputError ?? this.writeValidationIntoConsole;
+        this._handleExecuteNoInputError = config?.handleExecuteNoInputError ?? Form.FormHandler._globalConfig?.handleExecuteNoInputError ?? this.writeErrorIntoConsole;
+        this.defaultValues = defaultValues ?? {};
+        this.onWatcherChanged = this.onWatcherChanged.bind(this);
+        this.__watcher = Aventus.Watcher.get({
+            form: {},
+            item: this.defaultValues
+        }, this.onWatcherChanged);
+        this.__watcher.form = this.transformForm(schema);
+    }
+    writeValidationIntoConsole(errors) {
+        for (let name in errors) {
+            if (!errors[name])
+                continue;
+            for (let error of errors[name]) {
+                console.log(name + ": " + error);
+            }
+        }
+    }
+    writeErrorIntoConsole(errors) {
+        for (let error in errors) {
+            console.log(error);
+        }
+    }
+    transformForm(form) {
+        const result = form;
+        const normalizePart = (part) => {
+            let needTransform = true;
+            if (typeof part == 'object' && !Array.isArray(part)) {
+                const keys = Object.keys(part);
+                const keysAllows = ['validate', 'validateOnChange'];
+                let isValid = true;
+                for (let i = 0; i < keys.length; i++) {
+                    const allows = keysAllows;
+                    if (!allows.includes(keys[i])) {
+                        isValid = false;
+                        break;
+                    }
+                }
+                if (isValid) {
+                    needTransform = false;
+                }
+            }
+            if (needTransform) {
+                return {
+                    validate: part
+                };
+            }
+            return part;
+        };
+        const createKey = (key) => {
+            form[key] = normalizePart(form[key]);
+            this.transformFormPart(key, form[key]);
+        };
+        for (let key in result) {
+            createKey(key);
+        }
+        return result;
+    }
+    transformFormPart(key, part) {
+        if (!part)
+            return;
+        const realPart = part;
+        realPart.onValidation = new Aventus.Callback();
+        realPart.onValueChange = new Aventus.Callback();
+        realPart.handler = this;
+        if (part.validate) {
+            const isConstructor = (validate) => {
+                return Aventus.isClass(validate);
+            };
+            let validate;
+            if (Array.isArray(part.validate)) {
+                const fcts = [];
+                for (let temp of part.validate) {
+                    if (temp instanceof _.Form.Validator) {
+                        fcts.push(temp.validate);
+                    }
+                    else {
+                        let resultTemp = new temp();
+                        fcts.push(resultTemp.validate);
+                    }
+                }
+                validate = async (value, name, globalFct) => {
+                    let result = [];
+                    for (let fct of fcts) {
+                        const temp = await fct(value, name, globalFct);
+                        if (temp === false) {
+                            result.push('Le champs n\'est pas valide');
+                        }
+                        else if (Array.isArray(temp)) {
+                            for (let error of temp) {
+                                result.push(error);
+                            }
+                        }
+                        else if (typeof temp == 'string') {
+                            result.push(temp);
+                        }
+                    }
+                    return result.length == 0 ? undefined : result;
+                };
+            }
+            else if (part.validate instanceof _.Form.Validator) {
+                validate = part.validate.validate;
+            }
+            else if (isConstructor(part.validate)) {
+                let cst = part.validate;
+                let resultTemp = new cst();
+                validate = resultTemp.validate;
+            }
+            else {
+                validate = part.validate;
+            }
+            realPart.validate = validate;
+        }
+        realPart.test = async () => {
+            const result = await this.validate(key);
+            return result;
+        };
+        if (!this._elements[key]) {
+            this._elements[key] = [];
+        }
+        realPart.register = (el) => {
+            if (this._elements[key] && !this._elements[key].includes(el)) {
+                this._elements[key].push(el);
+            }
+        };
+        realPart.unregister = (el) => {
+            if (!this._elements[key])
+                return;
+            const index = this._elements[key].indexOf(el);
+            if (index != -1) {
+                this._elements[key].splice(index, 1);
+            }
+        };
+        realPart.value = {
+            get: () => {
+                return Aventus.getValueFromObject(key, this.item);
+            },
+            set: (value) => {
+                return Aventus.setValueToObject(key, this.item, value);
+            }
+        };
+        return;
+    }
+    async onWatcherChanged(action, path, value) {
+        if (!this.parts)
+            return;
+        if (path == "item") {
+            for (let key in this.parts) {
+                let formPart = this.parts[key];
+                formPart.onValueChange.trigger();
+            }
+        }
+        else if (path.startsWith("item.")) {
+            let key = path.substring("item.".length);
+            if (this.parts[key]) {
+                let formPart = this.parts[key];
+                formPart.onValueChange.trigger();
+                const validateOnChange = formPart.validateOnChange === undefined ? this._validateOnChange : formPart.validateOnChange;
+                if (validateOnChange) {
+                    this.validate(key);
+                }
+            }
+            this.onItemChange.trigger(action, key, value);
+        }
+    }
+    async _validate(key) {
+        try {
+            if (!this.parts)
+                return { "@general": ["Aucun formulaire trouvé"] };
+            if (key !== undefined) {
+                let errorsForm = [];
+                if (this.parts[key]) {
+                    let formPart = this.parts[key];
+                    let value = formPart.value.get();
+                    const resultToError = (result) => {
+                        if (result === false) {
+                            errorsForm.push('Le champs n\'est pas valide');
+                        }
+                        else if (typeof result == 'string' && result !== "") {
+                            errorsForm.push(result);
+                        }
+                        else if (Array.isArray(result)) {
+                            errorsForm = [...errorsForm, ...result];
+                        }
+                    };
+                    if (formPart.validate) {
+                        const global = async () => {
+                            if (this._globalValidation) {
+                                const result = await this._globalValidation(key, value);
+                                resultToError(result);
+                            }
+                        };
+                        let result = await formPart.validate(value, key, global);
+                        resultToError(result);
+                    }
+                    else if (this._globalValidation) {
+                        const result = await this._globalValidation(key, value);
+                        resultToError(result);
+                    }
+                    const proms = formPart.onValidation.trigger(errorsForm);
+                    const errors2d = await Promise.all(proms);
+                    const errors = [];
+                    for (let errorsTemp of errors2d) {
+                        for (let errorTemp of errorsTemp) {
+                            if (!errors.includes(errorTemp)) {
+                                errors.push(errorTemp);
+                            }
+                        }
+                    }
+                    errorsForm = errors;
+                }
+                return errorsForm.length == 0 ? {} : { [key]: errorsForm };
+            }
+            let errors = {};
+            for (let key in this.parts) {
+                errors = { ...errors, ...await this._validate(key) };
+            }
+            return errors;
+        }
+        catch (e) {
+            return { "@general": [e + ""] };
+        }
+    }
+    async validate(key) {
+        const result = await this._validate(key);
+        const unhandle = {};
+        let triggerUnhandle = false;
+        for (let key in result) {
+            if (!this._elements[key] || this._elements[key].length == 0) {
+                triggerUnhandle = true;
+                unhandle[key] = result[key];
+            }
+        }
+        if (triggerUnhandle && this._handleValidateNoInputError) {
+            this._handleValidateNoInputError(unhandle);
+        }
+        return Object.keys(result).length == 0;
+    }
+    async submit(query) {
+        const result = await this.validate();
+        if (!result) {
+            return null;
+        }
+        return this.execute(query);
+    }
+    async execute(query) {
+        if (typeof query == "function") {
+            if (!this.item) {
+                const result = new Aventus.VoidWithError();
+                result.errors.push(new Aventus.GenericError(404, "No item inside the form"));
+                return result;
+            }
+            query = query(this.item);
+        }
+        let queryResult = await query;
+        if (queryResult.errors.length > 0) {
+            queryResult.errors = this.parseErrors(queryResult);
+            if (queryResult.errors.length > 0 && this._handleExecuteNoInputError) {
+                this._handleExecuteNoInputError(queryResult.errors);
+            }
+        }
+        return queryResult;
+    }
+    parseErrors(queryResult) {
+        let noPrintErrors = [];
+        const elements = this.elements;
+        for (let error of queryResult.errors) {
+            if (error.details) {
+                if (Array.isArray(error.details)) {
+                    let found = false;
+                    for (let detail of error.details) {
+                        if (Object.hasOwn(detail, "Name")) {
+                            if (elements[detail.Name]) {
+                                for (const element of elements[detail.Name]) {
+                                    element.errors.push(error.message);
+                                }
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (found) {
+                        continue;
+                    }
+                }
+                else {
+                    let found = false;
+                    for (let key in error.details) {
+                        if (elements[key]) {
+                            if (Array.isArray(error.details[key])) {
+                                for (const element of elements[key]) {
+                                    for (let detail of error.details[key]) {
+                                        element.errors.push(detail);
+                                    }
+                                }
+                                found = true;
+                            }
+                            else {
+                                for (const element of elements[key]) {
+                                    element.errors.push(error.details[key]);
+                                }
+                                found = true;
+                            }
+                        }
+                    }
+                    if (found) {
+                        continue;
+                    }
+                }
+            }
+            noPrintErrors.push(error);
+        }
+        return noPrintErrors;
+    }
+    reset() {
+        this.item = this.defaultValues;
+    }
+}
+Form.FormHandler.Namespace=`Aventus.Form`;
+__as1(_.Form, 'FormHandler', Form.FormHandler);
+
+Form.FormElement = class FormElement extends Aventus.WebComponent {
+    static get observedAttributes() {return ["disabled"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'has_errors'() { return this.getBoolAttr('has_errors') }
+    set 'has_errors'(val) { this.setBoolAttr('has_errors', val) }    get 'disabled'() { return this.getBoolProp('disabled') }
+    set 'disabled'(val) { this.setBoolAttr('disabled', val) }    get 'value'() {
+						return this.__watch["value"];
+					}
+					set 'value'(val) {
+						this.__watch["value"] = val;
+					}get 'errors'() {
+						return this.__watch["errors"];
+					}
+					set 'errors'(val) {
+						this.__watch["errors"] = val;
+					}    static get formAssociated() { return true; }
+    _form;
+    get form() {
+        return this._form;
+    }
+    set form(value) {
+        this.unlinkFormPart();
+        this._form = value;
+        this.linkFormPart();
+    }
+    internals;
+    canLinkValueToForm = false;
+    handler = undefined;
+    onChange = new Aventus.Callback();
+    __registerWatchesActions() {
+    this.__addWatchesActions("value", ((target) => {
+    target.onValueChange(target.value);
+}));this.__addWatchesActions("errors", ((target) => {
+    target.onErrorsChange();
+}));    super.__registerWatchesActions();
+}
+    static __style = ``;
+    constructor() {
+        super();
+        this.internals = this.attachInternals();
+        if (this.constructor == FormElement) {
+            throw "can't instanciate an abstract class";
+        }
+        this.refreshValueFromForm = this.refreshValueFromForm.bind(this);
+        this.onFormValidation = this.onFormValidation.bind(this);
+    }
+    __getStatic() {
+        return FormElement;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(FormElement.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "FormElement";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('has_errors')) { this.attributeChangedCallback('has_errors', false, false); }if(!this.hasAttribute('disabled')) { this.attributeChangedCallback('disabled', false, false); } }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["value"] = undefined;w["errors"] = []; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('form');this.__upgradeProperty('has_errors');this.__upgradeProperty('disabled');this.__correctGetter('value');this.__correctGetter('errors'); }
+    __listBoolProps() { return ["has_errors","disabled"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    refreshValueFromForm() {
+        if (this._form) {
+            this.errors = [];
+            this.value = this._form.value.get();
+        }
+    }
+    unlinkFormPart() {
+        if (this._form) {
+            this._form.unregister(this);
+            this._form.onValueChange.remove(this.refreshValueFromForm);
+            this._form.onValidation.remove(this.onFormValidation);
+        }
+    }
+    linkFormPart() {
+        if (this._form) {
+            this._form.register(this);
+            this._form.onValueChange.add(this.refreshValueFromForm);
+            this._form.onValidation.add(this.onFormValidation);
+            this.refreshValueFromForm();
+        }
+        else {
+            this.value = undefined;
+        }
+    }
+    async onFormValidation(errors) {
+        let _errors = await this.validation();
+        if (_errors.length == 0) {
+            _errors = errors;
+        }
+        else if (errors.length > 0) {
+            for (let error of errors) {
+                if (!_errors.includes(error)) {
+                    _errors.push(error);
+                }
+            }
+        }
+        this.errors = _errors;
+        return this.errors;
+    }
+    async validate() {
+        if (!this.form) {
+            this.errors = await this.validation();
+            return this.errors.length == 0;
+        }
+        return await this.form.test();
+    }
+    async validation() {
+        return [];
+    }
+    clearErrors() {
+        this.errors = [];
+    }
+    triggerChange(value) {
+        this.value = value;
+        this.onChange.trigger(this.value);
+        if (this.form) {
+            this.form.value.set(this.value);
+        }
+    }
+    onValueChange(value) {
+        this.linkValueToForm();
+    }
+    onErrorsChange() {
+        this.has_errors = this.errors.length > 0;
+        this.linkErrorToForm();
+    }
+    linkErrorToForm() {
+        if (!this.canLinkValueToForm)
+            return;
+        if (this.has_errors) {
+            this.internals.setValidity({
+                customError: true
+            }, this.errors.join(' & '));
+        }
+        else {
+            this.internals.setValidity({});
+        }
+    }
+    linkValueToForm() {
+        if (!this.canLinkValueToForm)
+            return;
+        if (this.value === undefined) {
+            this.internals.setFormValue(null);
+        }
+        else {
+            this.internals.setFormValue(this.value + '');
+        }
+    }
+    formAssociatedCallback(form) {
+        this.canLinkValueToForm = true;
+        this.linkValueToForm();
+        this.linkErrorToForm();
+        this.validate();
+    }
+    formDisabledCallback(disabled) {
+        this.disabled = disabled;
+    }
+    postCreation() {
+        super.postCreation();
+        let handler = this.findParentByType(_.Form.Form.formElements)?.registerElement(this);
+    }
+    postDestruction() {
+        super.postDestruction();
+        this.unlinkFormPart();
+    }
+}
+Form.FormElement.Namespace=`Aventus.Form`;
+__as1(_.Form, 'FormElement', Form.FormElement);
+
 
 for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
@@ -7925,29 +9583,168 @@ const _ = {};
 
 
 let _n;
-const DocUICollapseEditor1Example = class DocUICollapseEditor1Example extends Aventus.WebComponent {
-    static __style = ``;
+const DocUIFormElementEditor1Input = class DocUIFormElementEditor1Input extends Aventus.Form.FormElement {
+    static get observedAttributes() {return ["name", "label", "value"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'type'() { return this.getStringAttr('type') }
+    set 'type'(val) { this.setStringAttr('type', val) }get 'placeholder'() { return this.getStringAttr('placeholder') }
+    set 'placeholder'(val) { this.setStringAttr('placeholder', val) }    get 'name'() { return this.getStringProp('name') }
+    set 'name'(val) { this.setStringAttr('name', val) }get 'label'() { return this.getStringProp('label') }
+    set 'label'(val) { this.setStringAttr('label', val) }get 'value'() { return this.getStringProp('value') }
+    set 'value'(val) { this.setStringAttr('value', val) }    focusValue = "";
+    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("value", ((target) => {
+    target.inputEl.value = target.value ?? "";
+})); }
+    static __style = `:host{color:#000;width:100%}:host .label{color:#eee;cursor:pointer;display:block;font-size:14px;margin-bottom:6px}:host .input{background-color:#eee;border:1px solid gray;border-radius:4px;cursor:pointer;display:flex;padding:0 8px;width:100%}:host .input input{-webkit-appearance:none;-moz-appearance:none;appearance:none;background-color:rgba(0,0,0,0);border:none;color:inherit;flex-grow:1;font-size:15px;outline:none;outline-style:none;padding:8px 0}:host .errors{color:red;font-size:13px;margin-top:6px}:host(:not([label])) .label,:host([label=""]) .label{display:none}:host(:not([has_errors])) .errors{display:none}:host([disabled]) .input input{background-color:#9e9e9e;border-color:#888;box-shadow:none;cursor:not-allowed}`;
     __getStatic() {
-        return DocUICollapseEditor1Example;
+        return DocUIFormElementEditor1Input;
     }
     __getStyle() {
         let arrStyle = super.__getStyle();
-        arrStyle.push(DocUICollapseEditor1Example.__style);
+        arrStyle.push(DocUIFormElementEditor1Input.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'before':`<slot name="before"></slot>`,'after':`<slot name="after"></slot>` }, 
+        blocks: { 'default':`<label class="label" _id="docuiformelementeditor1input_0"></label><div class="input">    <slot name="before"></slot>    <input _id="docuiformelementeditor1input_1" />    <slot name="after"></slot></div><div class="errors">    <template _id="docuiformelementeditor1input_2"></template></div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "inputEl",
+      "ids": [
+        "docuiformelementeditor1input_1"
+      ]
+    }
+  ],
+  "content": {
+    "docuiformelementeditor1input_0°for": {
+      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method1())}`,
+      "once": true
+    },
+    "docuiformelementeditor1input_0°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method2())}`,
+      "once": true
+    },
+    "docuiformelementeditor1input_1°type": {
+      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method3())}`,
+      "once": true
+    },
+    "docuiformelementeditor1input_1°name": {
+      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method1())}`,
+      "once": true
+    },
+    "docuiformelementeditor1input_1°id": {
+      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method1())}`,
+      "once": true
+    },
+    "docuiformelementeditor1input_1°placeholder": {
+      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method4())}`,
+      "once": true
+    }
+  },
+  "events": [
+    {
+      "eventName": "focus",
+      "id": "docuiformelementeditor1input_1",
+      "fct": (e, c) => c.comp.onFocus(e)
+    },
+    {
+      "eventName": "blur",
+      "id": "docuiformelementeditor1input_1",
+      "fct": (e, c) => c.comp.onBlur(e)
+    },
+    {
+      "eventName": "input",
+      "id": "docuiformelementeditor1input_1",
+      "fct": (e, c) => c.comp.onInput(e)
+    }
+  ],
+  "pressEvents": [
+    {
+      "id": "docuiformelementeditor1input_0",
+      "onPress": (e, pressInstance, c) => { c.comp.focusInput(e, pressInstance); }
+    }
+  ]
+});const templ0 = new Aventus.Template(this);templ0.setTemplate(`         <div _id="docuiformelementeditor1input_3"></div>    `);templ0.setActions({
+  "content": {
+    "docuiformelementeditor1input_3°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method5(c.data.error))}`,
+      "once": true
+    }
+  }
+});this.__getStatic().__template.addLoop({
+                    anchorId: 'docuiformelementeditor1input_2',
+                    template: templ0,
+                simple:{data: "this.errors",item:"error"}}); }
+    getClassName() {
+        return "DocUIFormElementEditor1Input";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('type')){ this['type'] = "text"; }if(!this.hasAttribute('placeholder')){ this['placeholder'] = undefined; }if(!this.hasAttribute('name')){ this['name'] = undefined; }if(!this.hasAttribute('label')){ this['label'] = undefined; }if(!this.hasAttribute('value')){ this['value'] = ""; } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('type');this.__upgradeProperty('placeholder');this.__upgradeProperty('name');this.__upgradeProperty('label');this.__upgradeProperty('value'); }
+    focusInput() {
+        this.inputEl.focus();
+    }
+    select() {
+        this.inputEl.select();
+    }
+    onFocus() {
+        this.clearErrors();
+        this.focusValue = this.inputEl.value;
+    }
+    onBlur() {
+        if (this.inputEl.value == this.focusValue) {
+            this.validate();
+        }
+    }
+    onInput() {
+        this.triggerChange(this.inputEl.value);
+    }
+    __a8f710d11461005cf0e177e0693ec7f4method1() {
+        return this.name;
+    }
+    __a8f710d11461005cf0e177e0693ec7f4method2() {
+        return this.label;
+    }
+    __a8f710d11461005cf0e177e0693ec7f4method3() {
+        return this.type;
+    }
+    __a8f710d11461005cf0e177e0693ec7f4method4() {
+        return this.placeholder;
+    }
+    __a8f710d11461005cf0e177e0693ec7f4method5(error) {
+        return error;
+    }
+}
+DocUIFormElementEditor1Input.Namespace=`AventusWebsite`;
+DocUIFormElementEditor1Input.Tag=`av-doc-u-i-form-element-editor-1-input`;
+__as1(_, 'DocUIFormElementEditor1Input', DocUIFormElementEditor1Input);
+if(!window.customElements.get('av-doc-u-i-form-element-editor-1-input')){window.customElements.define('av-doc-u-i-form-element-editor-1-input', DocUIFormElementEditor1Input);Aventus.WebComponentInstance.registerDefinition(DocUIFormElementEditor1Input);}
+
+const DocUIFormElementEditor1Compiled = class DocUIFormElementEditor1Compiled extends Aventus.WebComponent {
+    static __style = ``;
+    __getStatic() {
+        return DocUIFormElementEditor1Compiled;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIFormElementEditor1Compiled.__style);
         return arrStyle;
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<av-collapse>  <div slot="header">Show details</div>  <div>    <p>This is the hidden content that appears when open.</p>  </div></av-collapse>` }
+        blocks: { 'default':`<av-doc-u-i-form-element-editor-1-input label="test"></av-doc-u-i-form-element-editor-1-input>` }
     });
 }
     getClassName() {
-        return "DocUICollapseEditor1Example";
+        return "DocUIFormElementEditor1Compiled";
     }
 }
-DocUICollapseEditor1Example.Namespace=`AventusWebsite`;
-DocUICollapseEditor1Example.Tag=`av-doc-u-i-collapse-editor-1-example`;
-__as1(_, 'DocUICollapseEditor1Example', DocUICollapseEditor1Example);
-if(!window.customElements.get('av-doc-u-i-collapse-editor-1-example')){window.customElements.define('av-doc-u-i-collapse-editor-1-example', DocUICollapseEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocUICollapseEditor1Example);}
+DocUIFormElementEditor1Compiled.Namespace=`AventusWebsite`;
+DocUIFormElementEditor1Compiled.Tag=`av-doc-u-i-form-element-editor-1-compiled`;
+__as1(_, 'DocUIFormElementEditor1Compiled', DocUIFormElementEditor1Compiled);
+if(!window.customElements.get('av-doc-u-i-form-element-editor-1-compiled')){window.customElements.define('av-doc-u-i-form-element-editor-1-compiled', DocUIFormElementEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIFormElementEditor1Compiled);}
 
 let DocWcWatchEditor1Person=class DocWcWatchEditor1Person extends Aventus.Data {
     id = 0;
@@ -9719,6 +11516,78 @@ DocWcAttributeEditor1Example.Namespace=`AventusWebsite`;
 DocWcAttributeEditor1Example.Tag=`av-doc-wc-attribute-editor-1-example`;
 __as1(_, 'DocWcAttributeEditor1Example', DocWcAttributeEditor1Example);
 if(!window.customElements.get('av-doc-wc-attribute-editor-1-example')){window.customElements.define('av-doc-wc-attribute-editor-1-example', DocWcAttributeEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocWcAttributeEditor1Example);}
+
+const DocUIScrollableEditor1Compiled = class DocUIScrollableEditor1Compiled extends Aventus.WebComponent {
+    static __style = `:host{height:200px;width:100%}:host av-scrollable{height:100%;width:100%}`;
+    __getStatic() {
+        return DocUIScrollableEditor1Compiled;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIScrollableEditor1Compiled.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<av-scrollable x_scroll y_scroll pinch mouse_drag>  <div style="width: 2000px;   height: 1500px;   background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%);   background-size: 10px 10px, 10px 10px;">    Large content here  </div></av-scrollable>` }
+    });
+}
+    getClassName() {
+        return "DocUIScrollableEditor1Compiled";
+    }
+}
+DocUIScrollableEditor1Compiled.Namespace=`AventusWebsite`;
+DocUIScrollableEditor1Compiled.Tag=`av-doc-u-i-scrollable-editor-1-compiled`;
+__as1(_, 'DocUIScrollableEditor1Compiled', DocUIScrollableEditor1Compiled);
+if(!window.customElements.get('av-doc-u-i-scrollable-editor-1-compiled')){window.customElements.define('av-doc-u-i-scrollable-editor-1-compiled', DocUIScrollableEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIScrollableEditor1Compiled);}
+
+const DocUIGridHelperEditor1Compiled = class DocUIGridHelperEditor1Compiled extends Aventus.WebComponent {
+    static __style = `:host{width:100%}:host .page{background-color:#fff;height:400px;position:relative;width:100%;overflow:hidden}:host .page av-grid-helper{--ruler-color: var(--secondary-color);position:absolute}`;
+    __getStatic() {
+        return DocUIGridHelperEditor1Compiled;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIGridHelperEditor1Compiled.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<div class="page">    <av-grid-helper step="50" step_big="200" col_width="50" row_height="50" magnetic="5"></av-grid-helper></div>` }
+    });
+}
+    getClassName() {
+        return "DocUIGridHelperEditor1Compiled";
+    }
+}
+DocUIGridHelperEditor1Compiled.Namespace=`AventusWebsite`;
+DocUIGridHelperEditor1Compiled.Tag=`av-doc-u-i-grid-helper-editor-1-compiled`;
+__as1(_, 'DocUIGridHelperEditor1Compiled', DocUIGridHelperEditor1Compiled);
+if(!window.customElements.get('av-doc-u-i-grid-helper-editor-1-compiled')){window.customElements.define('av-doc-u-i-grid-helper-editor-1-compiled', DocUIGridHelperEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIGridHelperEditor1Compiled);}
+
+const DocUICollapseEditor1Example = class DocUICollapseEditor1Example extends Aventus.WebComponent {
+    static __style = ``;
+    __getStatic() {
+        return DocUICollapseEditor1Example;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUICollapseEditor1Example.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<av-collapse>  <div slot="header">Show details</div>  <div>    <p>This is the hidden content that appears when open.</p>  </div></av-collapse>` }
+    });
+}
+    getClassName() {
+        return "DocUICollapseEditor1Example";
+    }
+}
+DocUICollapseEditor1Example.Namespace=`AventusWebsite`;
+DocUICollapseEditor1Example.Tag=`av-doc-u-i-collapse-editor-1-example`;
+__as1(_, 'DocUICollapseEditor1Example', DocUICollapseEditor1Example);
+if(!window.customElements.get('av-doc-u-i-collapse-editor-1-example')){window.customElements.define('av-doc-u-i-collapse-editor-1-example', DocUICollapseEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocUICollapseEditor1Example);}
 
 const DocLibResizeObserverEditor1Example = class DocLibResizeObserverEditor1Example extends Aventus.WebComponent {
     static __style = `:host{animation-name:resize;animation-duration:5s;animation-direction:alternate;animation-iteration-count:infinite;animation-timing-function:linear;height:30px}@keyframes resize{0%{width:30px}100%{width:70px}}`;
@@ -11918,8 +13787,7 @@ const DocUIScrollable = class DocUIScrollable extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
+        blocks: { 'default':`<h1>UI - Scrollable</h1><p>The <span class="cn">av-scrollable</span> component provides a custom, fully-featured scrollable container with    support for:</p><ul>    <li>Horizontal and vertical scrolling</li>    <li>Smooth momentum-based scrolling</li>    <li>Floating or static scrollbars</li>    <li>Auto-hide scrollbars</li>    <li>Mouse dragging</li>    <li>Touch and pinch-zoom support</li>    <li>Zooming on a point</li>    <li>Programmatic scrolling</li></ul><p>It's ideal for applications that need precise control over scroll behavior, including drag-to-scroll, zoomable    content, and custom scrollbars.</p><h2>Concept</h2><p><span class="cn">av-scrollable</span> wraps content in a scrollable container with custom scrollbars. Unlike native    scroll elements, it supports momentum, pinch zoom, and dragging, with fully customizable styling.</p><p>Example:</p><av-doc-u-i-scrollable-editor-1></av-doc-u-i-scrollable-editor-1><h2>Attributes</h2><div class="table">    <av-row class="header">        <av-col size="4">Attribute</av-col>        <av-col size="4">Type</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">x_scroll</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Enable horizontal scrolling. Default: false.</av-col>    </av-row>    <av-row>        <av-col size="4">y_scroll</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Enable vertical scrolling. Default: true. </av-col>    </av-row>    <av-row>        <av-col size="4">floating_scroll</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">If true, scrollbars float over content instead of pushing it. </av-col>    </av-row>    <av-row>        <av-col size="4">auto_hide</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Scrollbars hide automatically when not in use.</av-col>    </av-row>    <av-row>        <av-col size="4">disable</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Disables all user interaction with scrolling.</av-col>    </av-row>    <av-row>        <av-col size="4">mouse_drag</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Enables dragging content with a mouse.</av-col>    </av-row>    <av-row>        <av-col size="4">pinch</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Enables pinch-to-zoom on touch devices.</av-col>    </av-row>    <av-row>        <av-col size="4">zoom</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Current zoom level of the content. Default: 1. </av-col>    </av-row>    <av-row>        <av-col size="4">min_zoom</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Minimum allowed zoom level. Default: 1. </av-col>    </av-row>    <av-row>        <av-col size="4">max_zoom</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Maximum allowed zoom level. Default: unlimited. </av-col>    </av-row>    <av-row>        <av-col size="4">break</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Easing factor for momentum. Default: 0.1. </av-col>    </av-row></div><h2>Features</h2><h3>1. Momentum-based scrolling</h3><p><span class="cn">av-scrollable</span> applies smooth momentum when dragging or using the mouse wheel. The break    attribute controls easing.</p><h3>2. Custom scrollbars</h3><ul>    <li>Scrollbars are separate DOM elements, styled with CSS variables.</li>    <li>Floating scrollbars can auto-hide after inactivity.</li>    <li>Supports drag-to-scroll directly on the scrollbars.</li></ul><h3>3. Pinch-to-zoom</h3><ul>    <li>Works on touch devices with two fingers.</li>    <li>Zoom is centered on a point for precise control.</li>    <li>Zoom boundaries respect min_zoom and max_zoom.</li>    <li>Triggers onZoomChange callback when zoom changes.</li></ul><h3>4. Mouse dragging</h3><ul>    <li>Drag content with mouse if mouse_drag is enabled.</li>    <li>Momentum continues after release for a natural feel.</li></ul><h2>Callbacks</h2><div class="table">    <av-row class="header">        <av-col size="4">Callback</av-col>        <av-col size="8">Description</av-col>    </av-row>    <av-row>        <av-col size="4">onScrollChange</av-col>        <av-col size="8">Triggered whenever the scroll position changes. Returns (x: number, y: number).</av-col>    </av-row>    <av-row>        <av-col size="4">onZoomChange</av-col>        <av-col size="8">Triggered when the zoom level changes. Returns the new zoom number.</av-col>    </av-row></div><h2>Methods</h2><div class="table">    <av-row class="header">        <av-col size="6">Method</av-col>        <av-col size="6">Description</av-col>        </av-row>    <av-row>        <av-col size="6">scrollToPosition(x, y)</av-col>        <av-col size="6">Scrolls to specific pixel positions.</av-col>    </av-row>    <av-row>        <av-col size="6">scrollX(x)</av-col>        <av-col size="6">Scroll horizontally to pixel position.</av-col>    </av-row>    <av-row>        <av-col size="6">scrollXPercent(percent)</av-col>        <av-col size="6">Scroll horizontally as a percentage of total width.</av-col>    </av-row>    <av-row>        <av-col size="6">scrollY(y)</av-col>        <av-col size="6">Scroll vertically to pixel position.</av-col>    </av-row>    <av-row>        <av-col size="6">scrollYPercent(percent)</av-col>        <av-col size="6">Scroll vertically as a percentage of total height.</av-col>    </av-row>    <av-row>        <av-col size="6">zoomOnPoint(clientX, clientY, newZoom)</av-col>        <av-col size="6">Zoom centered at a screen point (clientX, clientY) to a specific zoom value.</av-col>    </av-row>    <av-row>        <av-col size="6">autoScrollRight(percent)</av-col>        <av-col size="6">Automatically scrolls right at a speed relative to content size.</av-col>    </av-row>    <av-row>        <av-col size="6">stopAutoScrollRight()</av-col>        <av-col size="6">Stops auto-scroll right.</av-col>    </av-row>    <av-row>        <av-col size="6">autoScrollLeft(percent)</av-col>        <av-col size="6">Automatically scrolls left.</av-col>    </av-row>    <av-row>        <av-col size="6">stopAutoScrollLeft()</av-col>        <av-col size="6">Stops auto-scroll left.</av-col>    </av-row>    <av-row>        <av-col size="6">autoScrollTop(percent)</av-col>        <av-col size="6">Automatically scrolls up.</av-col>    </av-row>    <av-row>        <av-col size="6">stopAutoScrollTop()</av-col>        <av-col size="6">Stops auto-scroll up.</av-col>    </av-row>    <av-row>        <av-col size="6">autoScrollBottom(percent)</av-col>        <av-col size="6">Automatically scrolls down.</av-col>    </av-row>    <av-row>        <av-col size="6">stopAutoScrollBottom()</av-col>        <av-col size="6">Stops auto-scroll down.</av-col>    </av-row></div><h2>CSS Variables</h2><div class="table">    <av-row class="header">        <av-col size="4">Variable</av-col>        <av-col size="4">Default</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">--scrollbar-container-color</av-col>        <av-col size="4">transparent</av-col>        <av-col size="4">Background color of scrollbar container.</av-col>    </av-row>    <av-row>        <av-col size="4">--scrollbar-color</av-col>        <av-col size="4">#757575</av-col>        <av-col size="4">Scrollbar color.</av-col>    </av-row>    <av-row>        <av-col size="4">--scrollbar-active-color</av-col>        <av-col size="4">#858585</av-col>        <av-col size="4">Scrollbar color when active/dragged.</av-col>    </av-row>    <av-row>        <av-col size="4">--scroller-width</av-col>        <av-col size="4">6px</av-col>        <av-col size="4">Width of scrollbar.</av-col>    </av-row>    <av-row>        <av-col size="4">--scroller-top</av-col>        <av-col size="4">3px</av-col>        <av-col size="4">Top padding of horizontal scrollbar.</av-col>    </av-row>    <av-row>        <av-col size="4">--scroller-bottom</av-col>        <av-col size="4">3px</av-col>        <av-col size="4">Bottom padding of horizontal scrollbar.</av-col>    </av-row>    <av-row>        <av-col size="4">--scroller-left</av-col>        <av-col size="4">3px</av-col>        <av-col size="4">Left padding of vertical scrollbar.</av-col>    </av-row>    <av-row>        <av-col size="4">--scroller-right</av-col>        <av-col size="4">3px</av-col>        <av-col size="4">Right padding of vertical scrollbar.</av-col>    </av-row>    <av-row>        <av-col size="4">--scrollbar-content-padding</av-col>        <av-col size="4">0</av-col>        <av-col size="4">Padding inside content-wrapper.</av-col>    </av-row>    <av-row>        <av-col size="4">--scrollbar-container-display</av-col>        <av-col size="4">inline-block</av-col>        <av-col size="4">Display type of content-wrapper.</av-col>    </av-row></div><h2>Notes</h2><ul>    <li>Scrollbars are automatically shown or hidden based on content size.</li>    <li><span class="cn">disable</span> temporarily locks scrolling and zooming.</li>    <li>Pinch zoom uses DOMMatrix transformations for smooth and accurate scaling.</li>    <li>Supports both pixel-based and percent-based scrolling.</li>    <li>Works in combination with Aventus PressManager for unified pointer/touch handling.</li></ul>` }
     });
 }
     getClassName() {
@@ -12007,8 +13875,7 @@ const DocUIGridHelper = class DocUIGridHelper extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
+        blocks: { 'default':`<h1>UI - Grid Helper</h1><av-doc-u-i-grid-helper-editor-1></av-doc-u-i-grid-helper-editor-1>` }
     });
 }
     getClassName() {
@@ -12051,7 +13918,7 @@ const DocUICollapse = class DocUICollapse extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI - Collapse</h1><p>The <span class="cn">Collapse</span> component provides a lightweight expandable/collapsible container that hides or reveals its content with a smooth grid-based transition.It's designed to handle open/close logic automatically while letting you define your own layout and header appearance.</p><p>Unlike pre-styled accordions, this component handles only the logic and transitions, leaving full styling control to you.</p><h2>Concept</h2><p>&lt;av-collapse&gt; consists of two main parts:</p><ul>    <li>A header slot (<span class="cn">slot="header"</span>) that acts as the clickable trigger.</li>    <li>A content area that expands or collapses depending on the <span class="cn">open</span> state.</li></ul><p>By default, clicking the header toggles the open state with an animated transition.</p><h2>Attributes</h2><div class="table">    <av-row class="header">        <av-col size="4">Attribute</av-col>        <av-col size="4">Type</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">open</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Whether the collapse is currently expanded.</av-col>    </av-row>    <av-row>        <av-col size="4">no_animation</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Disables the transition animation.</av-col>    </av-row></div><h2>CSS Variables</h2><p>You can customize the animation behavior using these CSS variables:</p><div class="table">    <av-row class="header">        <av-col size="4">Attribute</av-col>        <av-col size="4">Type</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">--collapse-transition-duration</av-col>        <av-col size="4">Duration of the open/close transition</av-col>        <av-col size="4">0.5s</av-col>    </av-row>    <av-row>        <av-col size="4">--collapse-transition-timing-function</av-col>        <av-col size="4">Timing function for the transition</av-col>        <av-col size="4">cubic-bezier(0.65, 0, 0.15, 1)</av-col>    </av-row></div><h2>Example</h2><av-doc-u-i-collapse-editor-1></av-doc-u-i-collapse-editor-1>` }
+        blocks: { 'default':`<h1>UI - Collapse</h1><p>The <span class="cn">Collapse</span> component provides a lightweight expandable/collapsible container that hides or reveals its content with a smooth grid-based transition.It's designed to handle open/close logic automatically while letting you define your own layout and header appearance.</p><p>Unlike pre-styled accordions, this component handles only the logic and transitions, leaving full styling control to you.</p><h2>Concept</h2><p>&lt;av-collapse&gt; consists of two main parts:</p><ul>    <li>A header slot (<span class="cn">slot="header"</span>) that acts as the clickable trigger.</li>    <li>A content area that expands or collapses depending on the <span class="cn">open</span> state.</li></ul><p>By default, clicking the header toggles the open state with an animated transition.</p><h2>Attributes</h2><div class="table">    <av-row class="header">        <av-col size="4">Attribute</av-col>        <av-col size="4">Type</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">open</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Whether the collapse is currently expanded.</av-col>    </av-row>    <av-row>        <av-col size="4">no_animation</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Disables the transition animation.</av-col>    </av-row></div><h2>CSS Variables</h2><p>You can customize the animation behavior using these CSS variables:</p><div class="table">    <av-row class="header">        <av-col size="4">Attribute</av-col>        <av-col size="4">Description</av-col>        <av-col size="4">Default value</av-col>    </av-row>    <av-row>        <av-col size="4">--collapse-transition-duration</av-col>        <av-col size="4">Duration of the open/close transition</av-col>        <av-col size="4">0.5s</av-col>    </av-row>    <av-row>        <av-col size="4">--collapse-transition-timing-function</av-col>        <av-col size="4">Timing function for the transition</av-col>        <av-col size="4">cubic-bezier(0.65, 0, 0.15, 1)</av-col>    </av-row></div><h2>Example</h2><av-doc-u-i-collapse-editor-1></av-doc-u-i-collapse-editor-1>` }
     });
 }
     getClassName() {
@@ -12138,7 +14005,7 @@ const DocUIFormElement = class DocUIFormElement extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI - FormElement</h1><p><span class="cn">FormElement</span> is the foundation of all input components in Aventus.    It bridges the gap between your UI (the visible input field) and the form logic managed by <span class="cn">FormHandler</span>.</p><p>Just like the rest of the Aventus UI framework, it is completely design-agnostic: you define how your input looks and    behaves. Aventus handles the logic, validation, and data synchronization.</p><h2>Philosophy</h2><p>Traditional form systems often couple validation, layout, and styling.    Aventus takes a different route: logic and UI are separate, but synchronized.</p><p>Each <span class="cn">FormElement</span>:</p><ul>    <li>Knows its current value</li>    <li>Syncs automatically with its parent <span class="cn">FormHandler</span></li>    <li>Reacts to validation events</li>    <li>Exposes change and error callbacks</li>    <li>Integrates natively with browser forms through <span class="cn">ElementInternals</span></li></ul><p>This design allows developers to create fully custom input components, from simple text fields to rich custom    widgets, without rewriting boilerplate logic.</p><h2>Overview</h2><p><span class="cn">FormElement&lt;T&gt;</span> is an abstract class that provides:</p><ul>    <li>Automatic registration inside a Form</li>    <li>Two-way binding with the FormHandler</li>    <li>Integrated validation and error reporting</li>    <li>Native form association (formAssociated = true)</li>    <li>Built-in event callbacks (onChange, onFormValidation)</li>    <li>Internal state management (via ElementInternals)</li></ul><h2>Core Behavior</h2><h3>Automatic Registration</h3><p>When a <span class="cn">FormElement</span> is created, it automatically registers itself with its nearest parent    <span class="cn">Form</span>. This ensures that the form knows about all inputs and can include them in validation    or submission processes.</p><h3>Value and Error Binding</h3><p>Aventus provides two-way synchronization between:</p><ul>    <li>The field's value</li>    <li>The associated FormHandler's internal state</li>    <li>The browser's native form API (<span class="cn">ElementInternals</span>)</li></ul><h3>Validation Flow</h3><p>Every <span class="cn">FormElement</span> can:</p><ul>    <li>Define custom validation rules through the <span class="cn">validation()</span> method</li>    <li>Participate in form-wide validation triggered by the <span class="cn">FormHandler</span></li></ul><p>When a validation occurs:</p><ul>    <li>The element checks its own <span class="cn">validation()</span> rules.</li>    <li>The form merges its result with any global validation errors.</li>    <li>The element updates its <span class="cn">errors</span> array and sets the proper validity state.</li></ul><p>You can override <span class="cn">validation()</span> in your custom components:</p><av-code language="ts">    <pre>protected async validation(): Promise&lt;string[]&gt; {    const errors: string[] = [];    if (!this.value) errors.push("This field is required");    return errors;}    </pre></av-code></av-code><h3>Native Form Integration</h3><p>Aventus elements are natively compatible with browser <span class="cn">&lt;form&gt;</span> elements using    ElementInternals.    This means:</p><ul>    <li>You can use them directly inside standard HTML forms.</li>    <li>The <span class="cn">form.submit()</span> and <span class="cn">form.reset()</span> methods will behave normally.    </li>    <li>Validation states (<span class="cn">setValidity</span>) and disabled states are managed automatically.</li></ul><h3>Creating a Custom Form Element</h3><p>Creating a custom form element is simple: extend <span class="cn">FormElement</span> and implement the rendering    logic.</p><h2>Lifecycle Hooks</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Feature</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>postCreation()</av-col>        <av-col size="8" center>Called after the element is initialized. Registers to the parent Form.</av-col>    </av-row>    <av-row>        <av-col size="4" center>postDestruction()</av-col>        <av-col size="8" center>Called when the element is removed. Unregisters from the form.</av-col>    </av-row>    <av-row>        <av-col size="4" center>formAssociatedCallback(form)</av-col>        <av-col size="8" center>Invoked when linked to a native HTML form.</av-col>    </av-row>    <av-row>        <av-col size="4" center>formDisabledCallback(disabled)</av-col>        <av-col size="8" center>Called when the form or element is disabled.</av-col>    </av-row>    <av-row>        <av-col size="4" center>onFormValidation(errors)</av-col>        <av-col size="8" center>Receives and merges validation results.</av-col>    </av-row>    <av-row>        <av-col size="4" center>validation()</av-col>        <av-col size="8" center>Define your own validation logic here.</av-col>    </av-row>    <av-row>        <av-col size="4" center>triggerChange(value)</av-col>        <av-col size="8" center>Emits value change and updates the handler.</av-col>    </av-row></div><h2>Key Features</h2><ul>    <li>Two-way data binding between the UI and the FormHandler</li>    <li>Integrated validation system with custom and shared rules</li>    <li>Automatic registration inside forms</li>    <li>Extendable: build any input component</li>    <li>Smart error handling and ElementInternals integration</li>    <li>Design freedom: full control over rendering and layout</li></ul><h2>Example Integration</h2><av-code language="ts">    <pre>const loginForm = Form.FormHandler.create({    email: [Form.Validators.Required, Form.Validators.Email],});    </pre></av-code></av-code><av-code language="html">    <pre>    &lt;form-element :form="loginForm"&gt;        &lt;text-input name="email"&gt;&lt;/text-input&gt;        &lt;button-element type="submit"&gt;Submit&lt;/button-element&gt;    &lt;/form-element&gt;    </pre></av-code></av-code><p>Each text-input updates and validates through the shared handler. No glue code required.</p><h2>Injectable form part (manual wiring)</h2><p>If your input is used outside of the <span class="cn">Form</span> web component, you can still connect it to a <span class="cn">FormHandler</span> by injecting the form part directly. FormElement exposes an <span class="cn">form property</span> of type <span class="cn">InternalFormPart&lt;T&gt;</span> that you can set to link the element with the <span class="cn">FormHandler's</span> field.</p><p>When a <span class="cn">form</span> is injected:</p><ul>    <li>The element registers itself into the <span class="cn">InternalFormPart</span> (<span class="cn">register</span>) so the handler knows about it.</li>    <li>The element subscribes to <span class="cn">onValueChange</span> and <span class="cn">onValidation</span> callbacks from the part.</li>    <li>Value and error synchronization work the same way as when the element is registered via the <span class="cn">Form</span> container.</li></ul><p>If your framework templating supports binding (example follows AventusJS syntax), you can bind the element directly to the FormHandler part:</p><av-code language="ts">    <pre>const loginForm = Avenuts.Form.FormHandler.create({  email: [Avenuts.Form.Validators.Required, Avenuts.Form.Validators.Email],});    </pre></av-code></av-code><av-code language="html">    <pre>&lt;div&gt;  &lt;!-- declarative injection of the email form part --&gt;  &lt;text-input name="email" :form="loginForm.parts.email"&gt;&lt;/text-input&gt;&lt;/div&gt;    </pre></av-code></av-code><p>After assignment input will:</p><ul>    <li>receive the current value (onValueChange → refreshValueFromForm)</li>    <li>receive validation callbacks (onFormValidation)</li>    <li>push value changes back to loginForm.item when triggerChange() is called</li></ul><p>Manual wiring is useful when:</p><ul>    <li>You need to place inputs outside a &lt;form&gt; container (e.g. component composition, portal, popovers).</li>    <li>You want fine-grained control over which elements are bound to which field.</li>    <li>You build dynamic forms where fields are created programmatically.</li></ul><h2>Summary</h2><p><span class="cn">FormElement</span> is the bridge between visual components and logical form management. It encapsulates:</p><ul>    <li>Value and error synchronization</li>    <li>Form registration</li>    <li>Validation behavior</li>    <li>Native browser integration</li></ul><p>It's the building block for all input components in Aventus : logic-driven, design-free, and extensible by design.</p>` }
+        blocks: { 'default':`<h1>UI - FormElement</h1><p><span class="cn">FormElement</span> is the foundation of all input components in Aventus.    It bridges the gap between your UI (the visible input field) and the form logic managed by <span class="cn">FormHandler</span>.</p><p>Just like the rest of the Aventus UI framework, it is completely design-agnostic: you define how your input looks and    behaves. Aventus handles the logic, validation, and data synchronization.</p><h2>Philosophy</h2><p>Traditional form systems often couple validation, layout, and styling.    Aventus takes a different route: logic and UI are separate, but synchronized.</p><p>Each <span class="cn">FormElement</span>:</p><ul>    <li>Knows its current value</li>    <li>Syncs automatically with its parent <span class="cn">FormHandler</span></li>    <li>Reacts to validation events</li>    <li>Exposes change and error callbacks</li>    <li>Integrates natively with browser forms through <span class="cn">ElementInternals</span></li></ul><p>This design allows developers to create fully custom input components, from simple text fields to rich custom    widgets, without rewriting boilerplate logic.</p><h2>Overview</h2><p><span class="cn">FormElement&lt;T&gt;</span> is an abstract class that provides:</p><ul>    <li>Automatic registration inside a Form</li>    <li>Two-way binding with the FormHandler</li>    <li>Integrated validation and error reporting</li>    <li>Native form association (formAssociated = true)</li>    <li>Built-in event callbacks (onChange, onFormValidation)</li>    <li>Internal state management (via ElementInternals)</li></ul><av-doc-u-i-form-element-editor-1></av-doc-u-i-form-element-editor-1><h2>Core Behavior</h2><h3>Automatic Registration</h3><p>When a <span class="cn">FormElement</span> is created, it automatically registers itself with its nearest parent    <span class="cn">Form</span>. This ensures that the form knows about all inputs and can include them in validation    or submission processes.</p><h3>Value and Error Binding</h3><p>Aventus provides two-way synchronization between:</p><ul>    <li>The field's value</li>    <li>The associated FormHandler's internal state</li>    <li>The browser's native form API (<span class="cn">ElementInternals</span>)</li></ul><h3>Validation Flow</h3><p>Every <span class="cn">FormElement</span> can:</p><ul>    <li>Define custom validation rules through the <span class="cn">validation()</span> method</li>    <li>Participate in form-wide validation triggered by the <span class="cn">FormHandler</span></li></ul><p>When a validation occurs:</p><ul>    <li>The element checks its own <span class="cn">validation()</span> rules.</li>    <li>The form merges its result with any global validation errors.</li>    <li>The element updates its <span class="cn">errors</span> array and sets the proper validity state.</li></ul><p>You can override <span class="cn">validation()</span> in your custom components:</p><av-code language="ts">    <pre>protected async validation(): Promise&lt;string[]&gt; {    const errors: string[] = [];    if (!this.value) errors.push("This field is required");    return errors;}    </pre></av-code></av-code><h3>Native Form Integration</h3><p>Aventus elements are natively compatible with browser <span class="cn">&lt;form&gt;</span> elements using    ElementInternals.    This means:</p><ul>    <li>You can use them directly inside standard HTML forms.</li>    <li>The <span class="cn">form.submit()</span> and <span class="cn">form.reset()</span> methods will behave normally.    </li>    <li>Validation states (<span class="cn">setValidity</span>) and disabled states are managed automatically.</li></ul><h3>Creating a Custom Form Element</h3><p>Creating a custom form element is simple: extend <span class="cn">FormElement</span> and implement the rendering    logic.</p><h2>Lifecycle Hooks</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Feature</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>postCreation()</av-col>        <av-col size="8" center>Called after the element is initialized. Registers to the parent Form.</av-col>    </av-row>    <av-row>        <av-col size="4" center>postDestruction()</av-col>        <av-col size="8" center>Called when the element is removed. Unregisters from the form.</av-col>    </av-row>    <av-row>        <av-col size="4" center>formAssociatedCallback(form)</av-col>        <av-col size="8" center>Invoked when linked to a native HTML form.</av-col>    </av-row>    <av-row>        <av-col size="4" center>formDisabledCallback(disabled)</av-col>        <av-col size="8" center>Called when the form or element is disabled.</av-col>    </av-row>    <av-row>        <av-col size="4" center>onFormValidation(errors)</av-col>        <av-col size="8" center>Receives and merges validation results.</av-col>    </av-row>    <av-row>        <av-col size="4" center>validation()</av-col>        <av-col size="8" center>Define your own validation logic here.</av-col>    </av-row>    <av-row>        <av-col size="4" center>triggerChange(value)</av-col>        <av-col size="8" center>Emits value change and updates the handler.</av-col>    </av-row></div><h2>Key Features</h2><ul>    <li>Two-way data binding between the UI and the FormHandler</li>    <li>Integrated validation system with custom and shared rules</li>    <li>Automatic registration inside forms</li>    <li>Extendable: build any input component</li>    <li>Smart error handling and ElementInternals integration</li>    <li>Design freedom: full control over rendering and layout</li></ul><h2>Example Integration</h2><av-code language="ts">    <pre>const loginForm = Form.FormHandler.create({    email: [Form.Validators.Required, Form.Validators.Email],});    </pre></av-code></av-code><av-code language="html">    <pre>    &lt;form-element :form="loginForm"&gt;        &lt;text-input name="email"&gt;&lt;/text-input&gt;        &lt;button-element type="submit"&gt;Submit&lt;/button-element&gt;    &lt;/form-element&gt;    </pre></av-code></av-code><p>Each text-input updates and validates through the shared handler. No glue code required.</p><h2>Injectable form part (manual wiring)</h2><p>If your input is used outside of the <span class="cn">Form</span> web component, you can still connect it to a <span class="cn">FormHandler</span> by injecting the form part directly. FormElement exposes an <span class="cn">form property</span> of type <span class="cn">InternalFormPart&lt;T&gt;</span> that you can set to link the element with the <span class="cn">FormHandler's</span> field.</p><p>When a <span class="cn">form</span> is injected:</p><ul>    <li>The element registers itself into the <span class="cn">InternalFormPart</span> (<span class="cn">register</span>) so the handler knows about it.</li>    <li>The element subscribes to <span class="cn">onValueChange</span> and <span class="cn">onValidation</span> callbacks from the part.</li>    <li>Value and error synchronization work the same way as when the element is registered via the <span class="cn">Form</span> container.</li></ul><p>If your framework templating supports binding (example follows AventusJS syntax), you can bind the element directly to the FormHandler part:</p><av-code language="ts">    <pre>const loginForm = Avenuts.Form.FormHandler.create({  email: [Avenuts.Form.Validators.Required, Avenuts.Form.Validators.Email],});    </pre></av-code></av-code><av-code language="html">    <pre>&lt;div&gt;  &lt;!-- declarative injection of the email form part --&gt;  &lt;text-input name="email" :form="loginForm.parts.email"&gt;&lt;/text-input&gt;&lt;/div&gt;    </pre></av-code></av-code><p>After assignment input will:</p><ul>    <li>receive the current value (onValueChange → refreshValueFromForm)</li>    <li>receive validation callbacks (onFormValidation)</li>    <li>push value changes back to loginForm.item when triggerChange() is called</li></ul><p>Manual wiring is useful when:</p><ul>    <li>You need to place inputs outside a &lt;form&gt; container (e.g. component composition, portal, popovers).</li>    <li>You want fine-grained control over which elements are bound to which field.</li>    <li>You build dynamic forms where fields are created programmatically.</li></ul><h2>Summary</h2><p><span class="cn">FormElement</span> is the bridge between visual components and logical form management. It encapsulates:</p><ul>    <li>Value and error synchronization</li>    <li>Form registration</li>    <li>Validation behavior</li>    <li>Native browser integration</li></ul><p>It's the building block for all input components in Aventus : logic-driven, design-free, and extensible by design.</p>` }
     });
 }
     getClassName() {
@@ -14638,37 +16505,6 @@ BaseEditor.Tag=`av-base-editor`;
 __as1(_, 'BaseEditor', BaseEditor);
 if(!window.customElements.get('av-base-editor')){window.customElements.define('av-base-editor', BaseEditor);Aventus.WebComponentInstance.registerDefinition(BaseEditor);}
 
-const DocUICollapseEditor1 = class DocUICollapseEditor1 extends BaseEditor {
-    static __style = ``;
-    __getStatic() {
-        return DocUICollapseEditor1;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUICollapseEditor1.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Collapse">    <av-code language="html" filename="Example.wcv.avt">        <pre>            &lt;av-collapse&gt;                &lt;div slot="header">Show details&lt;/div&gt;                &lt;div>                    &lt;p>This is the hidden content that appears when open.&lt;/p>$slotBlock$gt;                &lt;/div&gt;            &lt;/av-collapse&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
-    });
-}
-    getClassName() {
-        return "DocUICollapseEditor1";
-    }
-    defineResult() {
-        const cont = document.createElement("DIV");
-        const ex1 = new DocUICollapseEditor1Example();
-        cont.appendChild(ex1);
-        return cont;
-    }
-}
-DocUICollapseEditor1.Namespace=`AventusWebsite`;
-DocUICollapseEditor1.Tag=`av-doc-u-i-collapse-editor-1`;
-__as1(_, 'DocUICollapseEditor1', DocUICollapseEditor1);
-if(!window.customElements.get('av-doc-u-i-collapse-editor-1')){window.customElements.define('av-doc-u-i-collapse-editor-1', DocUICollapseEditor1);Aventus.WebComponentInstance.registerDefinition(DocUICollapseEditor1);}
-
 const TutorialInitEditor3 = class TutorialInitEditor3 extends BaseEditor {
     static __style = ``;
     __getStatic() {
@@ -16074,6 +17910,99 @@ DocWcAttributeEditor1.Namespace=`AventusWebsite`;
 DocWcAttributeEditor1.Tag=`av-doc-wc-attribute-editor-1`;
 __as1(_, 'DocWcAttributeEditor1', DocWcAttributeEditor1);
 if(!window.customElements.get('av-doc-wc-attribute-editor-1')){window.customElements.define('av-doc-wc-attribute-editor-1', DocWcAttributeEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcAttributeEditor1);}
+
+const DocUIScrollableEditor1 = class DocUIScrollableEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUIScrollableEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIScrollableEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Scrollable">    <av-code language="html" filename="index.html">        <pre>            &lt;av-scrollable x_scroll y_scroll pinch mouse_drag&gt;                &lt;div style="width: 2000px;                 height: 1500px;                 background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%);                 background-size: 10px 10px, 10px 10px;"&gt;                    Large content here                &lt;/div&gt;            &lt;/av-scrollable&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUIScrollableEditor1";
+    }
+    defineResult() {
+        const cont = document.createElement("DIV");
+        const ex1 = new DocUIScrollableEditor1Compiled();
+        cont.appendChild(ex1);
+        return cont;
+    }
+}
+DocUIScrollableEditor1.Namespace=`AventusWebsite`;
+DocUIScrollableEditor1.Tag=`av-doc-u-i-scrollable-editor-1`;
+__as1(_, 'DocUIScrollableEditor1', DocUIScrollableEditor1);
+if(!window.customElements.get('av-doc-u-i-scrollable-editor-1')){window.customElements.define('av-doc-u-i-scrollable-editor-1', DocUIScrollableEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIScrollableEditor1);}
+
+const DocUIGridHelperEditor1 = class DocUIGridHelperEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUIGridHelperEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIGridHelperEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Scrollable">    <av-code language="html" filename="index.html">        <pre>            &lt;av-scrollable x_scroll y_scroll pinch mouse_drag&gt;                &lt;div style="width: 2000px;                 height: 1500px;                 background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%);                 background-size: 10px 10px, 10px 10px;"&gt;                    Large content here                &lt;/div&gt;            &lt;/av-scrollable&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUIGridHelperEditor1";
+    }
+    defineResult() {
+        const cont = document.createElement("DIV");
+        const ex1 = new DocUIGridHelperEditor1Compiled();
+        cont.appendChild(ex1);
+        return cont;
+    }
+}
+DocUIGridHelperEditor1.Namespace=`AventusWebsite`;
+DocUIGridHelperEditor1.Tag=`av-doc-u-i-grid-helper-editor-1`;
+__as1(_, 'DocUIGridHelperEditor1', DocUIGridHelperEditor1);
+if(!window.customElements.get('av-doc-u-i-grid-helper-editor-1')){window.customElements.define('av-doc-u-i-grid-helper-editor-1', DocUIGridHelperEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIGridHelperEditor1);}
+
+const DocUICollapseEditor1 = class DocUICollapseEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUICollapseEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUICollapseEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Collapse">    <av-code language="html" filename="index.html">        <pre>            &lt;av-collapse&gt;                &lt;div slot="header">Show details&lt;/div&gt;                &lt;div>                    &lt;p>This is the hidden content that appears when open.&lt;/p>$slotBlock$gt;                &lt;/div&gt;            &lt;/av-collapse&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUICollapseEditor1";
+    }
+    defineResult() {
+        const cont = document.createElement("DIV");
+        const ex1 = new DocUICollapseEditor1Example();
+        cont.appendChild(ex1);
+        return cont;
+    }
+}
+DocUICollapseEditor1.Namespace=`AventusWebsite`;
+DocUICollapseEditor1.Tag=`av-doc-u-i-collapse-editor-1`;
+__as1(_, 'DocUICollapseEditor1', DocUICollapseEditor1);
+if(!window.customElements.get('av-doc-u-i-collapse-editor-1')){window.customElements.define('av-doc-u-i-collapse-editor-1', DocUICollapseEditor1);Aventus.WebComponentInstance.registerDefinition(DocUICollapseEditor1);}
 
 const DocStateListenEditor1 = class DocStateListenEditor1 extends BaseEditor {
     static __style = ``;
@@ -20927,6 +22856,37 @@ TutorialIntroductionEditor1.Namespace=`AventusWebsite`;
 TutorialIntroductionEditor1.Tag=`av-tutorial-introduction-editor-1`;
 __as1(_, 'TutorialIntroductionEditor1', TutorialIntroductionEditor1);
 if(!window.customElements.get('av-tutorial-introduction-editor-1')){window.customElements.define('av-tutorial-introduction-editor-1', TutorialIntroductionEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialIntroductionEditor1);}
+
+const DocUIFormElementEditor1 = class DocUIFormElementEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUIFormElementEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIFormElementEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="FormElement">    <av-code language="typescript" filename="MyInput.wcl.avt">        <pre>            import { FormElement } from "Aventus@UI:Aventus.Form.package.avt";            &nbsp;            export class MyInput extends FormElement&lt;string&gt; implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props                @Property()                public name?: string;                @Property()                public label?: string;                @Attribute()                public type: string = "text";                @Attribute()                public placeholder?: string;            &nbsp;                @Property((target: DocUIFormElementEditor1Input) =&gt; {                    target.inputEl.value = target.value ?? "";                })                public override value: string = "";                //#endregion            &nbsp;            &nbsp;                //#region variables                @ViewElement()                protected inputEl!: HTMLInputElement;                private focusValue: string = "";                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods            &nbsp;                /**                 *                  */                protected focusInput() {                    this.inputEl.focus();                }            &nbsp;                /**                 *                  */                public select() {                    this.inputEl.select();                }            &nbsp;                /**                 *                  */                protected onFocus() {                    this.clearErrors();                    this.focusValue = this.inputEl.value;                }                /**                *                 */                protected onBlur() {                    &#105;f(this.inputEl.value == this.focusValue) {                        this.validate();                    }                }                /**                *                 */                protected onInput() {                    this.triggerChange(this.inputEl.value);                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="MyInput.wcs.avt">        <pre>            :host {            	color: black;            	width: 100%;            &nbsp;            	.label {            		color: #eee;            		cursor: pointer;            		display: block;            		font-size: 14px;            		margin-bottom: 6px;            	}            &nbsp;            	.input {            		background-color: #eee;            		border: 1px solid gray;            		border-radius: 4px;            		cursor: pointer;            		display: flex;            		padding: 0 8px;            		width: 100%;            &nbsp;            &nbsp;            		input {            			-webkit-appearance: none;            			-moz-appearance: none;            			appearance: none;            			background-color: transparent;            			border: none;            			color: inherit;            			flex-grow: 1;            			font-size: 15px;            			outline: none;            			outline-style: none;            			padding: 8px 0;            		}            	}            &nbsp;            	.errors {            		color: red;            		font-size: 13px;            		margin-top: 6px;            	}            }            &nbsp;            :host(:not([label])),            :host([label=""]) {            	.label {            		display: none;            	}            }            &nbsp;            :host(:not([has_errors])) {            	.errors {            		display: none;            	}            }            &nbsp;            :host([disabled]) {            	.input {            		input {            			background-color: #9e9e9e;            			border-color: #888888;            			box-shadow: none;            			cursor: not-allowed;            		}            	}            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="MyInput.wcv.avt">        <pre>            &lt;label &#102;or="&#123;&#123; this.name &#125;&#125;" class="label" @press="focusInput"&gt;&#123;&#123; this.label &#125;&#125;&lt;/label&gt;            &lt;div class="input"&gt;                &lt;slot name="before"&gt;&lt;/slot&gt;                &lt;input @element="inputEl" type="&#123;&#123; this.type &#125;&#125;" name="&#123;&#123; this.name &#125;&#125;" id="&#123;&#123; this.name &#125;&#125;" placeholder="&#123;&#123; this.placeholder &#125;&#125;" @focus="onFocus" @blur="onBlur" @input="onInput"&gt;                &lt;slot name="after"&gt;&lt;/slot&gt;            &lt;/div&gt;            &lt;div class="errors"&gt;                &#102;or(let error of this.errors) {                     &lt;div&gt;&#123;&#123; error &#125;&#125;&lt;/div&gt;                }            &lt;/div&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUIFormElementEditor1";
+    }
+    defineResult() {
+        const cont = document.createElement("DIV");
+        const ex1 = new DocUIFormElementEditor1Compiled();
+        cont.appendChild(ex1);
+        return cont;
+    }
+}
+DocUIFormElementEditor1.Namespace=`AventusWebsite`;
+DocUIFormElementEditor1.Tag=`av-doc-u-i-form-element-editor-1`;
+__as1(_, 'DocUIFormElementEditor1', DocUIFormElementEditor1);
+if(!window.customElements.get('av-doc-u-i-form-element-editor-1')){window.customElements.define('av-doc-u-i-form-element-editor-1', DocUIFormElementEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIFormElementEditor1);}
 
 
 for(let key in _) { AventusWebsite[key] = _[key] }
