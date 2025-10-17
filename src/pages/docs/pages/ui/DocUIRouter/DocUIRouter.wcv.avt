@@ -1,1 +1,203 @@
-<slot></slot>
+<h1>UI - Router Component</h1>
+<p>The <span class="cn">Router</span> component provides the core navigation system for Aventus-based applications.
+It defines, registers, and manages application routes, dynamically loads and displays pages, and keeps browser navigation in sync with the active state.</p>
+
+<h2>Overview</h2>
+<p>The Router acts as a central route controller, coordinating between the app's state manager and the rendered pages.</p>
+<p>It supports both synchronous and asynchronous route loading, custom 404 handling, URL synchronization, and smooth transitions between pages.</p>
+<p>It must be extended to define your own route structure and optionally override its behavior.</p>
+
+<h2>Example</h2>
+
+<av-code language="ts">
+    <pre>
+import { Router } from "Aventus@Main:Aventus.package.avt";
+import { HomePage } from "../pages/Home.page.avt";
+import { AboutPage } from "../pages/About.page.avt";
+import { NotFoundPage } from "../pages/NotFound.page.avt";
+
+export class AppRouter extends Router {
+	protected defineRoutes(): void {
+		this.addRoute("/", HomePage);
+		this.addRoute("/about", AboutPage);
+
+		this.addRouteAsync({
+			route: "/contact",
+			scriptUrl: "/pages/contact.js",
+			render: () => ContactPage,
+		});
+	}
+
+	protected override error404() {
+		return NotFoundPage;
+	}
+}
+    </pre>
+</av-code>
+<av-code language="html">
+    <pre>
+        &lt;app-router&gt;&lt;/app-router&gt;
+    </pre>
+</av-code>
+
+<h2>Template</h2>
+<av-code language="html">
+    <pre>
+&lt;slot name="before"&gt;&lt;/slot&gt;
+&lt;div class="content" @element="contentEl"&gt;&lt;/div&gt;
+&lt;slot name="after"&gt;&lt;/slot&gt;
+    </pre>
+</av-code>
+<p>This structure allows you to insert additional UI before or after the router content, such as headers, sidebars, or footers.</p>
+
+<h2>Configuration</h2>
+<p>You can globally configure the Router's default behavior:</p>
+<av-code language="ts">
+    <pre>
+Router.configure({
+	page404: NotFoundPage,
+	destroyPage: true,
+});
+    </pre>
+</av-code>
+
+<h2>Defining Routes</h2>
+<p>Routes are defined in the abstract defineRoutes() method.</p>
+
+<av-code language="ts">
+    <pre>
+        this.addRoute("/home", HomePage);
+        this.addRouteAsync({
+            route: "/settings",
+            scriptUrl: "/pages/settings.js",
+            render: () => SettingsPage,
+        });
+    </pre>
+</av-code>
+
+<p>Async routes are useful for lazy-loading parts of your application.</p>
+
+<h2>Page Lifecycle</h2>
+<p>Each page is a component extending <span class="cn">Page</span>.
+When a route becomes active, the Router:</p>
+
+<ul>
+    <li>Instantiates or reuses the corresponding <span class="cn">Page</span> class.</li>
+    <li>Calls <span class="cn">isAllowed()</span> on the page to check access control.</li>
+    <li>Invokes <span class="cn">show()</span> on the new page and <span class="cn">hide()</span> on the previous one.</li>
+    <li>Updates document metadata (<span class="cn">title</span>, <span class="cn">description</span>, <span class="cn">keywords</span>).</li>
+    <li>Synchronizes the browser URL and navigation history.</li>
+</ul>
+<p>Inactive pages are either removed or kept in memory depending on <span class="cn">destroyPage</span>.</p>
+
+
+<h2>404 Handling</h2>
+<p>If no route matches the current state, the Router:</p>
+<ul>
+    <li>Instantiates the <span class="cn">page404</span> page (default or overridden)</li>
+    <li>Displays it in the <span class="cn">contentEl</span></li>
+    <li>Optionally updates the URL to a "not found" path.</li>
+</ul>
+
+<p>You can customize 404 logic by overriding error404():</p>
+<av-code language="ts">
+    <pre>
+protected override error404(): new () => Page {
+	return CustomNotFoundPage;
+}
+    </pre>
+</av-code>
+
+
+<h2>Navigation Control</h2>
+<h3>Programmatic Navigation</h3>
+<p>You can navigate to a new route manually:</p>
+<av-code language="ts">
+    <pre>
+        await this.navigate("/dashboard");
+    </pre>
+</av-code>
+<p>Replace the current history entry:</p>
+<av-code language="ts">
+    <pre>
+       await this.navigate("/login", { replace: true });
+    </pre>
+</av-code>
+
+<h3>Access Control</h3>
+<p>Override <span class="cn">canChangeState()</span> to control route transitions:</p>
+<av-code language="ts">
+    <pre>
+protected override async canChangeState(newState: Aventus.State): Promise&lt;boolean&gt; {
+	const isAuthenticated = await AuthService.isLoggedIn();
+	return isAuthenticated;
+}
+    </pre>
+</av-code>
+
+<h3>Before/After Page Change Hooks</h3>
+<av-code language="ts">
+    <pre>
+protected override onNewPage(oldUrl: string, oldPage: Page | undefined, newUrl: string, newPage: Page) {
+	console.log("Navigated from", oldUrl, "to", newUrl);
+}
+    </pre>
+</av-code>
+
+<h2>URL Binding</h2>
+<p>By default, the Router binds to the browser URL:</p>
+<ul>
+    <li>Keeps window.location in sync.</li>
+    <li>Supports back/forward navigation using popstate.</li>
+</ul>
+<p>You can disable this by overriding:</p>
+
+<av-code language="ts">
+    <pre>
+protected override bindToUrl(): boolean {
+	return false;
+}
+    </pre>
+</av-code>
+
+<p>Or set a fallback:</p>
+
+<av-code language="ts">
+    <pre>
+protected override defaultUrl(): string {
+	return "/home";
+}
+    </pre>
+</av-code>
+
+<h2>Methods</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="6">Method</av-col>
+        <av-col size="6">Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">addRoute(route: string, elementCtr: new () => Page)</av-col>
+        <av-col size="6">Registers a synchronous route.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">addRouteAsync(options: RouteAsyncOption)</av-col>
+        <av-col size="6">Registers a lazy-loaded route.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">navigate(state: string | Aventus.State, options?: { replace: boolean })</av-col>
+        <av-col size="6">Navigates to a specific route.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">getSlugs()</av-col>
+        <av-col size="6">Returns the parameters extracted from the current route (if any).</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">bindToUrl()</av-col>
+        <av-col size="6">Determines whether navigation updates the browser URL.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">shouldDestroyFrame(page: Page)</av-col>
+        <av-col size="6">Determines if a page should be destroyed when hidden.</av-col>
+    </av-row>
+</div>

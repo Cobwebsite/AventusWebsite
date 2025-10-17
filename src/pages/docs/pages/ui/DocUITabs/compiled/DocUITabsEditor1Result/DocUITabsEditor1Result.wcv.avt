@@ -1,0 +1,11 @@
+<av-doc-u-i-tabs-editor-1-tabs>
+    <av-doc-u-i-tabs-editor-1-tab label="Page1" icon="home">
+        <p>Page 1</p>
+    </av-doc-u-i-tabs-editor-1-tab>
+    <av-doc-u-i-tabs-editor-1-tab label="Page2">
+        <p>Page 2</p>
+    </av-doc-u-i-tabs-editor-1-tab>
+    <av-doc-u-i-tabs-editor-1-tab label="Page3" count="3">
+        <p>Page 3</p>
+    </av-doc-u-i-tabs-editor-1-tab>
+</av-doc-u-i-tabs-editor-1-tabs>

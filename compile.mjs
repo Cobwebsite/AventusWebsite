@@ -7,7 +7,7 @@ import { sep, dirname } from 'path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const outDir = [__dirname, "output"].join(sep);
-const inDir = join(__dirname, "src\\pages\\docs\\pages\\ui\\DocUIFormElement\\compiled")
+const inDir = join(__dirname, "src\\pages\\docs\\pages\\ui\\DocUIModal\\compiled")
 
 const projectName = "FormElement";
 let extensions = {

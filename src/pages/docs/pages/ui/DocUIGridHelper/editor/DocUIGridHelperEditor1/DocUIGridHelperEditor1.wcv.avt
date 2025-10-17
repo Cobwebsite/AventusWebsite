@@ -1,14 +1,9 @@
 <av-code-editor name="Scrollable">
     <av-code language="html" filename="index.html">
         <pre>
-            &lt;av-scrollable x_scroll y_scroll pinch mouse_drag&gt;
-                &lt;div style="width: 2000px; 
-                height: 1500px; 
-                background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%); 
-                background-size: 10px 10px, 10px 10px;"&gt;
-                    Large content here
-                &lt;/div&gt;
-            &lt;/av-scrollable&gt;
+            &lt;div class="page"&gt;
+                &lt;av-grid-helper step="50" step_big="200" col_width="50" row_height="50" magnetic="5" lock="false"&gt;&lt;/av-grid-helper&gt;
+            &lt;/div&gt;
         </pre>
     </av-code>
     <slot></slot>

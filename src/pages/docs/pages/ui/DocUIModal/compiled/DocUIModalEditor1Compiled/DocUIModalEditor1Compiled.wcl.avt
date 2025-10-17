@@ -1,0 +1,45 @@
+import { DocUIModalEditor1Modal } from "../DocUIModalEditor1Modal/DocUIModalEditor1Modal.wcl.avt";
+
+export class DocUIModalEditor1Compiled extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+    @Watch()
+    public txt?: string;
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+
+    /**
+     * 
+     */
+    protected async openModal() {
+        const confirm = new DocUIModalEditor1Modal();
+        confirm.question = "Do you accept?"
+        const isAccepted = await confirm.show();
+        if(isAccepted) {
+			this.txt = "Accepted"
+        }
+		else {
+			this.txt = "Refused"
+		}
+    }
+
+    //#endregion
+
+}

@@ -1,1 +1,149 @@
-<slot></slot>
+<h1>UI - Page</h1>
+<p>The <span class="cn">Page</span> class is the foundational building block for every navigable screen in an Aventus application.
+Each route in your app corresponds to a Page component, which defines its content, metadata, and lifecycle behavior.</p>
+
+<h2>Overview</h2>
+<p>A <span class="cn">Page</span> is automatically managed by the <span class="cn">Router</span> component:</p>
+<ul>
+    <li>When a route is activated, its associated <span class="cn">Page</span> is shown.</li>
+    <li>When deactivated, it is hidden or destroyed (depending on configuration).</li>
+    <li>The Router updates the browser's metadata (<span class="cn">title</span>, <span class="cn">description</span>, <span class="cn">keywords</span>) based on the page's configuration.</li>
+</ul>
+
+<p>You can extend <span class="cn">Page</span> to create your own screens, and optionally override lifecycle methods like <span class="cn">onShow</span>, <span class="cn">onHide</span>, and <span class="cn">isAllowed</span>.</p>
+
+<av-code language="ts">
+    <pre>
+import { Page } from "Aventus@Main:Aventus.package.avt";
+&nbsp;
+export class HomePage extends Page {
+	public override async configure() {
+		return {
+			title: "Home - Aventus App",
+			description: "Welcome to the home page of the Aventus demo application.",
+			keywords: ["home", "aventus", "demo"],
+		};
+	}
+&nbsp;
+	public override onShow() {
+		console.log("HomePage is now visible!");
+	}
+&nbsp;
+	public override onHide() {
+		console.log("HomePage was hidden!");
+	}
+}
+    </pre>
+</av-code>
+<av-code language="html">
+    <pre>
+    &lt;div&gt;
+		&lt;h1&gt;Welcome!&lt;/h1&gt;
+		&lt;p&gt;This is the home page content.&lt;/p&gt;
+	&lt;/div&gt;
+    </pre>
+</av-code>
+
+
+<h2>Properties</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="3">Property</av-col>
+        <av-col size="3">Type</av-col>
+        <av-col size="6">Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="3">visible</av-col>
+        <av-col size="3">boolean</av-col>
+        <av-col size="6">Automatically managed by the router. When set to <span class="cn">true</span>, the page becomes visible.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="3">router</av-col>
+        <av-col size="3">Router</av-col>
+        <av-col size="6">Reference to the router managing this page.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="3">state</av-col>
+        <av-col size="3">State</av-col>
+        <av-col size="6">Holds the current state object for the route, if any.</av-col>
+    </av-row>
+</div>
+
+<p>The visible property is reactive when its value changes:</p>
+<ul>
+    <li>If true, onShow() is called</li>
+    <li>If false, onHide() is called</li>
+</ul>
+
+<h2>Lifecycle Methods</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="6">Method</av-col>
+        <av-col size="6">Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">configure()</av-col>
+        <av-col size="6">Abstract. Must return a PageConfig object defining metadata and optional destruction rules.</av-col>
+    </av-row>
+   <av-row>
+        <av-col size="6">show(state?: State)</av-col>
+        <av-col size="6">Called by the router when the page is activated. Sets visible = true.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">hide()</av-col>
+        <av-col size="6">Called by the router when the page is deactivated. Sets visible = false.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">onShow()</av-col>
+        <av-col size="6">Hook executed when the page becomes visible. Use it to start animations, load data, etc.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">onHide()</av-col>
+        <av-col size="6">Hook executed when the page is hidden. Use it to stop timers, clean up listeners, etc.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6">isAllowed(state, pattern, router)</av-col>
+        <av-col size="6">Optional access control. Return true to allow, false to block, or a redirect path/state.</av-col>
+    </av-row>
+</div>
+
+<h2>Access Control Example</h2>
+<p>You can control page visibility by overriding <span class="cn">isAllowed()</span>:</p>
+<av-code language="ts">
+    <pre>
+public override async isAllowed(state: State, pattern: string, router: Router) {
+	const isAuthenticated = await AuthService.isLoggedIn();
+	\if (!isAuthenticated) {
+		// Redirect unauthorized users to /login
+		return "/login";
+	}
+	return true;
+}
+    </pre>
+</av-code>
+
+
+<p>If the method returns:</p>
+<ul>
+    <li>true → The page is displayed.</li>
+    <li>false → The navigation is canceled.</li>
+    <li>string or State → The router redirects to the given route or state.</li>
+</ul>
+
+
+
+<h2>Page Configuration</h2>
+<p>Each page defines its configuration via the <span class="cn">configure()</span> method.</p>
+<av-code language="ts">
+    <pre>
+public async configure(): Promise&lt;PageConfig&gt; {
+	return {
+		title: "Dashboard", // Browser tab title for this page.
+		description: "User dashboard overview", // Meta description for SEO.
+		keywords: ["dashboard", "user", "aventus"], // Meta keywords for SEO.
+		destroy: false, // If true, the page is destroyed (removed from the DOM) when hidden.
+	};
+}
+    </pre>
+</av-code>
+

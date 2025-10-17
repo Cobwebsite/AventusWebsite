@@ -64,11 +64,6 @@ const _ = {};
 
 
 let _n;
-let isClass=function isClass(v) {
-    return typeof v === 'function' && /^\s*class\s+/.test(v.toString());
-}
-__as1(_, 'isClass', isClass);
-
 let DateConverter=class DateConverter {
     static __converter = new DateConverter();
     static get converter() {
@@ -92,6 +87,11 @@ let DateConverter=class DateConverter {
 }
 DateConverter.Namespace=`Aventus`;
 __as1(_, 'DateConverter', DateConverter);
+
+let isClass=function isClass(v) {
+    return typeof v === 'function' && /^\s*class\s+/.test(v.toString());
+}
+__as1(_, 'isClass', isClass);
 
 let sleep=function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -5689,6 +5689,83 @@ let DragAndDrop=class DragAndDrop {
 DragAndDrop.Namespace=`Aventus`;
 __as1(_, 'DragAndDrop', DragAndDrop);
 
+let GenericError=class GenericError {
+    /**
+     * Code for the error
+     */
+    code;
+    /**
+     * Description of the error
+     */
+    message;
+    /**
+     * Additional details related to the error.
+     */
+    details = [];
+    /**
+     * Creates a new instance of GenericError.
+     * @param {EnumValue<T>} code - The error code.
+     * @param {string} message - The error message.
+     */
+    constructor(code, message) {
+        this.code = code;
+        this.message = message + '';
+    }
+}
+GenericError.Namespace=`Aventus`;
+__as1(_, 'GenericError', GenericError);
+
+let VoidWithError=class VoidWithError {
+    /**
+     * Determine if the action is a success
+     */
+    get success() {
+        return this.errors.length == 0;
+    }
+    /**
+     * List of errors
+     */
+    errors = [];
+    /**
+     * Converts the current instance to a VoidWithError object.
+     * @returns {VoidWithError} A new instance of VoidWithError with the same error list.
+     */
+    toGeneric() {
+        const result = new VoidWithError();
+        result.errors = this.errors;
+        return result;
+    }
+    /**
+    * Checks if the error list contains a specific error code.
+    * @template U - The type of error, extending GenericError.
+    * @template T - The type of the error code, which extends either number or Enum.
+    * @param {EnumValue<T>} code - The error code to check for.
+    * @param {new (...args: any[]) => U} [type] - Optional constructor function of the error type.
+    * @returns {boolean} True if the error list contains the specified error code, otherwise false.
+    */
+    containsCode(code, type) {
+        if (type) {
+            for (let error of this.errors) {
+                if (error instanceof type) {
+                    if (error.code == code) {
+                        return true;
+                    }
+                }
+            }
+        }
+        else {
+            for (let error of this.errors) {
+                if (error.code == code) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}
+VoidWithError.Namespace=`Aventus`;
+__as1(_, 'VoidWithError', VoidWithError);
+
 let Json=class Json {
     /**
      * Converts a JavaScript class instance to a JSON object.
@@ -6031,83 +6108,6 @@ let Data=class Data {
 Data.Namespace=`Aventus`;
 __as1(_, 'Data', Data);
 
-let GenericError=class GenericError {
-    /**
-     * Code for the error
-     */
-    code;
-    /**
-     * Description of the error
-     */
-    message;
-    /**
-     * Additional details related to the error.
-     */
-    details = [];
-    /**
-     * Creates a new instance of GenericError.
-     * @param {EnumValue<T>} code - The error code.
-     * @param {string} message - The error message.
-     */
-    constructor(code, message) {
-        this.code = code;
-        this.message = message + '';
-    }
-}
-GenericError.Namespace=`Aventus`;
-__as1(_, 'GenericError', GenericError);
-
-let VoidWithError=class VoidWithError {
-    /**
-     * Determine if the action is a success
-     */
-    get success() {
-        return this.errors.length == 0;
-    }
-    /**
-     * List of errors
-     */
-    errors = [];
-    /**
-     * Converts the current instance to a VoidWithError object.
-     * @returns {VoidWithError} A new instance of VoidWithError with the same error list.
-     */
-    toGeneric() {
-        const result = new VoidWithError();
-        result.errors = this.errors;
-        return result;
-    }
-    /**
-    * Checks if the error list contains a specific error code.
-    * @template U - The type of error, extending GenericError.
-    * @template T - The type of the error code, which extends either number or Enum.
-    * @param {EnumValue<T>} code - The error code to check for.
-    * @param {new (...args: any[]) => U} [type] - Optional constructor function of the error type.
-    * @returns {boolean} True if the error list contains the specified error code, otherwise false.
-    */
-    containsCode(code, type) {
-        if (type) {
-            for (let error of this.errors) {
-                if (error instanceof type) {
-                    if (error.code == code) {
-                        return true;
-                    }
-                }
-            }
-        }
-        else {
-            for (let error of this.errors) {
-                if (error.code == code) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-}
-VoidWithError.Namespace=`Aventus`;
-__as1(_, 'VoidWithError', VoidWithError);
-
 
 for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
@@ -6237,87 +6237,21 @@ const __as1 = (o, k, c) => { if (o[k] !== undefined) for (let w in o[k]) { c[w] 
 const moduleName = `Aventus`;
 const _ = {};
 
-let Form = {};
-_.Form = Aventus.Form ?? {};
 let Lib = {};
 _.Lib = Aventus.Lib ?? {};
 let Layout = {};
 _.Layout = Aventus.Layout ?? {};
+let Form = {};
+_.Form = Aventus.Form ?? {};
 let Navigation = {};
 _.Navigation = Aventus.Navigation ?? {};
+Layout.Tabs = {};
+_.Layout.Tabs = Aventus.Layout?.Tabs ?? {};
+let Toast = {};
+_.Toast = Aventus.Toast ?? {};
+let Modal = {};
+_.Modal = Aventus.Modal ?? {};
 let _n;
-Form.ButtonElement = class ButtonElement extends Aventus.WebComponent {
-    static get observedAttributes() {return ["type"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
-    get 'type'() { return this.getStringProp('type') }
-    set 'type'(val) { this.setStringAttr('type', val) }    static get formAssociated() { return true; }
-    internals;
-    handler = undefined;
-    static __style = ``;
-    constructor() {
-        super();
-        this.internals = this.attachInternals();
-        if (this.constructor == ButtonElement) {
-            throw "can't instanciate an abstract class";
-        }
-    }
-    __getStatic() {
-        return ButtonElement;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(ButtonElement.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
-    });
-}
-    getClassName() {
-        return "ButtonElement";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('type')){ this['type'] = 'button'; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('type'); }
-    async triggerSubmit() {
-        if (this.type == "submit") {
-            if ("loading" in this) {
-                if (this.loading)
-                    return;
-                this.loading = true;
-            }
-            if (this.internals.form) {
-                this.internals.form.requestSubmit();
-            }
-            else if (this.handler) {
-                await this.handler.requestSubmit();
-                if ("loading" in this) {
-                    this.loading = false;
-                }
-            }
-        }
-    }
-    postCreation() {
-        super.postCreation();
-        this.handler = this.findParentByType(_.Form.Form.formElements)?.registerSubmit(this);
-        if (this.type == "submit") {
-            new Aventus.PressManager({
-                element: this,
-                onPress: () => {
-                    this.triggerSubmit();
-                }
-            });
-            this.addEventListener("keyup", (e) => {
-                if (e.key == 'Enter') {
-                    this.triggerSubmit();
-                }
-            });
-        }
-    }
-}
-Form.ButtonElement.Namespace=`Aventus.Form`;
-__as1(_.Form, 'ButtonElement', Form.ButtonElement);
-
 (function (SpecialTouch) {
     SpecialTouch[SpecialTouch["Backspace"] = 0] = "Backspace";
     SpecialTouch[SpecialTouch["Insert"] = 1] = "Insert";
@@ -6461,6 +6395,78 @@ Layout.GridGuideHelper.Namespace=`Aventus.Layout`;
 Layout.GridGuideHelper.Tag=`av-grid-guide-helper`;
 __as1(_.Layout, 'GridGuideHelper', Layout.GridGuideHelper);
 if(!window.customElements.get('av-grid-guide-helper')){window.customElements.define('av-grid-guide-helper', Layout.GridGuideHelper);Aventus.WebComponentInstance.registerDefinition(Layout.GridGuideHelper);}
+
+Form.ButtonElement = class ButtonElement extends Aventus.WebComponent {
+    static get observedAttributes() {return ["type"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'type'() { return this.getStringProp('type') }
+    set 'type'(val) { this.setStringAttr('type', val) }    static get formAssociated() { return true; }
+    internals;
+    handler = undefined;
+    static __style = ``;
+    constructor() {
+        super();
+        this.internals = this.attachInternals();
+        if (this.constructor == ButtonElement) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return ButtonElement;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(ButtonElement.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "ButtonElement";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('type')){ this['type'] = 'button'; } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('type'); }
+    async triggerSubmit() {
+        if (this.type == "submit") {
+            if ("loading" in this) {
+                if (this.loading)
+                    return;
+                this.loading = true;
+            }
+            if (this.internals.form) {
+                this.internals.form.requestSubmit();
+            }
+            else if (this.handler) {
+                await this.handler.requestSubmit();
+                if ("loading" in this) {
+                    this.loading = false;
+                }
+            }
+        }
+    }
+    postCreation() {
+        super.postCreation();
+        this.handler = this.findParentByType(_.Form.Form.formElements)?.registerSubmit(this);
+        if (this.type == "submit") {
+            new Aventus.PressManager({
+                element: this,
+                onPress: () => {
+                    this.triggerSubmit();
+                }
+            });
+            this.addEventListener("keyup", (e) => {
+                if (e.key == 'Enter') {
+                    this.triggerSubmit();
+                }
+            });
+        }
+    }
+}
+Form.ButtonElement.Namespace=`Aventus.Form`;
+__as1(_.Form, 'ButtonElement', Form.ButtonElement);
 
 const Img = class Img extends Aventus.WebComponent {
     static get observedAttributes() {return ["src", "mode"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
@@ -6812,6 +6818,106 @@ Navigation.Link.Namespace=`Aventus.Navigation`;
 Navigation.Link.Tag=`av-link`;
 __as1(_.Navigation, 'Link', Navigation.Link);
 if(!window.customElements.get('av-link')){window.customElements.define('av-link', Navigation.Link);Aventus.WebComponentInstance.registerDefinition(Navigation.Link);}
+
+Layout.Tabs.Tabs = class Tabs extends Aventus.WebComponent {
+    activeHeader;
+    tabs = {};
+    static __style = ``;
+    constructor() {
+        super();
+        if (this.constructor == Tabs) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return Tabs;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Tabs.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<div class="header" _id="tabs_0"></div><div class="body" _id="tabs_1">	<slot></slot></div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "headerEl",
+      "ids": [
+        "tabs_0"
+      ]
+    },
+    {
+      "name": "bodyEl",
+      "ids": [
+        "tabs_1"
+      ]
+    }
+  ]
+}); }
+    getClassName() {
+        return "Tabs";
+    }
+    async loadTabs() {
+        // let elements = this.elements;
+        let elements = this.getElementsInSlot();
+        let first = null;
+        for (let element of elements) {
+            element.style.display = 'none';
+            if (element instanceof _.Layout.Tabs.Tab) {
+                this.tabs[element.identifier()] = element;
+                let header = new (this.defineTabHeader())();
+                this.headerEl.appendChild(header);
+                await header.init(element, this);
+                if (first == null) {
+                    first = header;
+                }
+                else if (!first.tab.selected && element.selected) {
+                    first = header;
+                }
+            }
+        }
+        if (first) {
+            this.setActive(first);
+        }
+    }
+    setActive(tabHeader) {
+        if (typeof tabHeader == 'number') {
+            if (this.headerEl.children.length > tabHeader) {
+                const header = this.headerEl.children[tabHeader];
+                if (header instanceof _.Layout.Tabs.TabHeader) {
+                    return this.setActive(header);
+                }
+            }
+            return false;
+        }
+        else if (typeof tabHeader == 'string') {
+            const header = this.tabs[tabHeader].tabHeader;
+            if (header)
+                return this.setActive(header);
+            return false;
+        }
+        if (this.activeHeader) {
+            this.activeHeader.active = false;
+            this.activeHeader.tab.selected = false;
+            this.activeHeader.tab.style.display = 'none';
+        }
+        this.activeHeader = tabHeader;
+        this.activeHeader.active = true;
+        this.activeHeader.tab.style.display = '';
+        this.activeHeader.tab.selected = true;
+    }
+    postCreation() {
+        super.postCreation();
+        this.loadTabs();
+    }
+}
+Layout.Tabs.Tabs.Namespace=`Aventus.Layout.Tabs`;
+__as1(_.Layout.Tabs, 'Tabs', Layout.Tabs.Tabs);
 
 Form.Form = class Form extends Aventus.WebComponent {
     static get defaultConfig() {
@@ -8298,641 +8404,6 @@ Layout.Col.Tag=`av-col`;
 __as1(_.Layout, 'Col', Layout.Col);
 if(!window.customElements.get('av-col')){window.customElements.define('av-col', Layout.Col);Aventus.WebComponentInstance.registerDefinition(Layout.Col);}
 
-Lib.ShortcutManager=class ShortcutManager {
-    static memory = {};
-    static autoPrevents = [];
-    static isInit = false;
-    static arrayKeys = [];
-    static options = new Map();
-    static replacingMemory = {};
-    static isTxt(touch) {
-        return touch.match(/[a-zA-Z0-9_\+\-]/g);
-    }
-    static getText(combinaison) {
-        let allTouches = [];
-        for (let touch of combinaison) {
-            let realTouch = "";
-            if (typeof touch == "number" && Lib.SpecialTouch[touch] !== undefined) {
-                realTouch = Lib.SpecialTouch[touch];
-            }
-            else if (this.isTxt(touch)) {
-                realTouch = touch;
-            }
-            else {
-                throw "I can't use " + touch + " to add a shortcut";
-            }
-            allTouches.push(realTouch);
-        }
-        allTouches.sort();
-        return allTouches.join("+");
-    }
-    static subscribe(combinaison, cb, options) {
-        if (!Array.isArray(combinaison)) {
-            combinaison = [combinaison];
-        }
-        let key = this.getText(combinaison);
-        if (options?.replaceTemp) {
-            if (Lib.ShortcutManager.memory[key]) {
-                if (!this.replacingMemory[key]) {
-                    this.replacingMemory[key] = [];
-                }
-                this.replacingMemory[key].push(Lib.ShortcutManager.memory[key]);
-                delete Lib.ShortcutManager.memory[key];
-            }
-        }
-        if (!Lib.ShortcutManager.memory[key]) {
-            Lib.ShortcutManager.memory[key] = [];
-        }
-        if (!Lib.ShortcutManager.memory[key].includes(cb)) {
-            Lib.ShortcutManager.memory[key].push(cb);
-            if (options) {
-                this.options.set(cb, options);
-            }
-        }
-        if (!Lib.ShortcutManager.isInit) {
-            Lib.ShortcutManager.init();
-        }
-    }
-    static unsubscribe(combinaison, cb) {
-        if (!Array.isArray(combinaison)) {
-            combinaison = [combinaison];
-        }
-        let key = this.getText(combinaison);
-        if (Lib.ShortcutManager.memory[key]) {
-            let index = Lib.ShortcutManager.memory[key].indexOf(cb);
-            if (index != -1) {
-                Lib.ShortcutManager.memory[key].splice(index, 1);
-                let options = this.options.get(cb);
-                if (options) {
-                    this.options.delete(cb);
-                }
-                if (Lib.ShortcutManager.memory[key].length == 0) {
-                    delete Lib.ShortcutManager.memory[key];
-                    if (options?.replaceTemp) {
-                        if (this.replacingMemory[key]) {
-                            if (this.replacingMemory[key].length > 0) {
-                                Lib.ShortcutManager.memory[key] = this.replacingMemory[key].pop();
-                                if (this.replacingMemory[key].length == 0) {
-                                    delete this.replacingMemory[key];
-                                }
-                            }
-                            else {
-                                delete this.replacingMemory[key];
-                            }
-                        }
-                    }
-                }
-                if (Object.keys(Lib.ShortcutManager.memory).length == 0 && Lib.ShortcutManager.isInit) {
-                    //ShortcutManager.uninit();
-                }
-            }
-        }
-    }
-    static onKeyDown(e) {
-        if (e.ctrlKey) {
-            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Control];
-            if (!this.arrayKeys.includes(txt)) {
-                this.arrayKeys.push(txt);
-            }
-        }
-        if (e.altKey) {
-            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Alt];
-            if (!this.arrayKeys.includes(txt)) {
-                this.arrayKeys.push(txt);
-            }
-        }
-        if (e.shiftKey) {
-            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Shift];
-            if (!this.arrayKeys.includes(txt)) {
-                this.arrayKeys.push(txt);
-            }
-        }
-        if (this.isTxt(e.key) && !this.arrayKeys.includes(e.key)) {
-            this.arrayKeys.push(e.key);
-        }
-        else if (Lib.SpecialTouch[e.key] !== undefined && !this.arrayKeys.includes(e.key)) {
-            this.arrayKeys.push(e.key);
-        }
-        this.arrayKeys.sort();
-        let key = this.arrayKeys.join("+");
-        if (Lib.ShortcutManager.memory[key]) {
-            let preventDefault = true;
-            for (let cb of Lib.ShortcutManager.memory[key]) {
-                let options = this.options.get(cb);
-                if (options && options.preventDefault === false) {
-                    preventDefault = false;
-                }
-            }
-            this.arrayKeys = [];
-            for (let cb of Lib.ShortcutManager.memory[key]) {
-                const result = cb();
-                if (result === false) {
-                    preventDefault = result;
-                }
-            }
-            if (preventDefault) {
-                e.preventDefault();
-            }
-        }
-        else if (Lib.ShortcutManager.autoPrevents.includes(key)) {
-            e.preventDefault();
-        }
-    }
-    static onKeyUp(e) {
-        let index = this.arrayKeys.indexOf(e.key);
-        if (index != -1) {
-            this.arrayKeys.splice(index, 1);
-        }
-    }
-    static init() {
-        if (Lib.ShortcutManager.isInit)
-            return;
-        Lib.ShortcutManager.isInit = true;
-        this.onKeyDown = this.onKeyDown.bind(this);
-        this.onKeyUp = this.onKeyUp.bind(this);
-        Lib.ShortcutManager.autoPrevents = [
-            this.getText([Lib.SpecialTouch.Control, "s"]),
-            this.getText([Lib.SpecialTouch.Control, "p"]),
-            this.getText([Lib.SpecialTouch.Control, "l"]),
-            this.getText([Lib.SpecialTouch.Control, "k"]),
-            this.getText([Lib.SpecialTouch.Control, "j"]),
-            this.getText([Lib.SpecialTouch.Control, "h"]),
-            this.getText([Lib.SpecialTouch.Control, "g"]),
-            this.getText([Lib.SpecialTouch.Control, "f"]),
-            this.getText([Lib.SpecialTouch.Control, "d"]),
-            this.getText([Lib.SpecialTouch.Control, "o"]),
-            this.getText([Lib.SpecialTouch.Control, "u"]),
-            this.getText([Lib.SpecialTouch.Control, "e"]),
-        ];
-        window.addEventListener("blur", () => {
-            this.arrayKeys = [];
-        });
-        document.body.addEventListener("keydown", this.onKeyDown);
-        document.body.addEventListener("keyup", this.onKeyUp);
-    }
-    static uninit() {
-        document.body.removeEventListener("keydown", this.onKeyDown);
-        document.body.removeEventListener("keyup", this.onKeyUp);
-        this.arrayKeys = [];
-        Lib.ShortcutManager.isInit = false;
-    }
-}
-Lib.ShortcutManager.Namespace=`Aventus.Lib`;
-__as1(_.Lib, 'ShortcutManager', Lib.ShortcutManager);
-
-Layout.GridHelper = class GridHelper extends Aventus.WebComponent {
-    static get observedAttributes() {return ["unit", "nb_col", "nb_row", "col_width", "row_height", "ruler_size", "step", "step_big", "magnetic"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
-    get 'show_rulers'() { return this.getBoolAttr('show_rulers') }
-    set 'show_rulers'(val) { this.setBoolAttr('show_rulers', val) }get 'show_grid'() { return this.getBoolAttr('show_grid') }
-    set 'show_grid'(val) { this.setBoolAttr('show_grid', val) }get 'show_ruler'() { return this.getBoolAttr('show_ruler') }
-    set 'show_ruler'(val) { this.setBoolAttr('show_ruler', val) }get 'show_guides'() { return this.getBoolAttr('show_guides') }
-    set 'show_guides'(val) { this.setBoolAttr('show_guides', val) }get 'lock'() { return this.getBoolAttr('lock') }
-    set 'lock'(val) { this.setBoolAttr('lock', val) }get 'visible'() { return this.getBoolAttr('visible') }
-    set 'visible'(val) { this.setBoolAttr('visible', val) }    get 'unit'() { return this.getStringProp('unit') }
-    set 'unit'(val) { this.setStringAttr('unit', val) }get 'nb_col'() { return this.getNumberProp('nb_col') }
-    set 'nb_col'(val) { this.setNumberAttr('nb_col', val) }get 'nb_row'() { return this.getNumberProp('nb_row') }
-    set 'nb_row'(val) { this.setNumberAttr('nb_row', val) }get 'col_width'() { return this.getNumberProp('col_width') }
-    set 'col_width'(val) { this.setNumberAttr('col_width', val) }get 'row_height'() { return this.getNumberProp('row_height') }
-    set 'row_height'(val) { this.setNumberAttr('row_height', val) }get 'ruler_size'() { return this.getNumberProp('ruler_size') }
-    set 'ruler_size'(val) { this.setNumberAttr('ruler_size', val) }get 'step'() { return this.getNumberProp('step') }
-    set 'step'(val) { this.setNumberAttr('step', val) }get 'step_big'() { return this.getNumberProp('step_big') }
-    set 'step_big'(val) { this.setNumberAttr('step_big', val) }get 'magnetic'() { return this.getNumberProp('magnetic') }
-    set 'magnetic'(val) { this.setNumberAttr('magnetic', val) }    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("unit", ((target) => {
-    target.rulerLeftEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
-    target.rulerTopEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
-    target.lockEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
-}));this.__addPropertyActions("nb_row", ((target) => {
-}));this.__addPropertyActions("row_height", ((target) => {
-}));this.__addPropertyActions("ruler_size", ((target) => {
-    target.rulerLeftEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
-    target.rulerTopEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
-    target.lockEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
-})); }
-    static __style = `:host{--ruler-color: white;display:none;font-family:Arial,Helvetica,sans-serif;inset:0;pointer-events:none;position:fixed;user-select:none;z-index:9999}:host .grid{inset:0;position:absolute}:host .grid .cols,:host .grid .rows{display:flex;inset:0;position:absolute}:host .grid .rows{flex-direction:column}:host .grid .col{flex-shrink:0;height:100%;position:relative;width:var(--local-col-width)}:host .grid .col::after{background-color:#e78181;content:"";height:100%;position:absolute;right:-1px;top:0;width:2px}:host .grid .col:last-child::after{display:none}:host .grid .row{flex-shrink:0;height:var(--local-row-height);position:relative;width:100%}:host .grid .row::after{background-color:#e78181;bottom:-1px;content:"";height:2px;left:0;position:absolute;width:100%}:host .grid .row:last-child::after{display:none}:host .ruler-top{background-color:var(--ruler-color);height:var(--ruler-size);pointer-events:all;position:absolute;top:0;width:100%;z-index:3}:host .ruler-top::after{bottom:0;box-shadow:5px 0 5px #818181;content:"";height:100%;left:var(--ruler-size);pointer-events:none;position:absolute;width:calc(100% - var(--ruler-size))}:host .ruler-top .ruler-content{display:flex;flex-direction:row;height:100%;overflow:hidden;padding-left:var(--ruler-size)}:host .ruler-top .ruler-content .step{display:flex;flex-direction:column;flex-shrink:0;justify-content:space-between;text-align:left;width:var(--step-width)}:host .ruler-top .ruler-content .step span{align-items:center;display:flex;flex-grow:1;font-size:10px;transform:translateX(-50%);width:min-content}:host .ruler-top .ruler-content .step::after{background-color:#3d3d3d;content:"";display:inline-block;flex-shrink:0;height:3px;transform:translateX(-50%);width:2px}:host .ruler-top .ruler-content .step.big::after{background-color:#000;height:8px}:host .ruler-left{height:100%;pointer-events:all;position:absolute;top:0;width:var(--ruler-size);z-index:4}:host .ruler-left::after{box-shadow:0px 5px 5px #818181;content:"";height:calc(100% - var(--ruler-size));left:0;pointer-events:none;position:absolute;top:var(--ruler-size);width:100%}:host .ruler-left .ruler-content{display:flex;flex-direction:column;height:100%;overflow:hidden;padding-top:var(--ruler-size);position:relative;width:100%}:host .ruler-left .ruler-content::before{background-color:var(--ruler-color);content:"";inset:0;position:absolute;top:var(--ruler-size);z-index:2}:host .ruler-left .ruler-content .step{display:flex;flex-direction:row;flex-shrink:0;height:var(--step-height);justify-content:space-between;position:relative;text-align:left;z-index:3}:host .ruler-left .ruler-content .step span{display:flex;flex-grow:1;font-size:10px;height:min-content;justify-content:center;transform:translateY(-50%)}:host .ruler-left .ruler-content .step::after{background-color:#3d3d3d;content:"";display:inline-block;flex-shrink:0;height:2px;transform:translateY(-50%);width:3px}:host .ruler-left .ruler-content .step.big::after{background-color:#000;width:8px}:host .lock{align-items:center;cursor:pointer;display:flex;height:var(--ruler-size);justify-content:center;left:0;pointer-events:all;position:absolute;top:0;width:var(--ruler-size);z-index:5}:host .lock svg{aspect-ratio:1;display:inline-block;width:50%}:host .lock .close{display:none}:host([visible]){display:block}:host(:not([show_grid])) .grid{display:none}:host(:not([show_ruler])) .ruler-top{display:none}:host(:not([show_ruler])) .ruler-left{display:none}:host(:not([show_guides])) .guides{display:none}:host([lock]){--ruler-color: #eeeeee}:host([lock]) .ruler-top,:host([lock]) .ruler-left{cursor:not-allowed}:host([lock]) .guides av-grid-guide-helper{pointer-events:none}:host([lock]) .lock .open{display:none}:host([lock]) .lock .close{display:inline-block}`;
-    __getStatic() {
-        return GridHelper;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(GridHelper.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<div class="lock" _id="gridhelper_0">    <svg class="close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>    </svg>    <svg class="open" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>        <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>    </svg></div><div class="ruler-top" _id="gridhelper_1">    <div class="ruler-content" _id="gridhelper_2"></div></div><div class="ruler-left" _id="gridhelper_3">    <div class="ruler-content" _id="gridhelper_4"></div></div><div class="grid" _id="gridhelper_5">    <div class="cols" _id="gridhelper_6"></div>    <div class="rows" _id="gridhelper_7"></div></div><div class="guides" _id="gridhelper_8"></div>` }
-    });
-}
-    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
-  "elements": [
-    {
-      "name": "lockEl",
-      "ids": [
-        "gridhelper_0"
-      ]
-    },
-    {
-      "name": "rulerTopEl",
-      "ids": [
-        "gridhelper_1"
-      ]
-    },
-    {
-      "name": "rulerTopContentEl",
-      "ids": [
-        "gridhelper_2"
-      ]
-    },
-    {
-      "name": "rulerLeftEl",
-      "ids": [
-        "gridhelper_3"
-      ]
-    },
-    {
-      "name": "rulerLeftContentEl",
-      "ids": [
-        "gridhelper_4"
-      ]
-    },
-    {
-      "name": "gridEl",
-      "ids": [
-        "gridhelper_5"
-      ]
-    },
-    {
-      "name": "colsEl",
-      "ids": [
-        "gridhelper_6"
-      ]
-    },
-    {
-      "name": "rowsEl",
-      "ids": [
-        "gridhelper_7"
-      ]
-    },
-    {
-      "name": "guidesEl",
-      "ids": [
-        "gridhelper_8"
-      ]
-    }
-  ],
-  "pressEvents": [
-    {
-      "id": "gridhelper_0",
-      "onPress": (e, pressInstance, c) => { c.comp.toggleLock(e, pressInstance); }
-    }
-  ]
-}); }
-    getClassName() {
-        return "GridHelper";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('show_rulers')) { this.attributeChangedCallback('show_rulers', false, false); }if(!this.hasAttribute('show_grid')) {this.setAttribute('show_grid' ,'true'); }if(!this.hasAttribute('show_ruler')) {this.setAttribute('show_ruler' ,'true'); }if(!this.hasAttribute('show_guides')) {this.setAttribute('show_guides' ,'true'); }if(!this.hasAttribute('lock')) {this.setAttribute('lock' ,'true'); }if(!this.hasAttribute('visible')) {this.setAttribute('visible' ,'true'); }if(!this.hasAttribute('unit')){ this['unit'] = 'px'; }if(!this.hasAttribute('nb_col')){ this['nb_col'] = 0; }if(!this.hasAttribute('nb_row')){ this['nb_row'] = 0; }if(!this.hasAttribute('col_width')){ this['col_width'] = undefined; }if(!this.hasAttribute('row_height')){ this['row_height'] = undefined; }if(!this.hasAttribute('ruler_size')){ this['ruler_size'] = 25; }if(!this.hasAttribute('step')){ this['step'] = 20; }if(!this.hasAttribute('step_big')){ this['step_big'] = undefined; }if(!this.hasAttribute('magnetic')){ this['magnetic'] = 0; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('show_rulers');this.__upgradeProperty('show_grid');this.__upgradeProperty('show_ruler');this.__upgradeProperty('show_guides');this.__upgradeProperty('lock');this.__upgradeProperty('visible');this.__upgradeProperty('unit');this.__upgradeProperty('nb_col');this.__upgradeProperty('nb_row');this.__upgradeProperty('col_width');this.__upgradeProperty('row_height');this.__upgradeProperty('ruler_size');this.__upgradeProperty('step');this.__upgradeProperty('step_big');this.__upgradeProperty('magnetic'); }
-    __listBoolProps() { return ["show_rulers","show_grid","show_ruler","show_guides","lock","visible"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-    inPx(nb) {
-        if (this.unit == 'px') {
-            return nb;
-        }
-        if (this.unit == 'rem') {
-            return nb * 16;
-        }
-        if (this.unit == 'mm') {
-            return nb * 3.7795275591;
-        }
-        if (this.unit == 'cm') {
-            return nb * 37.795275591;
-        }
-        if (this.unit == 'in') {
-            return nb * 96;
-        }
-        if (this.unit == 'pt') {
-            return nb * 1.33333333;
-        }
-        throw 'unit not supported';
-    }
-    fromPx(nbPx) {
-        if (this.unit == 'px') {
-            return nbPx;
-        }
-        if (this.unit == 'rem') {
-            return Math.round(nbPx / 16 * 100) / 100;
-        }
-        if (this.unit == 'mm') {
-            return Math.round(nbPx * 0.2645833333 * 100) / 100;
-        }
-        if (this.unit == 'cm') {
-            return Math.round(nbPx * 0.02645833333 * 100) / 100;
-        }
-        if (this.unit == 'in') {
-            return Math.round(nbPx / 96 * 100) / 100;
-        }
-        if (this.unit == 'pt') {
-            return Math.round(nbPx * 0.75 * 100) / 100;
-        }
-        throw 'unit not supported';
-    }
-    toggleLock() {
-        this.lock = !this.lock;
-    }
-    draw() {
-        let nbCol = 0;
-        if (this.nb_col) {
-            this.gridEl.style.setProperty('--local-col-width', `calc(100% / ${this.nb_col})`);
-            nbCol = this.nb_col;
-        }
-        else {
-            let width = this.col_width;
-            if (width == 0) {
-                width = this.fromPx(16);
-            }
-            this.gridEl.style.setProperty('--local-col-width', width + this.unit);
-            nbCol = Math.ceil(this.offsetWidth / this.inPx(width));
-        }
-        if (this.colsEl.children.length != nbCol) {
-            this.colsEl.innerHTML = '';
-            for (let i = 0; i < nbCol; i++) {
-                const col = document.createElement("DIV");
-                col.classList.add('col');
-                this.colsEl.appendChild(col);
-            }
-        }
-        let nbRow = 0;
-        if (this.nb_row) {
-            this.gridEl.style.setProperty('--local-row-height', `calc(100% / ${this.nb_row})`);
-            nbRow = this.nb_row;
-        }
-        else {
-            let height = this.row_height;
-            if (height == 0) {
-                height = this.fromPx(16);
-            }
-            this.gridEl.style.setProperty('--local-row-height', height + this.unit);
-            nbRow = Math.ceil(this.offsetHeight / this.inPx(height));
-        }
-        if (this.rowsEl.children.length != nbRow) {
-            this.rowsEl.innerHTML = '';
-            for (let i = 0; i < nbRow; i++) {
-                const row = document.createElement("DIV");
-                row.classList.add('row');
-                this.rowsEl.appendChild(row);
-            }
-        }
-    }
-    drawRulerTop() {
-        const step = this.step;
-        const bigStep = this.step_big == 0 ? this.step : this.step_big;
-        const rulerSize = this.ruler_size;
-        this.rulerTopEl.style.setProperty("--step-width", step + this.unit);
-        const nb = Math.ceil(this.offsetWidth / this.inPx(step));
-        const createStep = (nb, isBig, w) => {
-            const d = document.createElement('div');
-            d.classList.add("step");
-            if (w) {
-                d.style.width = w + this.unit;
-            }
-            if (isBig) {
-                d.classList.add("big");
-            }
-            const s = document.createElement("span");
-            if (isBig)
-                s.innerHTML = nb + '';
-            d.appendChild(s);
-            this.rulerTopContentEl.appendChild(d);
-        };
-        let i = 0;
-        while (step * i - rulerSize < 0) {
-            i++;
-        }
-        createStep(rulerSize, true, step * i - rulerSize);
-        for (; i < nb; i++) {
-            if (i * step <= rulerSize)
-                continue;
-            const isBig = (step * i) % bigStep == 0;
-            createStep(i * step, isBig);
-        }
-    }
-    drawRulerLeft() {
-        const step = this.step;
-        const bigStep = this.step_big == 0 ? this.step : this.step_big;
-        const rulerSize = this.ruler_size;
-        this.rulerLeftEl.style.setProperty("--step-height", step + this.unit);
-        const nb = Math.ceil(this.offsetHeight / this.inPx(step));
-        const createStep = (nb, isBig, h) => {
-            const d = document.createElement('div');
-            d.classList.add("step");
-            if (h) {
-                d.style.height = h + this.unit;
-            }
-            if (isBig) {
-                d.classList.add("big");
-            }
-            const s = document.createElement("span");
-            if (isBig)
-                s.innerHTML = nb + '';
-            d.appendChild(s);
-            this.rulerLeftContentEl.appendChild(d);
-        };
-        let i = 0;
-        while (step * i - rulerSize < 0) {
-            i++;
-        }
-        createStep(rulerSize, true, step * i - rulerSize);
-        for (; i < nb; i++) {
-            if (i * step <= rulerSize)
-                continue;
-            const isBig = (step * i) % bigStep == 0;
-            createStep(i * step, isBig);
-        }
-    }
-    addDragLeft() {
-        let el = undefined;
-        new Aventus.PressManager({
-            element: this.rulerLeftContentEl,
-            onDblPress: () => {
-                const nbtxt = prompt("Top Position");
-                if (nbtxt) {
-                    const nb = Number(nbtxt);
-                    if (!isNaN(nb)) {
-                        this.createGuideFromTop(nb);
-                    }
-                }
-            }
-        });
-        new Aventus.DragAndDrop({
-            element: this.rulerLeftContentEl,
-            applyDrag: false,
-            onStart: (e) => {
-                if (this.lock)
-                    return false;
-                el = new _.Layout.GridGuideHelper();
-                el.direction = 'y';
-                el.container = this;
-                this.guidesEl.appendChild(el);
-                el.onStart();
-                return true;
-            },
-            onMove: (e) => {
-                if (el) {
-                    el.onMoveY(e);
-                }
-            },
-            onStop: () => {
-                if (el) {
-                    el.onStop();
-                }
-            }
-        });
-    }
-    addDragTop() {
-        let el = undefined;
-        new Aventus.PressManager({
-            element: this.rulerTopContentEl,
-            onDblPress: () => {
-                const nbtxt = prompt("Left Position");
-                if (nbtxt) {
-                    const nb = Number(nbtxt);
-                    if (!isNaN(nb)) {
-                        this.createGuideFromLeft(nb);
-                    }
-                }
-            }
-        });
-        new Aventus.DragAndDrop({
-            element: this.rulerTopContentEl,
-            applyDrag: false,
-            onStart: (e) => {
-                if (this.lock)
-                    return false;
-                el = new _.Layout.GridGuideHelper();
-                el.container = this;
-                el.direction = 'x';
-                this.guidesEl.appendChild(el);
-                el.onStart();
-                return true;
-            },
-            onMove: (e) => {
-                if (el) {
-                    el.onMoveX(e);
-                }
-            },
-            onStop: () => {
-                if (el) {
-                    el.onStop();
-                }
-            }
-        });
-    }
-    createGuideFromLeft(left) {
-        const el = new _.Layout.GridGuideHelper();
-        el.direction = 'y';
-        el.container = this;
-        el.style.left = left + this.unit;
-        this.guidesEl.appendChild(el);
-        this.save();
-    }
-    createGuideFromTop(top) {
-        const el = new _.Layout.GridGuideHelper();
-        el.direction = 'x';
-        el.container = this;
-        el.style.top = top + this.unit;
-        this.guidesEl.appendChild(el);
-        this.save();
-    }
-    addShortCut() {
-        let isKActive = false;
-        let timeout = 0;
-        Lib.ShortcutManager.subscribe([Lib.SpecialTouch.Control, 'k'], () => {
-            isKActive = true;
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                isKActive = false;
-            }, 1000);
-        });
-        const commande = (letter, cb) => {
-            Lib.ShortcutManager.subscribe([letter], () => {
-                if (!isKActive)
-                    return false;
-                isKActive = false;
-                cb();
-                return;
-            });
-            Lib.ShortcutManager.subscribe([Lib.SpecialTouch.Control, letter], () => {
-                if (!isKActive)
-                    return false;
-                isKActive = false;
-                cb();
-                return;
-            });
-        };
-        commande('v', () => { this.visible = !this.visible; });
-        commande('g', () => { this.show_grid = !this.show_grid; });
-        commande('r', () => { this.show_ruler = !this.show_ruler; });
-        commande('j', () => { this.show_guides = !this.show_guides; });
-        commande('l', () => { this.lock = !this.lock; });
-    }
-    addResize() {
-        new Aventus.ResizeObserver({
-            callback: () => {
-                this.draw();
-                this.drawRulerTop();
-                this.drawRulerLeft();
-            },
-            fps: 30
-        }).observe(this);
-    }
-    save() {
-        const data = { x: [], y: [] };
-        for (let child of this.guidesEl.children) {
-            if (child instanceof _.Layout.GridGuideHelper) {
-                if (child.direction == 'x') {
-                    data.x.push(child.offsetTop);
-                }
-                else {
-                    data.y.push(child.offsetLeft);
-                }
-            }
-        }
-        const id = this.id != '' ? this.id : 'grid-helper';
-        localStorage.setItem(id, JSON.stringify(data));
-    }
-    reload() {
-        const id = this.id != '' ? this.id : 'grid-helper';
-        const items = localStorage.getItem(id);
-        if (items) {
-            const data = JSON.parse(items);
-            for (let g of data.x) {
-                const el = new _.Layout.GridGuideHelper();
-                el.direction = 'x';
-                el.style.top = g + this.unit;
-                el.container = this;
-                this.guidesEl.appendChild(el);
-            }
-            for (let g of data.y) {
-                const el = new _.Layout.GridGuideHelper();
-                el.direction = 'y';
-                el.style.left = g + this.unit;
-                el.container = this;
-                this.guidesEl.appendChild(el);
-            }
-        }
-    }
-    postCreation() {
-        this.reload();
-        this.addResize();
-        this.addShortCut();
-        this.addDragLeft();
-        this.addDragTop();
-        this.draw();
-    }
-}
-Layout.GridHelper.Namespace=`Aventus.Layout`;
-Layout.GridHelper.Tag=`av-grid-helper`;
-__as1(_.Layout, 'GridHelper', Layout.GridHelper);
-if(!window.customElements.get('av-grid-helper')){window.customElements.define('av-grid-helper', Layout.GridHelper);Aventus.WebComponentInstance.registerDefinition(Layout.GridHelper);}
-
 Form.Validator=class Validator {
     constructor() { this.validate = this.validate.bind(this); }
     static async Test(validators, value, name, globalValidation) {
@@ -9570,6 +9041,1203 @@ Form.FormElement = class FormElement extends Aventus.WebComponent {
 Form.FormElement.Namespace=`Aventus.Form`;
 __as1(_.Form, 'FormElement', Form.FormElement);
 
+Lib.ShortcutManager=class ShortcutManager {
+    static memory = {};
+    static autoPrevents = [];
+    static isInit = false;
+    static arrayKeys = [];
+    static options = new Map();
+    static replacingMemory = {};
+    static isTxt(touch) {
+        return touch.match(/[a-zA-Z0-9_\+\-]/g);
+    }
+    static getText(combinaison) {
+        let allTouches = [];
+        for (let touch of combinaison) {
+            let realTouch = "";
+            if (typeof touch == "number" && Lib.SpecialTouch[touch] !== undefined) {
+                realTouch = Lib.SpecialTouch[touch];
+            }
+            else if (this.isTxt(touch)) {
+                realTouch = touch;
+            }
+            else {
+                throw "I can't use " + touch + " to add a shortcut";
+            }
+            allTouches.push(realTouch);
+        }
+        allTouches.sort();
+        return allTouches.join("+");
+    }
+    static subscribe(combinaison, cb, options) {
+        if (!Array.isArray(combinaison)) {
+            combinaison = [combinaison];
+        }
+        let key = this.getText(combinaison);
+        if (options?.replaceTemp) {
+            if (Lib.ShortcutManager.memory[key]) {
+                if (!this.replacingMemory[key]) {
+                    this.replacingMemory[key] = [];
+                }
+                this.replacingMemory[key].push(Lib.ShortcutManager.memory[key]);
+                delete Lib.ShortcutManager.memory[key];
+            }
+        }
+        if (!Lib.ShortcutManager.memory[key]) {
+            Lib.ShortcutManager.memory[key] = [];
+        }
+        if (!Lib.ShortcutManager.memory[key].includes(cb)) {
+            Lib.ShortcutManager.memory[key].push(cb);
+            if (options) {
+                this.options.set(cb, options);
+            }
+        }
+        if (!Lib.ShortcutManager.isInit) {
+            Lib.ShortcutManager.init();
+        }
+    }
+    static unsubscribe(combinaison, cb) {
+        if (!Array.isArray(combinaison)) {
+            combinaison = [combinaison];
+        }
+        let key = this.getText(combinaison);
+        if (Lib.ShortcutManager.memory[key]) {
+            let index = Lib.ShortcutManager.memory[key].indexOf(cb);
+            if (index != -1) {
+                Lib.ShortcutManager.memory[key].splice(index, 1);
+                let options = this.options.get(cb);
+                if (options) {
+                    this.options.delete(cb);
+                }
+                if (Lib.ShortcutManager.memory[key].length == 0) {
+                    delete Lib.ShortcutManager.memory[key];
+                    if (options?.replaceTemp) {
+                        if (this.replacingMemory[key]) {
+                            if (this.replacingMemory[key].length > 0) {
+                                Lib.ShortcutManager.memory[key] = this.replacingMemory[key].pop();
+                                if (this.replacingMemory[key].length == 0) {
+                                    delete this.replacingMemory[key];
+                                }
+                            }
+                            else {
+                                delete this.replacingMemory[key];
+                            }
+                        }
+                    }
+                }
+                if (Object.keys(Lib.ShortcutManager.memory).length == 0 && Lib.ShortcutManager.isInit) {
+                    //ShortcutManager.uninit();
+                }
+            }
+        }
+    }
+    static onKeyDown(e) {
+        if (e.ctrlKey) {
+            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Control];
+            if (!this.arrayKeys.includes(txt)) {
+                this.arrayKeys.push(txt);
+            }
+        }
+        if (e.altKey) {
+            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Alt];
+            if (!this.arrayKeys.includes(txt)) {
+                this.arrayKeys.push(txt);
+            }
+        }
+        if (e.shiftKey) {
+            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Shift];
+            if (!this.arrayKeys.includes(txt)) {
+                this.arrayKeys.push(txt);
+            }
+        }
+        if (this.isTxt(e.key) && !this.arrayKeys.includes(e.key)) {
+            this.arrayKeys.push(e.key);
+        }
+        else if (Lib.SpecialTouch[e.key] !== undefined && !this.arrayKeys.includes(e.key)) {
+            this.arrayKeys.push(e.key);
+        }
+        this.arrayKeys.sort();
+        let key = this.arrayKeys.join("+");
+        if (Lib.ShortcutManager.memory[key]) {
+            let preventDefault = true;
+            for (let cb of Lib.ShortcutManager.memory[key]) {
+                let options = this.options.get(cb);
+                if (options && options.preventDefault === false) {
+                    preventDefault = false;
+                }
+            }
+            this.arrayKeys = [];
+            for (let cb of Lib.ShortcutManager.memory[key]) {
+                const result = cb();
+                if (result === false) {
+                    preventDefault = result;
+                }
+            }
+            if (preventDefault) {
+                e.preventDefault();
+            }
+        }
+        else if (Lib.ShortcutManager.autoPrevents.includes(key)) {
+            e.preventDefault();
+        }
+    }
+    static onKeyUp(e) {
+        let index = this.arrayKeys.indexOf(e.key);
+        if (index != -1) {
+            this.arrayKeys.splice(index, 1);
+        }
+    }
+    static init() {
+        if (Lib.ShortcutManager.isInit)
+            return;
+        Lib.ShortcutManager.isInit = true;
+        this.onKeyDown = this.onKeyDown.bind(this);
+        this.onKeyUp = this.onKeyUp.bind(this);
+        Lib.ShortcutManager.autoPrevents = [
+            this.getText([Lib.SpecialTouch.Control, "s"]),
+            this.getText([Lib.SpecialTouch.Control, "p"]),
+            this.getText([Lib.SpecialTouch.Control, "l"]),
+            this.getText([Lib.SpecialTouch.Control, "k"]),
+            this.getText([Lib.SpecialTouch.Control, "j"]),
+            this.getText([Lib.SpecialTouch.Control, "h"]),
+            this.getText([Lib.SpecialTouch.Control, "g"]),
+            this.getText([Lib.SpecialTouch.Control, "f"]),
+            this.getText([Lib.SpecialTouch.Control, "d"]),
+            this.getText([Lib.SpecialTouch.Control, "o"]),
+            this.getText([Lib.SpecialTouch.Control, "u"]),
+            this.getText([Lib.SpecialTouch.Control, "e"]),
+        ];
+        window.addEventListener("blur", () => {
+            this.arrayKeys = [];
+        });
+        document.body.addEventListener("keydown", this.onKeyDown);
+        document.body.addEventListener("keyup", this.onKeyUp);
+    }
+    static uninit() {
+        document.body.removeEventListener("keydown", this.onKeyDown);
+        document.body.removeEventListener("keyup", this.onKeyUp);
+        this.arrayKeys = [];
+        Lib.ShortcutManager.isInit = false;
+    }
+}
+Lib.ShortcutManager.Namespace=`Aventus.Lib`;
+__as1(_.Lib, 'ShortcutManager', Lib.ShortcutManager);
+
+Layout.GridHelper = class GridHelper extends Aventus.WebComponent {
+    static get observedAttributes() {return ["unit", "nb_col", "nb_row", "col_width", "row_height", "ruler_size", "step", "step_big", "magnetic"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'show_rulers'() { return this.getBoolAttr('show_rulers') }
+    set 'show_rulers'(val) { this.setBoolAttr('show_rulers', val) }get 'show_grid'() { return this.getBoolAttr('show_grid') }
+    set 'show_grid'(val) { this.setBoolAttr('show_grid', val) }get 'show_ruler'() { return this.getBoolAttr('show_ruler') }
+    set 'show_ruler'(val) { this.setBoolAttr('show_ruler', val) }get 'show_guides'() { return this.getBoolAttr('show_guides') }
+    set 'show_guides'(val) { this.setBoolAttr('show_guides', val) }get 'lock'() { return this.getBoolAttr('lock') }
+    set 'lock'(val) { this.setBoolAttr('lock', val) }get 'visible'() { return this.getBoolAttr('visible') }
+    set 'visible'(val) { this.setBoolAttr('visible', val) }    get 'unit'() { return this.getStringProp('unit') }
+    set 'unit'(val) { this.setStringAttr('unit', val) }get 'nb_col'() { return this.getNumberProp('nb_col') }
+    set 'nb_col'(val) { this.setNumberAttr('nb_col', val) }get 'nb_row'() { return this.getNumberProp('nb_row') }
+    set 'nb_row'(val) { this.setNumberAttr('nb_row', val) }get 'col_width'() { return this.getNumberProp('col_width') }
+    set 'col_width'(val) { this.setNumberAttr('col_width', val) }get 'row_height'() { return this.getNumberProp('row_height') }
+    set 'row_height'(val) { this.setNumberAttr('row_height', val) }get 'ruler_size'() { return this.getNumberProp('ruler_size') }
+    set 'ruler_size'(val) { this.setNumberAttr('ruler_size', val) }get 'step'() { return this.getNumberProp('step') }
+    set 'step'(val) { this.setNumberAttr('step', val) }get 'step_big'() { return this.getNumberProp('step_big') }
+    set 'step_big'(val) { this.setNumberAttr('step_big', val) }get 'magnetic'() { return this.getNumberProp('magnetic') }
+    set 'magnetic'(val) { this.setNumberAttr('magnetic', val) }    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("unit", ((target) => {
+    target.rulerLeftEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
+    target.rulerTopEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
+    target.lockEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
+}));this.__addPropertyActions("nb_row", ((target) => {
+}));this.__addPropertyActions("row_height", ((target) => {
+}));this.__addPropertyActions("ruler_size", ((target) => {
+    target.rulerLeftEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
+    target.rulerTopEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
+    target.lockEl.style.setProperty("--ruler-size", target.ruler_size + target.unit);
+})); }
+    static __style = `:host{--ruler-color: white;display:none;font-family:Arial,Helvetica,sans-serif;inset:0;pointer-events:none;position:fixed;user-select:none;z-index:9999}:host .grid{inset:0;position:absolute}:host .grid .cols,:host .grid .rows{display:flex;inset:0;position:absolute}:host .grid .rows{flex-direction:column}:host .grid .col{flex-shrink:0;height:100%;position:relative;width:var(--local-col-width)}:host .grid .col::after{background-color:#e78181;content:"";height:100%;position:absolute;right:-1px;top:0;width:2px}:host .grid .col:last-child::after{display:none}:host .grid .row{flex-shrink:0;height:var(--local-row-height);position:relative;width:100%}:host .grid .row::after{background-color:#e78181;bottom:-1px;content:"";height:2px;left:0;position:absolute;width:100%}:host .grid .row:last-child::after{display:none}:host .ruler-top{background-color:var(--ruler-color);height:var(--ruler-size);pointer-events:all;position:absolute;top:0;width:100%;z-index:3}:host .ruler-top::after{bottom:0;box-shadow:5px 0 5px #818181;content:"";height:100%;left:var(--ruler-size);pointer-events:none;position:absolute;width:calc(100% - var(--ruler-size))}:host .ruler-top .ruler-content{display:flex;flex-direction:row;height:100%;overflow:hidden;padding-left:var(--ruler-size)}:host .ruler-top .ruler-content .step{display:flex;flex-direction:column;flex-shrink:0;justify-content:space-between;text-align:left;width:var(--step-width)}:host .ruler-top .ruler-content .step span{align-items:center;display:flex;flex-grow:1;font-size:10px;transform:translateX(-50%);width:min-content}:host .ruler-top .ruler-content .step::after{background-color:#3d3d3d;content:"";display:inline-block;flex-shrink:0;height:3px;transform:translateX(-50%);width:2px}:host .ruler-top .ruler-content .step.big::after{background-color:#000;height:8px}:host .ruler-left{height:100%;pointer-events:all;position:absolute;top:0;width:var(--ruler-size);z-index:4}:host .ruler-left::after{box-shadow:0px 5px 5px #818181;content:"";height:calc(100% - var(--ruler-size));left:0;pointer-events:none;position:absolute;top:var(--ruler-size);width:100%}:host .ruler-left .ruler-content{display:flex;flex-direction:column;height:100%;overflow:hidden;padding-top:var(--ruler-size);position:relative;width:100%}:host .ruler-left .ruler-content::before{background-color:var(--ruler-color);content:"";inset:0;position:absolute;top:var(--ruler-size);z-index:2}:host .ruler-left .ruler-content .step{display:flex;flex-direction:row;flex-shrink:0;height:var(--step-height);justify-content:space-between;position:relative;text-align:left;z-index:3}:host .ruler-left .ruler-content .step span{display:flex;flex-grow:1;font-size:10px;height:min-content;justify-content:center;transform:translateY(-50%)}:host .ruler-left .ruler-content .step::after{background-color:#3d3d3d;content:"";display:inline-block;flex-shrink:0;height:2px;transform:translateY(-50%);width:3px}:host .ruler-left .ruler-content .step.big::after{background-color:#000;width:8px}:host .lock{align-items:center;cursor:pointer;display:flex;height:var(--ruler-size);justify-content:center;left:0;pointer-events:all;position:absolute;top:0;width:var(--ruler-size);z-index:5}:host .lock svg{aspect-ratio:1;display:inline-block;width:50%}:host .lock .close{display:none}:host([visible]){display:block}:host(:not([show_grid])) .grid{display:none}:host(:not([show_ruler])) .ruler-top{display:none}:host(:not([show_ruler])) .ruler-left{display:none}:host(:not([show_guides])) .guides{display:none}:host([lock]){--ruler-color: #eeeeee}:host([lock]) .ruler-top,:host([lock]) .ruler-left{cursor:not-allowed}:host([lock]) .guides av-grid-guide-helper{pointer-events:none}:host([lock]) .lock .open{display:none}:host([lock]) .lock .close{display:inline-block}`;
+    __getStatic() {
+        return GridHelper;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(GridHelper.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<div class="lock" _id="gridhelper_0">    <svg class="close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>    </svg>    <svg class="open" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>        <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>    </svg></div><div class="ruler-top" _id="gridhelper_1">    <div class="ruler-content" _id="gridhelper_2"></div></div><div class="ruler-left" _id="gridhelper_3">    <div class="ruler-content" _id="gridhelper_4"></div></div><div class="grid" _id="gridhelper_5">    <div class="cols" _id="gridhelper_6"></div>    <div class="rows" _id="gridhelper_7"></div></div><div class="guides" _id="gridhelper_8"></div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "lockEl",
+      "ids": [
+        "gridhelper_0"
+      ]
+    },
+    {
+      "name": "rulerTopEl",
+      "ids": [
+        "gridhelper_1"
+      ]
+    },
+    {
+      "name": "rulerTopContentEl",
+      "ids": [
+        "gridhelper_2"
+      ]
+    },
+    {
+      "name": "rulerLeftEl",
+      "ids": [
+        "gridhelper_3"
+      ]
+    },
+    {
+      "name": "rulerLeftContentEl",
+      "ids": [
+        "gridhelper_4"
+      ]
+    },
+    {
+      "name": "gridEl",
+      "ids": [
+        "gridhelper_5"
+      ]
+    },
+    {
+      "name": "colsEl",
+      "ids": [
+        "gridhelper_6"
+      ]
+    },
+    {
+      "name": "rowsEl",
+      "ids": [
+        "gridhelper_7"
+      ]
+    },
+    {
+      "name": "guidesEl",
+      "ids": [
+        "gridhelper_8"
+      ]
+    }
+  ],
+  "pressEvents": [
+    {
+      "id": "gridhelper_0",
+      "onPress": (e, pressInstance, c) => { c.comp.toggleLock(e, pressInstance); }
+    }
+  ]
+}); }
+    getClassName() {
+        return "GridHelper";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('show_rulers')) { this.attributeChangedCallback('show_rulers', false, false); }if(!this.hasAttribute('show_grid')) {this.setAttribute('show_grid' ,'true'); }if(!this.hasAttribute('show_ruler')) {this.setAttribute('show_ruler' ,'true'); }if(!this.hasAttribute('show_guides')) {this.setAttribute('show_guides' ,'true'); }if(!this.hasAttribute('lock')) {this.setAttribute('lock' ,'true'); }if(!this.hasAttribute('visible')) {this.setAttribute('visible' ,'true'); }if(!this.hasAttribute('unit')){ this['unit'] = 'px'; }if(!this.hasAttribute('nb_col')){ this['nb_col'] = 0; }if(!this.hasAttribute('nb_row')){ this['nb_row'] = 0; }if(!this.hasAttribute('col_width')){ this['col_width'] = undefined; }if(!this.hasAttribute('row_height')){ this['row_height'] = undefined; }if(!this.hasAttribute('ruler_size')){ this['ruler_size'] = 25; }if(!this.hasAttribute('step')){ this['step'] = 20; }if(!this.hasAttribute('step_big')){ this['step_big'] = undefined; }if(!this.hasAttribute('magnetic')){ this['magnetic'] = 0; } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('show_rulers');this.__upgradeProperty('show_grid');this.__upgradeProperty('show_ruler');this.__upgradeProperty('show_guides');this.__upgradeProperty('lock');this.__upgradeProperty('visible');this.__upgradeProperty('unit');this.__upgradeProperty('nb_col');this.__upgradeProperty('nb_row');this.__upgradeProperty('col_width');this.__upgradeProperty('row_height');this.__upgradeProperty('ruler_size');this.__upgradeProperty('step');this.__upgradeProperty('step_big');this.__upgradeProperty('magnetic'); }
+    __listBoolProps() { return ["show_rulers","show_grid","show_ruler","show_guides","lock","visible"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    inPx(nb) {
+        if (this.unit == 'px') {
+            return nb;
+        }
+        if (this.unit == 'rem') {
+            return nb * 16;
+        }
+        if (this.unit == 'mm') {
+            return nb * 3.7795275591;
+        }
+        if (this.unit == 'cm') {
+            return nb * 37.795275591;
+        }
+        if (this.unit == 'in') {
+            return nb * 96;
+        }
+        if (this.unit == 'pt') {
+            return nb * 1.33333333;
+        }
+        throw 'unit not supported';
+    }
+    fromPx(nbPx) {
+        if (this.unit == 'px') {
+            return nbPx;
+        }
+        if (this.unit == 'rem') {
+            return Math.round(nbPx / 16 * 100) / 100;
+        }
+        if (this.unit == 'mm') {
+            return Math.round(nbPx * 0.2645833333 * 100) / 100;
+        }
+        if (this.unit == 'cm') {
+            return Math.round(nbPx * 0.02645833333 * 100) / 100;
+        }
+        if (this.unit == 'in') {
+            return Math.round(nbPx / 96 * 100) / 100;
+        }
+        if (this.unit == 'pt') {
+            return Math.round(nbPx * 0.75 * 100) / 100;
+        }
+        throw 'unit not supported';
+    }
+    toggleLock() {
+        this.lock = !this.lock;
+    }
+    draw() {
+        let nbCol = 0;
+        if (this.nb_col) {
+            this.gridEl.style.setProperty('--local-col-width', `calc(100% / ${this.nb_col})`);
+            nbCol = this.nb_col;
+        }
+        else {
+            let width = this.col_width;
+            if (width == 0) {
+                width = this.fromPx(16);
+            }
+            this.gridEl.style.setProperty('--local-col-width', width + this.unit);
+            nbCol = Math.ceil(this.offsetWidth / this.inPx(width));
+        }
+        if (this.colsEl.children.length != nbCol) {
+            this.colsEl.innerHTML = '';
+            for (let i = 0; i < nbCol; i++) {
+                const col = document.createElement("DIV");
+                col.classList.add('col');
+                this.colsEl.appendChild(col);
+            }
+        }
+        let nbRow = 0;
+        if (this.nb_row) {
+            this.gridEl.style.setProperty('--local-row-height', `calc(100% / ${this.nb_row})`);
+            nbRow = this.nb_row;
+        }
+        else {
+            let height = this.row_height;
+            if (height == 0) {
+                height = this.fromPx(16);
+            }
+            this.gridEl.style.setProperty('--local-row-height', height + this.unit);
+            nbRow = Math.ceil(this.offsetHeight / this.inPx(height));
+        }
+        if (this.rowsEl.children.length != nbRow) {
+            this.rowsEl.innerHTML = '';
+            for (let i = 0; i < nbRow; i++) {
+                const row = document.createElement("DIV");
+                row.classList.add('row');
+                this.rowsEl.appendChild(row);
+            }
+        }
+    }
+    drawRulerTop() {
+        const step = this.step;
+        const bigStep = this.step_big == 0 ? this.step : this.step_big;
+        const rulerSize = this.ruler_size;
+        this.rulerTopEl.style.setProperty("--step-width", step + this.unit);
+        const nb = Math.ceil(this.offsetWidth / this.inPx(step));
+        const createStep = (nb, isBig, w) => {
+            const d = document.createElement('div');
+            d.classList.add("step");
+            if (w) {
+                d.style.width = w + this.unit;
+            }
+            if (isBig) {
+                d.classList.add("big");
+            }
+            const s = document.createElement("span");
+            if (isBig)
+                s.innerHTML = nb + '';
+            d.appendChild(s);
+            this.rulerTopContentEl.appendChild(d);
+        };
+        let i = 0;
+        while (step * i - rulerSize < 0) {
+            i++;
+        }
+        createStep(rulerSize, true, step * i - rulerSize);
+        for (; i < nb; i++) {
+            if (i * step <= rulerSize)
+                continue;
+            const isBig = (step * i) % bigStep == 0;
+            createStep(i * step, isBig);
+        }
+    }
+    drawRulerLeft() {
+        const step = this.step;
+        const bigStep = this.step_big == 0 ? this.step : this.step_big;
+        const rulerSize = this.ruler_size;
+        this.rulerLeftEl.style.setProperty("--step-height", step + this.unit);
+        const nb = Math.ceil(this.offsetHeight / this.inPx(step));
+        const createStep = (nb, isBig, h) => {
+            const d = document.createElement('div');
+            d.classList.add("step");
+            if (h) {
+                d.style.height = h + this.unit;
+            }
+            if (isBig) {
+                d.classList.add("big");
+            }
+            const s = document.createElement("span");
+            if (isBig)
+                s.innerHTML = nb + '';
+            d.appendChild(s);
+            this.rulerLeftContentEl.appendChild(d);
+        };
+        let i = 0;
+        while (step * i - rulerSize < 0) {
+            i++;
+        }
+        createStep(rulerSize, true, step * i - rulerSize);
+        for (; i < nb; i++) {
+            if (i * step <= rulerSize)
+                continue;
+            const isBig = (step * i) % bigStep == 0;
+            createStep(i * step, isBig);
+        }
+    }
+    addDragLeft() {
+        let el = undefined;
+        new Aventus.PressManager({
+            element: this.rulerLeftContentEl,
+            onDblPress: () => {
+                const nbtxt = prompt("Top Position");
+                if (nbtxt) {
+                    const nb = Number(nbtxt);
+                    if (!isNaN(nb)) {
+                        this.createGuideFromTop(nb);
+                    }
+                }
+            }
+        });
+        new Aventus.DragAndDrop({
+            element: this.rulerLeftContentEl,
+            applyDrag: false,
+            onStart: (e) => {
+                if (this.lock)
+                    return false;
+                el = new _.Layout.GridGuideHelper();
+                el.direction = 'y';
+                el.container = this;
+                this.guidesEl.appendChild(el);
+                el.onStart();
+                return true;
+            },
+            onMove: (e) => {
+                if (el) {
+                    el.onMoveY(e);
+                }
+            },
+            onStop: () => {
+                if (el) {
+                    el.onStop();
+                }
+            }
+        });
+    }
+    addDragTop() {
+        let el = undefined;
+        new Aventus.PressManager({
+            element: this.rulerTopContentEl,
+            onDblPress: () => {
+                const nbtxt = prompt("Left Position");
+                if (nbtxt) {
+                    const nb = Number(nbtxt);
+                    if (!isNaN(nb)) {
+                        this.createGuideFromLeft(nb);
+                    }
+                }
+            }
+        });
+        new Aventus.DragAndDrop({
+            element: this.rulerTopContentEl,
+            applyDrag: false,
+            onStart: (e) => {
+                if (this.lock)
+                    return false;
+                el = new _.Layout.GridGuideHelper();
+                el.container = this;
+                el.direction = 'x';
+                this.guidesEl.appendChild(el);
+                el.onStart();
+                return true;
+            },
+            onMove: (e) => {
+                if (el) {
+                    el.onMoveX(e);
+                }
+            },
+            onStop: () => {
+                if (el) {
+                    el.onStop();
+                }
+            }
+        });
+    }
+    createGuideFromLeft(left) {
+        const el = new _.Layout.GridGuideHelper();
+        el.direction = 'y';
+        el.container = this;
+        el.style.left = left + this.unit;
+        this.guidesEl.appendChild(el);
+        this.save();
+    }
+    createGuideFromTop(top) {
+        const el = new _.Layout.GridGuideHelper();
+        el.direction = 'x';
+        el.container = this;
+        el.style.top = top + this.unit;
+        this.guidesEl.appendChild(el);
+        this.save();
+    }
+    addShortCut() {
+        let isKActive = false;
+        let timeout = 0;
+        Lib.ShortcutManager.subscribe([Lib.SpecialTouch.Control, 'k'], () => {
+            isKActive = true;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                isKActive = false;
+            }, 1000);
+        });
+        const commande = (letter, cb) => {
+            Lib.ShortcutManager.subscribe([letter], () => {
+                if (!isKActive)
+                    return false;
+                isKActive = false;
+                cb();
+                return;
+            });
+            Lib.ShortcutManager.subscribe([Lib.SpecialTouch.Control, letter], () => {
+                if (!isKActive)
+                    return false;
+                isKActive = false;
+                cb();
+                return;
+            });
+        };
+        commande('v', () => { this.visible = !this.visible; });
+        commande('g', () => { this.show_grid = !this.show_grid; });
+        commande('r', () => { this.show_ruler = !this.show_ruler; });
+        commande('j', () => { this.show_guides = !this.show_guides; });
+        commande('l', () => { this.lock = !this.lock; });
+    }
+    addResize() {
+        new Aventus.ResizeObserver({
+            callback: () => {
+                this.draw();
+                this.drawRulerTop();
+                this.drawRulerLeft();
+            },
+            fps: 30
+        }).observe(this);
+    }
+    save() {
+        const data = { x: [], y: [] };
+        for (let child of this.guidesEl.children) {
+            if (child instanceof _.Layout.GridGuideHelper) {
+                if (child.direction == 'x') {
+                    data.x.push(child.offsetTop);
+                }
+                else {
+                    data.y.push(child.offsetLeft);
+                }
+            }
+        }
+        const id = this.id != '' ? this.id : 'grid-helper';
+        localStorage.setItem(id, JSON.stringify(data));
+    }
+    reload() {
+        const id = this.id != '' ? this.id : 'grid-helper';
+        const items = localStorage.getItem(id);
+        if (items) {
+            const data = JSON.parse(items);
+            for (let g of data.x) {
+                const el = new _.Layout.GridGuideHelper();
+                el.direction = 'x';
+                el.style.top = g + this.unit;
+                el.container = this;
+                this.guidesEl.appendChild(el);
+            }
+            for (let g of data.y) {
+                const el = new _.Layout.GridGuideHelper();
+                el.direction = 'y';
+                el.style.left = g + this.unit;
+                el.container = this;
+                this.guidesEl.appendChild(el);
+            }
+        }
+    }
+    postCreation() {
+        this.reload();
+        this.addResize();
+        this.addShortCut();
+        this.addDragLeft();
+        this.addDragTop();
+        this.draw();
+    }
+}
+Layout.GridHelper.Namespace=`Aventus.Layout`;
+Layout.GridHelper.Tag=`av-grid-helper`;
+__as1(_.Layout, 'GridHelper', Layout.GridHelper);
+if(!window.customElements.get('av-grid-helper')){window.customElements.define('av-grid-helper', Layout.GridHelper);Aventus.WebComponentInstance.registerDefinition(Layout.GridHelper);}
+
+Layout.Tabs.TabHeader = class TabHeader extends Aventus.WebComponent {
+    get 'active'() { return this.getBoolAttr('active') }
+    set 'active'(val) { this.setBoolAttr('active', val) }    _tab;
+    get tab() {
+        return this._tab;
+    }
+    tabs;
+    static __style = ``;
+    constructor() {
+        super();
+        if (this.constructor == TabHeader) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return TabHeader;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TabHeader.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "TabHeader";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('active')) { this.attributeChangedCallback('active', false, false); } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('tab');this.__upgradeProperty('active'); }
+    __listBoolProps() { return ["active"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    async init(tab, tabs) {
+        this.tabs = tabs;
+        this._tab = tab;
+        tab.tabHeader = this;
+        await this.render();
+    }
+    onPress() {
+        if (!this.active) {
+            this.tabs.setActive(this);
+        }
+    }
+    addPress() {
+        new Aventus.PressManager({
+            element: this,
+            onPress: () => {
+                this.onPress();
+            }
+        });
+    }
+    postCreation() {
+        super.postCreation();
+        this.addPress();
+    }
+}
+Layout.Tabs.TabHeader.Namespace=`Aventus.Layout.Tabs`;
+__as1(_.Layout.Tabs, 'TabHeader', Layout.Tabs.TabHeader);
+
+Toast.ToastElement = class ToastElement extends Aventus.WebComponent {
+    get 'position'() { return this.getStringAttr('position') }
+    set 'position'(val) { this.setStringAttr('position', val) }get 'delay'() { return this.getNumberAttr('delay') }
+    set 'delay'(val) { this.setNumberAttr('delay', val) }get 'is_active'() { return this.getBoolAttr('is_active') }
+    set 'is_active'(val) { this.setBoolAttr('is_active', val) }    showAsked = false;
+    onHideCallback = () => { };
+    timeout = 0;
+    isTransition = false;
+    waitTransitionCbs = [];
+    static __style = `:host{position:absolute}:host(:not([is_active])){opacity:0;visibility:hidden}:host([position="bottom left"]){bottom:var(--_toast-space-bottom);left:0px}:host([position="top left"]){left:var(--_toast-space-left);top:var(--_toast-space-top)}:host([position="bottom right"]){bottom:var(--_toast-space-bottom);right:var(--_toast-space-right)}:host([position="top right"]){right:var(--_toast-space-right);top:var(--_toast-space-top)}:host([position=top]){left:50%;top:var(--_toast-space-top);transform:translateX(-50%)}:host([position=bottom]){bottom:var(--_toast-space-bottom);left:50%;transform:translateX(-50%)}`;
+    constructor() {
+        super();
+        if (this.constructor == ToastElement) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return ToastElement;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(ToastElement.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "ToastElement";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('position')){ this['position'] = _.Toast.ToastManager.defaultPosition; }if(!this.hasAttribute('delay')){ this['delay'] = _.Toast.ToastManager.defaultDelay; }if(!this.hasAttribute('is_active')) { this.attributeChangedCallback('is_active', false, false); } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('position');this.__upgradeProperty('delay');this.__upgradeProperty('is_active'); }
+    __listBoolProps() { return ["is_active"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    _setOptions(options) {
+        if (options.position !== undefined)
+            this.position = options.position;
+        if (options.delay !== undefined)
+            this.delay = options.delay;
+        return this.setOptions(options);
+    }
+    show(onHideCallback) {
+        this.onHideCallback = onHideCallback;
+        if (this.isReady) {
+            this.is_active = true;
+            this.startDelay();
+        }
+        else {
+            this.showAsked = true;
+        }
+    }
+    startDelay() {
+        if (this.delay > 0) {
+            this.timeout = setTimeout(() => {
+                this.close();
+            }, this.delay);
+        }
+    }
+    async close() {
+        if (this.onHideCallback) {
+            this.is_active = false;
+            this.onHideCallback(false);
+            this.remove();
+        }
+    }
+    addTransition() {
+        this.addEventListener("transitionStart", (e) => {
+            this.isTransition = true;
+        });
+        this.addEventListener("transitionEnd", () => {
+            this.isTransition = false;
+            let cbs = [...this.waitTransitionCbs];
+            this.waitTransitionCbs = [];
+            for (let cb of cbs) {
+                cb();
+            }
+        });
+    }
+    waitTransition() {
+        if (this.isTransition) {
+            return new Promise((resolve) => {
+                this.waitTransitionCbs.push(resolve);
+            });
+        }
+        return new Promise((resolve) => {
+            resolve();
+        });
+    }
+    postCreation() {
+        if (this.showAsked) {
+            this.is_active = true;
+            this.startDelay();
+        }
+    }
+    static add(options) {
+        return _.Toast.ToastManager.add(options);
+    }
+}
+Toast.ToastElement.Namespace=`Aventus.Toast`;
+__as1(_.Toast, 'ToastElement', Toast.ToastElement);
+
+Layout.Tabs.Tab = class Tab extends Aventus.WebComponent {
+    get 'selected'() { return this.getBoolAttr('selected') }
+    set 'selected'(val) { this.setBoolAttr('selected', val) }    tabHeader;
+    static __style = ``;
+    constructor() {
+        super();
+        if (this.constructor == Tab) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return Tab;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Tab.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "Tab";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('selected')) { this.attributeChangedCallback('selected', false, false); } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('selected'); }
+    __listBoolProps() { return ["selected"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+}
+Layout.Tabs.Tab.Namespace=`Aventus.Layout.Tabs`;
+__as1(_.Layout.Tabs, 'Tab', Layout.Tabs.Tab);
+
+Modal.ModalElement = class ModalElement extends Aventus.WebComponent {
+    get 'options'() {
+						return this.__watch["options"];
+					}
+					set 'options'(val) {
+						this.__watch["options"] = val;
+					}    static defaultCloseWithEsc = true;
+    static defaultCloseWithClick = true;
+    static defaultRejectValue = null;
+    cb;
+    pressManagerClickClose;
+    pressManagerPrevent;
+    __registerWatchesActions() {
+    this.__addWatchesActions("options", ((target, action, path, value) => {
+    target.onOptionsChanged();
+}));    super.__registerWatchesActions();
+}
+    static __style = `:host{align-items:center;display:flex;inset:0;justify-content:center;position:fixed;z-index:60}:host .modal{background-color:#fff;padding:1.5rem;position:relative}`;
+    constructor() {
+        super();
+        this.options = this.configure();
+        if (this.options.closeWithClick === undefined)
+            this.options.closeWithClick = Modal.ModalElement.defaultCloseWithClick;
+        if (this.options.closeWithEsc === undefined)
+            this.options.closeWithEsc = Modal.ModalElement.defaultCloseWithEsc;
+        if (!Object.hasOwn(this.options, "rejectValue")) {
+            this.options.rejectValue = Modal.ModalElement.defaultRejectValue;
+        }
+        if (this.constructor == ModalElement) {
+            throw "can't instanciate an abstract class";
+        }
+        this.close = this.close.bind(this);
+        this.reject = this.reject.bind(this);
+        this.resolve = this.resolve.bind(this);
+    }
+    __getStatic() {
+        return ModalElement;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(ModalElement.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<div class="modal" _id="modalelement_0">	<slot></slot></div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "modalEl",
+      "ids": [
+        "modalelement_0"
+      ]
+    }
+  ]
+}); }
+    getClassName() {
+        return "ModalElement";
+    }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["options"] = undefined; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('options'); }
+    onOptionsChanged() { }
+    init(cb) {
+        this.cb = cb;
+        if (this.options.closeWithEsc) {
+            Lib.ShortcutManager.subscribe(Lib.SpecialTouch.Escape, this.reject, { replaceTemp: true });
+        }
+        if (this.options.closeWithClick) {
+            this.pressManagerClickClose = new Aventus.PressManager({
+                element: this,
+                onPress: () => {
+                    this.reject();
+                }
+            });
+            this.pressManagerPrevent = new Aventus.PressManager({
+                element: this.modalEl,
+                onPress: () => { }
+            });
+        }
+    }
+    show(element) {
+        return Modal.ModalElement._show(this, element);
+    }
+    close() {
+        Lib.ShortcutManager.unsubscribe(Lib.SpecialTouch.Escape, this.reject);
+        this.pressManagerClickClose?.destroy();
+        this.pressManagerPrevent?.destroy();
+        this.remove();
+    }
+    reject(no_close) {
+        if (this.cb) {
+            this.cb(this.options.rejectValue ?? null);
+        }
+        if (no_close !== true) {
+            this.close();
+        }
+    }
+    resolve(response, no_close) {
+        if (this.cb) {
+            this.cb(response);
+        }
+        if (no_close !== true) {
+            this.close();
+        }
+    }
+    static configure(options) {
+        if (options.closeWithClick !== undefined)
+            this.defaultCloseWithClick = options.closeWithClick;
+        if (options.closeWithEsc !== undefined)
+            this.defaultCloseWithEsc = options.closeWithEsc;
+        if (!Object.hasOwn(options, "rejectValue")) {
+            this.defaultRejectValue = options.rejectValue;
+        }
+    }
+    static _show(modal, element) {
+        return new Promise((resolve) => {
+            modal.init((response) => {
+                resolve(response);
+            });
+            if (!element) {
+                element = document.body;
+            }
+            element.appendChild(modal);
+        });
+    }
+}
+Modal.ModalElement.Namespace=`Aventus.Modal`;
+__as1(_.Modal, 'ModalElement', Modal.ModalElement);
+
+Toast.ToastManager = class ToastManager extends Aventus.WebComponent {
+    get 'gap'() { return this.getNumberAttr('gap') }
+    set 'gap'(val) { this.setNumberAttr('gap', val) }get 'not_main'() { return this.getBoolAttr('not_main') }
+    set 'not_main'(val) { this.setBoolAttr('not_main', val) }    static defaultToast;
+    static defaultToastManager;
+    static defaultPosition = 'top right';
+    static defaultDelay = 5000;
+    static heightLimitPercent = 100;
+    static instance;
+    activeToasts = {
+        top: [],
+        'top left': [],
+        'bottom left': [],
+        bottom: [],
+        'bottom right': [],
+        'top right': [],
+    };
+    waitingToasts = {
+        top: [],
+        'top left': [],
+        'bottom left': [],
+        bottom: [],
+        'bottom right': [],
+        'top right': [],
+    };
+    get containerHeight() {
+        return this.offsetHeight;
+    }
+    get heightLimit() {
+        return this.containerHeight * Toast.ToastManager.heightLimitPercent / 100;
+    }
+    mutex = new Aventus.Mutex();
+    static __style = `:host{--_toast-space-bottom: var(--toast-space-bottom, 20px);--_toast-space-top: var(--toast-space-top, 20px);--_toast-space-right: var(--toast-space-right, 10px);--_toast-space-left: var(--toast-space-left, 10px)}:host{inset:0;overflow:hidden;pointer-events:none;position:fixed;z-index:50}:host ::slotted(*){pointer-events:auto}`;
+    __getStatic() {
+        return ToastManager;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(ToastManager.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "ToastManager";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('gap')){ this['gap'] = 10; }if(!this.hasAttribute('not_main')) { this.attributeChangedCallback('not_main', false, false); } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('containerHeight');this.__correctGetter('heightLimit');this.__upgradeProperty('gap');this.__upgradeProperty('not_main'); }
+    __listBoolProps() { return ["not_main"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    async add(toast) {
+        await this.mutex.waitOne();
+        let realToast;
+        if (toast instanceof _.Toast.ToastElement) {
+            realToast = toast;
+        }
+        else {
+            if (!Toast.ToastManager.defaultToast)
+                throw "No default toast. Try ToastManager.configure()";
+            realToast = new Toast.ToastManager.defaultToast();
+            await realToast._setOptions(toast);
+        }
+        this.appendChild(realToast);
+        if (realToast.position == "bottom") {
+            return this._notifyBottom(realToast, true);
+        }
+        else if (realToast.position == "bottom left") {
+            return this._notifyBottomLeft(realToast, true);
+        }
+        else if (realToast.position == "top left") {
+            return this._notifyTopLeft(realToast, true);
+        }
+        else if (realToast.position == "bottom right") {
+            return this._notifyBottomRight(realToast, true);
+        }
+        else if (realToast.position == "top right") {
+            return this._notifyTopRight(realToast, true);
+        }
+        else if (realToast.position == "top") {
+            return this._notifyTop(realToast, true);
+        }
+        return false;
+    }
+    _calculateBottom(toast, firstTime, position, from) {
+        return new Promise((resolve) => {
+            let height = toast.offsetHeight;
+            let containerHeight = this.containerHeight;
+            const _remove = (result) => {
+                let index = this.activeToasts[position].indexOf(toast);
+                if (index > -1) {
+                    this.activeToasts[position].splice(index, 1);
+                }
+                if (this.waitingToasts[position].length > 0) {
+                    let nextNotif = this.waitingToasts[position].splice(0, 1)[0];
+                    this._calculateBottom(nextNotif, false, position, index);
+                }
+                else {
+                    let containerHeight = this.containerHeight;
+                    for (let i = 0; i < index; i++) {
+                        let notif = this.activeToasts[position][i];
+                        let bottom = containerHeight - (notif.offsetTop + notif.offsetHeight);
+                        notif.style.bottom = bottom - height - this.gap + 'px';
+                    }
+                }
+                resolve(result);
+            };
+            let length = this.activeToasts[position].length;
+            if (length == 0) {
+                this.activeToasts[position].push(toast);
+                toast.show(_remove);
+            }
+            else {
+                let totHeight = 0;
+                for (let t of this.activeToasts[position]) {
+                    totHeight += t.offsetHeight + this.gap;
+                }
+                if (totHeight + height < this.heightLimit) {
+                    for (let i = from; i < this.activeToasts[position].length; i++) {
+                        let t = this.activeToasts[position][i];
+                        let bottom = containerHeight - (t.offsetTop + t.offsetHeight);
+                        t.style.bottom = bottom + height + this.gap + 'px';
+                    }
+                    this.activeToasts[position].push(toast);
+                    toast.show(_remove);
+                }
+                else if (firstTime) {
+                    this.waitingToasts[position].push(toast);
+                }
+            }
+        });
+    }
+    _calculateTop(toast, firstTime, position, from) {
+        return new Promise(async (resolve) => {
+            let height = toast.offsetHeight;
+            const _remove = (result) => {
+                let index = this.activeToasts[position].indexOf(toast);
+                if (index > -1) {
+                    this.activeToasts[position].splice(index, 1);
+                }
+                if (this.waitingToasts[position].length > 0) {
+                    let nextNotif = this.waitingToasts[position].splice(0, 1)[0];
+                    this._calculateTop(nextNotif, false, position, index);
+                }
+                else {
+                    for (let i = 0; i < index; i++) {
+                        let notif = this.activeToasts[position][i];
+                        let top = (notif.offsetTop - height - this.gap);
+                        notif.style.top = top + 'px';
+                    }
+                }
+                resolve(result);
+            };
+            let length = this.activeToasts[position].length;
+            if (length == 0) {
+                this.activeToasts[position].push(toast);
+                toast.show(_remove);
+            }
+            else {
+                let totHeight = 0;
+                for (let notif of this.activeToasts[position]) {
+                    await notif.waitTransition();
+                    totHeight += notif.offsetHeight + this.gap;
+                }
+                if (totHeight + height < this.heightLimit) {
+                    for (let i = from; i < this.activeToasts[position].length; i++) {
+                        let notif = this.activeToasts[position][i];
+                        await notif.waitTransition();
+                        let top = (notif.offsetTop + notif.offsetHeight);
+                        notif.style.top = top + this.gap + 'px';
+                    }
+                    this.activeToasts[position].push(toast);
+                    toast.show(_remove);
+                }
+                else if (firstTime) {
+                    this.waitingToasts[position].push(toast);
+                }
+            }
+            this.mutex.release();
+            return;
+        });
+    }
+    async _notifyBottomRight(toast, firstTime) {
+        return await this._calculateBottom(toast, firstTime, "bottom right", 0);
+    }
+    async _notifyTopRight(toast, firstTime) {
+        return await this._calculateTop(toast, firstTime, "top right", 0);
+    }
+    async _notifyBottomLeft(toast, firstTime) {
+        return await this._calculateBottom(toast, firstTime, "bottom left", 0);
+    }
+    async _notifyTopLeft(toast, firstTime) {
+        return await this._calculateTop(toast, firstTime, "top left", 0);
+    }
+    async _notifyTop(toast, firstTime, from = 0) {
+        return await this._calculateTop(toast, firstTime, "top", 0);
+    }
+    async _notifyBottom(toast, firstTime, from = 0) {
+        return await this._calculateBottom(toast, firstTime, "bottom", from);
+    }
+    postConnect() {
+        super.postConnect();
+        if (!Toast.ToastManager.instance && !this.not_main) {
+            Toast.ToastManager.instance = this;
+        }
+    }
+    postDisonnect() {
+        if (Toast.ToastManager.instance == this) {
+            Toast.ToastManager.instance = undefined;
+        }
+    }
+    static add(toast) {
+        if (!this.instance) {
+            this.instance = this.defaultToastManager ? new this.defaultToastManager() : new Toast.ToastManager();
+            document.body.appendChild(this.instance);
+        }
+        return this.instance.add(toast);
+    }
+    static configure(options) {
+        for (let key in options) {
+            if (options[key] !== undefined)
+                this[key] = options[key];
+        }
+    }
+}
+Toast.ToastManager.Namespace=`Aventus.Toast`;
+Toast.ToastManager.Tag=`av-toast-manager`;
+__as1(_.Toast, 'ToastManager', Toast.ToastManager);
+if(!window.customElements.get('av-toast-manager')){window.customElements.define('av-toast-manager', Toast.ToastManager);Aventus.WebComponentInstance.registerDefinition(Toast.ToastManager);}
+
 
 for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
@@ -9583,168 +10251,73 @@ const _ = {};
 
 
 let _n;
-const DocUIFormElementEditor1Input = class DocUIFormElementEditor1Input extends Aventus.Form.FormElement {
-    static get observedAttributes() {return ["name", "label", "value"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
-    get 'type'() { return this.getStringAttr('type') }
-    set 'type'(val) { this.setStringAttr('type', val) }get 'placeholder'() { return this.getStringAttr('placeholder') }
-    set 'placeholder'(val) { this.setStringAttr('placeholder', val) }    get 'name'() { return this.getStringProp('name') }
-    set 'name'(val) { this.setStringAttr('name', val) }get 'label'() { return this.getStringProp('label') }
-    set 'label'(val) { this.setStringAttr('label', val) }get 'value'() { return this.getStringProp('value') }
-    set 'value'(val) { this.setStringAttr('value', val) }    focusValue = "";
-    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("value", ((target) => {
-    target.inputEl.value = target.value ?? "";
-})); }
-    static __style = `:host{color:#000;width:100%}:host .label{color:#eee;cursor:pointer;display:block;font-size:14px;margin-bottom:6px}:host .input{background-color:#eee;border:1px solid gray;border-radius:4px;cursor:pointer;display:flex;padding:0 8px;width:100%}:host .input input{-webkit-appearance:none;-moz-appearance:none;appearance:none;background-color:rgba(0,0,0,0);border:none;color:inherit;flex-grow:1;font-size:15px;outline:none;outline-style:none;padding:8px 0}:host .errors{color:red;font-size:13px;margin-top:6px}:host(:not([label])) .label,:host([label=""]) .label{display:none}:host(:not([has_errors])) .errors{display:none}:host([disabled]) .input input{background-color:#9e9e9e;border-color:#888;box-shadow:none;cursor:not-allowed}`;
+const DocUIModalEditor1Modal = class DocUIModalEditor1Modal extends Aventus.Modal.ModalElement {
+    get 'question'() {
+						return this.__watch["question"];
+					}
+					set 'question'(val) {
+						this.__watch["question"] = val;
+					}    __registerWatchesActions() {
+    this.__addWatchesActions("question");    super.__registerWatchesActions();
+}
+    static __style = `:host{align-items:center;background:rgba(0,0,0,.7);display:flex;inset:0;justify-content:center;position:fixed;z-index:60;font-size:16px}:host .modal{background-color:var(--secondary-color);border-radius:12px;box-shadow:0 25px 50px rgba(0,0,0,.25);max-width:500px;padding:24px;position:relative;text-align:left;transform:translateZ(0);transition:all .2s ease-in-out;width:100%}:host .modal .modal-header{align-items:flex-start;display:flex;justify-content:space-between}:host .modal .modal-header .modal-title{color:#fff;line-height:24px;margin:0}:host .modal .modal-header .close{cursor:pointer;margin-right:-12px;margin-top:-12px}:host .modal .modal-body{color:var(--color-light);margin-top:16px}:host .modal .modal-body ::slotted(p){margin-bottom:16px}:host .modal .footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}:host .modal .footer av-button{font-size:14px}`;
     __getStatic() {
-        return DocUIFormElementEditor1Input;
+        return DocUIModalEditor1Modal;
     }
     __getStyle() {
         let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIFormElementEditor1Input.__style);
+        arrStyle.push(DocUIModalEditor1Modal.__style);
         return arrStyle;
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        slots: { 'before':`<slot name="before"></slot>`,'after':`<slot name="after"></slot>` }, 
-        blocks: { 'default':`<label class="label" _id="docuiformelementeditor1input_0"></label><div class="input">    <slot name="before"></slot>    <input _id="docuiformelementeditor1input_1" />    <slot name="after"></slot></div><div class="errors">    <template _id="docuiformelementeditor1input_2"></template></div>` }
+        blocks: { 'default':`<div class="modal-header">    <h3 class="modal-title">Confirm</h3>    <mi-icon icon="close" class="close" _id="docuimodaleditor1modal_0"></mi-icon></div><div class="modal-body" _id="docuimodaleditor1modal_1"></div><div class="footer">    <av-button _id="docuimodaleditor1modal_2">No</av-button>    <av-button _id="docuimodaleditor1modal_3">Yes</av-button></div>` }
     });
 }
     __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
-  "elements": [
-    {
-      "name": "inputEl",
-      "ids": [
-        "docuiformelementeditor1input_1"
-      ]
-    }
-  ],
   "content": {
-    "docuiformelementeditor1input_0°for": {
-      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method1())}`,
-      "once": true
-    },
-    "docuiformelementeditor1input_0°@HTML": {
-      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method2())}`,
-      "once": true
-    },
-    "docuiformelementeditor1input_1°type": {
-      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method3())}`,
-      "once": true
-    },
-    "docuiformelementeditor1input_1°name": {
-      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method1())}`,
-      "once": true
-    },
-    "docuiformelementeditor1input_1°id": {
-      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method1())}`,
-      "once": true
-    },
-    "docuiformelementeditor1input_1°placeholder": {
-      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method4())}`,
+    "docuimodaleditor1modal_1°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__6629b6e42a9d78bd72e4f97cd1ac67e4method0())}`,
       "once": true
     }
   },
-  "events": [
-    {
-      "eventName": "focus",
-      "id": "docuiformelementeditor1input_1",
-      "fct": (e, c) => c.comp.onFocus(e)
-    },
-    {
-      "eventName": "blur",
-      "id": "docuiformelementeditor1input_1",
-      "fct": (e, c) => c.comp.onBlur(e)
-    },
-    {
-      "eventName": "input",
-      "id": "docuiformelementeditor1input_1",
-      "fct": (e, c) => c.comp.onInput(e)
-    }
-  ],
   "pressEvents": [
     {
-      "id": "docuiformelementeditor1input_0",
-      "onPress": (e, pressInstance, c) => { c.comp.focusInput(e, pressInstance); }
+      "id": "docuimodaleditor1modal_0",
+      "onPress": (e, pressInstance, c) => { c.comp.reject(e, pressInstance); }
+    },
+    {
+      "id": "docuimodaleditor1modal_2",
+      "onPress": (e, pressInstance, c) => { c.comp.reject(e, pressInstance); }
+    },
+    {
+      "id": "docuimodaleditor1modal_3",
+      "onPress": (e, pressInstance, c) => { c.comp.accept(e, pressInstance); }
     }
   ]
-});const templ0 = new Aventus.Template(this);templ0.setTemplate(`         <div _id="docuiformelementeditor1input_3"></div>    `);templ0.setActions({
-  "content": {
-    "docuiformelementeditor1input_3°@HTML": {
-      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method5(c.data.error))}`,
-      "once": true
-    }
-  }
-});this.__getStatic().__template.addLoop({
-                    anchorId: 'docuiformelementeditor1input_2',
-                    template: templ0,
-                simple:{data: "this.errors",item:"error"}}); }
+}); }
     getClassName() {
-        return "DocUIFormElementEditor1Input";
+        return "DocUIModalEditor1Modal";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('type')){ this['type'] = "text"; }if(!this.hasAttribute('placeholder')){ this['placeholder'] = undefined; }if(!this.hasAttribute('name')){ this['name'] = undefined; }if(!this.hasAttribute('label')){ this['label'] = undefined; }if(!this.hasAttribute('value')){ this['value'] = ""; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('type');this.__upgradeProperty('placeholder');this.__upgradeProperty('name');this.__upgradeProperty('label');this.__upgradeProperty('value'); }
-    focusInput() {
-        this.inputEl.focus();
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["question"] = undefined; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('question'); }
+    configure() {
+        return {
+            closeWithClick: false,
+            closeWithEsc: false,
+        };
     }
-    select() {
-        this.inputEl.select();
+    accept() {
+        this.resolve(true);
     }
-    onFocus() {
-        this.clearErrors();
-        this.focusValue = this.inputEl.value;
-    }
-    onBlur() {
-        if (this.inputEl.value == this.focusValue) {
-            this.validate();
-        }
-    }
-    onInput() {
-        this.triggerChange(this.inputEl.value);
-    }
-    __a8f710d11461005cf0e177e0693ec7f4method1() {
-        return this.name;
-    }
-    __a8f710d11461005cf0e177e0693ec7f4method2() {
-        return this.label;
-    }
-    __a8f710d11461005cf0e177e0693ec7f4method3() {
-        return this.type;
-    }
-    __a8f710d11461005cf0e177e0693ec7f4method4() {
-        return this.placeholder;
-    }
-    __a8f710d11461005cf0e177e0693ec7f4method5(error) {
-        return error;
+    __6629b6e42a9d78bd72e4f97cd1ac67e4method0() {
+        return this.question;
     }
 }
-DocUIFormElementEditor1Input.Namespace=`AventusWebsite`;
-DocUIFormElementEditor1Input.Tag=`av-doc-u-i-form-element-editor-1-input`;
-__as1(_, 'DocUIFormElementEditor1Input', DocUIFormElementEditor1Input);
-if(!window.customElements.get('av-doc-u-i-form-element-editor-1-input')){window.customElements.define('av-doc-u-i-form-element-editor-1-input', DocUIFormElementEditor1Input);Aventus.WebComponentInstance.registerDefinition(DocUIFormElementEditor1Input);}
-
-const DocUIFormElementEditor1Compiled = class DocUIFormElementEditor1Compiled extends Aventus.WebComponent {
-    static __style = ``;
-    __getStatic() {
-        return DocUIFormElementEditor1Compiled;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIFormElementEditor1Compiled.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<av-doc-u-i-form-element-editor-1-input label="test"></av-doc-u-i-form-element-editor-1-input>` }
-    });
-}
-    getClassName() {
-        return "DocUIFormElementEditor1Compiled";
-    }
-}
-DocUIFormElementEditor1Compiled.Namespace=`AventusWebsite`;
-DocUIFormElementEditor1Compiled.Tag=`av-doc-u-i-form-element-editor-1-compiled`;
-__as1(_, 'DocUIFormElementEditor1Compiled', DocUIFormElementEditor1Compiled);
-if(!window.customElements.get('av-doc-u-i-form-element-editor-1-compiled')){window.customElements.define('av-doc-u-i-form-element-editor-1-compiled', DocUIFormElementEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIFormElementEditor1Compiled);}
+DocUIModalEditor1Modal.Namespace=`AventusWebsite`;
+DocUIModalEditor1Modal.Tag=`av-doc-u-i-modal-editor-1-modal`;
+__as1(_, 'DocUIModalEditor1Modal', DocUIModalEditor1Modal);
+if(!window.customElements.get('av-doc-u-i-modal-editor-1-modal')){window.customElements.define('av-doc-u-i-modal-editor-1-modal', DocUIModalEditor1Modal);Aventus.WebComponentInstance.registerDefinition(DocUIModalEditor1Modal);}
 
 let DocWcWatchEditor1Person=class DocWcWatchEditor1Person extends Aventus.Data {
     id = 0;
@@ -11517,6 +12090,142 @@ DocWcAttributeEditor1Example.Tag=`av-doc-wc-attribute-editor-1-example`;
 __as1(_, 'DocWcAttributeEditor1Example', DocWcAttributeEditor1Example);
 if(!window.customElements.get('av-doc-wc-attribute-editor-1-example')){window.customElements.define('av-doc-wc-attribute-editor-1-example', DocWcAttributeEditor1Example);Aventus.WebComponentInstance.registerDefinition(DocWcAttributeEditor1Example);}
 
+const DocUITabsEditor1Tab = class DocUITabsEditor1Tab extends Aventus.Layout.Tabs.Tab {
+    static get observedAttributes() {return ["label", "count", "icon"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'label'() { return this.getStringProp('label') }
+    set 'label'(val) { this.setStringAttr('label', val) }get 'count'() { return this.getNumberProp('count') }
+    set 'count'(val) { this.setNumberAttr('count', val) }get 'icon'() { return this.getStringProp('icon') }
+    set 'icon'(val) { this.setStringAttr('icon', val) }    static __style = `:host{width:100%}`;
+    __getStatic() {
+        return DocUITabsEditor1Tab;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUITabsEditor1Tab.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUITabsEditor1Tab";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('label')){ this['label'] = ""; }if(!this.hasAttribute('count')){ this['count'] = undefined; }if(!this.hasAttribute('icon')){ this['icon'] = undefined; } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('label');this.__upgradeProperty('count');this.__upgradeProperty('icon'); }
+    identifier() {
+        return this.label;
+    }
+}
+DocUITabsEditor1Tab.Namespace=`AventusWebsite`;
+DocUITabsEditor1Tab.Tag=`av-doc-u-i-tabs-editor-1-tab`;
+__as1(_, 'DocUITabsEditor1Tab', DocUITabsEditor1Tab);
+if(!window.customElements.get('av-doc-u-i-tabs-editor-1-tab')){window.customElements.define('av-doc-u-i-tabs-editor-1-tab', DocUITabsEditor1Tab);Aventus.WebComponentInstance.registerDefinition(DocUITabsEditor1Tab);}
+
+const DocUITabsEditor1TabHeader = class DocUITabsEditor1TabHeader extends Aventus.Layout.Tabs.TabHeader {
+    static __style = `:host{align-items:center;background:none;border:none;border-bottom:2px solid rgba(0,0,0,0);color:#94a3b8;cursor:pointer;display:flex;font-size:.875rem;font-weight:500;padding:1rem .5rem}:host mi-icon{font-size:1rem;margin-right:.5rem}:host mi-icon[icon=""]{display:none}:host .count{background-color:#334155;border-radius:9999px;color:#cbd5e1;font-size:.75rem;margin-left:.5rem;padding:.125rem .5rem}:host .count:empty{display:none}:host(:hover){border-color:#334155;color:#cbd5e1}:host([active]){border-color:#e5540e;color:#e5540e}`;
+    __getStatic() {
+        return DocUITabsEditor1TabHeader;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUITabsEditor1TabHeader.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<mi-icon icon="" _id="docuitabseditor1tabheader_0"></mi-icon><span><slot></slot></span><span class="count" _id="docuitabseditor1tabheader_1"></span>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "iconEl",
+      "ids": [
+        "docuitabseditor1tabheader_0"
+      ]
+    },
+    {
+      "name": "countEl",
+      "ids": [
+        "docuitabseditor1tabheader_1"
+      ]
+    }
+  ]
+}); }
+    getClassName() {
+        return "DocUITabsEditor1TabHeader";
+    }
+    render() {
+        this.innerHTML = this.tab.label;
+        if (this.tab.count) {
+            this.countEl.innerHTML = this.tab.count + '';
+        }
+        if (this.tab.icon) {
+            this.iconEl.icon = this.tab.icon;
+        }
+    }
+}
+DocUITabsEditor1TabHeader.Namespace=`AventusWebsite`;
+DocUITabsEditor1TabHeader.Tag=`av-doc-u-i-tabs-editor-1-tab-header`;
+__as1(_, 'DocUITabsEditor1TabHeader', DocUITabsEditor1TabHeader);
+if(!window.customElements.get('av-doc-u-i-tabs-editor-1-tab-header')){window.customElements.define('av-doc-u-i-tabs-editor-1-tab-header', DocUITabsEditor1TabHeader);Aventus.WebComponentInstance.registerDefinition(DocUITabsEditor1TabHeader);}
+
+const DocUITabsEditor1Tabs = class DocUITabsEditor1Tabs extends Aventus.Layout.Tabs.Tabs {
+    static __style = `:host{width:100%}:host .header{border-bottom:1px solid var(--border);display:flex;gap:2rem;margin-top:2rem}:host .body{width:100%}`;
+    __getStatic() {
+        return DocUITabsEditor1Tabs;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUITabsEditor1Tabs.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUITabsEditor1Tabs";
+    }
+    defineTabHeader() {
+        return DocUITabsEditor1TabHeader;
+    }
+}
+DocUITabsEditor1Tabs.Namespace=`AventusWebsite`;
+DocUITabsEditor1Tabs.Tag=`av-doc-u-i-tabs-editor-1-tabs`;
+__as1(_, 'DocUITabsEditor1Tabs', DocUITabsEditor1Tabs);
+if(!window.customElements.get('av-doc-u-i-tabs-editor-1-tabs')){window.customElements.define('av-doc-u-i-tabs-editor-1-tabs', DocUITabsEditor1Tabs);Aventus.WebComponentInstance.registerDefinition(DocUITabsEditor1Tabs);}
+
+const DocUITabsEditor1Result = class DocUITabsEditor1Result extends Aventus.WebComponent {
+    static __style = ``;
+    __getStatic() {
+        return DocUITabsEditor1Result;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUITabsEditor1Result.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<av-doc-u-i-tabs-editor-1-tabs>    <av-doc-u-i-tabs-editor-1-tab label="Page1" icon="home">        <p>Page 1</p>    </av-doc-u-i-tabs-editor-1-tab>    <av-doc-u-i-tabs-editor-1-tab label="Page2">        <p>Page 2</p>    </av-doc-u-i-tabs-editor-1-tab>    <av-doc-u-i-tabs-editor-1-tab label="Page3" count="3">        <p>Page 3</p>    </av-doc-u-i-tabs-editor-1-tab></av-doc-u-i-tabs-editor-1-tabs>` }
+    });
+}
+    getClassName() {
+        return "DocUITabsEditor1Result";
+    }
+}
+DocUITabsEditor1Result.Namespace=`AventusWebsite`;
+DocUITabsEditor1Result.Tag=`av-doc-u-i-tabs-editor-1-result`;
+__as1(_, 'DocUITabsEditor1Result', DocUITabsEditor1Result);
+if(!window.customElements.get('av-doc-u-i-tabs-editor-1-result')){window.customElements.define('av-doc-u-i-tabs-editor-1-result', DocUITabsEditor1Result);Aventus.WebComponentInstance.registerDefinition(DocUITabsEditor1Result);}
+
 const DocUIScrollableEditor1Compiled = class DocUIScrollableEditor1Compiled extends Aventus.WebComponent {
     static __style = `:host{height:200px;width:100%}:host av-scrollable{height:100%;width:100%}`;
     __getStatic() {
@@ -11529,7 +12238,7 @@ const DocUIScrollableEditor1Compiled = class DocUIScrollableEditor1Compiled exte
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<av-scrollable x_scroll y_scroll pinch mouse_drag>  <div style="width: 2000px;   height: 1500px;   background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%);   background-size: 10px 10px, 10px 10px;">    Large content here  </div></av-scrollable>` }
+        blocks: { 'default':`<av-scrollable x_scroll y_scroll mouse_drag>  <div style="width: 2000px;   height: 1500px;   background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%);   background-size: 10px 10px, 10px 10px;">    Large content here  </div></av-scrollable>` }
     });
 }
     getClassName() {
@@ -11553,7 +12262,7 @@ const DocUIGridHelperEditor1Compiled = class DocUIGridHelperEditor1Compiled exte
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<div class="page">    <av-grid-helper step="50" step_big="200" col_width="50" row_height="50" magnetic="5"></av-grid-helper></div>` }
+        blocks: { 'default':`<div class="page">    <av-grid-helper step="50" step_big="200" col_width="50" row_height="50" magnetic="5" lock="false"></av-grid-helper></div>` }
     });
 }
     getClassName() {
@@ -11564,6 +12273,169 @@ DocUIGridHelperEditor1Compiled.Namespace=`AventusWebsite`;
 DocUIGridHelperEditor1Compiled.Tag=`av-doc-u-i-grid-helper-editor-1-compiled`;
 __as1(_, 'DocUIGridHelperEditor1Compiled', DocUIGridHelperEditor1Compiled);
 if(!window.customElements.get('av-doc-u-i-grid-helper-editor-1-compiled')){window.customElements.define('av-doc-u-i-grid-helper-editor-1-compiled', DocUIGridHelperEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIGridHelperEditor1Compiled);}
+
+const DocUIFormElementEditor1Input = class DocUIFormElementEditor1Input extends Aventus.Form.FormElement {
+    static get observedAttributes() {return ["name", "label", "value"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'type'() { return this.getStringAttr('type') }
+    set 'type'(val) { this.setStringAttr('type', val) }get 'placeholder'() { return this.getStringAttr('placeholder') }
+    set 'placeholder'(val) { this.setStringAttr('placeholder', val) }    get 'name'() { return this.getStringProp('name') }
+    set 'name'(val) { this.setStringAttr('name', val) }get 'label'() { return this.getStringProp('label') }
+    set 'label'(val) { this.setStringAttr('label', val) }get 'value'() { return this.getStringProp('value') }
+    set 'value'(val) { this.setStringAttr('value', val) }    focusValue = "";
+    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("value", ((target) => {
+    target.inputEl.value = target.value ?? "";
+})); }
+    static __style = `:host{color:#000;width:100%}:host .label{color:#eee;cursor:pointer;display:block;font-size:14px;margin-bottom:6px}:host .input{background-color:#eee;border:1px solid gray;border-radius:4px;cursor:pointer;display:flex;padding:0 8px;width:100%}:host .input input{-webkit-appearance:none;-moz-appearance:none;appearance:none;background-color:rgba(0,0,0,0);border:none;color:inherit;flex-grow:1;font-size:15px;outline:none;outline-style:none;padding:8px 0}:host .errors{color:red;font-size:13px;margin-top:6px}:host(:not([label])) .label,:host([label=""]) .label{display:none}:host(:not([has_errors])) .errors{display:none}:host([disabled]) .input input{background-color:#9e9e9e;border-color:#888;box-shadow:none;cursor:not-allowed}`;
+    __getStatic() {
+        return DocUIFormElementEditor1Input;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIFormElementEditor1Input.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'before':`<slot name="before"></slot>`,'after':`<slot name="after"></slot>` }, 
+        blocks: { 'default':`<label class="label" _id="docuiformelementeditor1input_0"></label><div class="input">    <slot name="before"></slot>    <input _id="docuiformelementeditor1input_1" />    <slot name="after"></slot></div><div class="errors">    <template _id="docuiformelementeditor1input_2"></template></div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "inputEl",
+      "ids": [
+        "docuiformelementeditor1input_1"
+      ]
+    }
+  ],
+  "content": {
+    "docuiformelementeditor1input_0°for": {
+      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method1())}`,
+      "once": true
+    },
+    "docuiformelementeditor1input_0°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method2())}`,
+      "once": true
+    },
+    "docuiformelementeditor1input_1°type": {
+      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method3())}`,
+      "once": true
+    },
+    "docuiformelementeditor1input_1°name": {
+      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method1())}`,
+      "once": true
+    },
+    "docuiformelementeditor1input_1°id": {
+      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method1())}`,
+      "once": true
+    },
+    "docuiformelementeditor1input_1°placeholder": {
+      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method4())}`,
+      "once": true
+    }
+  },
+  "events": [
+    {
+      "eventName": "focus",
+      "id": "docuiformelementeditor1input_1",
+      "fct": (e, c) => c.comp.onFocus(e)
+    },
+    {
+      "eventName": "blur",
+      "id": "docuiformelementeditor1input_1",
+      "fct": (e, c) => c.comp.onBlur(e)
+    },
+    {
+      "eventName": "input",
+      "id": "docuiformelementeditor1input_1",
+      "fct": (e, c) => c.comp.onInput(e)
+    }
+  ],
+  "pressEvents": [
+    {
+      "id": "docuiformelementeditor1input_0",
+      "onPress": (e, pressInstance, c) => { c.comp.focusInput(e, pressInstance); }
+    }
+  ]
+});const templ0 = new Aventus.Template(this);templ0.setTemplate(`         <div _id="docuiformelementeditor1input_3"></div>    `);templ0.setActions({
+  "content": {
+    "docuiformelementeditor1input_3°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__a8f710d11461005cf0e177e0693ec7f4method5(c.data.error))}`,
+      "once": true
+    }
+  }
+});this.__getStatic().__template.addLoop({
+                    anchorId: 'docuiformelementeditor1input_2',
+                    template: templ0,
+                simple:{data: "this.errors",item:"error"}}); }
+    getClassName() {
+        return "DocUIFormElementEditor1Input";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('type')){ this['type'] = "text"; }if(!this.hasAttribute('placeholder')){ this['placeholder'] = undefined; }if(!this.hasAttribute('name')){ this['name'] = undefined; }if(!this.hasAttribute('label')){ this['label'] = undefined; }if(!this.hasAttribute('value')){ this['value'] = ""; } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('type');this.__upgradeProperty('placeholder');this.__upgradeProperty('name');this.__upgradeProperty('label');this.__upgradeProperty('value'); }
+    focusInput() {
+        this.inputEl.focus();
+    }
+    select() {
+        this.inputEl.select();
+    }
+    onFocus() {
+        this.clearErrors();
+        this.focusValue = this.inputEl.value;
+    }
+    onBlur() {
+        if (this.inputEl.value == this.focusValue) {
+            this.validate();
+        }
+    }
+    onInput() {
+        this.triggerChange(this.inputEl.value);
+    }
+    __a8f710d11461005cf0e177e0693ec7f4method1() {
+        return this.name;
+    }
+    __a8f710d11461005cf0e177e0693ec7f4method2() {
+        return this.label;
+    }
+    __a8f710d11461005cf0e177e0693ec7f4method3() {
+        return this.type;
+    }
+    __a8f710d11461005cf0e177e0693ec7f4method4() {
+        return this.placeholder;
+    }
+    __a8f710d11461005cf0e177e0693ec7f4method5(error) {
+        return error;
+    }
+}
+DocUIFormElementEditor1Input.Namespace=`AventusWebsite`;
+DocUIFormElementEditor1Input.Tag=`av-doc-u-i-form-element-editor-1-input`;
+__as1(_, 'DocUIFormElementEditor1Input', DocUIFormElementEditor1Input);
+if(!window.customElements.get('av-doc-u-i-form-element-editor-1-input')){window.customElements.define('av-doc-u-i-form-element-editor-1-input', DocUIFormElementEditor1Input);Aventus.WebComponentInstance.registerDefinition(DocUIFormElementEditor1Input);}
+
+const DocUIFormElementEditor1Compiled = class DocUIFormElementEditor1Compiled extends Aventus.WebComponent {
+    static __style = ``;
+    __getStatic() {
+        return DocUIFormElementEditor1Compiled;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIFormElementEditor1Compiled.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<av-doc-u-i-form-element-editor-1-input label="test"></av-doc-u-i-form-element-editor-1-input>` }
+    });
+}
+    getClassName() {
+        return "DocUIFormElementEditor1Compiled";
+    }
+}
+DocUIFormElementEditor1Compiled.Namespace=`AventusWebsite`;
+DocUIFormElementEditor1Compiled.Tag=`av-doc-u-i-form-element-editor-1-compiled`;
+__as1(_, 'DocUIFormElementEditor1Compiled', DocUIFormElementEditor1Compiled);
+if(!window.customElements.get('av-doc-u-i-form-element-editor-1-compiled')){window.customElements.define('av-doc-u-i-form-element-editor-1-compiled', DocUIFormElementEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIFormElementEditor1Compiled);}
 
 const DocUICollapseEditor1Example = class DocUICollapseEditor1Example extends Aventus.WebComponent {
     static __style = ``;
@@ -13517,8 +14389,7 @@ const DocUIRouter = class DocUIRouter extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
+        blocks: { 'default':`<h1>UI - Router Component</h1><p>The <span class="cn">Router</span> component provides the core navigation system for Aventus-based applications.It defines, registers, and manages application routes, dynamically loads and displays pages, and keeps browser navigation in sync with the active state.</p><h2>Overview</h2><p>The Router acts as a central route controller, coordinating between the app's state manager and the rendered pages.</p><p>It supports both synchronous and asynchronous route loading, custom 404 handling, URL synchronization, and smooth transitions between pages.</p><p>It must be extended to define your own route structure and optionally override its behavior.</p><h2>Example</h2><av-code language="ts">    <pre>import { Router } from "Aventus@Main:Aventus.package.avt";import { HomePage } from "../pages/Home.page.avt";import { AboutPage } from "../pages/About.page.avt";import { NotFoundPage } from "../pages/NotFound.page.avt";export class AppRouter extends Router {	protected defineRoutes(): void {		this.addRoute("/", HomePage);		this.addRoute("/about", AboutPage);		this.addRouteAsync({			route: "/contact",			scriptUrl: "/pages/contact.js",			render: () => ContactPage,		});	}	protected override error404() {		return NotFoundPage;	}}    </pre></av-code></av-code><av-code language="html">    <pre>        &lt;app-router&gt;&lt;/app-router&gt;    </pre></av-code></av-code><h2>Template</h2><av-code language="html">    <pre>&lt;slot name="before"&gt;&lt;/slot&gt;&lt;div class="content" @element="contentEl"&gt;&lt;/div&gt;&lt;slot name="after"&gt;&lt;/slot&gt;    </pre></av-code></av-code><p>This structure allows you to insert additional UI before or after the router content, such as headers, sidebars, or footers.</p><h2>Configuration</h2><p>You can globally configure the Router's default behavior:</p><av-code language="ts">    <pre>Router.configure({	page404: NotFoundPage,	destroyPage: true,});    </pre></av-code></av-code><h2>Defining Routes</h2><p>Routes are defined in the abstract defineRoutes() method.</p><av-code language="ts">    <pre>        this.addRoute("/home", HomePage);        this.addRouteAsync({            route: "/settings",            scriptUrl: "/pages/settings.js",            render: () => SettingsPage,        });    </pre></av-code></av-code><p>Async routes are useful for lazy-loading parts of your application.</p><h2>Page Lifecycle</h2><p>Each page is a component extending <span class="cn">Page</span>.When a route becomes active, the Router:</p><ul>    <li>Instantiates or reuses the corresponding <span class="cn">Page</span> class.</li>    <li>Calls <span class="cn">isAllowed()</span> on the page to check access control.</li>    <li>Invokes <span class="cn">show()</span> on the new page and <span class="cn">hide()</span> on the previous one.</li>    <li>Updates document metadata (<span class="cn">title</span>, <span class="cn">description</span>, <span class="cn">keywords</span>).</li>    <li>Synchronizes the browser URL and navigation history.</li></ul><p>Inactive pages are either removed or kept in memory depending on <span class="cn">destroyPage</span>.</p><h2>404 Handling</h2><p>If no route matches the current state, the Router:</p><ul>    <li>Instantiates the <span class="cn">page404</span> page (default or overridden)</li>    <li>Displays it in the <span class="cn">contentEl</span></li>    <li>Optionally updates the URL to a "not found" path.</li></ul><p>You can customize 404 logic by overriding error404():</p><av-code language="ts">    <pre>protected override error404(): new () => Page {	return CustomNotFoundPage;}    </pre></av-code></av-code><h2>Navigation Control</h2><h3>Programmatic Navigation</h3><p>You can navigate to a new route manually:</p><av-code language="ts">    <pre>        await this.navigate("/dashboard");    </pre></av-code></av-code><p>Replace the current history entry:</p><av-code language="ts">    <pre>       await this.navigate("/login", { replace: true });    </pre></av-code></av-code><h3>Access Control</h3><p>Override <span class="cn">canChangeState()</span> to control route transitions:</p><av-code language="ts">    <pre>protected override async canChangeState(newState: Aventus.State): Promise&lt;boolean&gt; {	const isAuthenticated = await AuthService.isLoggedIn();	return isAuthenticated;}    </pre></av-code></av-code><h3>Before/After Page Change Hooks</h3><av-code language="ts">    <pre>protected override onNewPage(oldUrl: string, oldPage: Page | undefined, newUrl: string, newPage: Page) {	console.log("Navigated from", oldUrl, "to", newUrl);}    </pre></av-code></av-code><h2>URL Binding</h2><p>By default, the Router binds to the browser URL:</p><ul>    <li>Keeps window.location in sync.</li>    <li>Supports back/forward navigation using popstate.</li></ul><p>You can disable this by overriding:</p><av-code language="ts">    <pre>protected override bindToUrl(): boolean {	return false;}    </pre></av-code></av-code><p>Or set a fallback:</p><av-code language="ts">    <pre>protected override defaultUrl(): string {	return "/home";}    </pre></av-code></av-code><h2>Methods</h2><div class="table">    <av-row class="header">        <av-col size="6">Method</av-col>        <av-col size="6">Description</av-col>    </av-row>    <av-row>        <av-col size="6">addRoute(route: string, elementCtr: new () => Page)</av-col>        <av-col size="6">Registers a synchronous route.</av-col>    </av-row>    <av-row>        <av-col size="6">addRouteAsync(options: RouteAsyncOption)</av-col>        <av-col size="6">Registers a lazy-loaded route.</av-col>    </av-row>    <av-row>        <av-col size="6">navigate(state: string | Aventus.State, options?: { replace: boolean })</av-col>        <av-col size="6">Navigates to a specific route.</av-col>    </av-row>    <av-row>        <av-col size="6">getSlugs()</av-col>        <av-col size="6">Returns the parameters extracted from the current route (if any).</av-col>    </av-row>    <av-row>        <av-col size="6">bindToUrl()</av-col>        <av-col size="6">Determines whether navigation updates the browser URL.</av-col>    </av-row>    <av-row>        <av-col size="6">shouldDestroyFrame(page: Page)</av-col>        <av-col size="6">Determines if a page should be destroyed when hidden.</av-col>    </av-row></div>` }
     });
 }
     getClassName() {
@@ -13562,8 +14433,7 @@ const DocUIPage = class DocUIPage extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
+        blocks: { 'default':`<h1>UI - Page</h1><p>The <span class="cn">Page</span> class is the foundational building block for every navigable screen in an Aventus application.Each route in your app corresponds to a Page component, which defines its content, metadata, and lifecycle behavior.</p><h2>Overview</h2><p>A <span class="cn">Page</span> is automatically managed by the <span class="cn">Router</span> component:</p><ul>    <li>When a route is activated, its associated <span class="cn">Page</span> is shown.</li>    <li>When deactivated, it is hidden or destroyed (depending on configuration).</li>    <li>The Router updates the browser's metadata (<span class="cn">title</span>, <span class="cn">description</span>, <span class="cn">keywords</span>) based on the page's configuration.</li></ul><p>You can extend <span class="cn">Page</span> to create your own screens, and optionally override lifecycle methods like <span class="cn">onShow</span>, <span class="cn">onHide</span>, and <span class="cn">isAllowed</span>.</p><av-code language="ts">    <pre>import { Page } from "Aventus@Main:Aventus.package.avt";&nbsp;export class HomePage extends Page {	public override async configure() {		return {			title: "Home - Aventus App",			description: "Welcome to the home page of the Aventus demo application.",			keywords: ["home", "aventus", "demo"],		};	}&nbsp;	public override onShow() {		console.log("HomePage is now visible!");	}&nbsp;	public override onHide() {		console.log("HomePage was hidden!");	}}    </pre></av-code></av-code><av-code language="html">    <pre>    &lt;div&gt;		&lt;h1&gt;Welcome!&lt;/h1&gt;		&lt;p&gt;This is the home page content.&lt;/p&gt;	&lt;/div&gt;    </pre></av-code></av-code><h2>Properties</h2><div class="table">    <av-row class="header">        <av-col size="3">Property</av-col>        <av-col size="3">Type</av-col>        <av-col size="6">Description</av-col>    </av-row>    <av-row>        <av-col size="3">visible</av-col>        <av-col size="3">boolean</av-col>        <av-col size="6">Automatically managed by the router. When set to <span class="cn">true</span>, the page becomes visible.</av-col>    </av-row>    <av-row>        <av-col size="3">router</av-col>        <av-col size="3">Router</av-col>        <av-col size="6">Reference to the router managing this page.</av-col>    </av-row>    <av-row>        <av-col size="3">state</av-col>        <av-col size="3">State</av-col>        <av-col size="6">Holds the current state object for the route, if any.</av-col>    </av-row></div><p>The visible property is reactive when its value changes:</p><ul>    <li>If true, onShow() is called</li>    <li>If false, onHide() is called</li></ul><h2>Lifecycle Methods</h2><div class="table">    <av-row class="header">        <av-col size="6">Method</av-col>        <av-col size="6">Description</av-col>    </av-row>    <av-row>        <av-col size="6">configure()</av-col>        <av-col size="6">Abstract. Must return a PageConfig object defining metadata and optional destruction rules.</av-col>    </av-row>   <av-row>        <av-col size="6">show(state?: State)</av-col>        <av-col size="6">Called by the router when the page is activated. Sets visible = true.</av-col>    </av-row>    <av-row>        <av-col size="6">hide()</av-col>        <av-col size="6">Called by the router when the page is deactivated. Sets visible = false.</av-col>    </av-row>    <av-row>        <av-col size="6">onShow()</av-col>        <av-col size="6">Hook executed when the page becomes visible. Use it to start animations, load data, etc.</av-col>    </av-row>    <av-row>        <av-col size="6">onHide()</av-col>        <av-col size="6">Hook executed when the page is hidden. Use it to stop timers, clean up listeners, etc.</av-col>    </av-row>    <av-row>        <av-col size="6">isAllowed(state, pattern, router)</av-col>        <av-col size="6">Optional access control. Return true to allow, false to block, or a redirect path/state.</av-col>    </av-row></div><h2>Access Control Example</h2><p>You can control page visibility by overriding <span class="cn">isAllowed()</span>:</p><av-code language="ts">    <pre>public override async isAllowed(state: State, pattern: string, router: Router) {	const isAuthenticated = await AuthService.isLoggedIn();	&#105;f (!isAuthenticated) {		// Redirect unauthorized users to /login		return "/login";	}	return true;}    </pre></av-code></av-code><p>If the method returns:</p><ul>    <li>true → The page is displayed.</li>    <li>false → The navigation is canceled.</li>    <li>string or State → The router redirects to the given route or state.</li></ul><h2>Page Configuration</h2><p>Each page defines its configuration via the <span class="cn">configure()</span> method.</p><av-code language="ts">    <pre>public async configure(): Promise&lt;PageConfig&gt; {	return {		title: "Dashboard", // Browser tab title for this page.		description: "User dashboard overview", // Meta description for SEO.		keywords: ["dashboard", "user", "aventus"], // Meta keywords for SEO.		destroy: false, // If true, the page is destroyed (removed from the DOM) when hidden.	};}    </pre></av-code></av-code>` }
     });
 }
     getClassName() {
@@ -13607,8 +14477,7 @@ const DocUILink = class DocUILink extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
+        blocks: { 'default':`<h1>UI - Link</h1><p>The <span class="cn">Link</span> component provides a declarative way to navigate between application routes.    It integrates with the Aventus Router System, automatically handling navigation, activation state, and style updates    for active routes.</p><h2>Overview</h2><p>The <span class="cn">Link</span> component acts similarly to a standard HTML <span class="cn">&lt;a&gt;</span>    element, but instead of performing a full page reload, it uses Aventus internal router to activate the target route.</p><p>It also automatically applies the <span class="cn">active</span> class when the linked route (or pattern) is    currently active, allowing developers to style active links easily.</p><av-code language="html">    <pre>        &lt;av-link to="home"&gt;Home&lt;/av-link&gt;        &lt;av-link to="profile"&gt;Profile&lt;/av-link&gt;        &lt;av-link to="settings" active_pattern="settings*"&gt;Settings&lt;/av-link&gt;    </pre></av-code></av-code><p>When the current route matches <span class="cn">settings*</span>, the Settings link automatically gets the <span class="cn">active</span> class.</p><h2>Navigation</h2><p>When the user clicks or presses the link:</p><ul>    <li>The component prevents the default browser navigation.</li>    <li>It resolves the route using <span class="cn">RouterStateManager</span>.</li>    <li>If <span class="cn">to</span> starts with <span class="cn">"."</span>, it is treated as a relative route.</li>    <li>It then activates the target state using: <span class="cn">Aventus.State.activate(to, Aventus.Instance.get(RouterStateManager));</span></li></ul><h2>Active State Handling</h2><p>The link automatically subscribes to route changes through <span class="cn">RouterStateManager</span>.When the current state matches its <span class="cn">to</span> value or <span class="cn">active_pattern</span>, the component:</p><ul>    <li>Adds the CSS class <span class="cn">active</span></li>    <li>Triggers the <span class="cn">onActiveChange</span> callback with <span class="cn">true</span></li></ul><p>When it becomes inactive:</p><ul>    <li>Removes the <span class="cn">active</span> class</li>    <li>riggers <span class="cn">onActiveChange</span> with <span class="cn">false</span></li></ul>` }
     });
 }
     getClassName() {
@@ -13652,8 +14521,7 @@ const DocUIToast = class DocUIToast extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
+        blocks: { 'default':`<h1>UI - Toast</h1><p>The <span class="cn">Toast</span> system provides a way to display small, temporary notifications in your Aventus    application.    It is composed of two main parts:</p><ul>    <li><span class="cn">ToastElement</span>: the base class for creating custom toast notifications</li>    <li><span class="cn">ToastManager</span>: a global controller that manages positioning, stacking, and lifecycle of        toasts</li></ul><p>Toasts can appear in multiple positions on the screen, close automatically after a delay, or stay visible    indefinitely.</p><h2>Example</h2><av-doc-u-i-toast-editor-1></av-doc-u-i-toast-editor-1><h2>ToastElement Class</h2><p>ToastElement&lt;T extends ToastOptions = ToastOptions&gt; is the base class used to define how individual toast    notifications behave and appear.    It handles visibility, automatic hiding after a timeout, and transitions.</p><h3>Methods</h3><div class="table">    <av-row class="header">        <av-col size="6">Method</av-col>        <av-col size="6">Description</av-col>    </av-row>    <av-row>        <av-col size="6">static add(options: ToastOptions | ToastElement): Promise&lt;boolean&gt;</av-col>        <av-col size="6">Displays a new toast.</av-col>    </av-row>    <av-row>        <av-col size="6">setOptions(options: T): Promise&lt;void&gt;</av-col>        <av-col>Must be implemented to define how your toast handles the provided options (e.g., set text, color, or            icon).</av-col>    </av-row>    <av-row>        <av-col size="6">close()</av-col>        <av-col>Manually closes the toast and removes it from the DOM.</av-col>    </av-row></div><h2>ToastManager Class</h2><p><span class="cn">ToastManager</span> handles displaying, positioning, and stacking toasts on the screen.    It ensures that multiple notifications do not overlap and automatically manages their lifecycle.</p><h3>Global Configuration</h3><p>You can define global defaults using:</p><av-code language="ts">    <pre>        Toast.ToastManager.configure({            defaultToast: MyToast,            defaultPosition: 'top right',            defaultDelay: 4000,            heightLimitPercent: 90,        });    </pre></av-code></av-code><p><strong>ToastManagerOptions</strong></p><div class="table">    <av-row class="header">        <av-col size="4">Option</av-col>        <av-col size="4">Type</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">defaultToast</av-col>        <av-col size="4">Constructor&lt;ToastElement&gt;</av-col>        <av-col size="4">Defines the default toast class used when none is provided.</av-col>    </av-row>    <av-row>        <av-col size="4">defaultToastManager</av-col>        <av-col size="4">Constructor&lt;ToastManager&gt;</av-col>        <av-col size="4">Allows using a custom toast manager implementation.</av-col>    </av-row>    <av-row>        <av-col size="4">defaultPosition</av-col>        <av-col size="4">ToastPosition</av-col>        <av-col size="4">Default screen position for new toasts. Default : 'top right'</av-col>    </av-row>    <av-row>        <av-col size="4">defaultDelay</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Default auto-close delay for toasts.. Default : 5000</av-col>    </av-row>    <av-row>        <av-col size="4">heightLimitPercent</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Max vertical space (in % of viewport height) that toasts can occupy. Default : 100</av-col>    </av-row></div><h2>Behavior</h2><ul>    <li>The toast slides in at the specified position.</li>    <li>Automatically disappears after delay milliseconds.</li>    <li>If delay = -1, it stays visible until manually closed.</li></ul>` }
     });
 }
     getClassName() {
@@ -13697,8 +14565,7 @@ const DocUIModal = class DocUIModal extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
+        blocks: { 'default':`<h1>UI - Modal</h1><p>The <span class="cn">Modal</span> component provides a flexible framework for creating modal dialogs in Aventus    applications.    It supports promise-based resolution and rejection, allowing developers to use modals as asynchronous prompts that    return data or cancellation results.</p><h2>Overview</h2><p>ModalElement is an abstract base class designed to handle modal logic such as:</p><ul>    <li>showing and hiding modals</li>    <li>resolving or rejecting user actions</li>    <li>automatic closure via Escape key or click outside</li>    <li>customizable options for behavior and rejection values</li></ul><p>Developers should extend this class to create specific modal components (confirmation dialogs, forms, alerts, etc.).</p><h2>Example</h2><av-doc-u-i-modal-editor-1></av-doc-u-i-modal-editor-1><h2>ModalElement Class</h2><p>ModalElement&lt;T, U extends ModalOptions&lt;T&gt; = ModalOptions&lt;T&gt;&gt; defines the core functionality for    modals.    It manages showing, closing, resolving, and rejecting, using built-in support for keyboard and click interactions.</p><div class="table">    <av-row class="header">        <av-col size="6">Method</av-col>        <av-col size="6">Description</av-col>    </av-row>    <av-row>        <av-col size="6">show(element?: Element): Promise&lt;T | null&gt;</av-col>        <av-col size="6">Displays the modal and returns a Promise that resolves when the modal is either resolved or rejected.</av-col>    </av-row>    <av-row>        <av-col size="6">resolve(response: T, no_close?: boolean)</av-col>        <av-col size="6">Resolves the modal with a given response value. If no_close=true, the modal remains open after resolving.</av-col>    </av-row>    <av-row>        <av-col size="6">reject(no_close?: boolean)</av-col>        <av-col size="6">Rejects the modal with the defined rejectValue. If no_close=true, the modal remains open after rejecting.</av-col>    </av-row></div><p>Developpers can also add custom options to modal by providing an interface that extends from <span class="cn">ModalOptions</span>.</p><h2>ModalOptions Interface</h2><p>Defines the modal's configurable behaviors.</p><div class="table">    <av-row class="header">        <av-col size="2">Option</av-col>        <av-col size="2">Type</av-col>        <av-col size="2">Default</av-col>        <av-col size="6">Description</av-col>    </av-row>    <av-row>        <av-col size="2">closeWithEsc</av-col>        <av-col size="2">boolean</av-col>        <av-col size="2">true</av-col>        <av-col size="6">Whether the modal should close when pressing the Escape key.</av-col>    </av-row>    <av-row>        <av-col size="2">closeWithClick</av-col>        <av-col size="2">boolean</av-col>        <av-col size="2">true</av-col>        <av-col size="6">Whether clicking outside the modal should close it.</av-col>    </av-row>    <av-row>        <av-col size="2">rejectValue</av-col>        <av-col size="2">T | null</av-col>        <av-col size="2">null</av-col>        <av-col size="6">The value returned when the modal is dismissed or canceled.</av-col>    </av-row></div><p>Developers can extends this interface to allow more options. For example if the modal has the close icon that is    configurable.</p><av-code language="ts">    <pre>    interface ModalOptions&lt;T = any&gt; =  Aventus.Modal.ModalOptions&lt;T&gt; & {        closeIcon?: boolean    }&nbsp;    export abstract class Modal extends ModalElement&lt;boolean, ModalOptions&lt;boolean&gt;&gt; implements Aventus.DefaultComponent {&nbsp;    }    </pre></av-code></av-code><h2>Static Configuration</h2><p>You can globally configure default modal behavior:</p><av-code language="ts">    <pre>    Aventus.Modal.ModalElement.configure({        closeWithClick: false,        rejectValue: null    });    </pre></av-code></av-code>` }
     });
 }
     getClassName() {
@@ -13742,8 +14609,7 @@ const DocUITabs = class DocUITabs extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
+        blocks: { 'default':`<h1>UI - Tabs System</h1><p>The <span class="cn">Tabs system</span> provides a flexible structure for managing and displaying tabbed interfaces. It separates the logic of tab content, tab headers, and overall container behavior, allowing developers to easily customize the appearance and interaction model.</p><h2>Overview</h2><p>The <span class="cn">Tabs</span> component manages a collection of <span class="cn">Tab</span> elements, each associated with a <span class="cn">TabHeader</span>.It handles tab switching, active state management, and layout rendering.</p><p>Developers can extend the abstract classes <span class="cn">Tabs</span>, <span class="cn">Tab</span>, and <span class="cn">TabHeader</span> to define their own UI and behavior while keeping consistent tab logic.</p><h2>Example</h2><av-doc-u-i-tabs-editor-1></av-doc-u-i-tabs-editor-1><h2>Tabs Class</h2><p><span class="cn">Tabs&lt;T extends Tab, U extends TabHeader&lt;T&gt;&gt;</span> is an abstract class that manages:</p><ul>    <li>the list of tabs and their headers</li>    <li>which tab is currently active</li>    <li>tab visibility and selection state</li></ul><p>Developers must implement the <span class="cn">defineTabHeader()</span> method to specify which header component should be used.</p><p>Developers can also use the method <span class="cn">setActive(tabHeader: TabHeader&lt;T&gt; | number | string)</span> to set the active tab by reference, index, or tab identifier.</p><div><strong>Behavior</strong></div><ul>    <li>Tabs are hidden until selected.</li>    <li>The first tab is automatically activated unless another one is marked as selected.</li>    <li>The <span class="cn">Tabs</span> component controls both visual state and logical state (selected attribute).</li></ul><h2>Tab Class</h2><p><span class="cn">Tab</span> represents the <strong>content</strong> of a tab, and provides the connection point between tab data and its header. To implement a <span class="cn">Tab</span>, the method <span class="cn">identifier() : string</span> have to be implemented.</p><p>When the tab is active, the attribute <span class="cn">selected</span> is set to true.</p><h2>TabHeader Class</h2><p><span class="cn">TabHeader&lt;T extends Tab&gt;</span> represents the clickable tab title associated with a <span class="cn">Tab</span>. It handles user interaction and manages synchronization between UI and logic.</p><p>The method <span class="cn">render()</span> must be implemented. The property <span class="cn">tab : T</span> is useful to get data from the <span class="cn">Tab</span> during rendering.</p><av-code language="ts">    <pre>    /**     * @inheritdoc     */    public override render(): Aventus.Asyncable&lt;void&gt; {        this.innerHTML = this.tab.label;    }    </pre></av-code></av-code><p>When the tab is active, the attribute <span class="cn">active</span> is set to true.</p><h2>Lifecycle</h2><ul>    <li>Tabs and their headers are initialized in <span class="cn">postCreation()</span>.</li>    <li>Each Tab registers itself with a dynamically created <span class="cn">TabHeader</span>.</li>    <li>The first tab (or the one marked as <span class="cn">selected</span>) becomes active.</li>    <li>When a header is pressed, <span class="cn">Tabs.setActive()</span> hides the previous tab and shows the new one.</li></ul>` }
     });
 }
     getClassName() {
@@ -13864,7 +14730,7 @@ __as1(_, 'DocUIImage', DocUIImage);
 if(!window.customElements.get('av-doc-u-i-image')){window.customElements.define('av-doc-u-i-image', DocUIImage);Aventus.WebComponentInstance.registerDefinition(DocUIImage);}
 
 const DocUIGridHelper = class DocUIGridHelper extends DocGenericPage {
-    static __style = ``;
+    static __style = `:host .shortcuts av-row:not(.header) av-col:first-child{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:10px}:host .shortcuts av-row:not(.header) av-col:first-child .cn{display:flex;width:fit-content}`;
     __getStatic() {
         return DocUIGridHelper;
     }
@@ -13875,7 +14741,7 @@ const DocUIGridHelper = class DocUIGridHelper extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI - Grid Helper</h1><av-doc-u-i-grid-helper-editor-1></av-doc-u-i-grid-helper-editor-1>` }
+        blocks: { 'default':`<h1>UI - Grid Helper</h1><p>The <span class="cn">av-grid-helper</span> component provides an interactive visual layout grid with rulers, guides,    and snapping.    It's designed to help developers and designers align elements precisely within a web layout, similar to tools found    in Figma, Photoshop, or web editors.</p><h2>Concept</h2><p><span class="cn">av-grid-helper</span> overlays your interface with rulers, a customizable grid, and draggable    guides.    It can be toggled on or off, locked to prevent editing, and remembers guide positions between sessions (using <span class="cn">localStorage</span>).</p><p>The component can show:</p><ul>    <li>Horizontal and vertical rulers (with custom units)</li>    <li>A configurable grid (columns and rows)</li>    <li>Draggable guide lines (with magnetic snapping)</li>    <li>Keyboard shortcuts for quick control</li></ul><h2>Example</h2><av-doc-u-i-grid-helper-editor-1></av-doc-u-i-grid-helper-editor-1><h2>Features</h2><ul>    <li>        <strong>Customizable Units : </strong>        <span>Supports multiple measurement units: px, rem, cm, mm, in, and pt.</span>    </li>    <li>        <strong>Smart Grid Rendering : </strong>        <span>Automatically calculates the number of rows and columns based on container size and settings.</span>    </li>    <li>        <strong>Rulers : </strong>        <span>Displays rulers on the top and left with configurable step sizes and major ticks.</span>    </li>    <li>        <strong>Draggable Guides : </strong>        <span>Drag from a ruler to create a guide. Double-click on a ruler to add a guide at a specific position.</span>    </li>    <li>        <strong>Magnetic Snapping : </strong>        <span>Guides snap to grid steps if the pointer is close enough (controlled by the magnetic property).</span>    </li>    <li>        <strong>Keyboard Shortcuts : </strong>        <span>Control visibility and locking with keyboard combinations.</span>    </li>    <li>        <strong>Persistent Guides : </strong>        <span>Saves and restores guide positions using localStorage.</span>    </li></ul><h2>Attributes</h2><div class="table">    <av-row class="header">        <av-col size="4">Attribute</av-col>        <av-col size="4">Type</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">unit</av-col>        <av-col size="4">'px' | 'rem' | 'cm' | 'mm' | 'in' | 'pt'</av-col>        <av-col size="4">Unit of measurement used for grid and rulers.</av-col>    </av-row>    <av-row>        <av-col size="4">nb_col</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Number of grid columns (auto-calculated if 0).</av-col>    </av-row>    <av-row>        <av-col size="4">nb_row</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Number of grid rows (auto-calculated if 0).</av-col>    </av-row>    <av-row>        <av-col size="4">col_width</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Column width (used if nb_col = 0).</av-col>    </av-row>    <av-row>        <av-col size="4">row_height</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Row height (used if nb_row = 0).</av-col>    </av-row>    <av-row>        <av-col size="4">show_grid</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Toggles visibility of the grid.</av-col>    </av-row>    <av-row>        <av-col size="4">show_ruler</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Toggles visibility of rulers.</av-col>    </av-row>    <av-row>        <av-col size="4">show_guide</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Toggles visibility of guide lines.</av-col>    </av-row>    <av-row>        <av-col size="4">visible</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Shows or hides the entire helper overlay.</av-col>    </av-row>    <av-row>        <av-col size="4">lock</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Locks/unlocks interactions with guides and rulers.</av-col>    </av-row>    <av-row>        <av-col size="4">ruler_size</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Thickness (height/width) of rulers.</av-col>    </av-row>    <av-row>        <av-col size="4">step</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Base step for ruler tick marks and snapping.</av-col>    </av-row>    <av-row>        <av-col size="4">step_big</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Distance between major ticks on rulers. If 0, uses step.</av-col>    </av-row>    <av-row>        <av-col size="4">magnetic</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Magnetic snapping distance in units. Guides snap to grid when within this threshold</av-col>    </av-row></div><h2>Shortcuts</h2><p>Press <span class="cn">Ctrl + K</span> and then press one of the following keys:</p><div class="table shortcuts">    <av-row class="header">        <av-col size="6">Shortcut</av-col>        <av-col size="6">Action</av-col>    </av-row>    <av-row>        <av-col size="6"><span class="cn">Ctrl + K</span> <span class="cn">V</span></av-col>        <av-col size="6">Toggle visibility</av-col>    </av-row>    <av-row>        <av-col size="6"><span class="cn">Ctrl + K</span> <span class="cn">G</span></av-col>        <av-col size="6">Toggle grid</av-col>    </av-row>    <av-row>        <av-col size="6"><span class="cn">Ctrl + K</span> <span class="cn">R</span></av-col>        <av-col size="6">Toggle rulers</av-col>    </av-row>    <av-row>        <av-col size="6"><span class="cn">Ctrl + K</span> <span class="cn">J</span></av-col>        <av-col size="6">Toggle guides</av-col>    </av-row>    <av-row>        <av-col size="6"><span class="cn">Ctrl + K</span> <span class="cn">L</span></av-col>        <av-col size="6">Toggle lock state</av-col>    </av-row></div><h2>Interactions</h2><div class="table">    <av-row class="header">        <av-col size="6">Action</av-col>        <av-col size="6">Behavior</av-col>    </av-row>    <av-row>        <av-col size="6">Double-click a ruler</av-col>        <av-col size="6">Prompts for a coordinate and adds a guide.</av-col>    </av-row>    <av-row>        <av-col size="6">Click and drag from ruler</av-col>        <av-col size="6">Creates and drags a new guide interactively.</av-col>    </av-row>    <av-row>        <av-col size="6">Double-click a guide</av-col>        <av-col size="6">Deletes the guide.</av-col>    </av-row>    <av-row>        <av-col size="6">Lock mode enabled</av-col>        <av-col size="6">Prevents guide creation or movement.</av-col>    </av-row></div><h2>Methods</h2><div class="table">    <av-row class="header">        <av-col size="6">Method</av-col>        <av-col size="6">Description</av-col>    </av-row>    <av-row>        <av-col size="6">inPx(value: number): number</av-col>        <av-col size="6">Converts a unit-based value to pixels.</av-col>    </av-row>    <av-row>        <av-col size="6">fromPx(valuePx: number): number</av-col>        <av-col size="6">Converts pixels to the current unit.</av-col>    </av-row>    <av-row>        <av-col size="6">createGuideFromLeft(left: number)</av-col>        <av-col size="6">Creates a vertical guide at a given position.</av-col>    </av-row>    <av-row>        <av-col size="6">createGuideFromTop(top: number)</av-col>        <av-col size="6">Creates a horizontal guide at a given position.</av-col>    </av-row></div><h2>CSS Variables</h2><div class="table">    <av-row class="header">        <av-col size="4">Variable</av-col>        <av-col size="4">Default</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">--ruler-color</av-col>        <av-col size="4">white</av-col>        <av-col size="4">Color of ruler background.</av-col>    </av-row></div><h2>Lock Button</h2><p>Located in the top-left corner, this toggle lets you enable or disable editing of guides and rulers.</p><ul>    <li>Open Lock Icon : Guides can be moved or created.</li>    <li>Closed Lock Icon : Grid and guides are locked.</li></ul><h2>Persistence</h2><p>GridHelper saves its guide positions automatically in <span class="cn">localStorage</span>.Each instance uses its <span class="cn">id</span> as a storage key (<span class="cn">grid-helper</span> by default).Reloading the page restores the same guide layout.</p><h2>Developer Notes</h2><ul>    <li>Use it in development environments to help with layout alignment.</li>    <li>Not recommended for production UI display.</li>    <li>Guides are draggable and magnetic for precision alignment.</li></ul>` }
     });
 }
     getClassName() {
@@ -17911,6 +18777,40 @@ DocWcAttributeEditor1.Tag=`av-doc-wc-attribute-editor-1`;
 __as1(_, 'DocWcAttributeEditor1', DocWcAttributeEditor1);
 if(!window.customElements.get('av-doc-wc-attribute-editor-1')){window.customElements.define('av-doc-wc-attribute-editor-1', DocWcAttributeEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcAttributeEditor1);}
 
+const DocUITabsEditor1 = class DocUITabsEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUITabsEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUITabsEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Tabs">    <av-code language="typescript" filename="Example/Example.wcl.avt">         <pre>            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Example/Example.wcs.avt">        <pre>            :host {                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="Example/Example.wcv.avt">        <pre>            &lt;av-tabs&gt;                &lt;av-tab label="Page1" icon="home"&gt;                    &lt;p&gt;Page 1&lt;/p&gt;                &lt;/av-tab&gt;                &lt;av-tab label="Page2"&gt;                    &lt;p&gt;Page 2&lt;/p&gt;                &lt;/av-tab&gt;                &lt;av-tab label="Page3" count="3"&gt;                    &lt;p&gt;Page 3&lt;/p&gt;                &lt;/av-tab&gt;            &lt;/av-tabs&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tab/Tab.wcl.avt">        <pre>            import type { IconType } from "MaterialIcon:MaterialIcon.package.avt";            &nbsp;            export class Tab extends Aventus.Layout.Tabs.Tab implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props                @Property()                public label: string = "";                @Property()                public count!: number;                @Property()                public icon?: IconType;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                public override identifier(): string {                    return this.label;                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Tab/Tab.wcs.avt">        <pre>            :host {            	width: 100%;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Tab/Tab.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="TabHeader/TabHeader.wcl.avt">        <pre>            import type { Tab } from "../Tab/Tab.wcl.avt";            &nbsp;            export class TabHeader extends Aventus.Layout.Tabs.TabHeader&lt;Tab&gt; implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                @ViewElement()                protected countEl!: HTMLSpanElement;                @ViewElement()                protected iconEl!: MaterialIcon.Icon;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                public override render(): Aventus.Asyncable&lt;void&gt; {                    this.innerHTML = this.tab.label;                    &#105;f(this.tab.count) {                        this.countEl.innerHTML = this.tab.count + '';                    }                    &#105;f(this.tab.icon) {                        this.iconEl.icon = this.tab.icon;                    }                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="TabHeader/TabHeader.wcs.avt">        <pre>            :host {            	align-items: center;            	background: none;            	border: none;            	border-bottom: 2px solid transparent;            	color: #94a3b8;            	cursor: pointer;            	display: flex;            	font-size: 0.875rem;            	font-weight: 500;            	padding: 1rem 0.5rem;            &nbsp;            	mi-icon {            		font-size: 1rem;            		margin-right: 0.5rem;            	}            &nbsp;            	mi-icon[icon=""] {            		display: none;            	}            &nbsp;            	.count {            		background-color: #334155;            		border-radius: 9999px;            		color: #cbd5e1;            		font-size: 0.75rem;            		margin-left: 0.5rem;            		padding: 0.125rem 0.5rem;            	}            &nbsp;            	.count:empty {            		display: none;            	}            }            &nbsp;            :host(:hover) {            	border-color: #334155;            	color: #cbd5e1;            }            &nbsp;            :host([active]) {            	border-color: #e5540e;            	color: #e5540e;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="TabHeader/TabHeader.wcv.avt">        <pre>            &lt;mi-icon icon="" @element="iconEl"&gt;&lt;/mi-icon&gt;            &lt;span&gt;&lt;slot&gt;&lt;/slot&gt;&lt;/span&gt;            &lt;span class="count" @element="countEl"&gt;&lt;/span&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tabs/Tabs.wcl.avt">        <pre>            import type { Tab } from "../Tab/Tab.wcl.avt";            import { TabHeader } from "../TabHeader/TabHeader.wcl.avt";            &nbsp;            export class Tabs extends Aventus.Layout.Tabs.Tabs&lt;Tab, TabHeader&gt; implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                protected override defineTabHeader(): new (...args: any[]) =&gt; TabHeader {                    return TabHeader;                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Tabs/Tabs.wcs.avt">        <pre>            :host {            	width: 100%;            &nbsp;            	.header {            		border-bottom: 1px solid var(--border);            		display: flex;            		gap: 2rem;            		margin-top: 2rem;            	}            &nbsp;            	.body {            		width: 100%;            	}            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Tabs/Tabs.wcv.avt">        <pre>            &lt;slot&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUITabsEditor1";
+    }
+    defineResult() {
+        return new DocUITabsEditor1Result();
+    }
+    all_open() {
+        return false;
+    }
+    startupFile() {
+        return "Example/Example.wcv.avt";
+    }
+}
+DocUITabsEditor1.Namespace=`AventusWebsite`;
+DocUITabsEditor1.Tag=`av-doc-u-i-tabs-editor-1`;
+__as1(_, 'DocUITabsEditor1', DocUITabsEditor1);
+if(!window.customElements.get('av-doc-u-i-tabs-editor-1')){window.customElements.define('av-doc-u-i-tabs-editor-1', DocUITabsEditor1);Aventus.WebComponentInstance.registerDefinition(DocUITabsEditor1);}
+
 const DocUIScrollableEditor1 = class DocUIScrollableEditor1 extends BaseEditor {
     static __style = ``;
     __getStatic() {
@@ -17924,7 +18824,7 @@ const DocUIScrollableEditor1 = class DocUIScrollableEditor1 extends BaseEditor {
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Scrollable">    <av-code language="html" filename="index.html">        <pre>            &lt;av-scrollable x_scroll y_scroll pinch mouse_drag&gt;                &lt;div style="width: 2000px;                 height: 1500px;                 background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%);                 background-size: 10px 10px, 10px 10px;"&gt;                    Large content here                &lt;/div&gt;            &lt;/av-scrollable&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+        blocks: { 'default':`<av-code-editor name="Scrollable">    <av-code language="html" filename="index.html">        <pre>            &lt;av-scrollable x_scroll y_scroll mouse_drag&gt;                &lt;div style="width: 2000px;                 height: 1500px;                 background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%);                 background-size: 10px 10px, 10px 10px;"&gt;                    Large content here                &lt;/div&gt;            &lt;/av-scrollable&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
     });
 }
     getClassName() {
@@ -17955,7 +18855,7 @@ const DocUIGridHelperEditor1 = class DocUIGridHelperEditor1 extends BaseEditor {
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Scrollable">    <av-code language="html" filename="index.html">        <pre>            &lt;av-scrollable x_scroll y_scroll pinch mouse_drag&gt;                &lt;div style="width: 2000px;                 height: 1500px;                 background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%);                 background-size: 10px 10px, 10px 10px;"&gt;                    Large content here                &lt;/div&gt;            &lt;/av-scrollable&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+        blocks: { 'default':`<av-code-editor name="Scrollable">    <av-code language="html" filename="index.html">        <pre>            &lt;div class="page"&gt;                &lt;av-grid-helper step="50" step_big="200" col_width="50" row_height="50" magnetic="5" lock="false"&gt;&lt;/av-grid-helper&gt;            &lt;/div&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
     });
 }
     getClassName() {
@@ -17972,6 +18872,37 @@ DocUIGridHelperEditor1.Namespace=`AventusWebsite`;
 DocUIGridHelperEditor1.Tag=`av-doc-u-i-grid-helper-editor-1`;
 __as1(_, 'DocUIGridHelperEditor1', DocUIGridHelperEditor1);
 if(!window.customElements.get('av-doc-u-i-grid-helper-editor-1')){window.customElements.define('av-doc-u-i-grid-helper-editor-1', DocUIGridHelperEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIGridHelperEditor1);}
+
+const DocUIFormElementEditor1 = class DocUIFormElementEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUIFormElementEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIFormElementEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="FormElement">    <av-code language="typescript" filename="MyInput.wcl.avt">        <pre>            import { FormElement } from "Aventus@UI:Aventus.Form.package.avt";            &nbsp;            export class MyInput extends FormElement&lt;string&gt; implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props                @Property()                public name?: string;                @Property()                public label?: string;                @Attribute()                public type: string = "text";                @Attribute()                public placeholder?: string;            &nbsp;                @Property((target: DocUIFormElementEditor1Input) =&gt; {                    target.inputEl.value = target.value ?? "";                })                public override value: string = "";                //#endregion            &nbsp;            &nbsp;                //#region variables                @ViewElement()                protected inputEl!: HTMLInputElement;                private focusValue: string = "";                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods            &nbsp;                /**                 *                  */                protected focusInput() {                    this.inputEl.focus();                }            &nbsp;                /**                 *                  */                public select() {                    this.inputEl.select();                }            &nbsp;                /**                 *                  */                protected onFocus() {                    this.clearErrors();                    this.focusValue = this.inputEl.value;                }                /**                *                 */                protected onBlur() {                    &#105;f(this.inputEl.value == this.focusValue) {                        this.validate();                    }                }                /**                *                 */                protected onInput() {                    this.triggerChange(this.inputEl.value);                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="MyInput.wcs.avt">        <pre>            :host {            	color: black;            	width: 100%;            &nbsp;            	.label {            		color: #eee;            		cursor: pointer;            		display: block;            		font-size: 14px;            		margin-bottom: 6px;            	}            &nbsp;            	.input {            		background-color: #eee;            		border: 1px solid gray;            		border-radius: 4px;            		cursor: pointer;            		display: flex;            		padding: 0 8px;            		width: 100%;            &nbsp;            &nbsp;            		input {            			-webkit-appearance: none;            			-moz-appearance: none;            			appearance: none;            			background-color: transparent;            			border: none;            			color: inherit;            			flex-grow: 1;            			font-size: 15px;            			outline: none;            			outline-style: none;            			padding: 8px 0;            		}            	}            &nbsp;            	.errors {            		color: red;            		font-size: 13px;            		margin-top: 6px;            	}            }            &nbsp;            :host(:not([label])),            :host([label=""]) {            	.label {            		display: none;            	}            }            &nbsp;            :host(:not([has_errors])) {            	.errors {            		display: none;            	}            }            &nbsp;            :host([disabled]) {            	.input {            		input {            			background-color: #9e9e9e;            			border-color: #888888;            			box-shadow: none;            			cursor: not-allowed;            		}            	}            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="MyInput.wcv.avt">        <pre>            &lt;label &#102;or="&#123;&#123; this.name &#125;&#125;" class="label" @press="focusInput"&gt;&#123;&#123; this.label &#125;&#125;&lt;/label&gt;            &lt;div class="input"&gt;                &lt;slot name="before"&gt;&lt;/slot&gt;                &lt;input @element="inputEl" type="&#123;&#123; this.type &#125;&#125;" name="&#123;&#123; this.name &#125;&#125;" id="&#123;&#123; this.name &#125;&#125;" placeholder="&#123;&#123; this.placeholder &#125;&#125;" @focus="onFocus" @blur="onBlur" @input="onInput"&gt;                &lt;slot name="after"&gt;&lt;/slot&gt;            &lt;/div&gt;            &lt;div class="errors"&gt;                &#102;or(let error of this.errors) {                     &lt;div&gt;&#123;&#123; error &#125;&#125;&lt;/div&gt;                }            &lt;/div&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUIFormElementEditor1";
+    }
+    defineResult() {
+        const cont = document.createElement("DIV");
+        const ex1 = new DocUIFormElementEditor1Compiled();
+        cont.appendChild(ex1);
+        return cont;
+    }
+}
+DocUIFormElementEditor1.Namespace=`AventusWebsite`;
+DocUIFormElementEditor1.Tag=`av-doc-u-i-form-element-editor-1`;
+__as1(_, 'DocUIFormElementEditor1', DocUIFormElementEditor1);
+if(!window.customElements.get('av-doc-u-i-form-element-editor-1')){window.customElements.define('av-doc-u-i-form-element-editor-1', DocUIFormElementEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIFormElementEditor1);}
 
 const DocUICollapseEditor1 = class DocUICollapseEditor1 extends BaseEditor {
     static __style = ``;
@@ -22857,36 +23788,283 @@ TutorialIntroductionEditor1.Tag=`av-tutorial-introduction-editor-1`;
 __as1(_, 'TutorialIntroductionEditor1', TutorialIntroductionEditor1);
 if(!window.customElements.get('av-tutorial-introduction-editor-1')){window.customElements.define('av-tutorial-introduction-editor-1', TutorialIntroductionEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialIntroductionEditor1);}
 
-const DocUIFormElementEditor1 = class DocUIFormElementEditor1 extends BaseEditor {
+const DocUIModalEditor1Compiled = class DocUIModalEditor1Compiled extends Aventus.WebComponent {
+    get 'txt'() {
+						return this.__watch["txt"];
+					}
+					set 'txt'(val) {
+						this.__watch["txt"] = val;
+					}    __registerWatchesActions() {
+    this.__addWatchesActions("txt");    super.__registerWatchesActions();
+}
     static __style = ``;
     __getStatic() {
-        return DocUIFormElementEditor1;
+        return DocUIModalEditor1Compiled;
     }
     __getStyle() {
         let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIFormElementEditor1.__style);
+        arrStyle.push(DocUIModalEditor1Compiled.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<button _id="docuimodaleditor1compiled_0">Open modal</button><div _id="docuimodaleditor1compiled_1"></div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "content": {
+    "docuimodaleditor1compiled_1°@HTML": {
+      "fct": (c) => `Result is : ${c.print(c.comp.__b4b8909be252c7621202c6451fcd0df6method0())}`,
+      "once": true
+    }
+  },
+  "pressEvents": [
+    {
+      "id": "docuimodaleditor1compiled_0",
+      "onPress": (e, pressInstance, c) => { c.comp.openModal(e, pressInstance); }
+    }
+  ]
+}); }
+    getClassName() {
+        return "DocUIModalEditor1Compiled";
+    }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["txt"] = undefined; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('txt'); }
+    async openModal() {
+        const confirm = new DocUIModalEditor1Modal();
+        confirm.question = "Do you accept?";
+        const isAccepted = await confirm.show();
+        if (isAccepted) {
+            this.txt = "Accepted";
+        }
+        else {
+            this.txt = "Refused";
+        }
+    }
+    __b4b8909be252c7621202c6451fcd0df6method0() {
+        return this.txt;
+    }
+}
+DocUIModalEditor1Compiled.Namespace=`AventusWebsite`;
+DocUIModalEditor1Compiled.Tag=`av-doc-u-i-modal-editor-1-compiled`;
+__as1(_, 'DocUIModalEditor1Compiled', DocUIModalEditor1Compiled);
+if(!window.customElements.get('av-doc-u-i-modal-editor-1-compiled')){window.customElements.define('av-doc-u-i-modal-editor-1-compiled', DocUIModalEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIModalEditor1Compiled);}
+
+const DocUIModalEditor1 = class DocUIModalEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUIModalEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIModalEditor1.__style);
         return arrStyle;
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="FormElement">    <av-code language="typescript" filename="MyInput.wcl.avt">        <pre>            import { FormElement } from "Aventus@UI:Aventus.Form.package.avt";            &nbsp;            export class MyInput extends FormElement&lt;string&gt; implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props                @Property()                public name?: string;                @Property()                public label?: string;                @Attribute()                public type: string = "text";                @Attribute()                public placeholder?: string;            &nbsp;                @Property((target: DocUIFormElementEditor1Input) =&gt; {                    target.inputEl.value = target.value ?? "";                })                public override value: string = "";                //#endregion            &nbsp;            &nbsp;                //#region variables                @ViewElement()                protected inputEl!: HTMLInputElement;                private focusValue: string = "";                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods            &nbsp;                /**                 *                  */                protected focusInput() {                    this.inputEl.focus();                }            &nbsp;                /**                 *                  */                public select() {                    this.inputEl.select();                }            &nbsp;                /**                 *                  */                protected onFocus() {                    this.clearErrors();                    this.focusValue = this.inputEl.value;                }                /**                *                 */                protected onBlur() {                    &#105;f(this.inputEl.value == this.focusValue) {                        this.validate();                    }                }                /**                *                 */                protected onInput() {                    this.triggerChange(this.inputEl.value);                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="MyInput.wcs.avt">        <pre>            :host {            	color: black;            	width: 100%;            &nbsp;            	.label {            		color: #eee;            		cursor: pointer;            		display: block;            		font-size: 14px;            		margin-bottom: 6px;            	}            &nbsp;            	.input {            		background-color: #eee;            		border: 1px solid gray;            		border-radius: 4px;            		cursor: pointer;            		display: flex;            		padding: 0 8px;            		width: 100%;            &nbsp;            &nbsp;            		input {            			-webkit-appearance: none;            			-moz-appearance: none;            			appearance: none;            			background-color: transparent;            			border: none;            			color: inherit;            			flex-grow: 1;            			font-size: 15px;            			outline: none;            			outline-style: none;            			padding: 8px 0;            		}            	}            &nbsp;            	.errors {            		color: red;            		font-size: 13px;            		margin-top: 6px;            	}            }            &nbsp;            :host(:not([label])),            :host([label=""]) {            	.label {            		display: none;            	}            }            &nbsp;            :host(:not([has_errors])) {            	.errors {            		display: none;            	}            }            &nbsp;            :host([disabled]) {            	.input {            		input {            			background-color: #9e9e9e;            			border-color: #888888;            			box-shadow: none;            			cursor: not-allowed;            		}            	}            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="MyInput.wcv.avt">        <pre>            &lt;label &#102;or="&#123;&#123; this.name &#125;&#125;" class="label" @press="focusInput"&gt;&#123;&#123; this.label &#125;&#125;&lt;/label&gt;            &lt;div class="input"&gt;                &lt;slot name="before"&gt;&lt;/slot&gt;                &lt;input @element="inputEl" type="&#123;&#123; this.type &#125;&#125;" name="&#123;&#123; this.name &#125;&#125;" id="&#123;&#123; this.name &#125;&#125;" placeholder="&#123;&#123; this.placeholder &#125;&#125;" @focus="onFocus" @blur="onBlur" @input="onInput"&gt;                &lt;slot name="after"&gt;&lt;/slot&gt;            &lt;/div&gt;            &lt;div class="errors"&gt;                &#102;or(let error of this.errors) {                     &lt;div&gt;&#123;&#123; error &#125;&#125;&lt;/div&gt;                }            &lt;/div&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+        blocks: { 'default':`<av-code-editor name="Modal">    <av-code language="typescript" filename="Example/Example.wcl.avt">        <pre>            import { Modal } from "../Modal/Modal.wcl.avt";            &nbsp;            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                @Watch()                public txt?: string;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods            &nbsp;                /**                 *                  */                protected async openModal() {                    const confirm = new Modal();                    confirm.question = "Do you accept?"                    const isAccepted = await confirm.show();                    &#105;f(isAccepted) {            			this.txt = "Accepted"                    }            		else {            			this.txt = "Refused"            		}                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Example/Example.wcs.avt">        <pre>            :host {                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="Example/Example.wcv.avt">        <pre>            &lt;button @press="openModal"&gt;Open modal&lt;/button&gt;            &lt;div&gt;Result is : &#123;&#123; this.txt &#125;&#125;&lt;/div&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Modal/Modal.wcl.avt">        <pre>            import { ModalElement } from "Aventus@UI:Aventus.Modal.package.avt";            &nbsp;            export class Modal extends ModalElement&lt;boolean&gt; implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                @Watch()                public question?: string;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                public override configure(): Aventus.Modal.ModalOptions&lt;boolean&gt; {                    return {                        closeWithClick: false,                        closeWithEsc: false,                    };                }            &nbsp;            &nbsp;                /**                 *                  */                protected accept() {                    this.resolve(true);                }            &nbsp;            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Modal/Modal.wcs.avt">        <pre>            :host {            	align-items: center;            	background: rgba(0, 0, 0, 0.7);            	display: flex;            	inset: 0;            	justify-content: center;            	position: fixed;            	z-index: 60;            	font-size: 16px;            &nbsp;            	.modal {            		background-color: var(--secondary-color);            		border-radius: 12px;            		box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);            		max-width: 500px;            		padding: 24px;            		position: relative;            		text-align: left;            		transform: translateZ(0);            		transition: all 0.2s ease-in-out;            		width: 100%;            &nbsp;            		.modal-header {            			align-items: flex-start;            			display: flex;            			justify-content: space-between;            &nbsp;            			.modal-title {            				color: #ffffff;            				line-height: 24px;            				margin: 0;            			}            &nbsp;            			.close {            				cursor: pointer;            				margin-right: -12px;            				margin-top: -12px;            			}            		}            &nbsp;            		.modal-body {            			color: var(--color-light);            			margin-top: 16px;            &nbsp;            			::slotted(p) {            				margin-bottom: 16px;            			}            		}            &nbsp;            		.footer {            			display: flex;            			gap: 8px;            			justify-content: flex-end;            			margin-top: 16px;            &nbsp;            			av-button {            				font-size: 14px;            			}            		}            	}            &nbsp;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Modal/Modal.wcv.avt">        <pre>            &lt;div class="modal-header"&gt;                &lt;h3 class="modal-title"&gt;Confirm&lt;/h3&gt;                &lt;mi-icon icon="close" class="close" @press="reject"&gt;&lt;/mi-icon&gt;            &lt;/div&gt;            &lt;div class="modal-body"&gt;&#123;&#123;this.question&#125;&#125;&lt;/div&gt;            &lt;div class="footer"&gt;                &lt;av-button @press="reject"&gt;No&lt;/av-button&gt;                &lt;av-button @press="accept"&gt;Yes&lt;/av-button&gt;            &lt;/div&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
     });
 }
     getClassName() {
-        return "DocUIFormElementEditor1";
+        return "DocUIModalEditor1";
     }
     defineResult() {
-        const cont = document.createElement("DIV");
-        const ex1 = new DocUIFormElementEditor1Compiled();
-        cont.appendChild(ex1);
-        return cont;
+        return new DocUIModalEditor1Compiled();
     }
 }
-DocUIFormElementEditor1.Namespace=`AventusWebsite`;
-DocUIFormElementEditor1.Tag=`av-doc-u-i-form-element-editor-1`;
-__as1(_, 'DocUIFormElementEditor1', DocUIFormElementEditor1);
-if(!window.customElements.get('av-doc-u-i-form-element-editor-1')){window.customElements.define('av-doc-u-i-form-element-editor-1', DocUIFormElementEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIFormElementEditor1);}
+DocUIModalEditor1.Namespace=`AventusWebsite`;
+DocUIModalEditor1.Tag=`av-doc-u-i-modal-editor-1`;
+__as1(_, 'DocUIModalEditor1', DocUIModalEditor1);
+if(!window.customElements.get('av-doc-u-i-modal-editor-1')){window.customElements.define('av-doc-u-i-modal-editor-1', DocUIModalEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIModalEditor1);}
+
+const DocUIToastEditor1Toast = class DocUIToastEditor1Toast extends Aventus.Toast.ToastElement {
+    get 'closing'() { return this.getBoolAttr('closing') }
+    set 'closing'(val) { this.setBoolAttr('closing', val) }    get 'toastTitle'() {
+						return this.__watch["toastTitle"];
+					}
+					set 'toastTitle'(val) {
+						this.__watch["toastTitle"] = val;
+					}get 'toastMessage'() {
+						return this.__watch["toastMessage"];
+					}
+					set 'toastMessage'(val) {
+						this.__watch["toastMessage"] = val;
+					}    icon;
+    __registerWatchesActions() {
+    this.__addWatchesActions("toastTitle");this.__addWatchesActions("toastMessage");    super.__registerWatchesActions();
+}
+    static __style = `:host{background-color:var(--light-primary-color);border-radius:8px;box-shadow:0 25px 50px rgba(0,0,0,.25);max-width:384px;overflow:hidden;pointer-events:auto;transition:top .2s linear,opacity .2s linear,visibility .2s linear;width:100%}:host .toast-content{padding:16px}:host .toast-flex{align-items:flex-start;display:flex}:host .toast-icon-wrapper{flex-shrink:0}:host .toast-icon{align-items:center;display:flex;font-size:24px;height:24px;justify-content:center;width:24px}:host .toast-message-wrapper{flex:1;margin-left:12px;padding-top:2px}:host .toast-title{color:#fff;font-size:14px;font-weight:500;margin:0}:host .toast-message{color:#fff;font-size:14px;margin-top:4px;margin-bottom:0}:host .toast-close-wrapper{flex-shrink:0;margin-left:16px}:host .toast-close-wrapper .toast-close-button{background-color:rgba(0,0,0,0);border:none;border-radius:6px;color:#fff;cursor:pointer;display:inline-flex;margin-right:-4px;margin-top:-4px;padding:4px;transition:color .2s}:host .toast-close-wrapper .toast-close-button:hover{color:var(--hover-light)}:host .toast-close-wrapper .toast-close-button:focus{box-shadow:0 0 0 2px var(--color-accent);outline:none}:host .toast-close-wrapper .toast-close-icon{align-items:center;display:flex;font-size:20px;height:20px;justify-content:center;width:20px}:host([closing]){opacity:0;visibility:hidden}`;
+    __getStatic() {
+        return DocUIToastEditor1Toast;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIToastEditor1Toast.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<div class="toast-content">    <div class="toast-flex">        <div class="toast-icon-wrapper">            <mi-icon class="toast-icon" aria-hidden="true" _id="docuitoasteditor1toast_0"></mi-icon>        </div>        <div class="toast-message-wrapper">            <p class="toast-title" _id="docuitoasteditor1toast_1"></p>            <template _id="docuitoasteditor1toast_2"></template>        </div>        <div class="toast-close-wrapper">            <button class="toast-close-button" _id="docuitoasteditor1toast_4">                <mi-icon icon="close" class="toast-close-icon"></mi-icon>            </button>        </div>    </div></div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "content": {
+    "docuitoasteditor1toast_0°icon": {
+      "fct": (c) => `${c.print(c.comp.__1109dd386d1a9ab31e5808d5bad01916method1())}`,
+      "once": true
+    },
+    "docuitoasteditor1toast_1°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__1109dd386d1a9ab31e5808d5bad01916method2())}`,
+      "once": true
+    }
+  },
+  "events": [
+    {
+      "eventName": "click",
+      "id": "docuitoasteditor1toast_4",
+      "fct": (e, c) => c.comp.close(e)
+    }
+  ]
+});const templ0 = new Aventus.Template(this);templ0.setTemplate(`                <p class="toast-message" _id="docuitoasteditor1toast_3"></p>            `);templ0.setActions({
+  "content": {
+    "docuitoasteditor1toast_3°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__1109dd386d1a9ab31e5808d5bad01916method3())}`,
+      "once": true
+    }
+  }
+});this.__getStatic().__template.addIf({
+                    anchorId: 'docuitoasteditor1toast_2',
+                    parts: [{once: true,
+                    condition: (c) => c.comp.__1109dd386d1a9ab31e5808d5bad01916method0(),
+                    template: templ0
+                }]
+            }); }
+    getClassName() {
+        return "DocUIToastEditor1Toast";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('closing')) { this.attributeChangedCallback('closing', false, false); } }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["toastTitle"] = "";w["toastMessage"] = ""; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('closing');this.__correctGetter('toastTitle');this.__correctGetter('toastMessage'); }
+    __listBoolProps() { return ["closing"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    close() {
+        if (this.onHideCallback) {
+            this.closing = true;
+            this.is_active = false;
+            this.onHideCallback(false);
+            Aventus.sleep(300).then(() => {
+                this.remove();
+            });
+        }
+    }
+    setOptions(options) {
+        if (options.icon != undefined)
+            this.icon = options.icon;
+        if (options.title != undefined)
+            this.toastTitle = options.title;
+        if (options.message != undefined)
+            this.toastMessage = options.message;
+    }
+    getIcon() {
+        if (this.icon !== undefined)
+            return this.icon;
+        return 'error';
+    }
+    __1109dd386d1a9ab31e5808d5bad01916method1() {
+        return this.getIcon();
+    }
+    __1109dd386d1a9ab31e5808d5bad01916method2() {
+        return this.toastTitle;
+    }
+    __1109dd386d1a9ab31e5808d5bad01916method3() {
+        return this.toastMessage;
+    }
+    __1109dd386d1a9ab31e5808d5bad01916method0() {
+        return this.toastMessage;
+    }
+    static add(options) {
+        return super.add(options);
+    }
+}
+DocUIToastEditor1Toast.Namespace=`AventusWebsite`;
+DocUIToastEditor1Toast.Tag=`av-doc-u-i-toast-editor-1-toast`;
+__as1(_, 'DocUIToastEditor1Toast', DocUIToastEditor1Toast);
+if(!window.customElements.get('av-doc-u-i-toast-editor-1-toast')){window.customElements.define('av-doc-u-i-toast-editor-1-toast', DocUIToastEditor1Toast);Aventus.WebComponentInstance.registerDefinition(DocUIToastEditor1Toast);}
+
+const DocUIToastEditor1Compiled = class DocUIToastEditor1Compiled extends Aventus.WebComponent {
+    static __style = ``;
+    __getStatic() {
+        return DocUIToastEditor1Compiled;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIToastEditor1Compiled.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<button _id="docuitoasteditor1compiled_0">Show toast</button>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "pressEvents": [
+    {
+      "id": "docuitoasteditor1compiled_0",
+      "onPress": (e, pressInstance, c) => { c.comp.showToast(e, pressInstance); }
+    }
+  ]
+}); }
+    getClassName() {
+        return "DocUIToastEditor1Compiled";
+    }
+    showToast() {
+        DocUIToastEditor1Toast.add({
+            icon: "done_all",
+            message: "Aventus is so fun to use",
+            title: "It's working",
+        });
+    }
+    postCreation() {
+        Aventus.Toast.ToastManager.configure({
+            defaultDelay: 5000,
+            defaultPosition: "top right",
+            defaultToast: DocUIToastEditor1Toast,
+            heightLimitPercent: 50
+        });
+    }
+}
+DocUIToastEditor1Compiled.Namespace=`AventusWebsite`;
+DocUIToastEditor1Compiled.Tag=`av-doc-u-i-toast-editor-1-compiled`;
+__as1(_, 'DocUIToastEditor1Compiled', DocUIToastEditor1Compiled);
+if(!window.customElements.get('av-doc-u-i-toast-editor-1-compiled')){window.customElements.define('av-doc-u-i-toast-editor-1-compiled', DocUIToastEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIToastEditor1Compiled);}
+
+const DocUIToastEditor1 = class DocUIToastEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUIToastEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIToastEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Tabs">    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUIToastEditor1";
+    }
+    defineResult() {
+        return new DocUIToastEditor1Compiled();
+    }
+}
+DocUIToastEditor1.Namespace=`AventusWebsite`;
+DocUIToastEditor1.Tag=`av-doc-u-i-toast-editor-1`;
+__as1(_, 'DocUIToastEditor1', DocUIToastEditor1);
+if(!window.customElements.get('av-doc-u-i-toast-editor-1')){window.customElements.define('av-doc-u-i-toast-editor-1', DocUIToastEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIToastEditor1);}
 
 
 for(let key in _) { AventusWebsite[key] = _[key] }

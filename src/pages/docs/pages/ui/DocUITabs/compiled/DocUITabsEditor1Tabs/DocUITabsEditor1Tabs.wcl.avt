@@ -1,0 +1,37 @@
+import { Tabs } from "Aventus@UI:Aventus.Layout.Tabs.package.avt";
+import type { DocUITabsEditor1Tab } from "../DocUITabsEditor1Tab/DocUITabsEditor1Tab.wcl.avt";
+import { DocUITabsEditor1TabHeader } from "../DocUITabsEditor1TabHeader/DocUITabsEditor1TabHeader.wcl.avt";
+
+export class DocUITabsEditor1Tabs extends Tabs<DocUITabsEditor1Tab, DocUITabsEditor1TabHeader> implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override defineTabHeader(): new (...args: any[]) => DocUITabsEditor1TabHeader {
+        return DocUITabsEditor1TabHeader;
+    }
+
+    //#endregion
+
+}

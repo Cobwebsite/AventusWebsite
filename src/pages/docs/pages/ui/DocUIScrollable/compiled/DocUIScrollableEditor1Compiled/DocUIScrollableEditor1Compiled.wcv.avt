@@ -1,4 +1,4 @@
-<av-scrollable x_scroll y_scroll pinch mouse_drag>
+<av-scrollable x_scroll y_scroll mouse_drag>
   <div style="width: 2000px; 
   height: 1500px; 
   background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%); 

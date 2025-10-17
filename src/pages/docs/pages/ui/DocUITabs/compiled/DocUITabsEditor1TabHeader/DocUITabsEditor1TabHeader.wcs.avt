@@ -1,0 +1,44 @@
+:host {
+	align-items: center;
+	background: none;
+	border: none;
+	border-bottom: 2px solid transparent;
+	color: #94a3b8;
+	cursor: pointer;
+	display: flex;
+	font-size: 0.875rem;
+	font-weight: 500;
+	padding: 1rem 0.5rem;
+
+	mi-icon {
+		font-size: 1rem;
+		margin-right: 0.5rem;
+	}
+
+	mi-icon[icon=""] {
+		display: none;
+	}
+
+	.count {
+		background-color: #334155;
+		border-radius: 9999px;
+		color: #cbd5e1;
+		font-size: 0.75rem;
+		margin-left: 0.5rem;
+		padding: 0.125rem 0.5rem;
+	}
+
+	.count:empty {
+		display: none;
+	}
+}
+
+:host(:hover) {
+	border-color: #334155;
+	color: #cbd5e1;
+}
+
+:host([active]) {
+	border-color: #e5540e;
+	color: #e5540e;
+}
