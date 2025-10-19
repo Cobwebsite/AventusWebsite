@@ -1,0 +1,15 @@
+<script>
+	export class Test extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+	}
+</script>
+
+<template>
+	<slot></slot>
+</template>
+
+<style>
+	:host {
+
+	}
+</style>

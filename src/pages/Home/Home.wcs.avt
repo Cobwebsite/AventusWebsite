@@ -2,6 +2,10 @@
 	height: 100%;
 	width: 100%;
 
+	av-col {
+		flex-direction: column;
+	}
+
 	.container {
 		max-width: none;
 	}

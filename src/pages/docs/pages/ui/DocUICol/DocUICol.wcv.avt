@@ -25,39 +25,39 @@
 <h2>Col Component</h2>
 <div class="table">
     <av-row class="header">
-        <av-col size="4">Attribute</av-col>
-        <av-col size="4">Type</av-col>
-        <av-col size="4">Description</av-col>
+        <av-col size="4" center>Attribute</av-col>
+        <av-col size="4" center>Type</av-col>
+        <av-col size="4" center>Description</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">size</av-col>
-        <av-col size="4">0-12</av-col>
-        <av-col size="4">Column width over 12 columns.</av-col>
+        <av-col size="4" center>size</av-col>
+        <av-col size="4" center>0-12</av-col>
+        <av-col size="4" center>Column width over 12 columns.</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">size_xs, size_sm, size_md, size_lg, size_xl</av-col>
-        <av-col size="4">0-12</av-col>
-        <av-col size="4">Responsive width for each breakpoint.</av-col>
+        <av-col size="4" center>size_xs, size_sm, size_md, size_lg, size_xl</av-col>
+        <av-col size="4" center>0-12</av-col>
+        <av-col size="4" center>Responsive width for each breakpoint.</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">offset</av-col>
-        <av-col size="4">0-12</av-col>
-        <av-col size="4">Adds a left offset (empty space before the column).</av-col>
+        <av-col size="4" center>offset</av-col>
+        <av-col size="4" center>0-12</av-col>
+        <av-col size="4" center>Adds a left offset (empty space before the column).</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">offset_right</av-col>
-        <av-col size="4">0-12</av-col>
-        <av-col size="4">Adds a right offset (empty space after the column).</av-col>
+        <av-col size="4" center>offset_right</av-col>
+        <av-col size="4" center>0-12</av-col>
+        <av-col size="4" center>Adds a right offset (empty space after the column).</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">center</av-col>
-        <av-col size="4">boolean</av-col>
-        <av-col size="4">Centers the column's content horizontally.</av-col>
+        <av-col size="4" center>center</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Centers the column's content horizontally.</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">use_container</av-col>
-        <av-col size="4">boolean</av-col>
-        <av-col size="4">Enables container query mode for local responsiveness.</av-col>
+        <av-col size="4" center>use_container</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Enables container query mode for local responsiveness.</av-col>
     </av-row>
 </div>
 
@@ -83,34 +83,34 @@
 <p>The grid supports five responsive breakpoints:</p>
 <div class="table">
     <av-row class="header">
-        <av-col size="4">Label</av-col>
-        <av-col size="4">Min width</av-col>
-        <av-col size="4">Description</av-col>
+        <av-col size="4" center>Label</av-col>
+        <av-col size="4" center>Min width</av-col>
+        <av-col size="4" center>Description</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">xs</av-col>
-        <av-col size="4">300px</av-col>
-        <av-col size="4">Extra small</av-col>
+        <av-col size="4" center>xs</av-col>
+        <av-col size="4" center>300px</av-col>
+        <av-col size="4" center>Extra small</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">sm</av-col>
-        <av-col size="4">540px</av-col>
-        <av-col size="4">Small</av-col>
+        <av-col size="4" center>sm</av-col>
+        <av-col size="4" center>540px</av-col>
+        <av-col size="4" center>Small</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">md</av-col>
-        <av-col size="4">720px</av-col>
-        <av-col size="4">Medium</av-col>
+        <av-col size="4" center>md</av-col>
+        <av-col size="4" center>720px</av-col>
+        <av-col size="4" center>Medium</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">lg</av-col>
-        <av-col size="4">960px</av-col>
-        <av-col size="4">Large</av-col>
+        <av-col size="4" center>lg</av-col>
+        <av-col size="4" center>960px</av-col>
+        <av-col size="4" center>Large</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">xl</av-col>
-        <av-col size="4">1140px</av-col>
-        <av-col size="4">Extra large</av-col>
+        <av-col size="4" center>xl</av-col>
+        <av-col size="4" center>1140px</av-col>
+        <av-col size="4" center>Extra large</av-col>
     </av-row>
 </div>
 
@@ -122,8 +122,8 @@
 <av-code language="html">
     <pre>
 &lt;av-row&gt;
-    &lt;av-col size="4" offset="2"&gt;Offset by 2&lt;/av-col&gt;
-    &lt;av-col size="4" offset_right="2"&gt;Offset to the right&lt;/av-col&gt;
+    &lt;av-col size="4" center offset="2"&gt;Offset by 2&lt;/av-col&gt;
+    &lt;av-col size="4" center offset_right="2"&gt;Offset to the right&lt;/av-col&gt;
 &lt;/av-row&gt;
     </pre>
 </av-code>
@@ -142,19 +142,19 @@
 <p>The grid can adapt using two distinct responsive modes:</p>
 <div class="table">
     <av-row class="header">
-        <av-col size="4">Mode</av-col>
-        <av-col size="4">Description</av-col>
-        <av-col size="4">Activation</av-col>
+        <av-col size="4" center>Mode</av-col>
+        <av-col size="4" center>Description</av-col>
+        <av-col size="4" center>Activation</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">Media Queries</av-col>
-        <av-col size="4">Reacts to the viewport width.</av-col>
-        <av-col size="4">Default (use_container = false)</av-col>
+        <av-col size="4" center>Media Queries</av-col>
+        <av-col size="4" center>Reacts to the viewport width.</av-col>
+        <av-col size="4" center>Default (use_container = false)</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">Container Queries</av-col>
-        <av-col size="4">Reacts to the width of its parent &lt;av-row&gt;.</av-col>
-        <av-col size="4">Set use_container on &lt;av-col&gt; or globally via config</av-col>
+        <av-col size="4" center>Container Queries</av-col>
+        <av-col size="4" center>Reacts to the width of its parent &lt;av-row&gt;.</av-col>
+        <av-col size="4" center>Set use_container on &lt;av-col&gt; or globally via config</av-col>
     </av-row>
 </div>
 
@@ -184,19 +184,19 @@ Layout.Col.configure({
 <p>You can customize spacing easily using CSS variables:</p>
 <div class="table">
     <av-row class="header">
-        <av-col size="4">Variable</av-col>
-        <av-col size="4">Description</av-col>
-        <av-col size="4">Default</av-col>
+        <av-col size="4" center>Variable</av-col>
+        <av-col size="4" center>Description</av-col>
+        <av-col size="4" center>Default</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">--col-padding</av-col>
-        <av-col size="4">Internal padding of a column</av-col>
-        <av-col size="4">8px</av-col>
+        <av-col size="4" center>--col-padding</av-col>
+        <av-col size="4" center>Internal padding of a column</av-col>
+        <av-col size="4" center>8px</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">--col-gap</av-col>
-        <av-col size="4">Horizontal gap between columns</av-col>
-        <av-col size="4">0px</av-col>
+        <av-col size="4" center>--col-gap</av-col>
+        <av-col size="4" center>Horizontal gap between columns</av-col>
+        <av-col size="4" center>0px</av-col>
     </av-row>
 </div>
 

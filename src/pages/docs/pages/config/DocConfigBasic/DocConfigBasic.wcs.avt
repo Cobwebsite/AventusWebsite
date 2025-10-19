@@ -1,4 +1,7 @@
 :host {
+	av-col {
+		flex-direction: column;
+	}
 	.table {
 		av-row:not(.header) {
 

@@ -173,31 +173,31 @@ protected override defaultUrl(): string {
 <h2>Methods</h2>
 <div class="table">
     <av-row class="header">
-        <av-col size="6">Method</av-col>
-        <av-col size="6">Description</av-col>
+        <av-col size="6" center>Method</av-col>
+        <av-col size="6" center>Description</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">addRoute(route: string, elementCtr: new () => Page)</av-col>
-        <av-col size="6">Registers a synchronous route.</av-col>
+        <av-col size="6" center>addRoute(route: string, elementCtr: new () => Page)</av-col>
+        <av-col size="6" center>Registers a synchronous route.</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">addRouteAsync(options: RouteAsyncOption)</av-col>
-        <av-col size="6">Registers a lazy-loaded route.</av-col>
+        <av-col size="6" center>addRouteAsync(options: RouteAsyncOption)</av-col>
+        <av-col size="6" center>Registers a lazy-loaded route.</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">navigate(state: string | Aventus.State, options?: { replace: boolean })</av-col>
-        <av-col size="6">Navigates to a specific route.</av-col>
+        <av-col size="6" center>navigate(state: string | Aventus.State, options?: { replace: boolean })</av-col>
+        <av-col size="6" center>Navigates to a specific route.</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">getSlugs()</av-col>
-        <av-col size="6">Returns the parameters extracted from the current route (if any).</av-col>
+        <av-col size="6" center>getSlugs()</av-col>
+        <av-col size="6" center>Returns the parameters extracted from the current route (if any).</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">bindToUrl()</av-col>
-        <av-col size="6">Determines whether navigation updates the browser URL.</av-col>
+        <av-col size="6" center>bindToUrl()</av-col>
+        <av-col size="6" center>Determines whether navigation updates the browser URL.</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">shouldDestroyFrame(page: Page)</av-col>
-        <av-col size="6">Determines if a page should be destroyed when hidden.</av-col>
+        <av-col size="6" center>shouldDestroyFrame(page: Page)</av-col>
+        <av-col size="6" center>Determines if a page should be destroyed when hidden.</av-col>
     </av-row>
 </div>

@@ -61,79 +61,79 @@
 <h2>Attributes</h2>
 <div class="table">
     <av-row class="header">
-        <av-col size="4">Attribute</av-col>
-        <av-col size="4">Type</av-col>
-        <av-col size="4">Description</av-col>
+        <av-col size="4" center>Attribute</av-col>
+        <av-col size="4" center>Type</av-col>
+        <av-col size="4" center>Description</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">unit</av-col>
-        <av-col size="4">'px' | 'rem' | 'cm' | 'mm' | 'in' | 'pt'</av-col>
-        <av-col size="4">Unit of measurement used for grid and rulers.</av-col>
+        <av-col size="4" center>unit</av-col>
+        <av-col size="4" center>'px' | 'rem' | 'cm' | 'mm' | 'in' | 'pt'</av-col>
+        <av-col size="4" center>Unit of measurement used for grid and rulers.</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">nb_col</av-col>
-        <av-col size="4">number</av-col>
-        <av-col size="4">Number of grid columns (auto-calculated if 0).</av-col>
+        <av-col size="4" center>nb_col</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Number of grid columns (auto-calculated if 0).</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">nb_row</av-col>
-        <av-col size="4">number</av-col>
-        <av-col size="4">Number of grid rows (auto-calculated if 0).</av-col>
+        <av-col size="4" center>nb_row</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Number of grid rows (auto-calculated if 0).</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">col_width</av-col>
-        <av-col size="4">number</av-col>
-        <av-col size="4">Column width (used if nb_col = 0).</av-col>
+        <av-col size="4" center>col_width</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Column width (used if nb_col = 0).</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">row_height</av-col>
-        <av-col size="4">number</av-col>
-        <av-col size="4">Row height (used if nb_row = 0).</av-col>
+        <av-col size="4" center>row_height</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Row height (used if nb_row = 0).</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">show_grid</av-col>
-        <av-col size="4">boolean</av-col>
-        <av-col size="4">Toggles visibility of the grid.</av-col>
+        <av-col size="4" center>show_grid</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Toggles visibility of the grid.</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">show_ruler</av-col>
-        <av-col size="4">boolean</av-col>
-        <av-col size="4">Toggles visibility of rulers.</av-col>
+        <av-col size="4" center>show_ruler</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Toggles visibility of rulers.</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">show_guide</av-col>
-        <av-col size="4">boolean</av-col>
-        <av-col size="4">Toggles visibility of guide lines.</av-col>
+        <av-col size="4" center>show_guide</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Toggles visibility of guide lines.</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">visible</av-col>
-        <av-col size="4">boolean</av-col>
-        <av-col size="4">Shows or hides the entire helper overlay.</av-col>
+        <av-col size="4" center>visible</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Shows or hides the entire helper overlay.</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">lock</av-col>
-        <av-col size="4">boolean</av-col>
-        <av-col size="4">Locks/unlocks interactions with guides and rulers.</av-col>
+        <av-col size="4" center>lock</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Locks/unlocks interactions with guides and rulers.</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">ruler_size</av-col>
-        <av-col size="4">number</av-col>
-        <av-col size="4">Thickness (height/width) of rulers.</av-col>
+        <av-col size="4" center>ruler_size</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Thickness (height/width) of rulers.</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">step</av-col>
-        <av-col size="4">number</av-col>
-        <av-col size="4">Base step for ruler tick marks and snapping.</av-col>
+        <av-col size="4" center>step</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Base step for ruler tick marks and snapping.</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">step_big</av-col>
-        <av-col size="4">number</av-col>
-        <av-col size="4">Distance between major ticks on rulers. If 0, uses step.</av-col>
+        <av-col size="4" center>step_big</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Distance between major ticks on rulers. If 0, uses step.</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">magnetic</av-col>
-        <av-col size="4">number</av-col>
-        <av-col size="4">Magnetic snapping distance in units. Guides snap to grid when within this threshold</av-col>
+        <av-col size="4" center>magnetic</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Magnetic snapping distance in units. Guides snap to grid when within this threshold</av-col>
     </av-row>
 </div>
 
@@ -142,90 +142,90 @@
 <p>Press <span class="cn">Ctrl + K</span> and then press one of the following keys:</p>
 <div class="table shortcuts">
     <av-row class="header">
-        <av-col size="6">Shortcut</av-col>
-        <av-col size="6">Action</av-col>
+        <av-col size="6" center>Shortcut</av-col>
+        <av-col size="6" center>Action</av-col>
     </av-row>
     <av-row>
-        <av-col size="6"><span class="cn">Ctrl + K</span> <span class="cn">V</span></av-col>
-        <av-col size="6">Toggle visibility</av-col>
+        <av-col size="6" center><span class="cn">Ctrl + K</span> <span class="cn">V</span></av-col>
+        <av-col size="6" center>Toggle visibility</av-col>
     </av-row>
     <av-row>
-        <av-col size="6"><span class="cn">Ctrl + K</span> <span class="cn">G</span></av-col>
-        <av-col size="6">Toggle grid</av-col>
+        <av-col size="6" center><span class="cn">Ctrl + K</span> <span class="cn">G</span></av-col>
+        <av-col size="6" center>Toggle grid</av-col>
     </av-row>
     <av-row>
-        <av-col size="6"><span class="cn">Ctrl + K</span> <span class="cn">R</span></av-col>
-        <av-col size="6">Toggle rulers</av-col>
+        <av-col size="6" center><span class="cn">Ctrl + K</span> <span class="cn">R</span></av-col>
+        <av-col size="6" center>Toggle rulers</av-col>
     </av-row>
     <av-row>
-        <av-col size="6"><span class="cn">Ctrl + K</span> <span class="cn">J</span></av-col>
-        <av-col size="6">Toggle guides</av-col>
+        <av-col size="6" center><span class="cn">Ctrl + K</span> <span class="cn">J</span></av-col>
+        <av-col size="6" center>Toggle guides</av-col>
     </av-row>
     <av-row>
-        <av-col size="6"><span class="cn">Ctrl + K</span> <span class="cn">L</span></av-col>
-        <av-col size="6">Toggle lock state</av-col>
+        <av-col size="6" center><span class="cn">Ctrl + K</span> <span class="cn">L</span></av-col>
+        <av-col size="6" center>Toggle lock state</av-col>
     </av-row>
 </div>
 
 <h2>Interactions</h2>
 <div class="table">
     <av-row class="header">
-        <av-col size="6">Action</av-col>
-        <av-col size="6">Behavior</av-col>
+        <av-col size="6" center>Action</av-col>
+        <av-col size="6" center>Behavior</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">Double-click a ruler</av-col>
-        <av-col size="6">Prompts for a coordinate and adds a guide.</av-col>
+        <av-col size="6" center>Double-click a ruler</av-col>
+        <av-col size="6" center>Prompts for a coordinate and adds a guide.</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">Click and drag from ruler</av-col>
-        <av-col size="6">Creates and drags a new guide interactively.</av-col>
+        <av-col size="6" center>Click and drag from ruler</av-col>
+        <av-col size="6" center>Creates and drags a new guide interactively.</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">Double-click a guide</av-col>
-        <av-col size="6">Deletes the guide.</av-col>
+        <av-col size="6" center>Double-click a guide</av-col>
+        <av-col size="6" center>Deletes the guide.</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">Lock mode enabled</av-col>
-        <av-col size="6">Prevents guide creation or movement.</av-col>
+        <av-col size="6" center>Lock mode enabled</av-col>
+        <av-col size="6" center>Prevents guide creation or movement.</av-col>
     </av-row>
 </div>
 
 <h2>Methods</h2>
 <div class="table">
     <av-row class="header">
-        <av-col size="6">Method</av-col>
-        <av-col size="6">Description</av-col>
+        <av-col size="6" center>Method</av-col>
+        <av-col size="6" center>Description</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">inPx(value: number): number</av-col>
-        <av-col size="6">Converts a unit-based value to pixels.</av-col>
+        <av-col size="6" center>inPx(value: number): number</av-col>
+        <av-col size="6" center>Converts a unit-based value to pixels.</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">fromPx(valuePx: number): number</av-col>
-        <av-col size="6">Converts pixels to the current unit.</av-col>
+        <av-col size="6" center>fromPx(valuePx: number): number</av-col>
+        <av-col size="6" center>Converts pixels to the current unit.</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">createGuideFromLeft(left: number)</av-col>
-        <av-col size="6">Creates a vertical guide at a given position.</av-col>
+        <av-col size="6" center>createGuideFromLeft(left: number)</av-col>
+        <av-col size="6" center>Creates a vertical guide at a given position.</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">createGuideFromTop(top: number)</av-col>
-        <av-col size="6">Creates a horizontal guide at a given position.</av-col>
+        <av-col size="6" center>createGuideFromTop(top: number)</av-col>
+        <av-col size="6" center>Creates a horizontal guide at a given position.</av-col>
     </av-row>
 </div>
 
 <h2>CSS Variables</h2>
 <div class="table">
     <av-row class="header">
-        <av-col size="4">Variable</av-col>
-        <av-col size="4">Default</av-col>
-        <av-col size="4">Description</av-col>
+        <av-col size="4" center>Variable</av-col>
+        <av-col size="4" center>Default</av-col>
+        <av-col size="4" center>Description</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">--ruler-color</av-col>
-        <av-col size="4">white</av-col>
-        <av-col size="4">Color of ruler background.</av-col>
+        <av-col size="4" center>--ruler-color</av-col>
+        <av-col size="4" center>white</av-col>
+        <av-col size="4" center>Color of ruler background.</av-col>
     </av-row>
 </div>
 

@@ -49,16 +49,16 @@
     </av-row>
     <av-row>
         <av-col size="4" center>autoRegister</av-col>
-        <av-col size="8" center>Define if aventus must autoRegister your i18n files. Default is
+        <av-col size="8">Define if aventus must autoRegister your i18n files. Default is
             true</av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>fallback</av-col>
-        <av-col size="8" center>Define the fallback locale</av-col>
+        <av-col size="8">Define the fallback locale</av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>locales</av-col>
-        <av-col size="8" center>This is an array of string to define locales that is required inside your
+        <av-col size="8">This is an array of string to define locales that is required inside your
             project</av-col>
     </av-row>
 </div>
@@ -107,12 +107,12 @@
     </av-row>
     <av-row>
         <av-col size="4" center>output</av-col>
-        <av-col size="8" center>This is string to define where to export i18n files.
+        <av-col size="8">This is string to define where to export i18n files.
         </av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>mode</av-col>
-        <av-col size="8" center>
+        <av-col size="8">
             <span>This is string to define how aventus must compile your i18n.</span>
             <ul>
                 <li>singleFile: export all translations inside a single file</li>
@@ -125,7 +125,7 @@
     </av-row>
     <av-row>
         <av-col size="4" center>mount</av-col>
-        <av-col size="8" center>This is string to define the http path to mount your i18n files.
+        <av-col size="8">This is string to define the http path to mount your i18n files.
         </av-col>
     </av-row>
 </div>

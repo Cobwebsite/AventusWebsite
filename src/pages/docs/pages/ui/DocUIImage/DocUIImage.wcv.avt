@@ -24,24 +24,24 @@
 <h2>Attributes</h2>
 <div class="table">
     <av-row class="header">
-        <av-col size="4">Attribute</av-col>
-        <av-col size="4">Type</av-col>
-        <av-col size="4">Description</av-col>
+        <av-col size="4" center>Attribute</av-col>
+        <av-col size="4" center>Type</av-col>
+        <av-col size="4" center>Description</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">src</av-col>
-        <av-col size="4">string</av-col>
-        <av-col size="4">Path or URL of the image (supports .svg).</av-col>
+        <av-col size="4" center>src</av-col>
+        <av-col size="4" center>string</av-col>
+        <av-col size="4" center>Path or URL of the image (supports .svg).</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">mode</av-col>
-        <av-col size="4">'stretch' | 'contains' | 'cover'</av-col>
-        <av-col size="4">Defines how the image fits inside the container. Default: "contains".</av-col>
+        <av-col size="4" center>mode</av-col>
+        <av-col size="4" center>'stretch' | 'contains' | 'cover'</av-col>
+        <av-col size="4" center>Defines how the image fits inside the container. Default: "contains".</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">cache</av-col>
-        <av-col size="4">boolean</av-col>
-        <av-col size="4">If true, loads the image as a Base64 string for faster access and offline
+        <av-col size="4" center>cache</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>If true, loads the image as a Base64 string for faster access and offline
             availability.</av-col>
     </av-row>
 </div>
@@ -49,24 +49,24 @@
 <h2>Modes</h2>
 <div class="table">
     <av-row class="header">
-        <av-col size="4">Mode</av-col>
-        <av-col size="4">Description</av-col>
-        <av-col size="4">Behavior</av-col>
+        <av-col size="4" center>Mode</av-col>
+        <av-col size="4" center>Description</av-col>
+        <av-col size="4" center>Behavior</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">stretch</av-col>
-        <av-col size="4">Fills the entire container regardless of aspect ratio.</av-col>
-        <av-col size="4">May distort the image.</av-col>
+        <av-col size="4" center>stretch</av-col>
+        <av-col size="4" center>Fills the entire container regardless of aspect ratio.</av-col>
+        <av-col size="4" center>May distort the image.</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">contains</av-col>
-        <av-col size="4">Scales the image to fit within the container while maintaining aspect ratio.</av-col>
-        <av-col size="4">No cropping; may leave empty space.</av-col>
+        <av-col size="4" center>contains</av-col>
+        <av-col size="4" center>Scales the image to fit within the container while maintaining aspect ratio.</av-col>
+        <av-col size="4" center>No cropping; may leave empty space.</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">cover</av-col>
-        <av-col size="4">Scales the image to completely fill the container while maintaining aspect ratio.</av-col>
-        <av-col size="4">May crop part of the image.</av-col>
+        <av-col size="4" center>cover</av-col>
+        <av-col size="4" center>Scales the image to completely fill the container while maintaining aspect ratio.</av-col>
+        <av-col size="4" center>May crop part of the image.</av-col>
     </av-row>
 </div>
 <av-code language="html">
@@ -86,29 +86,29 @@
 <p>You can override colors directly via CSS variables:</p>
 <div class="table">
     <av-row class="header">
-        <av-col size="4">Variable</av-col>
-        <av-col size="4">Description</av-col>
-        <av-col size="4">Default</av-col>
+        <av-col size="4" center>Variable</av-col>
+        <av-col size="4" center>Description</av-col>
+        <av-col size="4" center>Default</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">--img-color</av-col>
-        <av-col size="4">General SVG color base</av-col>
-        <av-col size="4">none</av-col>
+        <av-col size="4" center>--img-color</av-col>
+        <av-col size="4" center>General SVG color base</av-col>
+        <av-col size="4" center>none</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">--img-stroke-color</av-col>
-        <av-col size="4">Stroke color for SVG lines</av-col>
-        <av-col size="4">var(--img-color)</av-col>
+        <av-col size="4" center>--img-stroke-color</av-col>
+        <av-col size="4" center>Stroke color for SVG lines</av-col>
+        <av-col size="4" center>var(--img-color)</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">--img-fill-color</av-col>
-        <av-col size="4">Fill color for SVG lines</av-col>
-        <av-col size="4">var(--img-color)</av-col>
+        <av-col size="4" center>--img-fill-color</av-col>
+        <av-col size="4" center>Fill color for SVG lines</av-col>
+        <av-col size="4" center>var(--img-color)</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">--img-color-transition</av-col>
-        <av-col size="4">Transition for color changes</av-col>
-        <av-col size="4">none</av-col>
+        <av-col size="4" center>--img-color-transition</av-col>
+        <av-col size="4" center>Transition for color changes</av-col>
+        <av-col size="4" center>none</av-col>
     </av-row>
 </div>
 

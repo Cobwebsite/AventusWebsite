@@ -1,4 +1,11 @@
 :host {
+	av-col {
+		flex-direction: column;
+	}
+	av-col[center] {
+		justify-content: center;
+		align-items: center;
+	}
 	.table {
         margin: 40px 0;
 		av-row:not(.header) {

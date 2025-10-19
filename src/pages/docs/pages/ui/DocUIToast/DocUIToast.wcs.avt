@@ -1,3 +1,9 @@
 :host {
-    
+    .table {
+        av-row {
+            av-col {
+                text-align: left;
+            }
+        }
+    }
 }

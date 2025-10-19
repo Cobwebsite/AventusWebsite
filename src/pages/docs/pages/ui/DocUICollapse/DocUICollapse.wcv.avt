@@ -15,19 +15,19 @@ It's designed to handle open/close logic automatically while letting you define 
 <h2>Attributes</h2>
 <div class="table">
     <av-row class="header">
-        <av-col size="4">Attribute</av-col>
-        <av-col size="4">Type</av-col>
-        <av-col size="4">Description</av-col>
+        <av-col size="4" center>Attribute</av-col>
+        <av-col size="4" center>Type</av-col>
+        <av-col size="4" center>Description</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">open</av-col>
-        <av-col size="4">boolean</av-col>
-        <av-col size="4">Whether the collapse is currently expanded.</av-col>
+        <av-col size="4" center>open</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Whether the collapse is currently expanded.</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">no_animation</av-col>
-        <av-col size="4">boolean</av-col>
-        <av-col size="4">Disables the transition animation.</av-col>
+        <av-col size="4" center>no_animation</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Disables the transition animation.</av-col>
     </av-row>
 </div>
 
@@ -35,19 +35,19 @@ It's designed to handle open/close logic automatically while letting you define 
 <p>You can customize the animation behavior using these CSS variables:</p>
 <div class="table">
     <av-row class="header">
-        <av-col size="4">Attribute</av-col>
-        <av-col size="4">Description</av-col>
-        <av-col size="4">Default value</av-col>
+        <av-col size="4" center>Attribute</av-col>
+        <av-col size="4" center>Description</av-col>
+        <av-col size="4" center>Default value</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">--collapse-transition-duration</av-col>
-        <av-col size="4">Duration of the open/close transition</av-col>
-        <av-col size="4">0.5s</av-col>
+        <av-col size="4" center>--collapse-transition-duration</av-col>
+        <av-col size="4" center>Duration of the open/close transition</av-col>
+        <av-col size="4" center>0.5s</av-col>
     </av-row>
     <av-row>
-        <av-col size="4">--collapse-transition-timing-function</av-col>
-        <av-col size="4">Timing function for the transition</av-col>
-        <av-col size="4">cubic-bezier(0.65, 0, 0.15, 1)</av-col>
+        <av-col size="4" center>--collapse-transition-timing-function</av-col>
+        <av-col size="4" center>Timing function for the transition</av-col>
+        <av-col size="4" center>cubic-bezier(0.65, 0, 0.15, 1)</av-col>
     </av-row>
 </div>
 

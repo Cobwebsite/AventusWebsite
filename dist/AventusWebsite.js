@@ -1455,11 +1455,13 @@ let Watcher=class Watcher {
                                     el = replaceByAlias(target, el, target.length + '', receiver, false, out);
                                     target.push(el);
                                     const dones = [];
+                                    const dones2 = [];
                                     if (out.otherRoot) {
                                         dones.push(out.otherRoot);
+                                        dones2.push(out.otherRoot);
                                     }
                                     trigger('CREATED', target, receiver, receiver[index], "[" + (index) + "]", dones);
-                                    trigger('UPDATED', target, receiver, target.length, "length", dones);
+                                    trigger('UPDATED', target, receiver, target.length, "length", dones2);
                                     return index;
                                 };
                             }
@@ -1531,13 +1533,16 @@ let Watcher=class Watcher {
                                 result = (key, value) => {
                                     const out = {};
                                     let dones = [];
+                                    let dones2 = [];
                                     key = Watcher.extract(key);
                                     value = replaceByAlias(target, value, key + '', receiver, false, out);
-                                    if (out.otherRoot)
+                                    if (out.otherRoot) {
                                         dones.push(out.otherRoot);
+                                        dones2.push(out.otherRoot);
+                                    }
                                     let result = target.set(key, value);
                                     trigger('CREATED', target, receiver, receiver.get(key), key + '', dones);
-                                    trigger('UPDATED', target, receiver, target.size, "size", dones);
+                                    trigger('UPDATED', target, receiver, target.size, "size", dones2);
                                     return result;
                                 };
                             }
@@ -6247,10 +6252,10 @@ let Navigation = {};
 _.Navigation = Aventus.Navigation ?? {};
 Layout.Tabs = {};
 _.Layout.Tabs = Aventus.Layout?.Tabs ?? {};
-let Toast = {};
-_.Toast = Aventus.Toast ?? {};
 let Modal = {};
 _.Modal = Aventus.Modal ?? {};
+let Toast = {};
+_.Toast = Aventus.Toast ?? {};
 let _n;
 (function (SpecialTouch) {
     SpecialTouch[SpecialTouch["Backspace"] = 0] = "Backspace";
@@ -6331,15 +6336,15 @@ Layout.GridGuideHelper = class GridGuideHelper extends Aventus.WebComponent {
         return Math.abs(div - valuePx) < m ? div : valuePx;
     }
     onMoveX(e) {
-        const valuePx = this.applyMagnetic(e.pageY - this.container.getBoundingClientRect().y);
+        const valuePx = this.applyMagnetic(e.pageY);
         this.style.top = valuePx + 'px';
-        this.positionEl.style.left = e.pageX - this.container.getBoundingClientRect().x + 10 + 'px';
+        this.positionEl.style.left = e.pageX + 10 + 'px';
         this.displayValue(valuePx);
     }
     onMoveY(e) {
-        const valuePx = this.applyMagnetic(e.pageX - this.container.getBoundingClientRect().x);
+        const valuePx = this.applyMagnetic(e.pageX);
         this.style.left = valuePx + 'px';
-        this.positionEl.style.top = e.pageY - this.container.getBoundingClientRect().y - 20 + 'px';
+        this.positionEl.style.top = e.pageY - 20 + 'px';
         this.displayValue(valuePx);
     }
     onStop() {
@@ -9676,204 +9681,6 @@ Layout.GridHelper.Tag=`av-grid-helper`;
 __as1(_.Layout, 'GridHelper', Layout.GridHelper);
 if(!window.customElements.get('av-grid-helper')){window.customElements.define('av-grid-helper', Layout.GridHelper);Aventus.WebComponentInstance.registerDefinition(Layout.GridHelper);}
 
-Layout.Tabs.TabHeader = class TabHeader extends Aventus.WebComponent {
-    get 'active'() { return this.getBoolAttr('active') }
-    set 'active'(val) { this.setBoolAttr('active', val) }    _tab;
-    get tab() {
-        return this._tab;
-    }
-    tabs;
-    static __style = ``;
-    constructor() {
-        super();
-        if (this.constructor == TabHeader) {
-            throw "can't instanciate an abstract class";
-        }
-    }
-    __getStatic() {
-        return TabHeader;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(TabHeader.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
-    });
-}
-    getClassName() {
-        return "TabHeader";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('active')) { this.attributeChangedCallback('active', false, false); } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('tab');this.__upgradeProperty('active'); }
-    __listBoolProps() { return ["active"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-    async init(tab, tabs) {
-        this.tabs = tabs;
-        this._tab = tab;
-        tab.tabHeader = this;
-        await this.render();
-    }
-    onPress() {
-        if (!this.active) {
-            this.tabs.setActive(this);
-        }
-    }
-    addPress() {
-        new Aventus.PressManager({
-            element: this,
-            onPress: () => {
-                this.onPress();
-            }
-        });
-    }
-    postCreation() {
-        super.postCreation();
-        this.addPress();
-    }
-}
-Layout.Tabs.TabHeader.Namespace=`Aventus.Layout.Tabs`;
-__as1(_.Layout.Tabs, 'TabHeader', Layout.Tabs.TabHeader);
-
-Toast.ToastElement = class ToastElement extends Aventus.WebComponent {
-    get 'position'() { return this.getStringAttr('position') }
-    set 'position'(val) { this.setStringAttr('position', val) }get 'delay'() { return this.getNumberAttr('delay') }
-    set 'delay'(val) { this.setNumberAttr('delay', val) }get 'is_active'() { return this.getBoolAttr('is_active') }
-    set 'is_active'(val) { this.setBoolAttr('is_active', val) }    showAsked = false;
-    onHideCallback = () => { };
-    timeout = 0;
-    isTransition = false;
-    waitTransitionCbs = [];
-    static __style = `:host{position:absolute}:host(:not([is_active])){opacity:0;visibility:hidden}:host([position="bottom left"]){bottom:var(--_toast-space-bottom);left:0px}:host([position="top left"]){left:var(--_toast-space-left);top:var(--_toast-space-top)}:host([position="bottom right"]){bottom:var(--_toast-space-bottom);right:var(--_toast-space-right)}:host([position="top right"]){right:var(--_toast-space-right);top:var(--_toast-space-top)}:host([position=top]){left:50%;top:var(--_toast-space-top);transform:translateX(-50%)}:host([position=bottom]){bottom:var(--_toast-space-bottom);left:50%;transform:translateX(-50%)}`;
-    constructor() {
-        super();
-        if (this.constructor == ToastElement) {
-            throw "can't instanciate an abstract class";
-        }
-    }
-    __getStatic() {
-        return ToastElement;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(ToastElement.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
-    });
-}
-    getClassName() {
-        return "ToastElement";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('position')){ this['position'] = _.Toast.ToastManager.defaultPosition; }if(!this.hasAttribute('delay')){ this['delay'] = _.Toast.ToastManager.defaultDelay; }if(!this.hasAttribute('is_active')) { this.attributeChangedCallback('is_active', false, false); } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('position');this.__upgradeProperty('delay');this.__upgradeProperty('is_active'); }
-    __listBoolProps() { return ["is_active"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-    _setOptions(options) {
-        if (options.position !== undefined)
-            this.position = options.position;
-        if (options.delay !== undefined)
-            this.delay = options.delay;
-        return this.setOptions(options);
-    }
-    show(onHideCallback) {
-        this.onHideCallback = onHideCallback;
-        if (this.isReady) {
-            this.is_active = true;
-            this.startDelay();
-        }
-        else {
-            this.showAsked = true;
-        }
-    }
-    startDelay() {
-        if (this.delay > 0) {
-            this.timeout = setTimeout(() => {
-                this.close();
-            }, this.delay);
-        }
-    }
-    async close() {
-        if (this.onHideCallback) {
-            this.is_active = false;
-            this.onHideCallback(false);
-            this.remove();
-        }
-    }
-    addTransition() {
-        this.addEventListener("transitionStart", (e) => {
-            this.isTransition = true;
-        });
-        this.addEventListener("transitionEnd", () => {
-            this.isTransition = false;
-            let cbs = [...this.waitTransitionCbs];
-            this.waitTransitionCbs = [];
-            for (let cb of cbs) {
-                cb();
-            }
-        });
-    }
-    waitTransition() {
-        if (this.isTransition) {
-            return new Promise((resolve) => {
-                this.waitTransitionCbs.push(resolve);
-            });
-        }
-        return new Promise((resolve) => {
-            resolve();
-        });
-    }
-    postCreation() {
-        if (this.showAsked) {
-            this.is_active = true;
-            this.startDelay();
-        }
-    }
-    static add(options) {
-        return _.Toast.ToastManager.add(options);
-    }
-}
-Toast.ToastElement.Namespace=`Aventus.Toast`;
-__as1(_.Toast, 'ToastElement', Toast.ToastElement);
-
-Layout.Tabs.Tab = class Tab extends Aventus.WebComponent {
-    get 'selected'() { return this.getBoolAttr('selected') }
-    set 'selected'(val) { this.setBoolAttr('selected', val) }    tabHeader;
-    static __style = ``;
-    constructor() {
-        super();
-        if (this.constructor == Tab) {
-            throw "can't instanciate an abstract class";
-        }
-    }
-    __getStatic() {
-        return Tab;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(Tab.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
-    });
-}
-    getClassName() {
-        return "Tab";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('selected')) { this.attributeChangedCallback('selected', false, false); } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('selected'); }
-    __listBoolProps() { return ["selected"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-}
-Layout.Tabs.Tab.Namespace=`Aventus.Layout.Tabs`;
-__as1(_.Layout.Tabs, 'Tab', Layout.Tabs.Tab);
-
 Modal.ModalElement = class ModalElement extends Aventus.WebComponent {
     get 'options'() {
 						return this.__watch["options"];
@@ -10005,6 +9812,208 @@ Modal.ModalElement = class ModalElement extends Aventus.WebComponent {
 }
 Modal.ModalElement.Namespace=`Aventus.Modal`;
 __as1(_.Modal, 'ModalElement', Modal.ModalElement);
+
+Toast.ToastElement = class ToastElement extends Aventus.WebComponent {
+    get 'position'() { return this.getStringAttr('position') }
+    set 'position'(val) { this.setStringAttr('position', val) }get 'delay'() { return this.getNumberAttr('delay') }
+    set 'delay'(val) { this.setNumberAttr('delay', val) }get 'is_active'() { return this.getBoolAttr('is_active') }
+    set 'is_active'(val) { this.setBoolAttr('is_active', val) }    showAsked = false;
+    onHideCallback = () => { };
+    timeout = 0;
+    isTransition = false;
+    waitTransitionCbs = [];
+    static __style = `:host{position:absolute}:host(:not([is_active])){opacity:0;visibility:hidden}:host([position="bottom left"]){bottom:var(--_toast-space-bottom);left:0px}:host([position="top left"]){left:var(--_toast-space-left);top:var(--_toast-space-top)}:host([position="bottom right"]){bottom:var(--_toast-space-bottom);right:var(--_toast-space-right)}:host([position="top right"]){right:var(--_toast-space-right);top:var(--_toast-space-top)}:host([position=top]){left:50%;top:var(--_toast-space-top);transform:translateX(-50%)}:host([position=bottom]){bottom:var(--_toast-space-bottom);left:50%;transform:translateX(-50%)}`;
+    constructor() {
+        super();
+        if (this.constructor == ToastElement) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return ToastElement;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(ToastElement.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "ToastElement";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('position')){ this['position'] = _.Toast.ToastManager.defaultPosition; }if(!this.hasAttribute('delay')){ this['delay'] = _.Toast.ToastManager.defaultDelay; }if(!this.hasAttribute('is_active')) { this.attributeChangedCallback('is_active', false, false); } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('position');this.__upgradeProperty('delay');this.__upgradeProperty('is_active'); }
+    __listBoolProps() { return ["is_active"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    _setOptions(options) {
+        if (options.position !== undefined)
+            this.position = options.position;
+        if (options.delay !== undefined)
+            this.delay = options.delay;
+        return this.setOptions(options);
+    }
+    show(onHideCallback) {
+        this.onHideCallback = onHideCallback;
+        if (this.isReady) {
+            this.is_active = true;
+            this.startDelay();
+        }
+        else {
+            this.showAsked = true;
+        }
+    }
+    startDelay() {
+        if (this.delay > 0) {
+            this.timeout = setTimeout(() => {
+                this.close();
+            }, this.delay);
+        }
+    }
+    async close() {
+        if (this.onHideCallback) {
+            this.is_active = false;
+            this.onHideCallback(false);
+            this.remove();
+        }
+    }
+    addTransition() {
+        this.addEventListener("transitionStart", (e) => {
+            this.isTransition = true;
+        });
+        this.addEventListener("transitionEnd", () => {
+            this.isTransition = false;
+            let cbs = [...this.waitTransitionCbs];
+            this.waitTransitionCbs = [];
+            for (let cb of cbs) {
+                cb();
+            }
+        });
+    }
+    waitTransition() {
+        if (this.isTransition) {
+            return new Promise((resolve) => {
+                this.waitTransitionCbs.push(resolve);
+            });
+        }
+        return new Promise((resolve) => {
+            resolve();
+        });
+    }
+    postCreation() {
+        if (this.showAsked) {
+            this.is_active = true;
+            this.startDelay();
+        }
+    }
+    static add(options) {
+        return _.Toast.ToastManager.add(options);
+    }
+}
+Toast.ToastElement.Namespace=`Aventus.Toast`;
+__as1(_.Toast, 'ToastElement', Toast.ToastElement);
+
+Layout.Tabs.TabHeader = class TabHeader extends Aventus.WebComponent {
+    get 'active'() { return this.getBoolAttr('active') }
+    set 'active'(val) { this.setBoolAttr('active', val) }    _tab;
+    get tab() {
+        return this._tab;
+    }
+    tabs;
+    static __style = ``;
+    constructor() {
+        super();
+        if (this.constructor == TabHeader) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return TabHeader;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TabHeader.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "TabHeader";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('active')) { this.attributeChangedCallback('active', false, false); } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('tab');this.__upgradeProperty('active'); }
+    __listBoolProps() { return ["active"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    async init(tab, tabs) {
+        this.tabs = tabs;
+        this._tab = tab;
+        tab.tabHeader = this;
+        await this.render();
+    }
+    onPress() {
+        if (!this.active) {
+            this.tabs.setActive(this);
+        }
+    }
+    addPress() {
+        new Aventus.PressManager({
+            element: this,
+            onPress: () => {
+                this.onPress();
+            }
+        });
+    }
+    postCreation() {
+        super.postCreation();
+        this.addPress();
+    }
+}
+Layout.Tabs.TabHeader.Namespace=`Aventus.Layout.Tabs`;
+__as1(_.Layout.Tabs, 'TabHeader', Layout.Tabs.TabHeader);
+
+Layout.Tabs.Tab = class Tab extends Aventus.WebComponent {
+    get 'selected'() { return this.getBoolAttr('selected') }
+    set 'selected'(val) { this.setBoolAttr('selected', val) }    tabHeader;
+    get headerContent() {
+        let elements = this.getElementsInSlot("header");
+        return elements;
+    }
+    static __style = ``;
+    constructor() {
+        super();
+        if (this.constructor == Tab) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return Tab;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Tab.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>`,'header':`<slot name="header"></slot>` }, 
+        blocks: { 'default':`<slot></slot><div class="slot-header">    <slot name="header"></slot></div>` }
+    });
+}
+    getClassName() {
+        return "Tab";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('selected')) { this.attributeChangedCallback('selected', false, false); } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('headerContent');this.__upgradeProperty('selected'); }
+    __listBoolProps() { return ["selected"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+}
+Layout.Tabs.Tab.Namespace=`Aventus.Layout.Tabs`;
+__as1(_.Layout.Tabs, 'Tab', Layout.Tabs.Tab);
 
 Toast.ToastManager = class ToastManager extends Aventus.WebComponent {
     get 'gap'() { return this.getNumberAttr('gap') }
@@ -10251,73 +10260,30 @@ const _ = {};
 
 
 let _n;
-const DocUIModalEditor1Modal = class DocUIModalEditor1Modal extends Aventus.Modal.ModalElement {
-    get 'question'() {
-						return this.__watch["question"];
-					}
-					set 'question'(val) {
-						this.__watch["question"] = val;
-					}    __registerWatchesActions() {
-    this.__addWatchesActions("question");    super.__registerWatchesActions();
-}
-    static __style = `:host{align-items:center;background:rgba(0,0,0,.7);display:flex;inset:0;justify-content:center;position:fixed;z-index:60;font-size:16px}:host .modal{background-color:var(--secondary-color);border-radius:12px;box-shadow:0 25px 50px rgba(0,0,0,.25);max-width:500px;padding:24px;position:relative;text-align:left;transform:translateZ(0);transition:all .2s ease-in-out;width:100%}:host .modal .modal-header{align-items:flex-start;display:flex;justify-content:space-between}:host .modal .modal-header .modal-title{color:#fff;line-height:24px;margin:0}:host .modal .modal-header .close{cursor:pointer;margin-right:-12px;margin-top:-12px}:host .modal .modal-body{color:var(--color-light);margin-top:16px}:host .modal .modal-body ::slotted(p){margin-bottom:16px}:host .modal .footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}:host .modal .footer av-button{font-size:14px}`;
+const Test = class Test extends Aventus.WebComponent {
+    static __style = ``;
     __getStatic() {
-        return DocUIModalEditor1Modal;
+        return Test;
     }
     __getStyle() {
         let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIModalEditor1Modal.__style);
+        arrStyle.push(Test.__style);
         return arrStyle;
     }
-    __getHtml() {super.__getHtml();
+    __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<div class="modal-header">    <h3 class="modal-title">Confirm</h3>    <mi-icon icon="close" class="close" _id="docuimodaleditor1modal_0"></mi-icon></div><div class="modal-body" _id="docuimodaleditor1modal_1"></div><div class="footer">    <av-button _id="docuimodaleditor1modal_2">No</av-button>    <av-button _id="docuimodaleditor1modal_3">Yes</av-button></div>` }
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
     });
 }
-    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
-  "content": {
-    "docuimodaleditor1modal_1°@HTML": {
-      "fct": (c) => `${c.print(c.comp.__6629b6e42a9d78bd72e4f97cd1ac67e4method0())}`,
-      "once": true
-    }
-  },
-  "pressEvents": [
-    {
-      "id": "docuimodaleditor1modal_0",
-      "onPress": (e, pressInstance, c) => { c.comp.reject(e, pressInstance); }
-    },
-    {
-      "id": "docuimodaleditor1modal_2",
-      "onPress": (e, pressInstance, c) => { c.comp.reject(e, pressInstance); }
-    },
-    {
-      "id": "docuimodaleditor1modal_3",
-      "onPress": (e, pressInstance, c) => { c.comp.accept(e, pressInstance); }
-    }
-  ]
-}); }
     getClassName() {
-        return "DocUIModalEditor1Modal";
-    }
-    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["question"] = undefined; }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('question'); }
-    configure() {
-        return {
-            closeWithClick: false,
-            closeWithEsc: false,
-        };
-    }
-    accept() {
-        this.resolve(true);
-    }
-    __6629b6e42a9d78bd72e4f97cd1ac67e4method0() {
-        return this.question;
+        return "Test";
     }
 }
-DocUIModalEditor1Modal.Namespace=`AventusWebsite`;
-DocUIModalEditor1Modal.Tag=`av-doc-u-i-modal-editor-1-modal`;
-__as1(_, 'DocUIModalEditor1Modal', DocUIModalEditor1Modal);
-if(!window.customElements.get('av-doc-u-i-modal-editor-1-modal')){window.customElements.define('av-doc-u-i-modal-editor-1-modal', DocUIModalEditor1Modal);Aventus.WebComponentInstance.registerDefinition(DocUIModalEditor1Modal);}
+Test.Namespace=`AventusWebsite`;
+Test.Tag=`av-test`;
+__as1(_, 'Test', Test);
+if(!window.customElements.get('av-test')){window.customElements.define('av-test', Test);Aventus.WebComponentInstance.registerDefinition(Test);}
 
 let DocWcWatchEditor1Person=class DocWcWatchEditor1Person extends Aventus.Data {
     id = 0;
@@ -12250,6 +12216,74 @@ DocUIScrollableEditor1Compiled.Tag=`av-doc-u-i-scrollable-editor-1-compiled`;
 __as1(_, 'DocUIScrollableEditor1Compiled', DocUIScrollableEditor1Compiled);
 if(!window.customElements.get('av-doc-u-i-scrollable-editor-1-compiled')){window.customElements.define('av-doc-u-i-scrollable-editor-1-compiled', DocUIScrollableEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIScrollableEditor1Compiled);}
 
+const DocUIModalEditor1Modal = class DocUIModalEditor1Modal extends Aventus.Modal.ModalElement {
+    get 'question'() {
+						return this.__watch["question"];
+					}
+					set 'question'(val) {
+						this.__watch["question"] = val;
+					}    __registerWatchesActions() {
+    this.__addWatchesActions("question");    super.__registerWatchesActions();
+}
+    static __style = `:host{align-items:center;background:rgba(0,0,0,.7);display:flex;inset:0;justify-content:center;position:fixed;z-index:60;font-size:16px}:host .modal{background-color:var(--secondary-color);border-radius:12px;box-shadow:0 25px 50px rgba(0,0,0,.25);max-width:500px;padding:24px;position:relative;text-align:left;transform:translateZ(0);transition:all .2s ease-in-out;width:100%}:host .modal .modal-header{align-items:flex-start;display:flex;justify-content:space-between}:host .modal .modal-header .modal-title{color:#fff;line-height:24px;margin:0}:host .modal .modal-header .close{cursor:pointer;margin-right:-12px;margin-top:-12px}:host .modal .modal-body{color:var(--color-light);margin-top:16px}:host .modal .modal-body ::slotted(p){margin-bottom:16px}:host .modal .footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}:host .modal .footer av-button{font-size:14px}`;
+    __getStatic() {
+        return DocUIModalEditor1Modal;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIModalEditor1Modal.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<div class="modal-header">    <h3 class="modal-title">Confirm</h3>    <mi-icon icon="close" class="close" _id="docuimodaleditor1modal_0"></mi-icon></div><div class="modal-body" _id="docuimodaleditor1modal_1"></div><div class="footer">    <av-button _id="docuimodaleditor1modal_2">No</av-button>    <av-button _id="docuimodaleditor1modal_3">Yes</av-button></div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "content": {
+    "docuimodaleditor1modal_1°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__6629b6e42a9d78bd72e4f97cd1ac67e4method0())}`,
+      "once": true
+    }
+  },
+  "pressEvents": [
+    {
+      "id": "docuimodaleditor1modal_0",
+      "onPress": (e, pressInstance, c) => { c.comp.reject(e, pressInstance); }
+    },
+    {
+      "id": "docuimodaleditor1modal_2",
+      "onPress": (e, pressInstance, c) => { c.comp.reject(e, pressInstance); }
+    },
+    {
+      "id": "docuimodaleditor1modal_3",
+      "onPress": (e, pressInstance, c) => { c.comp.accept(e, pressInstance); }
+    }
+  ]
+}); }
+    getClassName() {
+        return "DocUIModalEditor1Modal";
+    }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["question"] = undefined; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('question'); }
+    configure() {
+        return {
+            closeWithClick: false,
+            closeWithEsc: false,
+        };
+    }
+    accept() {
+        this.resolve(true);
+    }
+    __6629b6e42a9d78bd72e4f97cd1ac67e4method0() {
+        return this.question;
+    }
+}
+DocUIModalEditor1Modal.Namespace=`AventusWebsite`;
+DocUIModalEditor1Modal.Tag=`av-doc-u-i-modal-editor-1-modal`;
+__as1(_, 'DocUIModalEditor1Modal', DocUIModalEditor1Modal);
+if(!window.customElements.get('av-doc-u-i-modal-editor-1-modal')){window.customElements.define('av-doc-u-i-modal-editor-1-modal', DocUIModalEditor1Modal);Aventus.WebComponentInstance.registerDefinition(DocUIModalEditor1Modal);}
+
 const DocUIGridHelperEditor1Compiled = class DocUIGridHelperEditor1Compiled extends Aventus.WebComponent {
     static __style = `:host{width:100%}:host .page{background-color:#fff;height:400px;position:relative;width:100%;overflow:hidden}:host .page av-grid-helper{--ruler-color: var(--secondary-color);position:absolute}`;
     __getStatic() {
@@ -13639,7 +13673,7 @@ __as1(_, 'TutorialSidenav', TutorialSidenav);
 if(!window.customElements.get('av-tutorial-sidenav')){window.customElements.define('av-tutorial-sidenav', TutorialSidenav);Aventus.WebComponentInstance.registerDefinition(TutorialSidenav);}
 
 const Page = class Page extends Aventus.Navigation.Page {
-    static __style = `:host{background-color:var(--secondary-color);height:100%;width:100%}:host .container{display:inline-block;height:100%;margin:auto;max-width:1000px;width:100%}:host av-col{--col-padding: 8px;flex-direction:column}:host av-link{display:inline-block}`;
+    static __style = `:host{background-color:var(--secondary-color);height:100%;width:100%}:host .container{display:inline-block;height:100%;margin:auto;max-width:1000px;width:100%}:host av-col{--col-padding: 8px}:host av-link{display:inline-block}`;
     constructor() {
         super();
         if (this.constructor == Page) {
@@ -13795,7 +13829,7 @@ __as1(_, 'About', About);
 if(!window.customElements.get('av-about')){window.customElements.define('av-about', About);Aventus.WebComponentInstance.registerDefinition(About);}
 
 const Home = class Home extends Page {
-    static __style = `:host{height:100%;width:100%}:host .container{max-width:none}:host .height-wrapper{flex-grow:1}:host .main-scroll::part(content-wrapper){display:flex;flex-direction:column;min-height:100%}:host .main{background-color:var(--light-primary-color);display:flex;flex-direction:column;height:500px;overflow:hidden;padding:50px 0;position:relative;width:100%}:host .main .icon-text{align-items:center;flex-grow:1;margin:auto;max-width:1000px;width:100%;z-index:2}:host .main .icon-text av-img{--img-color: var(--aventus-color);flex-shrink:0;height:250px;margin:auto;transition:all linear .5s;width:250px}:host .main .icon-text av-col:nth-child(2){flex-direction:row;justify-content:right}:host .main .icon-text .title{color:var(--primary-font-color);font-size:64px;margin-bottom:10px}:host .main .icon-text .sub-title{color:var(--primary-font-color);font-size:24px}:host .main .btn-container{margin:auto;z-index:2}:host .main .btn-container av-col{flex-direction:row;justify-content:center}:host .main .btn-container av-col av-button{margin:0 10px}:host .main av-img.design-logo{--img-color: rgb(200, 200, 200);height:150%;left:-200px;opacity:.3;position:absolute;top:30px;z-index:1}:host .main av-img.design-logo2{--img-color: rgb(200, 200, 200);height:150%;opacity:.3;position:absolute;right:-200px;top:30px;transform:rotate(180deg);z-index:1}:host .blocks{margin:50px auto;max-width:1200px}:host .blocks av-col{padding:10px 20px}:host .blocks av-col .block{background-color:var(--light-primary-color);border-radius:5px;box-shadow:var(--elevation-5);color:var(--primary-font-color);display:flex;flex-direction:column;height:100%;padding:30px;padding-bottom:20px;width:100%}:host .blocks av-col .block .title{font-size:28px;font-weight:bold;letter-spacing:1px}:host .blocks av-col .block p{align-items:center;display:flex;flex-grow:1;margin:0;text-align:justify}:host .blocks av-col .block .icon{margin:25px 0;text-align:center}:host .blocks av-col .block .icon mi-icon{font-size:60px}:host .blocks av-col:nth-child(2) .block{background-color:var(--aventus-color)}:host .separator{background:linear-gradient(90deg, transparent 0%, var(--text-color) 50%, transparent 100%);height:1px;margin:auto;width:75%}:host .why{margin:50px auto;max-width:1200px;padding:0 50px}:host .why h2{color:var(--title-color)}:host .why p{color:var(--text-color);font-size:18px;text-align:justify}:host .why .important{font-size:20px;font-weight:600}@media screen and (max-width: 505px){:host .main .icon-text{flex-direction:column}:host .main .icon-text av-col{justify-content:center !important;text-align:center;width:100%}:host .main .icon-text av-img{margin:20px 0px;height:200px;width:200px}}`;
+    static __style = `:host{height:100%;width:100%}:host av-col{flex-direction:column}:host .container{max-width:none}:host .height-wrapper{flex-grow:1}:host .main-scroll::part(content-wrapper){display:flex;flex-direction:column;min-height:100%}:host .main{background-color:var(--light-primary-color);display:flex;flex-direction:column;height:500px;overflow:hidden;padding:50px 0;position:relative;width:100%}:host .main .icon-text{align-items:center;flex-grow:1;margin:auto;max-width:1000px;width:100%;z-index:2}:host .main .icon-text av-img{--img-color: var(--aventus-color);flex-shrink:0;height:250px;margin:auto;transition:all linear .5s;width:250px}:host .main .icon-text av-col:nth-child(2){flex-direction:row;justify-content:right}:host .main .icon-text .title{color:var(--primary-font-color);font-size:64px;margin-bottom:10px}:host .main .icon-text .sub-title{color:var(--primary-font-color);font-size:24px}:host .main .btn-container{margin:auto;z-index:2}:host .main .btn-container av-col{flex-direction:row;justify-content:center}:host .main .btn-container av-col av-button{margin:0 10px}:host .main av-img.design-logo{--img-color: rgb(200, 200, 200);height:150%;left:-200px;opacity:.3;position:absolute;top:30px;z-index:1}:host .main av-img.design-logo2{--img-color: rgb(200, 200, 200);height:150%;opacity:.3;position:absolute;right:-200px;top:30px;transform:rotate(180deg);z-index:1}:host .blocks{margin:50px auto;max-width:1200px}:host .blocks av-col{padding:10px 20px}:host .blocks av-col .block{background-color:var(--light-primary-color);border-radius:5px;box-shadow:var(--elevation-5);color:var(--primary-font-color);display:flex;flex-direction:column;height:100%;padding:30px;padding-bottom:20px;width:100%}:host .blocks av-col .block .title{font-size:28px;font-weight:bold;letter-spacing:1px}:host .blocks av-col .block p{align-items:center;display:flex;flex-grow:1;margin:0;text-align:justify}:host .blocks av-col .block .icon{margin:25px 0;text-align:center}:host .blocks av-col .block .icon mi-icon{font-size:60px}:host .blocks av-col:nth-child(2) .block{background-color:var(--aventus-color)}:host .separator{background:linear-gradient(90deg, transparent 0%, var(--text-color) 50%, transparent 100%);height:1px;margin:auto;width:75%}:host .why{margin:50px auto;max-width:1200px;padding:0 50px}:host .why h2{color:var(--title-color)}:host .why p{color:var(--text-color);font-size:18px;text-align:justify}:host .why .important{font-size:20px;font-weight:600}@media screen and (max-width: 505px){:host .main .icon-text{flex-direction:column}:host .main .icon-text av-col{justify-content:center !important;text-align:center;width:100%}:host .main .icon-text av-img{margin:20px 0px;height:200px;width:200px}}`;
     __getStatic() {
         return Home;
     }
@@ -13850,7 +13884,7 @@ const DocSidenav = class DocSidenav extends Aventus.WebComponent {
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<av-icon icon="close" class="close-icon" _id="docsidenav_0"></av-icon><av-scrollable class="menu">    <av-collapse>        <div class="title" slot="header">install</div>        <ul>            <li><av-link to="/docs/introduction">Introduction</av-link></li>            <li><av-link to="/docs/installation">Install Aventus</av-link></li>            <li><av-link to="/docs/experience">Dev experience</av-link></li>            <li><av-link to="/docs/first_app">Your first app</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">configuration</div>        <ul>            <li><av-link to="/docs/config/basic_prop">Generic properties</av-link></li>            <li><av-link to="/docs/config/build">Builds</av-link></li>            <li><av-link to="/docs/config/static">Statics</av-link></li>            <li><av-link to="/docs/config/lib">Import libs</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">data</div>        <ul>            <li><av-link to="/docs/data/create">Create</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">ram</div>        <ul>            <li><av-link to="/docs/ram/create">Create</av-link></li>            <li><av-link to="/docs/ram/crud">CRUD operation</av-link></li>            <li><av-link to="/docs/ram/listen_changes">Listen changes</av-link></li>            <li><av-link to="/docs/ram/mixin">Extend data</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">state</div>        <ul>            <li><av-link to="/docs/state/create">Create</av-link></li>            <li><av-link to="/docs/state/change">Change to</av-link></li>            <li><av-link to="/docs/state/listen_changes">Listen to change</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">webcomponent</div>        <ul>            <li><av-link to="/docs/wc/create">Create</av-link></li>            <li><av-link to="/docs/wc/style">Style</av-link></li>            <li><av-link to="/docs/wc/inheritance">Inhertiance</av-link></li>            <li><av-link to="/docs/wc/attribute">Attribute</av-link></li>            <li><av-link to="/docs/wc/property">Property</av-link></li>            <li><av-link to="/docs/wc/watch">Watch</av-link></li>            <li><av-link to="/docs/wc/signal">Signal</av-link></li>            <li><av-link to="/docs/wc/interpolation">Interpolation</av-link></li>            <li><av-link to="/docs/wc/element">Select element</av-link></li>            <li><av-link to="/docs/wc/injection">Injection</av-link></li>            <li><av-link to="/docs/wc/event">Event</av-link></li>            <li><av-link to="/docs/wc/binding">Binding</av-link></li>            <li><av-link to="/docs/wc/state">State</av-link></li>            <li><av-link to="/docs/wc/loop">Loop</av-link></li>            <li><av-link to="/docs/wc/condition">Condition</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">lib</div>        <ul>            <li><av-link to="/docs/lib/create">Create</av-link></li>            <li><av-link to="/docs/lib/animation">Animation</av-link></li>            <li><av-link to="/docs/lib/callback">Callback</av-link></li>            <li><av-link to="/docs/lib/press_manager">PressManager</av-link></li>            <li><av-link to="/docs/lib/drag_and_drop">Drag&Drop</av-link></li>            <li><av-link to="/docs/lib/instance">Instance</av-link></li>            <li><av-link to="/docs/lib/resize_observer">ResizeObserver</av-link></li>            <li><av-link to="/docs/lib/resource_loader">ResourceLoader</av-link></li>            <li><av-link to="/docs/lib/watcher">Watcher</av-link></li>            <li><av-link to="/docs/lib/tools">Tools</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">i18n</div>        <ul>            <li><av-link to="/docs/i18n/config">Config</av-link></li>            <li><av-link to="/docs/i18n/usage">Usage</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">UI</div>        <ul>            <li><av-link to="/docs/ui/introduction">Introduction</av-link></li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Form</div>                    <ul>                        <li><av-link to="/docs/ui/button">Button</av-link></li>                        <li><av-link to="/docs/ui/form">Form</av-link></li>                        <li><av-link to="/docs/ui/form_element">FormElement</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Layout</div>                    <ul>                        <li><av-link to="/docs/ui/col_row">Col / Row</av-link></li>                        <li><av-link to="/docs/ui/collapse">Collapse</av-link></li>                        <li><av-link to="/docs/ui/grid_helper">Grid Helper</av-link></li>                        <li><av-link to="/docs/ui/image">Image</av-link></li>                        <li><av-link to="/docs/ui/scrollable">Scrollable</av-link></li>                        <li><av-link to="/docs/ui/tabs">Tabs</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Interaction</div>                    <ul>                        <li><av-link to="/docs/ui/modal">Modal</av-link></li>                        <li><av-link to="/docs/ui/toast">Toast</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Navigation</div>                    <ul>                        <li><av-link to="/docs/ui/link">Link</av-link></li>                        <li><av-link to="/docs/ui/page">Page</av-link></li>                        <li><av-link to="/docs/ui/router">Router</av-link></li>                    </ul>                </av-collapse>            </li>             <li>                <av-collapse>                    <div class="sub-title" slot="header">Lib</div>                    <ul>                        <li><av-link to="/docs/ui/process">Process</av-link></li>                        <li><av-link to="/docs/ui/shortcut">Shortcut</av-link></li>                    </ul>                </av-collapse>            </li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">advanced</div>        <ul>            <li><av-link to="/docs/advanced/template">Template</av-link></li>            <li><av-link to="/docs/advanced/store">Store</av-link></li>            <li><av-link to="/docs/advanced/npm_export">Npm Export</av-link></li>            <li><av-link to="/docs/advanced/storybook">Storybook</av-link></li>        </ul>    </av-collapse></av-scrollable>` }
+        blocks: { 'default':`<av-icon icon="close" class="close-icon" _id="docsidenav_0"></av-icon><av-scrollable class="menu">    <av-collapse>        <div class="title" slot="header">install</div>        <ul>            <li><av-link to="/docs/introduction">Introduction</av-link></li>            <li><av-link to="/docs/installation">Install Aventus</av-link></li>            <li><av-link to="/docs/experience">Dev experience</av-link></li>            <li><av-link to="/docs/first_app">Your first app</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">configuration</div>        <ul>            <li><av-link to="/docs/config/basic_prop">Generic properties</av-link></li>            <li><av-link to="/docs/config/build">Builds</av-link></li>            <li><av-link to="/docs/config/static">Statics</av-link></li>            <li><av-link to="/docs/config/lib">Import libs</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">data</div>        <ul>            <li><av-link to="/docs/data/create">Create</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">ram</div>        <ul>            <li><av-link to="/docs/ram/create">Create</av-link></li>            <li><av-link to="/docs/ram/crud">CRUD operation</av-link></li>            <li><av-link to="/docs/ram/listen_changes">Listen changes</av-link></li>            <li><av-link to="/docs/ram/mixin">Extend data</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">state</div>        <ul>            <li><av-link to="/docs/state/create">Create</av-link></li>            <li><av-link to="/docs/state/change">Change to</av-link></li>            <li><av-link to="/docs/state/listen_changes">Listen to change</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">webcomponent</div>        <ul>            <li><av-link to="/docs/wc/create">Create</av-link></li>            <li><av-link to="/docs/wc/style">Style</av-link></li>            <li><av-link to="/docs/wc/inheritance">Inhertiance</av-link></li>            <li><av-link to="/docs/wc/attribute">Attribute</av-link></li>            <li><av-link to="/docs/wc/property">Property</av-link></li>            <li><av-link to="/docs/wc/watch">Watch</av-link></li>            <li><av-link to="/docs/wc/signal">Signal</av-link></li>            <li><av-link to="/docs/wc/interpolation">Interpolation</av-link></li>            <li><av-link to="/docs/wc/element">Select element</av-link></li>            <li><av-link to="/docs/wc/injection">Injection</av-link></li>            <li><av-link to="/docs/wc/event">Event</av-link></li>            <li><av-link to="/docs/wc/binding">Binding</av-link></li>            <li><av-link to="/docs/wc/state">State</av-link></li>            <li><av-link to="/docs/wc/loop">Loop</av-link></li>            <li><av-link to="/docs/wc/condition">Condition</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">lib</div>        <ul>            <li><av-link to="/docs/lib/create">Create</av-link></li>            <li><av-link to="/docs/lib/animation">Animation</av-link></li>            <li><av-link to="/docs/lib/callback">Callback</av-link></li>            <li><av-link to="/docs/lib/press_manager">PressManager</av-link></li>            <li><av-link to="/docs/lib/drag_and_drop">Drag&Drop</av-link></li>            <li><av-link to="/docs/lib/instance">Instance</av-link></li>            <li><av-link to="/docs/lib/resize_observer">ResizeObserver</av-link></li>            <li><av-link to="/docs/lib/resource_loader">ResourceLoader</av-link></li>            <li><av-link to="/docs/lib/watcher">Watcher</av-link></li>            <li><av-link to="/docs/lib/tools">Tools</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">i18n</div>        <ul>            <li><av-link to="/docs/i18n/config">Config</av-link></li>            <li><av-link to="/docs/i18n/usage">Usage</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">UI</div>        <ul>            <li><av-link to="/docs/ui/introduction">Introduction</av-link></li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Form</div>                    <ul>                        <li><av-link to="/docs/ui/button">Button</av-link></li>                        <li><av-link to="/docs/ui/form">Form</av-link></li>                        <li><av-link to="/docs/ui/form_element">FormElement</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Layout</div>                    <ul>                        <li><av-link to="/docs/ui/col_row">Col / Row</av-link></li>                        <li><av-link to="/docs/ui/collapse">Collapse</av-link></li>                        <li><av-link to="/docs/ui/grid_helper">Grid Helper</av-link></li>                        <li><av-link to="/docs/ui/image">Image</av-link></li>                        <li><av-link to="/docs/ui/scrollable">Scrollable</av-link></li>                        <li><av-link to="/docs/ui/tabs">Tabs</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Interaction</div>                    <ul>                        <li><av-link to="/docs/ui/modal">Modal</av-link></li>                        <li><av-link to="/docs/ui/toast">Toast</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Navigation</div>                    <ul>                        <li><av-link to="/docs/ui/link">Link</av-link></li>                        <li><av-link to="/docs/ui/page">Page</av-link></li>                        <li><av-link to="/docs/ui/page_form">Page Form</av-link></li>                        <li><av-link to="/docs/ui/page_form_http">Page Form Http</av-link></li>                        <li><av-link to="/docs/ui/router">Router</av-link></li>                    </ul>                </av-collapse>            </li>             <li>                <av-collapse>                    <div class="sub-title" slot="header">Lib</div>                    <ul>                        <li><av-link to="/docs/ui/process">Process</av-link></li>                        <li><av-link to="/docs/ui/shortcut">Shortcut</av-link></li>                    </ul>                </av-collapse>            </li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">advanced</div>        <ul>            <li><av-link to="/docs/advanced/template">Template</av-link></li>            <li><av-link to="/docs/advanced/store">Store</av-link></li>            <li><av-link to="/docs/advanced/npm_export">Npm Export</av-link></li>            <li><av-link to="/docs/advanced/storybook">Storybook</av-link></li>        </ul>    </av-collapse></av-scrollable>` }
     });
 }
     __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
@@ -14064,7 +14098,7 @@ if(!window.customElements.get('av-doc-footer')){window.customElements.define('av
 
 const DocGenericPage = class DocGenericPage extends Page {
     get 'fade'() { return this.getBoolAttr('fade') }
-    set 'fade'(val) { this.setBoolAttr('fade', val) }    static __style = `:host{color:var(--text-color);opacity:0;transition:visibility .3s ease-in,opacity .3s ease-in;visibility:hidden}:host .container{max-width:none;width:100%}:host .container img{border-radius:5px}:host .container av-scrollable{--scroller-right: 10px}:host .container .page-content{font-size:1.6rem;margin:auto;padding:0 50px}:host .icon-menu{color:var(--text-color);cursor:pointer;display:none;font-size:25px;left:16px;position:absolute;-webkit-tap-highlight-color:rgba(0,0,0,0);top:28px;z-index:9999}:host h1{color:var(--title-color);font-size:3.2rem;margin:2.3rem 0;text-align:center}:host a{color:var(--link-color);text-decoration:none}:host p{line-height:1.7;text-align:justify}:host av-link,:host av-link{color:var(--link-color);cursor:pointer;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host av-img,:host av-docu-img{max-height:300px;width:100%}:host ul li,:host ol li{margin:5px 0}:host .table{margin:15px 0}:host .table .header{font-size:20px;font-weight:700;letter-spacing:1px;padding:0px}:host .table .header av-col{text-align:center}:host .table .header::after{background:linear-gradient(90deg, transparent 0%, var(--text-color) 50%, transparent 100%);content:"";height:1px;margin:5px auto;width:100%}:host .table av-row{align-items:center;padding:10px}:host .table av-row av-col{padding:0 15px;text-align:center}:host .cn{background-color:#cfd1d4;background-color:var(--light-primary-color);border-radius:5px;color:var(--aventus-color);font-size:14px;padding:2px 8px}:host([fade]){opacity:1;visibility:visible}@media screen and (max-width: 1100px){:host .container av-scrollable{--scroller-right: 3px}:host .container .page-content{padding:0px 16px}:host h1{padding:0 32px}:host .icon-menu{display:block}}`;
+    set 'fade'(val) { this.setBoolAttr('fade', val) }    static __style = `:host{color:var(--text-color);opacity:0;transition:visibility .3s ease-in,opacity .3s ease-in;visibility:hidden}:host .container{max-width:none;width:100%}:host .container img{border-radius:5px}:host .container av-scrollable{--scroller-right: 10px}:host .container .page-content{font-size:1.6rem;margin:auto;padding:0 50px}:host .icon-menu{color:var(--text-color);cursor:pointer;display:none;font-size:25px;left:16px;position:absolute;-webkit-tap-highlight-color:rgba(0,0,0,0);top:28px;z-index:9999}:host h1{color:var(--title-color);font-size:3.2rem;margin:2.3rem 0;text-align:center}:host a{color:var(--link-color);text-decoration:none}:host p{line-height:1.7;text-align:justify}:host av-link,:host av-link{color:var(--link-color);cursor:pointer;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host av-img,:host av-docu-img{max-height:300px;width:100%}:host ul li,:host ol li{margin:5px 0}:host .table{margin:15px 0}:host .table .header{font-size:20px;font-weight:700;letter-spacing:1px;padding:0px}:host .table .header av-col{text-align:center}:host .table .header::after{background:linear-gradient(90deg, transparent 0%, var(--text-color) 50%, transparent 100%);content:"";height:1px;margin:5px auto;width:100%}:host .table av-row{align-items:center;padding:10px}:host .table av-row av-col{padding:0 15px;text-align:center}:host .table av-row av-col.left{text-align:left}:host .cn{background-color:#cfd1d4;background-color:var(--light-primary-color);border-radius:5px;color:var(--aventus-color);font-size:14px;padding:2px 8px}:host .img-cont{align-items:center;display:flex;justify-content:center}:host .img-cont av-img{max-width:500px}:host([fade]){opacity:1;visibility:visible}@media screen and (max-width: 1100px){:host .container av-scrollable{--scroller-right: 3px}:host .container .page-content{padding:0px 16px}:host h1{padding:0 32px}:host .icon-menu{display:block}}`;
     constructor() {
         super();
         if (this.constructor == DocGenericPage) {
@@ -14389,7 +14423,7 @@ const DocUIRouter = class DocUIRouter extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI - Router Component</h1><p>The <span class="cn">Router</span> component provides the core navigation system for Aventus-based applications.It defines, registers, and manages application routes, dynamically loads and displays pages, and keeps browser navigation in sync with the active state.</p><h2>Overview</h2><p>The Router acts as a central route controller, coordinating between the app's state manager and the rendered pages.</p><p>It supports both synchronous and asynchronous route loading, custom 404 handling, URL synchronization, and smooth transitions between pages.</p><p>It must be extended to define your own route structure and optionally override its behavior.</p><h2>Example</h2><av-code language="ts">    <pre>import { Router } from "Aventus@Main:Aventus.package.avt";import { HomePage } from "../pages/Home.page.avt";import { AboutPage } from "../pages/About.page.avt";import { NotFoundPage } from "../pages/NotFound.page.avt";export class AppRouter extends Router {	protected defineRoutes(): void {		this.addRoute("/", HomePage);		this.addRoute("/about", AboutPage);		this.addRouteAsync({			route: "/contact",			scriptUrl: "/pages/contact.js",			render: () => ContactPage,		});	}	protected override error404() {		return NotFoundPage;	}}    </pre></av-code></av-code><av-code language="html">    <pre>        &lt;app-router&gt;&lt;/app-router&gt;    </pre></av-code></av-code><h2>Template</h2><av-code language="html">    <pre>&lt;slot name="before"&gt;&lt;/slot&gt;&lt;div class="content" @element="contentEl"&gt;&lt;/div&gt;&lt;slot name="after"&gt;&lt;/slot&gt;    </pre></av-code></av-code><p>This structure allows you to insert additional UI before or after the router content, such as headers, sidebars, or footers.</p><h2>Configuration</h2><p>You can globally configure the Router's default behavior:</p><av-code language="ts">    <pre>Router.configure({	page404: NotFoundPage,	destroyPage: true,});    </pre></av-code></av-code><h2>Defining Routes</h2><p>Routes are defined in the abstract defineRoutes() method.</p><av-code language="ts">    <pre>        this.addRoute("/home", HomePage);        this.addRouteAsync({            route: "/settings",            scriptUrl: "/pages/settings.js",            render: () => SettingsPage,        });    </pre></av-code></av-code><p>Async routes are useful for lazy-loading parts of your application.</p><h2>Page Lifecycle</h2><p>Each page is a component extending <span class="cn">Page</span>.When a route becomes active, the Router:</p><ul>    <li>Instantiates or reuses the corresponding <span class="cn">Page</span> class.</li>    <li>Calls <span class="cn">isAllowed()</span> on the page to check access control.</li>    <li>Invokes <span class="cn">show()</span> on the new page and <span class="cn">hide()</span> on the previous one.</li>    <li>Updates document metadata (<span class="cn">title</span>, <span class="cn">description</span>, <span class="cn">keywords</span>).</li>    <li>Synchronizes the browser URL and navigation history.</li></ul><p>Inactive pages are either removed or kept in memory depending on <span class="cn">destroyPage</span>.</p><h2>404 Handling</h2><p>If no route matches the current state, the Router:</p><ul>    <li>Instantiates the <span class="cn">page404</span> page (default or overridden)</li>    <li>Displays it in the <span class="cn">contentEl</span></li>    <li>Optionally updates the URL to a "not found" path.</li></ul><p>You can customize 404 logic by overriding error404():</p><av-code language="ts">    <pre>protected override error404(): new () => Page {	return CustomNotFoundPage;}    </pre></av-code></av-code><h2>Navigation Control</h2><h3>Programmatic Navigation</h3><p>You can navigate to a new route manually:</p><av-code language="ts">    <pre>        await this.navigate("/dashboard");    </pre></av-code></av-code><p>Replace the current history entry:</p><av-code language="ts">    <pre>       await this.navigate("/login", { replace: true });    </pre></av-code></av-code><h3>Access Control</h3><p>Override <span class="cn">canChangeState()</span> to control route transitions:</p><av-code language="ts">    <pre>protected override async canChangeState(newState: Aventus.State): Promise&lt;boolean&gt; {	const isAuthenticated = await AuthService.isLoggedIn();	return isAuthenticated;}    </pre></av-code></av-code><h3>Before/After Page Change Hooks</h3><av-code language="ts">    <pre>protected override onNewPage(oldUrl: string, oldPage: Page | undefined, newUrl: string, newPage: Page) {	console.log("Navigated from", oldUrl, "to", newUrl);}    </pre></av-code></av-code><h2>URL Binding</h2><p>By default, the Router binds to the browser URL:</p><ul>    <li>Keeps window.location in sync.</li>    <li>Supports back/forward navigation using popstate.</li></ul><p>You can disable this by overriding:</p><av-code language="ts">    <pre>protected override bindToUrl(): boolean {	return false;}    </pre></av-code></av-code><p>Or set a fallback:</p><av-code language="ts">    <pre>protected override defaultUrl(): string {	return "/home";}    </pre></av-code></av-code><h2>Methods</h2><div class="table">    <av-row class="header">        <av-col size="6">Method</av-col>        <av-col size="6">Description</av-col>    </av-row>    <av-row>        <av-col size="6">addRoute(route: string, elementCtr: new () => Page)</av-col>        <av-col size="6">Registers a synchronous route.</av-col>    </av-row>    <av-row>        <av-col size="6">addRouteAsync(options: RouteAsyncOption)</av-col>        <av-col size="6">Registers a lazy-loaded route.</av-col>    </av-row>    <av-row>        <av-col size="6">navigate(state: string | Aventus.State, options?: { replace: boolean })</av-col>        <av-col size="6">Navigates to a specific route.</av-col>    </av-row>    <av-row>        <av-col size="6">getSlugs()</av-col>        <av-col size="6">Returns the parameters extracted from the current route (if any).</av-col>    </av-row>    <av-row>        <av-col size="6">bindToUrl()</av-col>        <av-col size="6">Determines whether navigation updates the browser URL.</av-col>    </av-row>    <av-row>        <av-col size="6">shouldDestroyFrame(page: Page)</av-col>        <av-col size="6">Determines if a page should be destroyed when hidden.</av-col>    </av-row></div>` }
+        blocks: { 'default':`<h1>UI - Router Component</h1><p>The <span class="cn">Router</span> component provides the core navigation system for Aventus-based applications.It defines, registers, and manages application routes, dynamically loads and displays pages, and keeps browser navigation in sync with the active state.</p><h2>Overview</h2><p>The Router acts as a central route controller, coordinating between the app's state manager and the rendered pages.</p><p>It supports both synchronous and asynchronous route loading, custom 404 handling, URL synchronization, and smooth transitions between pages.</p><p>It must be extended to define your own route structure and optionally override its behavior.</p><h2>Example</h2><av-code language="ts">    <pre>import { Router } from "Aventus@Main:Aventus.package.avt";import { HomePage } from "../pages/Home.page.avt";import { AboutPage } from "../pages/About.page.avt";import { NotFoundPage } from "../pages/NotFound.page.avt";export class AppRouter extends Router {	protected defineRoutes(): void {		this.addRoute("/", HomePage);		this.addRoute("/about", AboutPage);		this.addRouteAsync({			route: "/contact",			scriptUrl: "/pages/contact.js",			render: () => ContactPage,		});	}	protected override error404() {		return NotFoundPage;	}}    </pre></av-code></av-code><av-code language="html">    <pre>        &lt;app-router&gt;&lt;/app-router&gt;    </pre></av-code></av-code><h2>Template</h2><av-code language="html">    <pre>&lt;slot name="before"&gt;&lt;/slot&gt;&lt;div class="content" @element="contentEl"&gt;&lt;/div&gt;&lt;slot name="after"&gt;&lt;/slot&gt;    </pre></av-code></av-code><p>This structure allows you to insert additional UI before or after the router content, such as headers, sidebars, or footers.</p><h2>Configuration</h2><p>You can globally configure the Router's default behavior:</p><av-code language="ts">    <pre>Router.configure({	page404: NotFoundPage,	destroyPage: true,});    </pre></av-code></av-code><h2>Defining Routes</h2><p>Routes are defined in the abstract defineRoutes() method.</p><av-code language="ts">    <pre>        this.addRoute("/home", HomePage);        this.addRouteAsync({            route: "/settings",            scriptUrl: "/pages/settings.js",            render: () => SettingsPage,        });    </pre></av-code></av-code><p>Async routes are useful for lazy-loading parts of your application.</p><h2>Page Lifecycle</h2><p>Each page is a component extending <span class="cn">Page</span>.When a route becomes active, the Router:</p><ul>    <li>Instantiates or reuses the corresponding <span class="cn">Page</span> class.</li>    <li>Calls <span class="cn">isAllowed()</span> on the page to check access control.</li>    <li>Invokes <span class="cn">show()</span> on the new page and <span class="cn">hide()</span> on the previous one.</li>    <li>Updates document metadata (<span class="cn">title</span>, <span class="cn">description</span>, <span class="cn">keywords</span>).</li>    <li>Synchronizes the browser URL and navigation history.</li></ul><p>Inactive pages are either removed or kept in memory depending on <span class="cn">destroyPage</span>.</p><h2>404 Handling</h2><p>If no route matches the current state, the Router:</p><ul>    <li>Instantiates the <span class="cn">page404</span> page (default or overridden)</li>    <li>Displays it in the <span class="cn">contentEl</span></li>    <li>Optionally updates the URL to a "not found" path.</li></ul><p>You can customize 404 logic by overriding error404():</p><av-code language="ts">    <pre>protected override error404(): new () => Page {	return CustomNotFoundPage;}    </pre></av-code></av-code><h2>Navigation Control</h2><h3>Programmatic Navigation</h3><p>You can navigate to a new route manually:</p><av-code language="ts">    <pre>        await this.navigate("/dashboard");    </pre></av-code></av-code><p>Replace the current history entry:</p><av-code language="ts">    <pre>       await this.navigate("/login", { replace: true });    </pre></av-code></av-code><h3>Access Control</h3><p>Override <span class="cn">canChangeState()</span> to control route transitions:</p><av-code language="ts">    <pre>protected override async canChangeState(newState: Aventus.State): Promise&lt;boolean&gt; {	const isAuthenticated = await AuthService.isLoggedIn();	return isAuthenticated;}    </pre></av-code></av-code><h3>Before/After Page Change Hooks</h3><av-code language="ts">    <pre>protected override onNewPage(oldUrl: string, oldPage: Page | undefined, newUrl: string, newPage: Page) {	console.log("Navigated from", oldUrl, "to", newUrl);}    </pre></av-code></av-code><h2>URL Binding</h2><p>By default, the Router binds to the browser URL:</p><ul>    <li>Keeps window.location in sync.</li>    <li>Supports back/forward navigation using popstate.</li></ul><p>You can disable this by overriding:</p><av-code language="ts">    <pre>protected override bindToUrl(): boolean {	return false;}    </pre></av-code></av-code><p>Or set a fallback:</p><av-code language="ts">    <pre>protected override defaultUrl(): string {	return "/home";}    </pre></av-code></av-code><h2>Methods</h2><div class="table">    <av-row class="header">        <av-col size="6" center>Method</av-col>        <av-col size="6" center>Description</av-col>    </av-row>    <av-row>        <av-col size="6" center>addRoute(route: string, elementCtr: new () => Page)</av-col>        <av-col size="6" center>Registers a synchronous route.</av-col>    </av-row>    <av-row>        <av-col size="6" center>addRouteAsync(options: RouteAsyncOption)</av-col>        <av-col size="6" center>Registers a lazy-loaded route.</av-col>    </av-row>    <av-row>        <av-col size="6" center>navigate(state: string | Aventus.State, options?: { replace: boolean })</av-col>        <av-col size="6" center>Navigates to a specific route.</av-col>    </av-row>    <av-row>        <av-col size="6" center>getSlugs()</av-col>        <av-col size="6" center>Returns the parameters extracted from the current route (if any).</av-col>    </av-row>    <av-row>        <av-col size="6" center>bindToUrl()</av-col>        <av-col size="6" center>Determines whether navigation updates the browser URL.</av-col>    </av-row>    <av-row>        <av-col size="6" center>shouldDestroyFrame(page: Page)</av-col>        <av-col size="6" center>Determines if a page should be destroyed when hidden.</av-col>    </av-row></div>` }
     });
 }
     getClassName() {
@@ -14421,8 +14455,101 @@ DocUIRouter.Tag=`av-doc-u-i-router`;
 __as1(_, 'DocUIRouter', DocUIRouter);
 if(!window.customElements.get('av-doc-u-i-router')){window.customElements.define('av-doc-u-i-router', DocUIRouter);Aventus.WebComponentInstance.registerDefinition(DocUIRouter);}
 
-const DocUIPage = class DocUIPage extends DocGenericPage {
+const DocUIPageFormRoute = class DocUIPageFormRoute extends DocGenericPage {
     static __style = ``;
+    __getStatic() {
+        return DocUIPageFormRoute;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIPageFormRoute.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUIPageFormRoute";
+    }
+    Title() {
+        return "How to Use the PageFormRoute Component in AventusJs";
+    }
+    Description() {
+        return "Discover how to use the abstract PageFormRoute component in AventusJs to structure page-level logic. This guide covers form submitting through HttpRoute.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Page",
+            "abstract page component",
+            "page metadata AventusJs",
+            "page logic structure",
+            "Aventus web development",
+            "title description management",
+            "frontend page architecture",
+            "Aventus abstract components",
+            "un-styled page logic",
+            "Aventus page guide",
+            "Page with form",
+            "Http request"
+        ];
+    }
+}
+DocUIPageFormRoute.Namespace=`AventusWebsite`;
+DocUIPageFormRoute.Tag=`av-doc-u-i-page-form-route`;
+__as1(_, 'DocUIPageFormRoute', DocUIPageFormRoute);
+if(!window.customElements.get('av-doc-u-i-page-form-route')){window.customElements.define('av-doc-u-i-page-form-route', DocUIPageFormRoute);Aventus.WebComponentInstance.registerDefinition(DocUIPageFormRoute);}
+
+const DocUIPageForm = class DocUIPageForm extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIPageForm;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIPageForm.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "DocUIPageForm";
+    }
+    Title() {
+        return "How to Use the PageForm Component in AventusJs";
+    }
+    Description() {
+        return "Discover how to use the abstract PageForm component in AventusJs to structure page-level logic. This guide covers form managment";
+    }
+    Keywords() {
+        return [
+            "AventusJs Page",
+            "abstract page component",
+            "page metadata AventusJs",
+            "page logic structure",
+            "Aventus web development",
+            "title description management",
+            "frontend page architecture",
+            "Aventus abstract components",
+            "un-styled page logic",
+            "Aventus page guide",
+            "Page with form"
+        ];
+    }
+}
+DocUIPageForm.Namespace=`AventusWebsite`;
+DocUIPageForm.Tag=`av-doc-u-i-page-form`;
+__as1(_, 'DocUIPageForm', DocUIPageForm);
+if(!window.customElements.get('av-doc-u-i-page-form')){window.customElements.define('av-doc-u-i-page-form', DocUIPageForm);Aventus.WebComponentInstance.registerDefinition(DocUIPageForm);}
+
+const DocUIPage = class DocUIPage extends DocGenericPage {
+    static __style = `:host av-col{flex-direction:row}:host .table av-row av-col{text-align:left}`;
     __getStatic() {
         return DocUIPage;
     }
@@ -14433,7 +14560,7 @@ const DocUIPage = class DocUIPage extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI - Page</h1><p>The <span class="cn">Page</span> class is the foundational building block for every navigable screen in an Aventus application.Each route in your app corresponds to a Page component, which defines its content, metadata, and lifecycle behavior.</p><h2>Overview</h2><p>A <span class="cn">Page</span> is automatically managed by the <span class="cn">Router</span> component:</p><ul>    <li>When a route is activated, its associated <span class="cn">Page</span> is shown.</li>    <li>When deactivated, it is hidden or destroyed (depending on configuration).</li>    <li>The Router updates the browser's metadata (<span class="cn">title</span>, <span class="cn">description</span>, <span class="cn">keywords</span>) based on the page's configuration.</li></ul><p>You can extend <span class="cn">Page</span> to create your own screens, and optionally override lifecycle methods like <span class="cn">onShow</span>, <span class="cn">onHide</span>, and <span class="cn">isAllowed</span>.</p><av-code language="ts">    <pre>import { Page } from "Aventus@Main:Aventus.package.avt";&nbsp;export class HomePage extends Page {	public override async configure() {		return {			title: "Home - Aventus App",			description: "Welcome to the home page of the Aventus demo application.",			keywords: ["home", "aventus", "demo"],		};	}&nbsp;	public override onShow() {		console.log("HomePage is now visible!");	}&nbsp;	public override onHide() {		console.log("HomePage was hidden!");	}}    </pre></av-code></av-code><av-code language="html">    <pre>    &lt;div&gt;		&lt;h1&gt;Welcome!&lt;/h1&gt;		&lt;p&gt;This is the home page content.&lt;/p&gt;	&lt;/div&gt;    </pre></av-code></av-code><h2>Properties</h2><div class="table">    <av-row class="header">        <av-col size="3">Property</av-col>        <av-col size="3">Type</av-col>        <av-col size="6">Description</av-col>    </av-row>    <av-row>        <av-col size="3">visible</av-col>        <av-col size="3">boolean</av-col>        <av-col size="6">Automatically managed by the router. When set to <span class="cn">true</span>, the page becomes visible.</av-col>    </av-row>    <av-row>        <av-col size="3">router</av-col>        <av-col size="3">Router</av-col>        <av-col size="6">Reference to the router managing this page.</av-col>    </av-row>    <av-row>        <av-col size="3">state</av-col>        <av-col size="3">State</av-col>        <av-col size="6">Holds the current state object for the route, if any.</av-col>    </av-row></div><p>The visible property is reactive when its value changes:</p><ul>    <li>If true, onShow() is called</li>    <li>If false, onHide() is called</li></ul><h2>Lifecycle Methods</h2><div class="table">    <av-row class="header">        <av-col size="6">Method</av-col>        <av-col size="6">Description</av-col>    </av-row>    <av-row>        <av-col size="6">configure()</av-col>        <av-col size="6">Abstract. Must return a PageConfig object defining metadata and optional destruction rules.</av-col>    </av-row>   <av-row>        <av-col size="6">show(state?: State)</av-col>        <av-col size="6">Called by the router when the page is activated. Sets visible = true.</av-col>    </av-row>    <av-row>        <av-col size="6">hide()</av-col>        <av-col size="6">Called by the router when the page is deactivated. Sets visible = false.</av-col>    </av-row>    <av-row>        <av-col size="6">onShow()</av-col>        <av-col size="6">Hook executed when the page becomes visible. Use it to start animations, load data, etc.</av-col>    </av-row>    <av-row>        <av-col size="6">onHide()</av-col>        <av-col size="6">Hook executed when the page is hidden. Use it to stop timers, clean up listeners, etc.</av-col>    </av-row>    <av-row>        <av-col size="6">isAllowed(state, pattern, router)</av-col>        <av-col size="6">Optional access control. Return true to allow, false to block, or a redirect path/state.</av-col>    </av-row></div><h2>Access Control Example</h2><p>You can control page visibility by overriding <span class="cn">isAllowed()</span>:</p><av-code language="ts">    <pre>public override async isAllowed(state: State, pattern: string, router: Router) {	const isAuthenticated = await AuthService.isLoggedIn();	&#105;f (!isAuthenticated) {		// Redirect unauthorized users to /login		return "/login";	}	return true;}    </pre></av-code></av-code><p>If the method returns:</p><ul>    <li>true → The page is displayed.</li>    <li>false → The navigation is canceled.</li>    <li>string or State → The router redirects to the given route or state.</li></ul><h2>Page Configuration</h2><p>Each page defines its configuration via the <span class="cn">configure()</span> method.</p><av-code language="ts">    <pre>public async configure(): Promise&lt;PageConfig&gt; {	return {		title: "Dashboard", // Browser tab title for this page.		description: "User dashboard overview", // Meta description for SEO.		keywords: ["dashboard", "user", "aventus"], // Meta keywords for SEO.		destroy: false, // If true, the page is destroyed (removed from the DOM) when hidden.	};}    </pre></av-code></av-code>` }
+        blocks: { 'default':`<h1>UI - Page</h1><p>The <span class="cn">Page</span> class is the foundational building block for every navigable screen in an Aventus application.Each route in your app corresponds to a Page component, which defines its content, metadata, and lifecycle behavior.</p><h2>Overview</h2><p>A <span class="cn">Page</span> is automatically managed by the <span class="cn">Router</span> component:</p><ul>    <li>When a route is activated, its associated <span class="cn">Page</span> is shown.</li>    <li>When deactivated, it is hidden or destroyed (depending on configuration).</li>    <li>The Router updates the browser's metadata (<span class="cn">title</span>, <span class="cn">description</span>, <span class="cn">keywords</span>) based on the page's configuration.</li></ul><p>You can extend <span class="cn">Page</span> to create your own screens, and optionally override lifecycle methods like <span class="cn">onShow</span>, <span class="cn">onHide</span>, and <span class="cn">isAllowed</span>.</p><av-code language="ts">    <pre>import { Page } from "Aventus@Main:Aventus.package.avt";&nbsp;export class HomePage extends Page {	public override async configure() {		return {			title: "Home - Aventus App",			description: "Welcome to the home page of the Aventus demo application.",			keywords: ["home", "aventus", "demo"],		};	}&nbsp;	public override onShow() {		console.log("HomePage is now visible!");	}&nbsp;	public override onHide() {		console.log("HomePage was hidden!");	}}    </pre></av-code></av-code><av-code language="html">    <pre>    &lt;div&gt;		&lt;h1&gt;Welcome!&lt;/h1&gt;		&lt;p&gt;This is the home page content.&lt;/p&gt;	&lt;/div&gt;    </pre></av-code></av-code><h2>Properties</h2><div class="table">    <av-row class="header">        <av-col size="3" center>Property</av-col>        <av-col size="3" center>Type</av-col>        <av-col size="6" center>Description</av-col>    </av-row>    <av-row>        <av-col size="3" center>visible</av-col>        <av-col size="3" center>boolean</av-col>        <av-col size="6"><span>Automatically managed by the router. When set to <span class="cn">true</span>, the page becomes visible.</span></av-col>    </av-row>    <av-row>        <av-col size="3" center>router</av-col>        <av-col size="3" center>Router</av-col>        <av-col size="6">Reference to the router managing this page.</av-col>    </av-row>    <av-row>        <av-col size="3" center>state</av-col>        <av-col size="3" center>State</av-col>        <av-col size="6">Holds the current state object for the route, if any.</av-col>    </av-row></div><p>The visible property is reactive when its value changes:</p><ul>    <li>If true, onShow() is called</li>    <li>If false, onHide() is called</li></ul><h2>Lifecycle Methods</h2><div class="table">    <av-row class="header">        <av-col size="6" center>Method</av-col>        <av-col size="6" center>Description</av-col>    </av-row>    <av-row>        <av-col size="6" center>configure()</av-col>        <av-col size="6">Abstract. Must return a PageConfig object defining metadata and optional destruction rules.</av-col>    </av-row>   <av-row>        <av-col size="6" center>show(state?: State)</av-col>        <av-col size="6">Called by the router when the page is activated. Sets visible = true.</av-col>    </av-row>    <av-row>        <av-col size="6" center>hide()</av-col>        <av-col size="6">Called by the router when the page is deactivated. Sets visible = false.</av-col>    </av-row>    <av-row>        <av-col size="6" center>onShow()</av-col>        <av-col size="6">Hook executed when the page becomes visible. Use it to start animations, load data, etc.</av-col>    </av-row>    <av-row>        <av-col size="6" center>onHide()</av-col>        <av-col size="6">Hook executed when the page is hidden. Use it to stop timers, clean up listeners, etc.</av-col>    </av-row>    <av-row>        <av-col size="6" center>isAllowed(state, pattern, router)</av-col>        <av-col size="6">Optional access control. Return true to allow, false to block, or a redirect path/state.</av-col>    </av-row>    <av-row>        <av-col size="6" center>loadData(state)</av-col>        <av-col size="6">Optional loading data function. Return true if evrything is ok, false to block, or a redirect path/state.</av-col>    </av-row></div><h2>Access Control Example</h2><p>You can control page visibility by overriding <span class="cn">isAllowed</span>:</p><av-code language="ts">    <pre>public override async isAllowed(state: State, pattern: string, router: Router) {	const isAuthenticated = await AuthService.isLoggedIn();	&#105;f (!isAuthenticated) {		// Redirect unauthorized users to /login		return "/login";	}	return true;}    </pre></av-code></av-code><p>If the method returns:</p><ul>    <li>true → The page is displayed.</li>    <li>false → The navigation is canceled.</li>    <li>string or State → The router redirects to the given route or state.</li></ul><h2>Loading Data Example</h2><p>You can load data for the page by overriding <span class="cn">loadData</span>:</p><av-code language="ts">    <pre>public override async loadData(state: State) {	const data = await api.loadData() as Data | null;	&#105;f (!data) {		return "/home";	}    this.appData = data;	return true;}    </pre></av-code></av-code><p>If the method returns:</p><ul>    <li>true → The page is displayed.</li>    <li>false → The navigation is canceled.</li>    <li>string or State → The router redirects to the given route or state.</li></ul><h2>Page Configuration</h2><p>Each page defines its configuration via the <span class="cn">configure()</span> method.</p><av-code language="ts">    <pre>public async configure(): Promise&lt;PageConfig&gt; {	return {		title: "Dashboard", // Browser tab title for this page.		description: "User dashboard overview", // Meta description for SEO.		keywords: ["dashboard", "user", "aventus"], // Meta keywords for SEO.		destroy: false, // If true, the page is destroyed (removed from the DOM) when hidden.	};}    </pre></av-code></av-code>` }
     });
 }
     getClassName() {
@@ -14510,7 +14637,7 @@ __as1(_, 'DocUILink', DocUILink);
 if(!window.customElements.get('av-doc-u-i-link')){window.customElements.define('av-doc-u-i-link', DocUILink);Aventus.WebComponentInstance.registerDefinition(DocUILink);}
 
 const DocUIToast = class DocUIToast extends DocGenericPage {
-    static __style = ``;
+    static __style = `:host .table av-row av-col{text-align:left}`;
     __getStatic() {
         return DocUIToast;
     }
@@ -14521,7 +14648,7 @@ const DocUIToast = class DocUIToast extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI - Toast</h1><p>The <span class="cn">Toast</span> system provides a way to display small, temporary notifications in your Aventus    application.    It is composed of two main parts:</p><ul>    <li><span class="cn">ToastElement</span>: the base class for creating custom toast notifications</li>    <li><span class="cn">ToastManager</span>: a global controller that manages positioning, stacking, and lifecycle of        toasts</li></ul><p>Toasts can appear in multiple positions on the screen, close automatically after a delay, or stay visible    indefinitely.</p><h2>Example</h2><av-doc-u-i-toast-editor-1></av-doc-u-i-toast-editor-1><h2>ToastElement Class</h2><p>ToastElement&lt;T extends ToastOptions = ToastOptions&gt; is the base class used to define how individual toast    notifications behave and appear.    It handles visibility, automatic hiding after a timeout, and transitions.</p><h3>Methods</h3><div class="table">    <av-row class="header">        <av-col size="6">Method</av-col>        <av-col size="6">Description</av-col>    </av-row>    <av-row>        <av-col size="6">static add(options: ToastOptions | ToastElement): Promise&lt;boolean&gt;</av-col>        <av-col size="6">Displays a new toast.</av-col>    </av-row>    <av-row>        <av-col size="6">setOptions(options: T): Promise&lt;void&gt;</av-col>        <av-col>Must be implemented to define how your toast handles the provided options (e.g., set text, color, or            icon).</av-col>    </av-row>    <av-row>        <av-col size="6">close()</av-col>        <av-col>Manually closes the toast and removes it from the DOM.</av-col>    </av-row></div><h2>ToastManager Class</h2><p><span class="cn">ToastManager</span> handles displaying, positioning, and stacking toasts on the screen.    It ensures that multiple notifications do not overlap and automatically manages their lifecycle.</p><h3>Global Configuration</h3><p>You can define global defaults using:</p><av-code language="ts">    <pre>        Toast.ToastManager.configure({            defaultToast: MyToast,            defaultPosition: 'top right',            defaultDelay: 4000,            heightLimitPercent: 90,        });    </pre></av-code></av-code><p><strong>ToastManagerOptions</strong></p><div class="table">    <av-row class="header">        <av-col size="4">Option</av-col>        <av-col size="4">Type</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">defaultToast</av-col>        <av-col size="4">Constructor&lt;ToastElement&gt;</av-col>        <av-col size="4">Defines the default toast class used when none is provided.</av-col>    </av-row>    <av-row>        <av-col size="4">defaultToastManager</av-col>        <av-col size="4">Constructor&lt;ToastManager&gt;</av-col>        <av-col size="4">Allows using a custom toast manager implementation.</av-col>    </av-row>    <av-row>        <av-col size="4">defaultPosition</av-col>        <av-col size="4">ToastPosition</av-col>        <av-col size="4">Default screen position for new toasts. Default : 'top right'</av-col>    </av-row>    <av-row>        <av-col size="4">defaultDelay</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Default auto-close delay for toasts.. Default : 5000</av-col>    </av-row>    <av-row>        <av-col size="4">heightLimitPercent</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Max vertical space (in % of viewport height) that toasts can occupy. Default : 100</av-col>    </av-row></div><h2>Behavior</h2><ul>    <li>The toast slides in at the specified position.</li>    <li>Automatically disappears after delay milliseconds.</li>    <li>If delay = -1, it stays visible until manually closed.</li></ul>` }
+        blocks: { 'default':`<h1>UI - Toast</h1><p>The <span class="cn">Toast</span> system provides a way to display small, temporary notifications in your Aventus    application.    It is composed of two main parts:</p><ul>    <li><span class="cn">ToastElement</span>: the base class for creating custom toast notifications</li>    <li><span class="cn">ToastManager</span>: a global controller that manages positioning, stacking, and lifecycle of        toasts</li></ul><p>Toasts can appear in multiple positions on the screen, close automatically after a delay, or stay visible    indefinitely.</p><h2>Example</h2><av-doc-u-i-toast-editor-1></av-doc-u-i-toast-editor-1><h2>ToastElement Class</h2><p>ToastElement&lt;T extends ToastOptions = ToastOptions&gt; is the base class used to define how individual toast    notifications behave and appear.    It handles visibility, automatic hiding after a timeout, and transitions.</p><h3>Methods</h3><div class="table">    <av-row class="header">        <av-col size="6" center>Method</av-col>        <av-col size="6" center>Description</av-col>    </av-row>    <av-row>        <av-col size="6" center>static add(options: ToastOptions | ToastElement): Promise&lt;boolean&gt;</av-col>        <av-col size="6">Displays a new toast.</av-col>    </av-row>    <av-row>        <av-col size="6" center>setOptions(options: T): Promise&lt;void&gt;</av-col>        <av-col size="6">Must be implemented to define how your toast handles the provided options (e.g., set text, color, or            icon).</av-col>    </av-row>    <av-row>        <av-col size="6" center>close()</av-col>        <av-col size="6">Manually closes the toast and removes it from the DOM.</av-col>    </av-row></div><h2>ToastManager Class</h2><p><span class="cn">ToastManager</span> handles displaying, positioning, and stacking toasts on the screen.    It ensures that multiple notifications do not overlap and automatically manages their lifecycle.</p><h3>Global Configuration</h3><p>You can define global defaults using:</p><av-code language="ts">    <pre>        Toast.ToastManager.configure({            defaultToast: MyToast,            defaultPosition: 'top right',            defaultDelay: 4000,            heightLimitPercent: 90,        });    </pre></av-code></av-code><p><strong>ToastManagerOptions</strong></p><div class="table">    <av-row class="header">        <av-col size="3" center>Option</av-col>        <av-col size="3" center>Type</av-col>        <av-col size="6" center>Description</av-col>    </av-row>    <av-row>        <av-col size="3" center>defaultToast</av-col>        <av-col size="3" center>Constructor&lt;ToastElement&gt;</av-col>        <av-col size="6">Defines the default toast class used when none is provided.</av-col>    </av-row>    <av-row>        <av-col size="3" center>defaultToastManager</av-col>        <av-col size="3" center>Constructor&lt;ToastManager&gt;</av-col>        <av-col size="6">Allows using a custom toast manager implementation.</av-col>    </av-row>    <av-row>        <av-col size="3" center>defaultPosition</av-col>        <av-col size="3" center>ToastPosition</av-col>        <av-col size="6">Default screen position for new toasts. Default : 'top right'</av-col>    </av-row>    <av-row>        <av-col size="3" center>defaultDelay</av-col>        <av-col size="3" center>number</av-col>        <av-col size="6">Default auto-close delay for toasts.. Default : 5000</av-col>    </av-row>    <av-row>        <av-col size="3" center>heightLimitPercent</av-col>        <av-col size="3" center>number</av-col>        <av-col size="6">Max vertical space2 (in % of viewport height) that toasts can occupy. Default : 100</av-col>    </av-row></div><h2>Behavior</h2><ul>    <li>The toast slides in at the specified position.</li>    <li>Automatically disappears after delay milliseconds.</li>    <li>If delay = -1, it stays visible until manually closed.</li></ul>` }
     });
 }
     getClassName() {
@@ -14565,7 +14692,7 @@ const DocUIModal = class DocUIModal extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI - Modal</h1><p>The <span class="cn">Modal</span> component provides a flexible framework for creating modal dialogs in Aventus    applications.    It supports promise-based resolution and rejection, allowing developers to use modals as asynchronous prompts that    return data or cancellation results.</p><h2>Overview</h2><p>ModalElement is an abstract base class designed to handle modal logic such as:</p><ul>    <li>showing and hiding modals</li>    <li>resolving or rejecting user actions</li>    <li>automatic closure via Escape key or click outside</li>    <li>customizable options for behavior and rejection values</li></ul><p>Developers should extend this class to create specific modal components (confirmation dialogs, forms, alerts, etc.).</p><h2>Example</h2><av-doc-u-i-modal-editor-1></av-doc-u-i-modal-editor-1><h2>ModalElement Class</h2><p>ModalElement&lt;T, U extends ModalOptions&lt;T&gt; = ModalOptions&lt;T&gt;&gt; defines the core functionality for    modals.    It manages showing, closing, resolving, and rejecting, using built-in support for keyboard and click interactions.</p><div class="table">    <av-row class="header">        <av-col size="6">Method</av-col>        <av-col size="6">Description</av-col>    </av-row>    <av-row>        <av-col size="6">show(element?: Element): Promise&lt;T | null&gt;</av-col>        <av-col size="6">Displays the modal and returns a Promise that resolves when the modal is either resolved or rejected.</av-col>    </av-row>    <av-row>        <av-col size="6">resolve(response: T, no_close?: boolean)</av-col>        <av-col size="6">Resolves the modal with a given response value. If no_close=true, the modal remains open after resolving.</av-col>    </av-row>    <av-row>        <av-col size="6">reject(no_close?: boolean)</av-col>        <av-col size="6">Rejects the modal with the defined rejectValue. If no_close=true, the modal remains open after rejecting.</av-col>    </av-row></div><p>Developpers can also add custom options to modal by providing an interface that extends from <span class="cn">ModalOptions</span>.</p><h2>ModalOptions Interface</h2><p>Defines the modal's configurable behaviors.</p><div class="table">    <av-row class="header">        <av-col size="2">Option</av-col>        <av-col size="2">Type</av-col>        <av-col size="2">Default</av-col>        <av-col size="6">Description</av-col>    </av-row>    <av-row>        <av-col size="2">closeWithEsc</av-col>        <av-col size="2">boolean</av-col>        <av-col size="2">true</av-col>        <av-col size="6">Whether the modal should close when pressing the Escape key.</av-col>    </av-row>    <av-row>        <av-col size="2">closeWithClick</av-col>        <av-col size="2">boolean</av-col>        <av-col size="2">true</av-col>        <av-col size="6">Whether clicking outside the modal should close it.</av-col>    </av-row>    <av-row>        <av-col size="2">rejectValue</av-col>        <av-col size="2">T | null</av-col>        <av-col size="2">null</av-col>        <av-col size="6">The value returned when the modal is dismissed or canceled.</av-col>    </av-row></div><p>Developers can extends this interface to allow more options. For example if the modal has the close icon that is    configurable.</p><av-code language="ts">    <pre>    interface ModalOptions&lt;T = any&gt; =  Aventus.Modal.ModalOptions&lt;T&gt; & {        closeIcon?: boolean    }&nbsp;    export abstract class Modal extends ModalElement&lt;boolean, ModalOptions&lt;boolean&gt;&gt; implements Aventus.DefaultComponent {&nbsp;    }    </pre></av-code></av-code><h2>Static Configuration</h2><p>You can globally configure default modal behavior:</p><av-code language="ts">    <pre>    Aventus.Modal.ModalElement.configure({        closeWithClick: false,        rejectValue: null    });    </pre></av-code></av-code>` }
+        blocks: { 'default':`<h1>UI - Modal</h1><p>The <span class="cn">Modal</span> component provides a flexible framework for creating modal dialogs in Aventus    applications.    It supports promise-based resolution and rejection, allowing developers to use modals as asynchronous prompts that    return data or cancellation results.</p><h2>Overview</h2><p>ModalElement is an abstract base class designed to handle modal logic such as:</p><ul>    <li>showing and hiding modals</li>    <li>resolving or rejecting user actions</li>    <li>automatic closure via Escape key or click outside</li>    <li>customizable options for behavior and rejection values</li></ul><p>Developers should extend this class to create specific modal components (confirmation dialogs, forms, alerts, etc.).</p><h2>Example</h2><av-doc-u-i-modal-editor-1></av-doc-u-i-modal-editor-1><h2>ModalElement Class</h2><p>ModalElement&lt;T, U extends ModalOptions&lt;T&gt; = ModalOptions&lt;T&gt;&gt; defines the core functionality for    modals.    It manages showing, closing, resolving, and rejecting, using built-in support for keyboard and click interactions.</p><div class="table">    <av-row class="header">        <av-col size="6" center>Method</av-col>        <av-col size="6" center>Description</av-col>    </av-row>    <av-row>        <av-col size="6" center>show(element?: Element): Promise&lt;T | null&gt;</av-col>        <av-col size="6" center>Displays the modal and returns a Promise that resolves when the modal is either resolved or rejected.</av-col>    </av-row>    <av-row>        <av-col size="6" center>resolve(response: T, no_close?: boolean)</av-col>        <av-col size="6" center>Resolves the modal with a given response value. If no_close=true, the modal remains open after resolving.</av-col>    </av-row>    <av-row>        <av-col size="6" center>reject(no_close?: boolean)</av-col>        <av-col size="6" center>Rejects the modal with the defined rejectValue. If no_close=true, the modal remains open after rejecting.</av-col>    </av-row></div><p>Developpers can also add custom options to modal by providing an interface that extends from <span class="cn">ModalOptions</span>.</p><h2>ModalOptions Interface</h2><p>Defines the modal's configurable behaviors.</p><div class="table">    <av-row class="header">        <av-col size="2" center>Option</av-col>        <av-col size="2" center>Type</av-col>        <av-col size="2" center>Default</av-col>        <av-col size="6" center>Description</av-col>    </av-row>    <av-row>        <av-col size="2" center>closeWithEsc</av-col>        <av-col size="2" center>boolean</av-col>        <av-col size="2" center>true</av-col>        <av-col size="6" center>Whether the modal should close when pressing the Escape key.</av-col>    </av-row>    <av-row>        <av-col size="2" center>closeWithClick</av-col>        <av-col size="2" center>boolean</av-col>        <av-col size="2" center>true</av-col>        <av-col size="6" center>Whether clicking outside the modal should close it.</av-col>    </av-row>    <av-row>        <av-col size="2" center>rejectValue</av-col>        <av-col size="2" center>T | null</av-col>        <av-col size="2" center>null</av-col>        <av-col size="6" center>The value returned when the modal is dismissed or canceled.</av-col>    </av-row></div><p>Developers can extends this interface to allow more options. For example if the modal has the close icon that is    configurable.</p><av-code language="ts">    <pre>    interface ModalOptions&lt;T = any&gt; =  Aventus.Modal.ModalOptions&lt;T&gt; & {        closeIcon?: boolean    }&nbsp;    export abstract class Modal extends ModalElement&lt;boolean, ModalOptions&lt;boolean&gt;&gt; implements Aventus.DefaultComponent {&nbsp;    }    </pre></av-code></av-code><h2>Static Configuration</h2><p>You can globally configure default modal behavior:</p><av-code language="ts">    <pre>    Aventus.Modal.ModalElement.configure({        closeWithClick: false,        rejectValue: null    });    </pre></av-code></av-code>` }
     });
 }
     getClassName() {
@@ -14653,7 +14780,7 @@ const DocUIScrollable = class DocUIScrollable extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI - Scrollable</h1><p>The <span class="cn">av-scrollable</span> component provides a custom, fully-featured scrollable container with    support for:</p><ul>    <li>Horizontal and vertical scrolling</li>    <li>Smooth momentum-based scrolling</li>    <li>Floating or static scrollbars</li>    <li>Auto-hide scrollbars</li>    <li>Mouse dragging</li>    <li>Touch and pinch-zoom support</li>    <li>Zooming on a point</li>    <li>Programmatic scrolling</li></ul><p>It's ideal for applications that need precise control over scroll behavior, including drag-to-scroll, zoomable    content, and custom scrollbars.</p><h2>Concept</h2><p><span class="cn">av-scrollable</span> wraps content in a scrollable container with custom scrollbars. Unlike native    scroll elements, it supports momentum, pinch zoom, and dragging, with fully customizable styling.</p><p>Example:</p><av-doc-u-i-scrollable-editor-1></av-doc-u-i-scrollable-editor-1><h2>Attributes</h2><div class="table">    <av-row class="header">        <av-col size="4">Attribute</av-col>        <av-col size="4">Type</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">x_scroll</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Enable horizontal scrolling. Default: false.</av-col>    </av-row>    <av-row>        <av-col size="4">y_scroll</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Enable vertical scrolling. Default: true. </av-col>    </av-row>    <av-row>        <av-col size="4">floating_scroll</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">If true, scrollbars float over content instead of pushing it. </av-col>    </av-row>    <av-row>        <av-col size="4">auto_hide</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Scrollbars hide automatically when not in use.</av-col>    </av-row>    <av-row>        <av-col size="4">disable</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Disables all user interaction with scrolling.</av-col>    </av-row>    <av-row>        <av-col size="4">mouse_drag</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Enables dragging content with a mouse.</av-col>    </av-row>    <av-row>        <av-col size="4">pinch</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Enables pinch-to-zoom on touch devices.</av-col>    </av-row>    <av-row>        <av-col size="4">zoom</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Current zoom level of the content. Default: 1. </av-col>    </av-row>    <av-row>        <av-col size="4">min_zoom</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Minimum allowed zoom level. Default: 1. </av-col>    </av-row>    <av-row>        <av-col size="4">max_zoom</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Maximum allowed zoom level. Default: unlimited. </av-col>    </av-row>    <av-row>        <av-col size="4">break</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Easing factor for momentum. Default: 0.1. </av-col>    </av-row></div><h2>Features</h2><h3>1. Momentum-based scrolling</h3><p><span class="cn">av-scrollable</span> applies smooth momentum when dragging or using the mouse wheel. The break    attribute controls easing.</p><h3>2. Custom scrollbars</h3><ul>    <li>Scrollbars are separate DOM elements, styled with CSS variables.</li>    <li>Floating scrollbars can auto-hide after inactivity.</li>    <li>Supports drag-to-scroll directly on the scrollbars.</li></ul><h3>3. Pinch-to-zoom</h3><ul>    <li>Works on touch devices with two fingers.</li>    <li>Zoom is centered on a point for precise control.</li>    <li>Zoom boundaries respect min_zoom and max_zoom.</li>    <li>Triggers onZoomChange callback when zoom changes.</li></ul><h3>4. Mouse dragging</h3><ul>    <li>Drag content with mouse if mouse_drag is enabled.</li>    <li>Momentum continues after release for a natural feel.</li></ul><h2>Callbacks</h2><div class="table">    <av-row class="header">        <av-col size="4">Callback</av-col>        <av-col size="8">Description</av-col>    </av-row>    <av-row>        <av-col size="4">onScrollChange</av-col>        <av-col size="8">Triggered whenever the scroll position changes. Returns (x: number, y: number).</av-col>    </av-row>    <av-row>        <av-col size="4">onZoomChange</av-col>        <av-col size="8">Triggered when the zoom level changes. Returns the new zoom number.</av-col>    </av-row></div><h2>Methods</h2><div class="table">    <av-row class="header">        <av-col size="6">Method</av-col>        <av-col size="6">Description</av-col>        </av-row>    <av-row>        <av-col size="6">scrollToPosition(x, y)</av-col>        <av-col size="6">Scrolls to specific pixel positions.</av-col>    </av-row>    <av-row>        <av-col size="6">scrollX(x)</av-col>        <av-col size="6">Scroll horizontally to pixel position.</av-col>    </av-row>    <av-row>        <av-col size="6">scrollXPercent(percent)</av-col>        <av-col size="6">Scroll horizontally as a percentage of total width.</av-col>    </av-row>    <av-row>        <av-col size="6">scrollY(y)</av-col>        <av-col size="6">Scroll vertically to pixel position.</av-col>    </av-row>    <av-row>        <av-col size="6">scrollYPercent(percent)</av-col>        <av-col size="6">Scroll vertically as a percentage of total height.</av-col>    </av-row>    <av-row>        <av-col size="6">zoomOnPoint(clientX, clientY, newZoom)</av-col>        <av-col size="6">Zoom centered at a screen point (clientX, clientY) to a specific zoom value.</av-col>    </av-row>    <av-row>        <av-col size="6">autoScrollRight(percent)</av-col>        <av-col size="6">Automatically scrolls right at a speed relative to content size.</av-col>    </av-row>    <av-row>        <av-col size="6">stopAutoScrollRight()</av-col>        <av-col size="6">Stops auto-scroll right.</av-col>    </av-row>    <av-row>        <av-col size="6">autoScrollLeft(percent)</av-col>        <av-col size="6">Automatically scrolls left.</av-col>    </av-row>    <av-row>        <av-col size="6">stopAutoScrollLeft()</av-col>        <av-col size="6">Stops auto-scroll left.</av-col>    </av-row>    <av-row>        <av-col size="6">autoScrollTop(percent)</av-col>        <av-col size="6">Automatically scrolls up.</av-col>    </av-row>    <av-row>        <av-col size="6">stopAutoScrollTop()</av-col>        <av-col size="6">Stops auto-scroll up.</av-col>    </av-row>    <av-row>        <av-col size="6">autoScrollBottom(percent)</av-col>        <av-col size="6">Automatically scrolls down.</av-col>    </av-row>    <av-row>        <av-col size="6">stopAutoScrollBottom()</av-col>        <av-col size="6">Stops auto-scroll down.</av-col>    </av-row></div><h2>CSS Variables</h2><div class="table">    <av-row class="header">        <av-col size="4">Variable</av-col>        <av-col size="4">Default</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">--scrollbar-container-color</av-col>        <av-col size="4">transparent</av-col>        <av-col size="4">Background color of scrollbar container.</av-col>    </av-row>    <av-row>        <av-col size="4">--scrollbar-color</av-col>        <av-col size="4">#757575</av-col>        <av-col size="4">Scrollbar color.</av-col>    </av-row>    <av-row>        <av-col size="4">--scrollbar-active-color</av-col>        <av-col size="4">#858585</av-col>        <av-col size="4">Scrollbar color when active/dragged.</av-col>    </av-row>    <av-row>        <av-col size="4">--scroller-width</av-col>        <av-col size="4">6px</av-col>        <av-col size="4">Width of scrollbar.</av-col>    </av-row>    <av-row>        <av-col size="4">--scroller-top</av-col>        <av-col size="4">3px</av-col>        <av-col size="4">Top padding of horizontal scrollbar.</av-col>    </av-row>    <av-row>        <av-col size="4">--scroller-bottom</av-col>        <av-col size="4">3px</av-col>        <av-col size="4">Bottom padding of horizontal scrollbar.</av-col>    </av-row>    <av-row>        <av-col size="4">--scroller-left</av-col>        <av-col size="4">3px</av-col>        <av-col size="4">Left padding of vertical scrollbar.</av-col>    </av-row>    <av-row>        <av-col size="4">--scroller-right</av-col>        <av-col size="4">3px</av-col>        <av-col size="4">Right padding of vertical scrollbar.</av-col>    </av-row>    <av-row>        <av-col size="4">--scrollbar-content-padding</av-col>        <av-col size="4">0</av-col>        <av-col size="4">Padding inside content-wrapper.</av-col>    </av-row>    <av-row>        <av-col size="4">--scrollbar-container-display</av-col>        <av-col size="4">inline-block</av-col>        <av-col size="4">Display type of content-wrapper.</av-col>    </av-row></div><h2>Notes</h2><ul>    <li>Scrollbars are automatically shown or hidden based on content size.</li>    <li><span class="cn">disable</span> temporarily locks scrolling and zooming.</li>    <li>Pinch zoom uses DOMMatrix transformations for smooth and accurate scaling.</li>    <li>Supports both pixel-based and percent-based scrolling.</li>    <li>Works in combination with Aventus PressManager for unified pointer/touch handling.</li></ul>` }
+        blocks: { 'default':`<h1>UI - Scrollable</h1><p>The <span class="cn">av-scrollable</span> component provides a custom, fully-featured scrollable container with    support for:</p><ul>    <li>Horizontal and vertical scrolling</li>    <li>Smooth momentum-based scrolling</li>    <li>Floating or static scrollbars</li>    <li>Auto-hide scrollbars</li>    <li>Mouse dragging</li>    <li>Touch and pinch-zoom support</li>    <li>Zooming on a point</li>    <li>Programmatic scrolling</li></ul><p>It's ideal for applications that need precise control over scroll behavior, including drag-to-scroll, zoomable    content, and custom scrollbars.</p><h2>Concept</h2><p><span class="cn">av-scrollable</span> wraps content in a scrollable container with custom scrollbars. Unlike native    scroll elements, it supports momentum, pinch zoom, and dragging, with fully customizable styling.</p><p>Example:</p><av-doc-u-i-scrollable-editor-1></av-doc-u-i-scrollable-editor-1><h2>Attributes</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Attribute</av-col>        <av-col size="4" center>Type</av-col>        <av-col size="4" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>x_scroll</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>Enable horizontal scrolling. Default: false.</av-col>    </av-row>    <av-row>        <av-col size="4" center>y_scroll</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>Enable vertical scrolling. Default: true. </av-col>    </av-row>    <av-row>        <av-col size="4" center>floating_scroll</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>If true, scrollbars float over content instead of pushing it. </av-col>    </av-row>    <av-row>        <av-col size="4" center>auto_hide</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>Scrollbars hide automatically when not in use.</av-col>    </av-row>    <av-row>        <av-col size="4" center>disable</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>Disables all user interaction with scrolling.</av-col>    </av-row>    <av-row>        <av-col size="4" center>mouse_drag</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>Enables dragging content with a mouse.</av-col>    </av-row>    <av-row>        <av-col size="4" center>pinch</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>Enables pinch-to-zoom on touch devices.</av-col>    </av-row>    <av-row>        <av-col size="4" center>zoom</av-col>        <av-col size="4" center>number</av-col>        <av-col size="4" center>Current zoom level of the content. Default: 1. </av-col>    </av-row>    <av-row>        <av-col size="4" center>min_zoom</av-col>        <av-col size="4" center>number</av-col>        <av-col size="4" center>Minimum allowed zoom level. Default: 1. </av-col>    </av-row>    <av-row>        <av-col size="4" center>max_zoom</av-col>        <av-col size="4" center>number</av-col>        <av-col size="4" center>Maximum allowed zoom level. Default: unlimited. </av-col>    </av-row>    <av-row>        <av-col size="4" center>break</av-col>        <av-col size="4" center>number</av-col>        <av-col size="4" center>Easing factor for momentum. Default: 0.1. </av-col>    </av-row></div><h2>Features</h2><h3>1. Momentum-based scrolling</h3><p><span class="cn">av-scrollable</span> applies smooth momentum when dragging or using the mouse wheel. The break    attribute controls easing.</p><h3>2. Custom scrollbars</h3><ul>    <li>Scrollbars are separate DOM elements, styled with CSS variables.</li>    <li>Floating scrollbars can auto-hide after inactivity.</li>    <li>Supports drag-to-scroll directly on the scrollbars.</li></ul><h3>3. Pinch-to-zoom</h3><ul>    <li>Works on touch devices with two fingers.</li>    <li>Zoom is centered on a point for precise control.</li>    <li>Zoom boundaries respect min_zoom and max_zoom.</li>    <li>Triggers onZoomChange callback when zoom changes.</li></ul><h3>4. Mouse dragging</h3><ul>    <li>Drag content with mouse if mouse_drag is enabled.</li>    <li>Momentum continues after release for a natural feel.</li></ul><h2>Callbacks</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Callback</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>onScrollChange</av-col>        <av-col size="8">Triggered whenever the scroll position changes. Returns (x: number, y: number).</av-col>    </av-row>    <av-row>        <av-col size="4" center>onZoomChange</av-col>        <av-col size="8">Triggered when the zoom level changes. Returns the new zoom number.</av-col>    </av-row></div><h2>Methods</h2><div class="table">    <av-row class="header">        <av-col size="6" center>Method</av-col>        <av-col size="6" center>Description</av-col>        </av-row>    <av-row>        <av-col size="6" center>scrollToPosition(x, y)</av-col>        <av-col size="6">Scrolls to specific pixel positions.</av-col>    </av-row>    <av-row>        <av-col size="6" center>scrollX(x)</av-col>        <av-col size="6">Scroll horizontally to pixel position.</av-col>    </av-row>    <av-row>        <av-col size="6" center>scrollXPercent(percent)</av-col>        <av-col size="6">Scroll horizontally as a percentage of total width.</av-col>    </av-row>    <av-row>        <av-col size="6" center>scrollY(y)</av-col>        <av-col size="6">Scroll vertically to pixel position.</av-col>    </av-row>    <av-row>        <av-col size="6" center>scrollYPercent(percent)</av-col>        <av-col size="6">Scroll vertically as a percentage of total height.</av-col>    </av-row>    <av-row>        <av-col size="6" center>zoomOnPoint(clientX, clientY, newZoom)</av-col>        <av-col size="6">Zoom centered at a screen point (clientX, clientY) to a specific zoom value.</av-col>    </av-row>    <av-row>        <av-col size="6" center>autoScrollRight(percent)</av-col>        <av-col size="6">Automatically scrolls right at a speed relative to content size.</av-col>    </av-row>    <av-row>        <av-col size="6" center>stopAutoScrollRight()</av-col>        <av-col size="6">Stops auto-scroll right.</av-col>    </av-row>    <av-row>        <av-col size="6" center>autoScrollLeft(percent)</av-col>        <av-col size="6">Automatically scrolls left.</av-col>    </av-row>    <av-row>        <av-col size="6" center>stopAutoScrollLeft()</av-col>        <av-col size="6">Stops auto-scroll left.</av-col>    </av-row>    <av-row>        <av-col size="6" center>autoScrollTop(percent)</av-col>        <av-col size="6">Automatically scrolls up.</av-col>    </av-row>    <av-row>        <av-col size="6" center>stopAutoScrollTop()</av-col>        <av-col size="6">Stops auto-scroll up.</av-col>    </av-row>    <av-row>        <av-col size="6" center>autoScrollBottom(percent)</av-col>        <av-col size="6">Automatically scrolls down.</av-col>    </av-row>    <av-row>        <av-col size="6" center>stopAutoScrollBottom()</av-col>        <av-col size="6">Stops auto-scroll down.</av-col>    </av-row></div><h2>CSS Variables</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Variable</av-col>        <av-col size="4" center>Default</av-col>        <av-col size="4" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>--scrollbar-container-color</av-col>        <av-col size="4" center>transparent</av-col>        <av-col size="4" center>Background color of scrollbar container.</av-col>    </av-row>    <av-row>        <av-col size="4" center>--scrollbar-color</av-col>        <av-col size="4" center>#757575</av-col>        <av-col size="4" center>Scrollbar color.</av-col>    </av-row>    <av-row>        <av-col size="4" center>--scrollbar-active-color</av-col>        <av-col size="4" center>#858585</av-col>        <av-col size="4" center>Scrollbar color when active/dragged.</av-col>    </av-row>    <av-row>        <av-col size="4" center>--scroller-width</av-col>        <av-col size="4" center>6px</av-col>        <av-col size="4" center>Width of scrollbar.</av-col>    </av-row>    <av-row>        <av-col size="4" center>--scroller-top</av-col>        <av-col size="4" center>3px</av-col>        <av-col size="4" center>Top padding of horizontal scrollbar.</av-col>    </av-row>    <av-row>        <av-col size="4" center>--scroller-bottom</av-col>        <av-col size="4" center>3px</av-col>        <av-col size="4" center>Bottom padding of horizontal scrollbar.</av-col>    </av-row>    <av-row>        <av-col size="4" center>--scroller-left</av-col>        <av-col size="4" center>3px</av-col>        <av-col size="4" center>Left padding of vertical scrollbar.</av-col>    </av-row>    <av-row>        <av-col size="4" center>--scroller-right</av-col>        <av-col size="4" center>3px</av-col>        <av-col size="4" center>Right padding of vertical scrollbar.</av-col>    </av-row>    <av-row>        <av-col size="4" center>--scrollbar-content-padding</av-col>        <av-col size="4" center>0</av-col>        <av-col size="4" center>Padding inside content-wrapper.</av-col>    </av-row>    <av-row>        <av-col size="4" center>--scrollbar-container-display</av-col>        <av-col size="4" center>inline-block</av-col>        <av-col size="4" center>Display type of content-wrapper.</av-col>    </av-row></div><h2>Notes</h2><ul>    <li>Scrollbars are automatically shown or hidden based on content size.</li>    <li><span class="cn">disable</span> temporarily locks scrolling and zooming.</li>    <li>Pinch zoom uses DOMMatrix transformations for smooth and accurate scaling.</li>    <li>Supports both pixel-based and percent-based scrolling.</li>    <li>Works in combination with Aventus PressManager for unified pointer/touch handling.</li></ul>` }
     });
 }
     getClassName() {
@@ -14697,7 +14824,7 @@ const DocUIImage = class DocUIImage extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI - Image</h1><p>The <span class="cn">av-img</span> component is an advanced image element that supports raster and SVG images,    dynamic resizing, display modes (stretch, contains, cover), and optional caching.</p><p>It replaces the standard <span class="cn">&lt;img&gt;</span> tag when you need consistent, reactive sizing or when    you want to embed and colorize SVGs directly.</p><h2>Concept</h2><p><span class="cn">av-img</span> manages the rendering and scaling of images inside flexible containers. It    automatically adjusts its internal image or SVG to match the container's size and the selected display mode.</p><p>It supports:</p><ul>    <li>Automatic aspect ratio calculation</li>    <li>SVG inline loading with color control</li>    <li>Optional caching via base64 encoding</li>    <li>Dynamic resizing with ResizeObserver</li></ul><av-code language="html">    <pre>        &lt;av-img src="/assets/example.jpg" mode="cover"&gt;&lt;/av-img&gt;    </pre></av-code></av-code><h2>Attributes</h2><div class="table">    <av-row class="header">        <av-col size="4">Attribute</av-col>        <av-col size="4">Type</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">src</av-col>        <av-col size="4">string</av-col>        <av-col size="4">Path or URL of the image (supports .svg).</av-col>    </av-row>    <av-row>        <av-col size="4">mode</av-col>        <av-col size="4">'stretch' | 'contains' | 'cover'</av-col>        <av-col size="4">Defines how the image fits inside the container. Default: "contains".</av-col>    </av-row>    <av-row>        <av-col size="4">cache</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">If true, loads the image as a Base64 string for faster access and offline            availability.</av-col>    </av-row></div><h2>Modes</h2><div class="table">    <av-row class="header">        <av-col size="4">Mode</av-col>        <av-col size="4">Description</av-col>        <av-col size="4">Behavior</av-col>    </av-row>    <av-row>        <av-col size="4">stretch</av-col>        <av-col size="4">Fills the entire container regardless of aspect ratio.</av-col>        <av-col size="4">May distort the image.</av-col>    </av-row>    <av-row>        <av-col size="4">contains</av-col>        <av-col size="4">Scales the image to fit within the container while maintaining aspect ratio.</av-col>        <av-col size="4">No cropping; may leave empty space.</av-col>    </av-row>    <av-row>        <av-col size="4">cover</av-col>        <av-col size="4">Scales the image to completely fill the container while maintaining aspect ratio.</av-col>        <av-col size="4">May crop part of the image.</av-col>    </av-row></div><av-code language="html">    <pre>        &lt;av-img src="/photos/banner.svg" mode="cover"&gt;&lt;/av-img&gt;        &lt;av-img src="/photos/logo.svg" mode="contains"&gt;&lt;/av-img&gt;    </pre></av-code></av-code><h2>SVG Support</h2><p>If the src ends with .svg, the file is loaded inline, allowing you to style or animate it using CSS variables.</p><av-code language="html">    <pre>        &lt;av-img src="/icons/mail.svg"&gt;&lt;/av-img&gt;    </pre></av-code></av-code><p>You can override colors directly via CSS variables:</p><div class="table">    <av-row class="header">        <av-col size="4">Variable</av-col>        <av-col size="4">Description</av-col>        <av-col size="4">Default</av-col>    </av-row>    <av-row>        <av-col size="4">--img-color</av-col>        <av-col size="4">General SVG color base</av-col>        <av-col size="4">none</av-col>    </av-row>    <av-row>        <av-col size="4">--img-stroke-color</av-col>        <av-col size="4">Stroke color for SVG lines</av-col>        <av-col size="4">var(--img-color)</av-col>    </av-row>    <av-row>        <av-col size="4">--img-fill-color</av-col>        <av-col size="4">Fill color for SVG lines</av-col>        <av-col size="4">var(--img-color)</av-col>    </av-row>    <av-row>        <av-col size="4">--img-color-transition</av-col>        <av-col size="4">Transition for color changes</av-col>        <av-col size="4">none</av-col>    </av-row></div><p>This allows theme-based or hover-driven color changes for inline SVGs.</p><h2>Caching</h2><p>If the cache attribute is set, <span class="cn">av-img</span> uses the <span class="cn">Aventus ResourceLoader</span>    to load and convert the image into a Base64 string.</p><p>This is useful for:</p><ul>    <li>Avoiding multiple network requests for frequently used images</li>    <li>Faster rendering of static assets</li></ul><av-code language="html">    <pre>        &lt;av-img src="/logos/company.png" cache&gt;&lt;/av-img&gt;    </pre></av-code></av-code>` }
+        blocks: { 'default':`<h1>UI - Image</h1><p>The <span class="cn">av-img</span> component is an advanced image element that supports raster and SVG images,    dynamic resizing, display modes (stretch, contains, cover), and optional caching.</p><p>It replaces the standard <span class="cn">&lt;img&gt;</span> tag when you need consistent, reactive sizing or when    you want to embed and colorize SVGs directly.</p><h2>Concept</h2><p><span class="cn">av-img</span> manages the rendering and scaling of images inside flexible containers. It    automatically adjusts its internal image or SVG to match the container's size and the selected display mode.</p><p>It supports:</p><ul>    <li>Automatic aspect ratio calculation</li>    <li>SVG inline loading with color control</li>    <li>Optional caching via base64 encoding</li>    <li>Dynamic resizing with ResizeObserver</li></ul><av-code language="html">    <pre>        &lt;av-img src="/assets/example.jpg" mode="cover"&gt;&lt;/av-img&gt;    </pre></av-code></av-code><h2>Attributes</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Attribute</av-col>        <av-col size="4" center>Type</av-col>        <av-col size="4" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>src</av-col>        <av-col size="4" center>string</av-col>        <av-col size="4" center>Path or URL of the image (supports .svg).</av-col>    </av-row>    <av-row>        <av-col size="4" center>mode</av-col>        <av-col size="4" center>'stretch' | 'contains' | 'cover'</av-col>        <av-col size="4" center>Defines how the image fits inside the container. Default: "contains".</av-col>    </av-row>    <av-row>        <av-col size="4" center>cache</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>If true, loads the image as a Base64 string for faster access and offline            availability.</av-col>    </av-row></div><h2>Modes</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Mode</av-col>        <av-col size="4" center>Description</av-col>        <av-col size="4" center>Behavior</av-col>    </av-row>    <av-row>        <av-col size="4" center>stretch</av-col>        <av-col size="4" center>Fills the entire container regardless of aspect ratio.</av-col>        <av-col size="4" center>May distort the image.</av-col>    </av-row>    <av-row>        <av-col size="4" center>contains</av-col>        <av-col size="4" center>Scales the image to fit within the container while maintaining aspect ratio.</av-col>        <av-col size="4" center>No cropping; may leave empty space.</av-col>    </av-row>    <av-row>        <av-col size="4" center>cover</av-col>        <av-col size="4" center>Scales the image to completely fill the container while maintaining aspect ratio.</av-col>        <av-col size="4" center>May crop part of the image.</av-col>    </av-row></div><av-code language="html">    <pre>        &lt;av-img src="/photos/banner.svg" mode="cover"&gt;&lt;/av-img&gt;        &lt;av-img src="/photos/logo.svg" mode="contains"&gt;&lt;/av-img&gt;    </pre></av-code></av-code><h2>SVG Support</h2><p>If the src ends with .svg, the file is loaded inline, allowing you to style or animate it using CSS variables.</p><av-code language="html">    <pre>        &lt;av-img src="/icons/mail.svg"&gt;&lt;/av-img&gt;    </pre></av-code></av-code><p>You can override colors directly via CSS variables:</p><div class="table">    <av-row class="header">        <av-col size="4" center>Variable</av-col>        <av-col size="4" center>Description</av-col>        <av-col size="4" center>Default</av-col>    </av-row>    <av-row>        <av-col size="4" center>--img-color</av-col>        <av-col size="4" center>General SVG color base</av-col>        <av-col size="4" center>none</av-col>    </av-row>    <av-row>        <av-col size="4" center>--img-stroke-color</av-col>        <av-col size="4" center>Stroke color for SVG lines</av-col>        <av-col size="4" center>var(--img-color)</av-col>    </av-row>    <av-row>        <av-col size="4" center>--img-fill-color</av-col>        <av-col size="4" center>Fill color for SVG lines</av-col>        <av-col size="4" center>var(--img-color)</av-col>    </av-row>    <av-row>        <av-col size="4" center>--img-color-transition</av-col>        <av-col size="4" center>Transition for color changes</av-col>        <av-col size="4" center>none</av-col>    </av-row></div><p>This allows theme-based or hover-driven color changes for inline SVGs.</p><h2>Caching</h2><p>If the cache attribute is set, <span class="cn">av-img</span> uses the <span class="cn">Aventus ResourceLoader</span>    to load and convert the image into a Base64 string.</p><p>This is useful for:</p><ul>    <li>Avoiding multiple network requests for frequently used images</li>    <li>Faster rendering of static assets</li></ul><av-code language="html">    <pre>        &lt;av-img src="/logos/company.png" cache&gt;&lt;/av-img&gt;    </pre></av-code></av-code>` }
     });
 }
     getClassName() {
@@ -14741,7 +14868,7 @@ const DocUIGridHelper = class DocUIGridHelper extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI - Grid Helper</h1><p>The <span class="cn">av-grid-helper</span> component provides an interactive visual layout grid with rulers, guides,    and snapping.    It's designed to help developers and designers align elements precisely within a web layout, similar to tools found    in Figma, Photoshop, or web editors.</p><h2>Concept</h2><p><span class="cn">av-grid-helper</span> overlays your interface with rulers, a customizable grid, and draggable    guides.    It can be toggled on or off, locked to prevent editing, and remembers guide positions between sessions (using <span class="cn">localStorage</span>).</p><p>The component can show:</p><ul>    <li>Horizontal and vertical rulers (with custom units)</li>    <li>A configurable grid (columns and rows)</li>    <li>Draggable guide lines (with magnetic snapping)</li>    <li>Keyboard shortcuts for quick control</li></ul><h2>Example</h2><av-doc-u-i-grid-helper-editor-1></av-doc-u-i-grid-helper-editor-1><h2>Features</h2><ul>    <li>        <strong>Customizable Units : </strong>        <span>Supports multiple measurement units: px, rem, cm, mm, in, and pt.</span>    </li>    <li>        <strong>Smart Grid Rendering : </strong>        <span>Automatically calculates the number of rows and columns based on container size and settings.</span>    </li>    <li>        <strong>Rulers : </strong>        <span>Displays rulers on the top and left with configurable step sizes and major ticks.</span>    </li>    <li>        <strong>Draggable Guides : </strong>        <span>Drag from a ruler to create a guide. Double-click on a ruler to add a guide at a specific position.</span>    </li>    <li>        <strong>Magnetic Snapping : </strong>        <span>Guides snap to grid steps if the pointer is close enough (controlled by the magnetic property).</span>    </li>    <li>        <strong>Keyboard Shortcuts : </strong>        <span>Control visibility and locking with keyboard combinations.</span>    </li>    <li>        <strong>Persistent Guides : </strong>        <span>Saves and restores guide positions using localStorage.</span>    </li></ul><h2>Attributes</h2><div class="table">    <av-row class="header">        <av-col size="4">Attribute</av-col>        <av-col size="4">Type</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">unit</av-col>        <av-col size="4">'px' | 'rem' | 'cm' | 'mm' | 'in' | 'pt'</av-col>        <av-col size="4">Unit of measurement used for grid and rulers.</av-col>    </av-row>    <av-row>        <av-col size="4">nb_col</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Number of grid columns (auto-calculated if 0).</av-col>    </av-row>    <av-row>        <av-col size="4">nb_row</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Number of grid rows (auto-calculated if 0).</av-col>    </av-row>    <av-row>        <av-col size="4">col_width</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Column width (used if nb_col = 0).</av-col>    </av-row>    <av-row>        <av-col size="4">row_height</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Row height (used if nb_row = 0).</av-col>    </av-row>    <av-row>        <av-col size="4">show_grid</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Toggles visibility of the grid.</av-col>    </av-row>    <av-row>        <av-col size="4">show_ruler</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Toggles visibility of rulers.</av-col>    </av-row>    <av-row>        <av-col size="4">show_guide</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Toggles visibility of guide lines.</av-col>    </av-row>    <av-row>        <av-col size="4">visible</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Shows or hides the entire helper overlay.</av-col>    </av-row>    <av-row>        <av-col size="4">lock</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Locks/unlocks interactions with guides and rulers.</av-col>    </av-row>    <av-row>        <av-col size="4">ruler_size</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Thickness (height/width) of rulers.</av-col>    </av-row>    <av-row>        <av-col size="4">step</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Base step for ruler tick marks and snapping.</av-col>    </av-row>    <av-row>        <av-col size="4">step_big</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Distance between major ticks on rulers. If 0, uses step.</av-col>    </av-row>    <av-row>        <av-col size="4">magnetic</av-col>        <av-col size="4">number</av-col>        <av-col size="4">Magnetic snapping distance in units. Guides snap to grid when within this threshold</av-col>    </av-row></div><h2>Shortcuts</h2><p>Press <span class="cn">Ctrl + K</span> and then press one of the following keys:</p><div class="table shortcuts">    <av-row class="header">        <av-col size="6">Shortcut</av-col>        <av-col size="6">Action</av-col>    </av-row>    <av-row>        <av-col size="6"><span class="cn">Ctrl + K</span> <span class="cn">V</span></av-col>        <av-col size="6">Toggle visibility</av-col>    </av-row>    <av-row>        <av-col size="6"><span class="cn">Ctrl + K</span> <span class="cn">G</span></av-col>        <av-col size="6">Toggle grid</av-col>    </av-row>    <av-row>        <av-col size="6"><span class="cn">Ctrl + K</span> <span class="cn">R</span></av-col>        <av-col size="6">Toggle rulers</av-col>    </av-row>    <av-row>        <av-col size="6"><span class="cn">Ctrl + K</span> <span class="cn">J</span></av-col>        <av-col size="6">Toggle guides</av-col>    </av-row>    <av-row>        <av-col size="6"><span class="cn">Ctrl + K</span> <span class="cn">L</span></av-col>        <av-col size="6">Toggle lock state</av-col>    </av-row></div><h2>Interactions</h2><div class="table">    <av-row class="header">        <av-col size="6">Action</av-col>        <av-col size="6">Behavior</av-col>    </av-row>    <av-row>        <av-col size="6">Double-click a ruler</av-col>        <av-col size="6">Prompts for a coordinate and adds a guide.</av-col>    </av-row>    <av-row>        <av-col size="6">Click and drag from ruler</av-col>        <av-col size="6">Creates and drags a new guide interactively.</av-col>    </av-row>    <av-row>        <av-col size="6">Double-click a guide</av-col>        <av-col size="6">Deletes the guide.</av-col>    </av-row>    <av-row>        <av-col size="6">Lock mode enabled</av-col>        <av-col size="6">Prevents guide creation or movement.</av-col>    </av-row></div><h2>Methods</h2><div class="table">    <av-row class="header">        <av-col size="6">Method</av-col>        <av-col size="6">Description</av-col>    </av-row>    <av-row>        <av-col size="6">inPx(value: number): number</av-col>        <av-col size="6">Converts a unit-based value to pixels.</av-col>    </av-row>    <av-row>        <av-col size="6">fromPx(valuePx: number): number</av-col>        <av-col size="6">Converts pixels to the current unit.</av-col>    </av-row>    <av-row>        <av-col size="6">createGuideFromLeft(left: number)</av-col>        <av-col size="6">Creates a vertical guide at a given position.</av-col>    </av-row>    <av-row>        <av-col size="6">createGuideFromTop(top: number)</av-col>        <av-col size="6">Creates a horizontal guide at a given position.</av-col>    </av-row></div><h2>CSS Variables</h2><div class="table">    <av-row class="header">        <av-col size="4">Variable</av-col>        <av-col size="4">Default</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">--ruler-color</av-col>        <av-col size="4">white</av-col>        <av-col size="4">Color of ruler background.</av-col>    </av-row></div><h2>Lock Button</h2><p>Located in the top-left corner, this toggle lets you enable or disable editing of guides and rulers.</p><ul>    <li>Open Lock Icon : Guides can be moved or created.</li>    <li>Closed Lock Icon : Grid and guides are locked.</li></ul><h2>Persistence</h2><p>GridHelper saves its guide positions automatically in <span class="cn">localStorage</span>.Each instance uses its <span class="cn">id</span> as a storage key (<span class="cn">grid-helper</span> by default).Reloading the page restores the same guide layout.</p><h2>Developer Notes</h2><ul>    <li>Use it in development environments to help with layout alignment.</li>    <li>Not recommended for production UI display.</li>    <li>Guides are draggable and magnetic for precision alignment.</li></ul>` }
+        blocks: { 'default':`<h1>UI - Grid Helper</h1><p>The <span class="cn">av-grid-helper</span> component provides an interactive visual layout grid with rulers, guides,    and snapping.    It's designed to help developers and designers align elements precisely within a web layout, similar to tools found    in Figma, Photoshop, or web editors.</p><h2>Concept</h2><p><span class="cn">av-grid-helper</span> overlays your interface with rulers, a customizable grid, and draggable    guides.    It can be toggled on or off, locked to prevent editing, and remembers guide positions between sessions (using <span class="cn">localStorage</span>).</p><p>The component can show:</p><ul>    <li>Horizontal and vertical rulers (with custom units)</li>    <li>A configurable grid (columns and rows)</li>    <li>Draggable guide lines (with magnetic snapping)</li>    <li>Keyboard shortcuts for quick control</li></ul><h2>Example</h2><av-doc-u-i-grid-helper-editor-1></av-doc-u-i-grid-helper-editor-1><h2>Features</h2><ul>    <li>        <strong>Customizable Units : </strong>        <span>Supports multiple measurement units: px, rem, cm, mm, in, and pt.</span>    </li>    <li>        <strong>Smart Grid Rendering : </strong>        <span>Automatically calculates the number of rows and columns based on container size and settings.</span>    </li>    <li>        <strong>Rulers : </strong>        <span>Displays rulers on the top and left with configurable step sizes and major ticks.</span>    </li>    <li>        <strong>Draggable Guides : </strong>        <span>Drag from a ruler to create a guide. Double-click on a ruler to add a guide at a specific position.</span>    </li>    <li>        <strong>Magnetic Snapping : </strong>        <span>Guides snap to grid steps if the pointer is close enough (controlled by the magnetic property).</span>    </li>    <li>        <strong>Keyboard Shortcuts : </strong>        <span>Control visibility and locking with keyboard combinations.</span>    </li>    <li>        <strong>Persistent Guides : </strong>        <span>Saves and restores guide positions using localStorage.</span>    </li></ul><h2>Attributes</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Attribute</av-col>        <av-col size="4" center>Type</av-col>        <av-col size="4" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>unit</av-col>        <av-col size="4" center>'px' | 'rem' | 'cm' | 'mm' | 'in' | 'pt'</av-col>        <av-col size="4" center>Unit of measurement used for grid and rulers.</av-col>    </av-row>    <av-row>        <av-col size="4" center>nb_col</av-col>        <av-col size="4" center>number</av-col>        <av-col size="4" center>Number of grid columns (auto-calculated if 0).</av-col>    </av-row>    <av-row>        <av-col size="4" center>nb_row</av-col>        <av-col size="4" center>number</av-col>        <av-col size="4" center>Number of grid rows (auto-calculated if 0).</av-col>    </av-row>    <av-row>        <av-col size="4" center>col_width</av-col>        <av-col size="4" center>number</av-col>        <av-col size="4" center>Column width (used if nb_col = 0).</av-col>    </av-row>    <av-row>        <av-col size="4" center>row_height</av-col>        <av-col size="4" center>number</av-col>        <av-col size="4" center>Row height (used if nb_row = 0).</av-col>    </av-row>    <av-row>        <av-col size="4" center>show_grid</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>Toggles visibility of the grid.</av-col>    </av-row>    <av-row>        <av-col size="4" center>show_ruler</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>Toggles visibility of rulers.</av-col>    </av-row>    <av-row>        <av-col size="4" center>show_guide</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>Toggles visibility of guide lines.</av-col>    </av-row>    <av-row>        <av-col size="4" center>visible</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>Shows or hides the entire helper overlay.</av-col>    </av-row>    <av-row>        <av-col size="4" center>lock</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>Locks/unlocks interactions with guides and rulers.</av-col>    </av-row>    <av-row>        <av-col size="4" center>ruler_size</av-col>        <av-col size="4" center>number</av-col>        <av-col size="4" center>Thickness (height/width) of rulers.</av-col>    </av-row>    <av-row>        <av-col size="4" center>step</av-col>        <av-col size="4" center>number</av-col>        <av-col size="4" center>Base step for ruler tick marks and snapping.</av-col>    </av-row>    <av-row>        <av-col size="4" center>step_big</av-col>        <av-col size="4" center>number</av-col>        <av-col size="4" center>Distance between major ticks on rulers. If 0, uses step.</av-col>    </av-row>    <av-row>        <av-col size="4" center>magnetic</av-col>        <av-col size="4" center>number</av-col>        <av-col size="4" center>Magnetic snapping distance in units. Guides snap to grid when within this threshold</av-col>    </av-row></div><h2>Shortcuts</h2><p>Press <span class="cn">Ctrl + K</span> and then press one of the following keys:</p><div class="table shortcuts">    <av-row class="header">        <av-col size="6" center>Shortcut</av-col>        <av-col size="6" center>Action</av-col>    </av-row>    <av-row>        <av-col size="6" center><span class="cn">Ctrl + K</span> <span class="cn">V</span></av-col>        <av-col size="6" center>Toggle visibility</av-col>    </av-row>    <av-row>        <av-col size="6" center><span class="cn">Ctrl + K</span> <span class="cn">G</span></av-col>        <av-col size="6" center>Toggle grid</av-col>    </av-row>    <av-row>        <av-col size="6" center><span class="cn">Ctrl + K</span> <span class="cn">R</span></av-col>        <av-col size="6" center>Toggle rulers</av-col>    </av-row>    <av-row>        <av-col size="6" center><span class="cn">Ctrl + K</span> <span class="cn">J</span></av-col>        <av-col size="6" center>Toggle guides</av-col>    </av-row>    <av-row>        <av-col size="6" center><span class="cn">Ctrl + K</span> <span class="cn">L</span></av-col>        <av-col size="6" center>Toggle lock state</av-col>    </av-row></div><h2>Interactions</h2><div class="table">    <av-row class="header">        <av-col size="6" center>Action</av-col>        <av-col size="6" center>Behavior</av-col>    </av-row>    <av-row>        <av-col size="6" center>Double-click a ruler</av-col>        <av-col size="6" center>Prompts for a coordinate and adds a guide.</av-col>    </av-row>    <av-row>        <av-col size="6" center>Click and drag from ruler</av-col>        <av-col size="6" center>Creates and drags a new guide interactively.</av-col>    </av-row>    <av-row>        <av-col size="6" center>Double-click a guide</av-col>        <av-col size="6" center>Deletes the guide.</av-col>    </av-row>    <av-row>        <av-col size="6" center>Lock mode enabled</av-col>        <av-col size="6" center>Prevents guide creation or movement.</av-col>    </av-row></div><h2>Methods</h2><div class="table">    <av-row class="header">        <av-col size="6" center>Method</av-col>        <av-col size="6" center>Description</av-col>    </av-row>    <av-row>        <av-col size="6" center>inPx(value: number): number</av-col>        <av-col size="6" center>Converts a unit-based value to pixels.</av-col>    </av-row>    <av-row>        <av-col size="6" center>fromPx(valuePx: number): number</av-col>        <av-col size="6" center>Converts pixels to the current unit.</av-col>    </av-row>    <av-row>        <av-col size="6" center>createGuideFromLeft(left: number)</av-col>        <av-col size="6" center>Creates a vertical guide at a given position.</av-col>    </av-row>    <av-row>        <av-col size="6" center>createGuideFromTop(top: number)</av-col>        <av-col size="6" center>Creates a horizontal guide at a given position.</av-col>    </av-row></div><h2>CSS Variables</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Variable</av-col>        <av-col size="4" center>Default</av-col>        <av-col size="4" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>--ruler-color</av-col>        <av-col size="4" center>white</av-col>        <av-col size="4" center>Color of ruler background.</av-col>    </av-row></div><h2>Lock Button</h2><p>Located in the top-left corner, this toggle lets you enable or disable editing of guides and rulers.</p><ul>    <li>Open Lock Icon : Guides can be moved or created.</li>    <li>Closed Lock Icon : Grid and guides are locked.</li></ul><h2>Persistence</h2><p>GridHelper saves its guide positions automatically in <span class="cn">localStorage</span>.Each instance uses its <span class="cn">id</span> as a storage key (<span class="cn">grid-helper</span> by default).Reloading the page restores the same guide layout.</p><h2>Developer Notes</h2><ul>    <li>Use it in development environments to help with layout alignment.</li>    <li>Not recommended for production UI display.</li>    <li>Guides are draggable and magnetic for precision alignment.</li></ul>` }
     });
 }
     getClassName() {
@@ -14784,7 +14911,7 @@ const DocUICollapse = class DocUICollapse extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI - Collapse</h1><p>The <span class="cn">Collapse</span> component provides a lightweight expandable/collapsible container that hides or reveals its content with a smooth grid-based transition.It's designed to handle open/close logic automatically while letting you define your own layout and header appearance.</p><p>Unlike pre-styled accordions, this component handles only the logic and transitions, leaving full styling control to you.</p><h2>Concept</h2><p>&lt;av-collapse&gt; consists of two main parts:</p><ul>    <li>A header slot (<span class="cn">slot="header"</span>) that acts as the clickable trigger.</li>    <li>A content area that expands or collapses depending on the <span class="cn">open</span> state.</li></ul><p>By default, clicking the header toggles the open state with an animated transition.</p><h2>Attributes</h2><div class="table">    <av-row class="header">        <av-col size="4">Attribute</av-col>        <av-col size="4">Type</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">open</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Whether the collapse is currently expanded.</av-col>    </av-row>    <av-row>        <av-col size="4">no_animation</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Disables the transition animation.</av-col>    </av-row></div><h2>CSS Variables</h2><p>You can customize the animation behavior using these CSS variables:</p><div class="table">    <av-row class="header">        <av-col size="4">Attribute</av-col>        <av-col size="4">Description</av-col>        <av-col size="4">Default value</av-col>    </av-row>    <av-row>        <av-col size="4">--collapse-transition-duration</av-col>        <av-col size="4">Duration of the open/close transition</av-col>        <av-col size="4">0.5s</av-col>    </av-row>    <av-row>        <av-col size="4">--collapse-transition-timing-function</av-col>        <av-col size="4">Timing function for the transition</av-col>        <av-col size="4">cubic-bezier(0.65, 0, 0.15, 1)</av-col>    </av-row></div><h2>Example</h2><av-doc-u-i-collapse-editor-1></av-doc-u-i-collapse-editor-1>` }
+        blocks: { 'default':`<h1>UI - Collapse</h1><p>The <span class="cn">Collapse</span> component provides a lightweight expandable/collapsible container that hides or reveals its content with a smooth grid-based transition.It's designed to handle open/close logic automatically while letting you define your own layout and header appearance.</p><p>Unlike pre-styled accordions, this component handles only the logic and transitions, leaving full styling control to you.</p><h2>Concept</h2><p>&lt;av-collapse&gt; consists of two main parts:</p><ul>    <li>A header slot (<span class="cn">slot="header"</span>) that acts as the clickable trigger.</li>    <li>A content area that expands or collapses depending on the <span class="cn">open</span> state.</li></ul><p>By default, clicking the header toggles the open state with an animated transition.</p><h2>Attributes</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Attribute</av-col>        <av-col size="4" center>Type</av-col>        <av-col size="4" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>open</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>Whether the collapse is currently expanded.</av-col>    </av-row>    <av-row>        <av-col size="4" center>no_animation</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>Disables the transition animation.</av-col>    </av-row></div><h2>CSS Variables</h2><p>You can customize the animation behavior using these CSS variables:</p><div class="table">    <av-row class="header">        <av-col size="4" center>Attribute</av-col>        <av-col size="4" center>Description</av-col>        <av-col size="4" center>Default value</av-col>    </av-row>    <av-row>        <av-col size="4" center>--collapse-transition-duration</av-col>        <av-col size="4" center>Duration of the open/close transition</av-col>        <av-col size="4" center>0.5s</av-col>    </av-row>    <av-row>        <av-col size="4" center>--collapse-transition-timing-function</av-col>        <av-col size="4" center>Timing function for the transition</av-col>        <av-col size="4" center>cubic-bezier(0.65, 0, 0.15, 1)</av-col>    </av-row></div><h2>Example</h2><av-doc-u-i-collapse-editor-1></av-doc-u-i-collapse-editor-1>` }
     });
 }
     getClassName() {
@@ -14828,7 +14955,7 @@ const DocUICol = class DocUICol extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI - Col / Row</h1><p>The Layout module provides a lightweight and responsive 12-column grid system based on two Web Components:    &lt;av-row&gt; and &lt;av-col&gt;.</p><p>It’s inspired by modern grid frameworks like Bootstrap or Tailwind but designed to be framework-agnostic,    flexbox-based, and natively responsive thanks to container queries.</p><h2>Core Concept</h2><p>The grid layout is composed of:</p><ul>    <li>&lt;av-row&gt;: defines a row container (a flex context with container sizing).</li>    <li>&lt;av-col&gt;: defines a column inside the row, with a width ranging from 1 to 12.</li></ul><av-code language="html">    <pre>&lt;av-row&gt;    &lt;av-col size="6">Column 1&lt;/av-col&gt;    &lt;av-col size="6">Column 2&lt;/av-col&gt;&lt;/av-row>    </pre></av-code></av-code><p>Each column will automatically wrap to the next line when there’s not enough horizontal space.</p><h2>Col Component</h2><div class="table">    <av-row class="header">        <av-col size="4">Attribute</av-col>        <av-col size="4">Type</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">size</av-col>        <av-col size="4">0-12</av-col>        <av-col size="4">Column width over 12 columns.</av-col>    </av-row>    <av-row>        <av-col size="4">size_xs, size_sm, size_md, size_lg, size_xl</av-col>        <av-col size="4">0-12</av-col>        <av-col size="4">Responsive width for each breakpoint.</av-col>    </av-row>    <av-row>        <av-col size="4">offset</av-col>        <av-col size="4">0-12</av-col>        <av-col size="4">Adds a left offset (empty space before the column).</av-col>    </av-row>    <av-row>        <av-col size="4">offset_right</av-col>        <av-col size="4">0-12</av-col>        <av-col size="4">Adds a right offset (empty space after the column).</av-col>    </av-row>    <av-row>        <av-col size="4">center</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Centers the column's content horizontally.</av-col>    </av-row>    <av-row>        <av-col size="4">use_container</av-col>        <av-col size="4">boolean</av-col>        <av-col size="4">Enables container query mode for local responsiveness.</av-col>    </av-row></div><h3>Basic Example</h3><av-code language="html">    <pre>&lt;av-row&gt;    &lt;av-col size="12" size_md="6" size_lg="4"&gt;        Responsive column    &lt;/av-col&gt;&lt;/av-row&gt;    </pre></av-code></av-code><p>Behavior:</p><ul>    <li>XS (mobile) → full width (12/12)</li>    <li>MD (≥720px) → half width (6/12)</li>    <li>LG (≥960px) → one-third width (4/12)</li></ul><h3>Breakpoints</h3><p>The grid supports five responsive breakpoints:</p><div class="table">    <av-row class="header">        <av-col size="4">Label</av-col>        <av-col size="4">Min width</av-col>        <av-col size="4">Description</av-col>    </av-row>    <av-row>        <av-col size="4">xs</av-col>        <av-col size="4">300px</av-col>        <av-col size="4">Extra small</av-col>    </av-row>    <av-row>        <av-col size="4">sm</av-col>        <av-col size="4">540px</av-col>        <av-col size="4">Small</av-col>    </av-row>    <av-row>        <av-col size="4">md</av-col>        <av-col size="4">720px</av-col>        <av-col size="4">Medium</av-col>    </av-row>    <av-row>        <av-col size="4">lg</av-col>        <av-col size="4">960px</av-col>        <av-col size="4">Large</av-col>    </av-row>    <av-row>        <av-col size="4">xl</av-col>        <av-col size="4">1140px</av-col>        <av-col size="4">Extra large</av-col>    </av-row></div><p>Each label can be used in size, offset, and offset-right attributes.</p><h3>Offsets & Centering</h3><p>Offsets are useful to create proportional spacing in your layout:</p><av-code language="html">    <pre>&lt;av-row&gt;    &lt;av-col size="4" offset="2"&gt;Offset by 2&lt;/av-col&gt;    &lt;av-col size="4" offset_right="2"&gt;Offset to the right&lt;/av-col&gt;&lt;/av-row&gt;    </pre></av-code></av-code><p>To center content horizontally inside a column:</p><av-code language="html">    <pre>&lt;av-row&gt;    &lt;av-col size="6" center&gt;Centered content&lt;/av-col&gt;&lt;/av-row&gt;    </pre></av-code></av-code><h3>Container Queries vs Media Queries</h3><p>The grid can adapt using two distinct responsive modes:</p><div class="table">    <av-row class="header">        <av-col size="4">Mode</av-col>        <av-col size="4">Description</av-col>        <av-col size="4">Activation</av-col>    </av-row>    <av-row>        <av-col size="4">Media Queries</av-col>        <av-col size="4">Reacts to the viewport width.</av-col>        <av-col size="4">Default (use_container = false)</av-col>    </av-row>    <av-row>        <av-col size="4">Container Queries</av-col>        <av-col size="4">Reacts to the width of its parent &lt;av-row&gt;.</av-col>        <av-col size="4">Set use_container on &lt;av-col&gt; or globally via config</av-col>    </av-row></div><p>Local container example</p><av-code language="html">    <pre>&lt;av-row&gt;    &lt;av-col use_container size_xs="12" size_md="6" size_lg="4"&gt;        Responsive to its container width    &lt;/av-col&gt;&lt;/av-row&gt;    </pre></av-code></av-code><p>You can enable container query mode globally for all columns:</p><av-code language="ts">    <pre>Layout.Col.configure({    use_container: true});    </pre></av-code></av-code><p>All &lt;av-col&gt; components will then behave responsively based on their container width.</p><h3>CSS Variables</h3><p>You can customize spacing easily using CSS variables:</p><div class="table">    <av-row class="header">        <av-col size="4">Variable</av-col>        <av-col size="4">Description</av-col>        <av-col size="4">Default</av-col>    </av-row>    <av-row>        <av-col size="4">--col-padding</av-col>        <av-col size="4">Internal padding of a column</av-col>        <av-col size="4">8px</av-col>    </av-row>    <av-row>        <av-col size="4">--col-gap</av-col>        <av-col size="4">Horizontal gap between columns</av-col>        <av-col size="4">0px</av-col>    </av-row></div><h2>Row component</h2><p>The &lt;av-row&gt; component:</p><ul>    <li>Creates the grid container (display: flex; flex-wrap: wrap;)</li>    <li>Defines a container context (container-name: row; container-type: inline-size;)</li>    <li>Manages horizontal gaps between columns.</li></ul><h3>Technical Details</h3><ul>    <li>Widths are computed dynamically with <span class="cn">calc(100% / 12 * n)</span> adjusted by the column gap.</li>    <li>Columns with <span class="cn">size="0"</span> are hidden (<span class="cn">display: none</span>).</li>    <li>The <span class="cn">container-name: row</span> enables container query behavior for <span class="cn">av-col[use_container]</span>.</li>    <li><span class="cn">use_container</span> mode allows nested responsive layouts that adapt to their parent width, not the entire viewport.</li></ul>` }
+        blocks: { 'default':`<h1>UI - Col / Row</h1><p>The Layout module provides a lightweight and responsive 12-column grid system based on two Web Components:    &lt;av-row&gt; and &lt;av-col&gt;.</p><p>It’s inspired by modern grid frameworks like Bootstrap or Tailwind but designed to be framework-agnostic,    flexbox-based, and natively responsive thanks to container queries.</p><h2>Core Concept</h2><p>The grid layout is composed of:</p><ul>    <li>&lt;av-row&gt;: defines a row container (a flex context with container sizing).</li>    <li>&lt;av-col&gt;: defines a column inside the row, with a width ranging from 1 to 12.</li></ul><av-code language="html">    <pre>&lt;av-row&gt;    &lt;av-col size="6">Column 1&lt;/av-col&gt;    &lt;av-col size="6">Column 2&lt;/av-col&gt;&lt;/av-row>    </pre></av-code></av-code><p>Each column will automatically wrap to the next line when there’s not enough horizontal space.</p><h2>Col Component</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Attribute</av-col>        <av-col size="4" center>Type</av-col>        <av-col size="4" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>size</av-col>        <av-col size="4" center>0-12</av-col>        <av-col size="4" center>Column width over 12 columns.</av-col>    </av-row>    <av-row>        <av-col size="4" center>size_xs, size_sm, size_md, size_lg, size_xl</av-col>        <av-col size="4" center>0-12</av-col>        <av-col size="4" center>Responsive width for each breakpoint.</av-col>    </av-row>    <av-row>        <av-col size="4" center>offset</av-col>        <av-col size="4" center>0-12</av-col>        <av-col size="4" center>Adds a left offset (empty space before the column).</av-col>    </av-row>    <av-row>        <av-col size="4" center>offset_right</av-col>        <av-col size="4" center>0-12</av-col>        <av-col size="4" center>Adds a right offset (empty space after the column).</av-col>    </av-row>    <av-row>        <av-col size="4" center>center</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>Centers the column's content horizontally.</av-col>    </av-row>    <av-row>        <av-col size="4" center>use_container</av-col>        <av-col size="4" center>boolean</av-col>        <av-col size="4" center>Enables container query mode for local responsiveness.</av-col>    </av-row></div><h3>Basic Example</h3><av-code language="html">    <pre>&lt;av-row&gt;    &lt;av-col size="12" size_md="6" size_lg="4"&gt;        Responsive column    &lt;/av-col&gt;&lt;/av-row&gt;    </pre></av-code></av-code><p>Behavior:</p><ul>    <li>XS (mobile) → full width (12/12)</li>    <li>MD (≥720px) → half width (6/12)</li>    <li>LG (≥960px) → one-third width (4/12)</li></ul><h3>Breakpoints</h3><p>The grid supports five responsive breakpoints:</p><div class="table">    <av-row class="header">        <av-col size="4" center>Label</av-col>        <av-col size="4" center>Min width</av-col>        <av-col size="4" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>xs</av-col>        <av-col size="4" center>300px</av-col>        <av-col size="4" center>Extra small</av-col>    </av-row>    <av-row>        <av-col size="4" center>sm</av-col>        <av-col size="4" center>540px</av-col>        <av-col size="4" center>Small</av-col>    </av-row>    <av-row>        <av-col size="4" center>md</av-col>        <av-col size="4" center>720px</av-col>        <av-col size="4" center>Medium</av-col>    </av-row>    <av-row>        <av-col size="4" center>lg</av-col>        <av-col size="4" center>960px</av-col>        <av-col size="4" center>Large</av-col>    </av-row>    <av-row>        <av-col size="4" center>xl</av-col>        <av-col size="4" center>1140px</av-col>        <av-col size="4" center>Extra large</av-col>    </av-row></div><p>Each label can be used in size, offset, and offset-right attributes.</p><h3>Offsets & Centering</h3><p>Offsets are useful to create proportional spacing in your layout:</p><av-code language="html">    <pre>&lt;av-row&gt;    &lt;av-col size="4" center offset="2"&gt;Offset by 2&lt;/av-col&gt;    &lt;av-col size="4" center offset_right="2"&gt;Offset to the right&lt;/av-col&gt;&lt;/av-row&gt;    </pre></av-code></av-code><p>To center content horizontally inside a column:</p><av-code language="html">    <pre>&lt;av-row&gt;    &lt;av-col size="6" center&gt;Centered content&lt;/av-col&gt;&lt;/av-row&gt;    </pre></av-code></av-code><h3>Container Queries vs Media Queries</h3><p>The grid can adapt using two distinct responsive modes:</p><div class="table">    <av-row class="header">        <av-col size="4" center>Mode</av-col>        <av-col size="4" center>Description</av-col>        <av-col size="4" center>Activation</av-col>    </av-row>    <av-row>        <av-col size="4" center>Media Queries</av-col>        <av-col size="4" center>Reacts to the viewport width.</av-col>        <av-col size="4" center>Default (use_container = false)</av-col>    </av-row>    <av-row>        <av-col size="4" center>Container Queries</av-col>        <av-col size="4" center>Reacts to the width of its parent &lt;av-row&gt;.</av-col>        <av-col size="4" center>Set use_container on &lt;av-col&gt; or globally via config</av-col>    </av-row></div><p>Local container example</p><av-code language="html">    <pre>&lt;av-row&gt;    &lt;av-col use_container size_xs="12" size_md="6" size_lg="4"&gt;        Responsive to its container width    &lt;/av-col&gt;&lt;/av-row&gt;    </pre></av-code></av-code><p>You can enable container query mode globally for all columns:</p><av-code language="ts">    <pre>Layout.Col.configure({    use_container: true});    </pre></av-code></av-code><p>All &lt;av-col&gt; components will then behave responsively based on their container width.</p><h3>CSS Variables</h3><p>You can customize spacing easily using CSS variables:</p><div class="table">    <av-row class="header">        <av-col size="4" center>Variable</av-col>        <av-col size="4" center>Description</av-col>        <av-col size="4" center>Default</av-col>    </av-row>    <av-row>        <av-col size="4" center>--col-padding</av-col>        <av-col size="4" center>Internal padding of a column</av-col>        <av-col size="4" center>8px</av-col>    </av-row>    <av-row>        <av-col size="4" center>--col-gap</av-col>        <av-col size="4" center>Horizontal gap between columns</av-col>        <av-col size="4" center>0px</av-col>    </av-row></div><h2>Row component</h2><p>The &lt;av-row&gt; component:</p><ul>    <li>Creates the grid container (display: flex; flex-wrap: wrap;)</li>    <li>Defines a container context (container-name: row; container-type: inline-size;)</li>    <li>Manages horizontal gaps between columns.</li></ul><h3>Technical Details</h3><ul>    <li>Widths are computed dynamically with <span class="cn">calc(100% / 12 * n)</span> adjusted by the column gap.</li>    <li>Columns with <span class="cn">size="0"</span> are hidden (<span class="cn">display: none</span>).</li>    <li>The <span class="cn">container-name: row</span> enables container query behavior for <span class="cn">av-col[use_container]</span>.</li>    <li><span class="cn">use_container</span> mode allows nested responsive layouts that adapt to their parent width, not the entire viewport.</li></ul>` }
     });
 }
     getClassName() {
@@ -15069,7 +15196,7 @@ __as1(_, 'DocI18nUsage', DocI18nUsage);
 if(!window.customElements.get('av-doc-i-18n-usage')){window.customElements.define('av-doc-i-18n-usage', DocI18nUsage);Aventus.WebComponentInstance.registerDefinition(DocI18nUsage);}
 
 const DocI18nConfig = class DocI18nConfig extends DocGenericPage {
-    static __style = `:host .table{margin:40px 0}:host .table av-row:not(.header) av-col{padding:3px;text-align:left}:host .table av-row:not(.header) av-col:nth-child(2){text-align:justify}:host .table av-row:not(.header) av-link,:host .table av-row:not(.header) b,:host .table av-row:not(.header) i{display:contents}:host .table av-row:not(.header):nth-child(odd){background-color:rgba(0,0,0,.2)}:host .table .constraint{display:block;font-size:14px;margin-top:5px}`;
+    static __style = `:host av-col{flex-direction:column}:host av-col[center]{justify-content:center;align-items:center}:host .table{margin:40px 0}:host .table av-row:not(.header) av-col{padding:3px;text-align:left}:host .table av-row:not(.header) av-col:nth-child(2){text-align:justify}:host .table av-row:not(.header) av-link,:host .table av-row:not(.header) b,:host .table av-row:not(.header) i{display:contents}:host .table av-row:not(.header):nth-child(odd){background-color:rgba(0,0,0,.2)}:host .table .constraint{display:block;font-size:14px;margin-top:5px}`;
     __getStatic() {
         return DocI18nConfig;
     }
@@ -15080,7 +15207,7 @@ const DocI18nConfig = class DocI18nConfig extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>I18n - Configuration</h1><p>AventusJs includes a native i18n module, designed to simplify the process of translating your application. With i18n,    you can easily manage multiple languages, switch content dynamically, and ensure a seamless experience for users    around the world. By integrating i18n directly into AventusJs, we make it straightforward for developers to build    multilingual applications without relying on external libraries</p><p>To enable I18n, you need to add the section <span class="cn">i18n</span> inside your <span class="cn">aventus.conf.avt</span>.</p><av-code language="json" filename="aventus.conf.avt">    <pre>        {            "module": "test",            "componentPrefix": "av",            "build": [                {                    "src": ["./src/*"],                    "compile": [                        {                            "output": "./dist/test.js"                        }                    ],                    "i18n": {                        "autoRegister": true,                        "fallback": "en-gb",                        "locales": [                            "en-gb",                            "fr-fr"                        ]                    }                }            ]        }    </pre></av-code></av-code><p>When you add this config, Aventus will automatically add the lib <span class="cn">Aventus@I18n</span> inside your    build.</p><p>Inside the output folder you must have a new folder named <span class="cn">locales</span> that contains <span class="cn">en-gb.json</span> and <span class="cn">fr-fr.json</span>. Thoses files contains all transalations you    need for your application.</p><h2>General configuration</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Name</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>autoRegister</av-col>        <av-col size="8" center>Define if aventus must autoRegister your i18n files. Default is            true</av-col>    </av-row>    <av-row>        <av-col size="4" center>fallback</av-col>        <av-col size="8" center>Define the fallback locale</av-col>    </av-row>    <av-row>        <av-col size="4" center>locales</av-col>        <av-col size="8" center>This is an array of string to define locales that is required inside your            project</av-col>    </av-row></div><h2>Compilation configuration</h2><p>You can customize how Avenuts must handle you i18n files.</p><av-code language="json" filename="aventus.conf.avt">    <pre>        {            "module": "test",            "componentPrefix": "av",            "build": [                {                    "src": ["./src/*"],                    "compile": [                        {                            "output": "./dist/test.js",                            "i18n": [                                {                                    "output": "dist/public",                                    "mode": "singleFile",                                    "mount": "/public"                                }                            ]                        }                    ],                    "i18n": {                        "autoRegister": true,                        "fallback": "en-gb",                        "locales": [                            "en-gb",                            "fr-fr"                        ]                    }                }            ]        }    </pre></av-code></av-code><div class="table">    <av-row class="header">        <av-col size="4" center>Name</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>output</av-col>        <av-col size="8" center>This is string to define where to export i18n files.        </av-col>    </av-row>    <av-row>        <av-col size="4" center>mode</av-col>        <av-col size="8" center>            <span>This is string to define how aventus must compile your i18n.</span>            <ul>                <li>singleFile: export all translations inside a single file</li>                <li>oneToOne: export translation inside the same file name as input</li>                <li>groupComponent: group components transaltions inside a single file</li>                <li>basedOnAttribute: WIP</li>                <li>include: WIP</li>            </ul>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>mount</av-col>        <av-col size="8" center>This is string to define the http path to mount your i18n files.        </av-col>    </av-row></div>` }
+        blocks: { 'default':`<h1>I18n - Configuration</h1><p>AventusJs includes a native i18n module, designed to simplify the process of translating your application. With i18n,    you can easily manage multiple languages, switch content dynamically, and ensure a seamless experience for users    around the world. By integrating i18n directly into AventusJs, we make it straightforward for developers to build    multilingual applications without relying on external libraries</p><p>To enable I18n, you need to add the section <span class="cn">i18n</span> inside your <span class="cn">aventus.conf.avt</span>.</p><av-code language="json" filename="aventus.conf.avt">    <pre>        {            "module": "test",            "componentPrefix": "av",            "build": [                {                    "src": ["./src/*"],                    "compile": [                        {                            "output": "./dist/test.js"                        }                    ],                    "i18n": {                        "autoRegister": true,                        "fallback": "en-gb",                        "locales": [                            "en-gb",                            "fr-fr"                        ]                    }                }            ]        }    </pre></av-code></av-code><p>When you add this config, Aventus will automatically add the lib <span class="cn">Aventus@I18n</span> inside your    build.</p><p>Inside the output folder you must have a new folder named <span class="cn">locales</span> that contains <span class="cn">en-gb.json</span> and <span class="cn">fr-fr.json</span>. Thoses files contains all transalations you    need for your application.</p><h2>General configuration</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Name</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>autoRegister</av-col>        <av-col size="8">Define if aventus must autoRegister your i18n files. Default is            true</av-col>    </av-row>    <av-row>        <av-col size="4" center>fallback</av-col>        <av-col size="8">Define the fallback locale</av-col>    </av-row>    <av-row>        <av-col size="4" center>locales</av-col>        <av-col size="8">This is an array of string to define locales that is required inside your            project</av-col>    </av-row></div><h2>Compilation configuration</h2><p>You can customize how Avenuts must handle you i18n files.</p><av-code language="json" filename="aventus.conf.avt">    <pre>        {            "module": "test",            "componentPrefix": "av",            "build": [                {                    "src": ["./src/*"],                    "compile": [                        {                            "output": "./dist/test.js",                            "i18n": [                                {                                    "output": "dist/public",                                    "mode": "singleFile",                                    "mount": "/public"                                }                            ]                        }                    ],                    "i18n": {                        "autoRegister": true,                        "fallback": "en-gb",                        "locales": [                            "en-gb",                            "fr-fr"                        ]                    }                }            ]        }    </pre></av-code></av-code><div class="table">    <av-row class="header">        <av-col size="4" center>Name</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>output</av-col>        <av-col size="8">This is string to define where to export i18n files.        </av-col>    </av-row>    <av-row>        <av-col size="4" center>mode</av-col>        <av-col size="8">            <span>This is string to define how aventus must compile your i18n.</span>            <ul>                <li>singleFile: export all translations inside a single file</li>                <li>oneToOne: export translation inside the same file name as input</li>                <li>groupComponent: group components transaltions inside a single file</li>                <li>basedOnAttribute: WIP</li>                <li>include: WIP</li>            </ul>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>mount</av-col>        <av-col size="8">This is string to define the http path to mount your i18n files.        </av-col>    </av-row></div>` }
     });
 }
     getClassName() {
@@ -15650,7 +15777,7 @@ const DocWcElement = class DocWcElement extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Webcomponent - Select element</h1><p>In this section you are going to learn how to select a element from your shadowroot to use it inside your logical    part.</p><h2>Normal case</h2><p>Inside the <span class="cn">*.wcv.avt</span> file you can add an attribute <span class="cn">@element</span> to tag    your element.</p><av-code language="html" filename="Img.wcv.avt">    &lt;div class="img-container" @element="container"&gt;    \t&lt;img @element="imgEl"/&gt;    &lt;/div&gt;</av-code></av-code><p>When you save your file, the attribute <span class="cn">@element</span> will be underlined in red because you didn't    declare the variable    inside the <span class="cn">*.wcl.avt.</span> You can open this file and if you have sections, the variables section    will be underline. You    can <span class="cn">alt + .</span> and click on "Import missing view element". This will create the two variables with a <span class="cn">protected</span>    modifier and a decorator <span class="cn">@ViewElement</span>. This decorator is set to have a quick vision on which    variables are    used inside your view.</p><av-code language="typescript" filename="Img.wcl.avt">    export class Img extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region static    &nbsp;    \t//#endregion    &nbsp;    \t//#region props    &nbsp;    \t//#endregion    &nbsp;    \t//#region variables    \t@ViewElement()    \tprotected container: HTMLDivElement;    &nbsp;    \t@ViewElement()    \tprotected imgEl: HTMLImageElement;    \t//#endregion    &nbsp;    \t//#region constructor    &nbsp;    \t//#endregion    &nbsp;    \t//#region methods    &nbsp;    \t//#endregion    &nbsp;    }</av-code></av-code><h2>Multiple selection</h2><p>In addition, you can use the same element name for different tags. It will select all the tags marked by the element    name.</p><av-code language="html" filename="List.wcv.avt">    &lt;div class="list"&gt;    \t&lt;div class="item" @element="items"&gt;&lt;/div&gt;    \t&lt;div class="item" @element="items"&gt;&lt;/div&gt;    \t&lt;p class="item" @element="items"&gt;&lt;/p&gt;    &lt;/div&gt;</av-code></av-code><av-code language="typescript" filename="List.wcl.avt">    export class List extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region static    &nbsp;    \t//#endregion    &nbsp;    \t//#region props    &nbsp;    \t//#endregion    &nbsp;    \t//#region variables    \t@ViewElement()    \tprotected items: (HTMLDivElement | HTMLParagraphElement)[];    \t//#endregion    &nbsp;    \t//#region constructor    &nbsp;    \t//#endregion    &nbsp;    \t//#region methods    &nbsp;    \t//#endregion    &nbsp;    }</av-code></av-code><h2>Expert use only</h2><p>If you change your <span class="cn">shadowroot</span> by cloning node or something else, you can add a    useLive option inside the decorator <span class="cn">@ViewElement</span> to do a <span class="cn">querySelector</span> instead of using saved values.</p><av-code language="typescript" filename="Img.wcl.avt">    export class Img extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region static    &nbsp;    \t//#endregion    &nbsp;    \t//#region props    &nbsp;    \t//#endregion    &nbsp;    \t//#region variables    \t@ViewElement({    \t\tuseLive: true // this code ll do a this.shadowroot.querySelector.    \t})    \tprotected container: HTMLDivElement;    &nbsp;    \t@ViewElement()    \tprotected imgEl: HTMLImageElement;    \t//#endregion    &nbsp;    \t//#region constructor    &nbsp;    \t//#endregion    &nbsp;    \t//#region methods    &nbsp;    \t//#endregion    &nbsp;    }</av-code></av-code>` }
+        blocks: { 'default':`<h1>Webcomponent - Select element</h1><p>In this section you are going to learn how to select a element from your shadowroot to use it inside your logical    part.</p><h2>Normal case</h2><p>Inside the <span class="cn">*.wcv.avt</span> file you can add an attribute <span class="cn">@element</span> to tag    your element.</p><av-code language="html" filename="Img.wcv.avt">    &lt;div class="img-container" @element="container"&gt;    \t&lt;img @element="imgEl"/&gt;    &lt;/div&gt;</av-code></av-code><p>When you save your file, the attribute <span class="cn">@element</span> will be underlined in red because you didn't    declare the variable    inside the <span class="cn">*.wcl.avt.</span> You can open this file and if you have sections, the variables section    will be underline. You    can <span class="cn">ctrl + .</span> and click on <span class="cn">"Import missing view element"</span>. This will create the two variables with a <span class="cn">protected</span>    modifier and a decorator <span class="cn">@ViewElement</span>. This decorator is set to have a quick vision on which    variables are    used inside your view.</p><av-code language="typescript" filename="Img.wcl.avt">    export class Img extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region static    &nbsp;    \t//#endregion    &nbsp;    \t//#region props    &nbsp;    \t//#endregion    &nbsp;    \t//#region variables    \t@ViewElement()    \tprotected container: HTMLDivElement;    &nbsp;    \t@ViewElement()    \tprotected imgEl: HTMLImageElement;    \t//#endregion    &nbsp;    \t//#region constructor    &nbsp;    \t//#endregion    &nbsp;    \t//#region methods    &nbsp;    \t//#endregion    &nbsp;    }</av-code></av-code><h2>Multiple selection</h2><p>In addition, you can use the same element name for different tags. It will select all the tags marked by the element    name.</p><av-code language="html" filename="List.wcv.avt">    &lt;div class="list"&gt;    \t&lt;div class="item" @element="items"&gt;&lt;/div&gt;    \t&lt;div class="item" @element="items"&gt;&lt;/div&gt;    \t&lt;p class="item" @element="items"&gt;&lt;/p&gt;    &lt;/div&gt;</av-code></av-code><av-code language="typescript" filename="List.wcl.avt">    export class List extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region static    &nbsp;    \t//#endregion    &nbsp;    \t//#region props    &nbsp;    \t//#endregion    &nbsp;    \t//#region variables    \t@ViewElement()    \tprotected items: (HTMLDivElement | HTMLParagraphElement)[];    \t//#endregion    &nbsp;    \t//#region constructor    &nbsp;    \t//#endregion    &nbsp;    \t//#region methods    &nbsp;    \t//#endregion    &nbsp;    }</av-code></av-code><h2>Expert use only</h2><p>If you change your <span class="cn">shadowroot</span> by cloning node or something else, you can add a    useLive option inside the decorator <span class="cn">@ViewElement</span> to do a <span class="cn">querySelector</span> instead of using saved values.</p><av-code language="typescript" filename="Img.wcl.avt">    export class Img extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region static    &nbsp;    \t//#endregion    &nbsp;    \t//#region props    &nbsp;    \t//#endregion    &nbsp;    \t//#region variables    \t@ViewElement({    \t\tuseLive: true // this code ll do a this.shadowroot.querySelector.    \t})    \tprotected container: HTMLDivElement;    &nbsp;    \t@ViewElement()    \tprotected imgEl: HTMLImageElement;    \t//#endregion    &nbsp;    \t//#region constructor    &nbsp;    \t//#endregion    &nbsp;    \t//#region methods    &nbsp;    \t//#endregion    &nbsp;    }</av-code></av-code>` }
     });
 }
     getClassName() {
@@ -15716,7 +15843,7 @@ const DocWcStyle = class DocWcStyle extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Webcomponent - Style</h1><p>In this section you are going to learn how to apply a style to your component.</p><h2>Definition</h2><p>Because Aventus is build on the top of webcomponent, the style is scoped. It means that the style from Component 1    won't affect the style from Component 2. If you want more information about scoped style inside webcomponent you    can read <a href="https://web.dev/shadowdom-v1/#component-defined-styles" target="_blank">this</a>. It's great but    it involves that each components must include it own style locally. What if I want to create a general style for all    my components? This is why in addition to webcomponent scoped style, Aventus using the <a href="https://web.dev/constructable-stylesheets/" target="_blank">Constructable Stylesheets</a> to    improve reusability.</p><h2>Local style</h2><p>To edit the style of your component, you must open the file <span class="cn">*.wcs.avt</span> and add the style you    want written in SCSS. The only special selector inside webcomponent style is the <span class="cn">:host</span> that    will target the current custom element.</p><av-doc-wc-style-editor-1></av-doc-wc-style-editor-1><h2>Inherit style</h2><p>If a webcomponent is inheriting another webcomponent, their styles will be merged. Parent style will be written    before Child style so that you can override parent style without problem.</p><av-doc-wc-style-editor-2></av-doc-wc-style-editor-2><p>The child title will be blue instead of orange.</p><h2>External style</h2><p>If you want to create some utility classes for components, you can create file named <span class="cn">@*.wcs.avt</span> for Global WebComponent Style, then you can include this file inside component.    This file is also a SCSS file.</p><h3>Create the file</h3><p>You can create the global style file where you want, but you have to add it inside the <span class="cn">aventus.conf.avt</span> under the section <span class="cn">build.src</span>.</p><av-doc-wc-style-editor-3></av-doc-wc-style-editor-3><p>This will register the file <span class="cn">@utility.wcs.avt</span> inside the <span class="cn">Aventus.Style</span>    lib with the name <span class="cn">@utility</span>.</p><av-img src="/img/doc/wc/style/stylemanager.png"></av-img><p>If you want to use an external lib as a style for your component, you can use the <span class="cn">load</span>    function. For example to load the bootstrap class : </p><av-doc-wc-style-editor-4></av-doc-wc-style-editor-4><p>By default, a base style existing inside <span class="cn">Style</span>. This style is named <span class="cn">@default</span> and is composed by</p><av-code language="css" filename="@default">    <pre>    :host {        display: inline-block;        box-sizing: border-box;    }    :host * {        box-sizing: border-box;    }    </pre></av-code></av-code><p>If you want that all your components contains some styles, you can write your own <span class="cn">@default.wcs.avt</span>. That will override the default style.</p><h3>Use global style</h3><p>Now that you have style registered, you can tell your component to use this style. You can override 2 methods inside    the logical file <span class="cn">*.wcl.avt</span> named : <span class="cn">styleBefore</span> and <span class="cn">styleAfter</span>.</p><av-code language="typescript" filename="Example.wcl.avt">    <pre>    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {        ...        // Inside Aventus.WebCompoent the value of styleBefore is addStyle("@default")        protected override styleBefore(addStyle: (name: string) => void): void {            super.styleBefore(addStyle);            addStyle("@Bootstrap");        }        protected override styleAfter(addStyle: (name: string) => void): void {            addStyle("@utility");        }        ...    }    </pre></av-code></av-code><p>The style loaded will be the following :</p><ol>    <li>@default</li>    <li>@Bootstrap</li>    <li>parent style inside <span class="cn">*.wcs.avt</span></li>    <li>local style inside <span class="cn">*.wcs.avt</span></li>    <li>@utility</li></ol><h2>Edit style from outside</h2><p>When you create component for a library, you should provide some style parameter that the user can edit. What if the    library user want to change the backgroud-color. The style is scoped so he won't be able to edit it from outside.    This is why you can define <span class="cn">custom property</span> inside your component. Declaring a custom    property can be done by following the next pattern:</p><av-code language="css" filename="Example.wcs.avt">    <pre>    :host {        --_example-background-color: var(--example-background-color, red);    }    &nbsp;    :host {        .content {            backgroud-color: var(--_example-background-color);        }    }    </pre></av-code></av-code><p>The property declaration must be done inside the <span class="cn">:host</span> at the first level and following the    schema --_<b>componentName</b>-<b>propName</b>: var(--<b>componentName</b>-<b>propName</b>). In the future version    of Aventus you will be able to use the <span class="cn">@property</span> tag in css and the completion will be    improved. The current schema is used to be    detected by the parser so that an auto-completion can be provided when you editing the style of the element.</p><av-code language="css" filename="Example2.wcs.avt">    <pre>    :host {        av-example {            // come from auto-completion because the rules is the tag av-example            --background-color: red;        }    }    </pre></av-code></av-code><p>You can also quick create a variable by pressing <span class="cn">Ctrl + k Ctrl + numpad1</span> and provide the name    for what the variable is for.</p><h2>Creating theme</h2><p>A good pratice when you developing application is to create theme file where you can declare globals properties for    the project. Inside Aventus you can achieve it by creating a new file named <span class="cn">*.gs.avt</span> for    Global Style. This file must be set inside a <span class="cn"><av-link to="/docs/config/static">static</av-link></span> part of your project. This allows you to have    auto-completion for all your global variables that must be declared inside the <span class="cn">:root</span>    selector.</p><av-doc-wc-style-editor-5></av-doc-wc-style-editor-5>` }
+        blocks: { 'default':`<h1>Webcomponent - Style</h1><p>In this section you are going to learn how to apply a style to your component.</p><h2>Definition</h2><p>Because Aventus is build on the top of webcomponent, the style is scoped. It means that the style from Component 1    won't affect the style from Component 2. If you want more information about scoped style inside webcomponent you    can read <a href="https://web.dev/shadowdom-v1/#component-defined-styles" target="_blank">this</a>. It's great but    it involves that each components must include it own style locally. What if I want to create a general style for all    my components? This is why in addition to webcomponent scoped style, Aventus using the <a href="https://web.dev/constructable-stylesheets/" target="_blank">Constructable Stylesheets</a> to    improve reusability.</p><h2>Local style</h2><p>To edit the style of your component, you must open the file <span class="cn">*.wcs.avt</span> and add the style you    want written in SCSS. The only special selector inside webcomponent style is the <span class="cn">:host</span> that    will target the current custom element.</p><av-doc-wc-style-editor-1></av-doc-wc-style-editor-1><h2>Inherit style</h2><p>If a webcomponent is inheriting another webcomponent, their styles will be merged. Parent style will be written    before Child style so that you can override parent style without problem.</p><av-doc-wc-style-editor-2></av-doc-wc-style-editor-2><p>The child title will be blue instead of orange.</p><h2>External style</h2><p>If you want to create some utility classes for components, you can create file named <span class="cn">@*.wcs.avt</span> for Global WebComponent Style, then you can include this file inside component.    This file is also a SCSS file.</p><h3>Create the file</h3><p>You can create the global style file where you want.</p><av-doc-wc-style-editor-3></av-doc-wc-style-editor-3><p>This will register the file <span class="cn">@Utility.wcs.avt</span> inside the <span class="cn">Aventus.Style</span>    lib with the name <span class="cn">@Utility</span>.</p><av-img src="/img/doc/wc/style/stylemanager.png"></av-img><p>If you want to use an external lib as a style for your component, you can use the <span class="cn">load</span>    function. For example to load the bootstrap class : </p><av-doc-wc-style-editor-4></av-doc-wc-style-editor-4><p>By default, a base style existing inside <span class="cn">Style</span>. This style is named <span class="cn">@default</span> and is composed by</p><av-code language="css" filename="@default">    <pre>    :host {        display: inline-block;        box-sizing: border-box;    }    :host * {        box-sizing: border-box;    }    </pre></av-code></av-code><p>If you want that all your components contains some styles, you can write your own <span class="cn">@default.wcs.avt</span>. That will override the default style.</p><h3>Use global style</h3><p>Now that you have style registered, you can tell your component to use this style. You can override 2 methods inside    the logical file <span class="cn">*.wcl.avt</span> named : <span class="cn">styleBefore</span> and <span class="cn">styleAfter</span>.</p><av-code language="typescript" filename="Example.wcl.avt">    <pre>    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {        ...        // Inside Aventus.WebCompoent the value of styleBefore is addStyle("@default")        protected override styleBefore(addStyle: (name: string) => void): void {            super.styleBefore(addStyle);            addStyle("@Bootstrap");        }        protected override styleAfter(addStyle: (name: string) => void): void {            addStyle("@utility");        }        ...    }    </pre></av-code></av-code><p>The style loaded will be the following :</p><ol>    <li>@default</li>    <li>@Bootstrap</li>    <li>parent style inside <span class="cn">*.wcs.avt</span></li>    <li>local style inside <span class="cn">*.wcs.avt</span></li>    <li>@utility</li></ol><h2>Edit style from outside</h2><p>When you create component for a library, you should provide some style parameter that the user can edit. What if the    library user want to change the backgroud-color. The style is scoped so he won't be able to edit it from outside.    This is why you can define <span class="cn">custom property</span> inside your component. Declaring a custom    property can be done by following the next pattern:</p><av-code language="css" filename="Example.wcs.avt">    <pre>    :host {        --_example-background-color: var(--example-background-color, red);    }    &nbsp;    :host {        .content {            backgroud-color: var(--_example-background-color);        }    }    </pre></av-code></av-code><p>The property declaration must be done inside the <span class="cn">:host</span> at the first level and following the    schema --_<b>componentName</b>-<b>propName</b>: var(--<b>componentName</b>-<b>propName</b>). In the future version    of Aventus you will be able to use the <span class="cn">@property</span> tag in css and the completion will be    improved. The current schema is used to be    detected by the parser so that an auto-completion can be provided when you editing the style of the element.</p><av-code language="css" filename="Example2.wcs.avt">    <pre>    :host {        av-example {            // come from auto-completion because the rules is the tag av-example            --background-color: red;        }    }    </pre></av-code></av-code><p>You can also quick create a variable by pressing <span class="cn">Ctrl + k Ctrl + numpad1</span> and provide the name    for what the variable is for.</p><h2>Creating theme</h2><p>A good pratice when you developing application is to create theme file where you can declare globals properties for    the project. Inside Aventus you can achieve it by creating a new file named <span class="cn">*.gs.avt</span> for    Global Style. This file must be set inside a <span class="cn"><av-link to="/docs/config/static">static</av-link></span> part of your project. This allows you to have    auto-completion for all your global variables that must be declared inside the <span class="cn">:root</span>    selector.</p><av-doc-wc-style-editor-5></av-doc-wc-style-editor-5>` }
     });
 }
     getClassName() {
@@ -15914,7 +16041,7 @@ const DocWcCreate = class DocWcCreate extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Webcomponent - Create</h1><p>In this section you are going to learn what is a webcomponent and how you can create it inside Aventus.</p><h2>Definition</h2><p>Web Components is a suite of different technologies allowing you to create reusable custom elements — with their    functionality encapsulated away from the rest of your code — and utilize them in your web apps. (<i><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components" target="_blank">https://developer.mozilla.org/</a></i>).</p><p>With the native technologie, you are able to wrap your style, your logic and your html template inside a single html    tag. You can build your full webapp by building one component after another without worring about side effects (the    developer's worst nightmare).</p><h2>Inside Aventus</h2><p>Inside Aventus you can create web component by right clicking one the explorer part inside vscode, choose <i>Aventus        : Create...</i> and choose <i>Component</i>. Inside the input you can enter the name for the typescript class.    By convention, this name should be in Snake case. You can write your webcomponent inside a single file    <span class="cn">*.wc.avt</span> that    will contains following section :</p><ul>    <li><span class="cn">&lt;template&gt;</span> : for Html part</li>    <li><span class="cn">&lt;style&gt;</span> : for Scss part</li>    <li><span class="cn">&lt;script&gt;</span> : for Js part</li></ul><p>or inside 3 different file. (This option is the adviced one because it allows developer to keep a well knowed    architecture.)</p><ul>    <li><span class="cn">*.wcv.avt</span> : Web Componenent View for Html part</li>    <li><span class="cn">*.wcs.avt</span> : Web Componenent View for Scss part</li>    <li><span class="cn">*.wcl.avt</span> : Web Componenent View for Ts part</li></ul><av-doc-wc-create-editor-1></av-doc-wc-create-editor-1><h2>The Html</h2><p>You can use any basic tag or any tag you imported or created. The auto-completion will help you to find knowed tags.    There are 2 special tags that you must know :</p><h3>&lt;slot&gt;</h3><p>The slot tag allows developer to define the place where the code inside the tag will be added. This slot can have an    attribute <span class="cn">name</span> to have multiple slots.</p><av-doc-wc-create-editor-2></av-doc-wc-create-editor-2><h3>&lt;block&gt;</h3><p>The block tag must be used in case of inheritance. This will replace the slot by the block with the same name.</p><av-doc-wc-create-editor-3></av-doc-wc-create-editor-3><p>There are sepcial attributes you can use to add feature to basic html: </p><ul>    <li>@element : To select element(s). <av-link to="/docs/wc/element" class="font-sm">More            info</av-link></li>    <li>@for : To create a loop. <av-link to="/docs/wc/loop" class="font-sm">More info</av-link></li>    <li>@bind(_<i><span class="cn">$event</span></i>)?(:<i><span class="cn">$field</span></i>)? : To bind data.        <av-link class="font-sm" to="/docs/wc/binding">More            info</av-link>    </li>    <li>:<i><span class="cn">$field</span></i> : To inject data. <av-link to="/docs/wc/injection" class="font-sm">More            info</av-link>    </li>    <li>@press : To add press event from PressManager. <av-link to="/docs/wc/event" class="font-sm">More            info</av-link>    </li>    <li>@<i><span class="cn">$eventName</span></i> : To add event listener. <av-link to="/docs/wc/event" class="font-sm">More            info</av-link>    </li></ul><p>You can use interpolation inside tag content and normal attribute to have dynamic content. If you use <av-link to="/docs/wc/event">a property value</av-link>&nbsp;or&nbsp;<av-link to="/docs/wc/event">a        watch value</av-link> the content will be refreshed.</p><av-doc-wc-create-editor-4></av-doc-wc-create-editor-4><h2>The style</h2><p>This is just a simple SCSS file. The only think to know is that the style must be wrapped inside a :host{}.</p><av-code language="css" filename="TextRed.wcs.avt">    :host {    \tcolor: red; // This ll change the behavior of the current webcomponent    }</av-code></av-code><p>You can find more informations about the style <av-link to="/docs/wc/style">here.</av-link></p><h2>The logic</h2><p>When you create a new file *.wcl.avt you can notice that the file has region. This is set to allow developer to order    the code. Each region has a goal. You can remove it but we advice you to keep it.</p><ul>    <li>static : Where you can write the static properties or methods for your webcomponent.</li>    <li>props : Where you can define the <av-link to="/docs/wc/attribute">attributes</av-link>, the        <av-link to="/docs/wc/property">properties</av-link>&nbsp;and the <av-link to="/docs/wc/watch">watch variables.</av-link>    </li>    <li>variables : Where you can define the variables and the pointers on <av-link to="/docs/wc/element">view            element</av-link></li>    <li>constructor : Where you can override the constructor for your webcomponent.</li>    <li>methods : Where you can write the methods for your webcomponent.</li></ul><av-code language="typescript">    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region static    &nbsp;    \t//#endregion    &nbsp;    \t//#region props    &nbsp;    \t//#endregion    &nbsp;    \t//#region variables    &nbsp;    \t//#endregion    &nbsp;    \t//#region constructor    &nbsp;    \t//#endregion    &nbsp;    \t//#region methods    &nbsp;    \t//#endregion    &nbsp;    }</av-code></av-code><p>Over the classname you can add predefine Decorators :</p><ul>    <li><span class="cn">@TagName(name:string)</span> : to define the tag for the component</li>    <li><span class="cn">@Debugger({ writeCompiled?: boolean, enableWatchHistory?: boolean})</span> : to debug component        compilation and        to.    </li>    <li><span class="cn">@Dependances({ type: Type, strong?:boolean}[])</span> : to add dependance not written inside        component. The        strong boolean define if the dependance must be loaded before the class.</li>    <li><span class="cn">@OverrideView({ removeViewVariables?: string[] })</span> : to fully override parent view. You        can remove parent        ViewElement needed, but you have to be aware of what you are doing.</li>    <li><span class="cn">@Internal()</span> : to allow exporting class only in the current package but the class won't be usable for someone else that is using the package.</li>    <li><span class="cn">@Required()</span> : to force the class to be exported inside the *.js file.</li>    <li><span class="cn">@Convertible(name: string = "Fullname")</span> : to notify the compiler that the class can be converted from JSON. The parameter <span class="cn">name</span> define the key to detect the class to build.</li></ul><av-code language="typescript">    @TagName("my-tag-name")    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    }</av-code></av-code><h2>Lifecycle</h2><p>The webcomponent has the following lifecycle</p><av-img src="/img/doc/wc/create/lifecylce.png"></av-img><p>By default <span class="cn">postCreation</span> and <span class="cn">postDestruction</span> are empty.</p>` }
+        blocks: { 'default':`<h1>Webcomponent - Create</h1><p>In this section you are going to learn what is a webcomponent and how you can create it inside Aventus.</p><h2>Definition</h2><p>Web Components is a suite of different technologies allowing you to create reusable custom elements — with their    functionality encapsulated away from the rest of your code — and utilize them in your web apps. (<i><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components" target="_blank">https://developer.mozilla.org/</a></i>).</p><p>With the native technologie, you are able to wrap your style, your logic and your html template inside a single html    tag. You can build your full webapp by building one component after another without worring about side effects (the    developer's worst nightmare).</p><h2>Inside Aventus</h2><p>Inside Aventus you can create web component by right clicking one the explorer part inside vscode, choose <i>Aventus        : Create...</i> and choose <i>Component</i>. Inside the input you can enter the name for the typescript class.    By convention, this name should be in Snake case. You can write your webcomponent inside a single file    <span class="cn">*.wc.avt</span> that    will contains following section :</p><ul>    <li><span class="cn">&lt;template&gt;</span> : for Html part</li>    <li><span class="cn">&lt;style&gt;</span> : for Scss part</li>    <li><span class="cn">&lt;script&gt;</span> : for Js part</li></ul><av-doc-wc-create-editor-0></av-doc-wc-create-editor-0><p>or inside 3 different file. (This option is the adviced one because it allows developer to keep a well knowed    architecture.)</p><ul>    <li><span class="cn">*.wcv.avt</span> : Web Componenent View for Html part</li>    <li><span class="cn">*.wcs.avt</span> : Web Componenent View for Scss part</li>    <li><span class="cn">*.wcl.avt</span> : Web Componenent View for Ts part</li></ul><av-doc-wc-create-editor-1></av-doc-wc-create-editor-1><h2>The Html</h2><p>You can use any basic tag or any tag you imported or created. The auto-completion will help you to find knowed tags.    There are 2 special tags that you must know :</p><h3>&lt;slot&gt;</h3><p>The slot tag allows developer to define the place where the code inside the tag will be added. This slot can have an    attribute <span class="cn">name</span> to have multiple slots.</p><av-doc-wc-create-editor-2></av-doc-wc-create-editor-2><h3>&lt;block&gt;</h3><p>The block tag must be used in case of inheritance. This will replace the slot by the block with the same name.</p><av-doc-wc-create-editor-3></av-doc-wc-create-editor-3><p>There are sepcial attributes you can use to add feature to basic html: </p><ul>    <li>@element : To select element(s). <av-link to="/docs/wc/element" class="font-sm">More            info</av-link></li>    <li>@for : To create a loop. <av-link to="/docs/wc/loop" class="font-sm">More info</av-link></li>    <li>@bind(_<i><span class="cn">$event</span></i>)?(:<i><span class="cn">$field</span></i>)? : To bind data.        <av-link class="font-sm" to="/docs/wc/binding">More            info</av-link>    </li>    <li>:<i><span class="cn">$field</span></i> : To inject data. <av-link to="/docs/wc/injection" class="font-sm">More            info</av-link>    </li>    <li>@press : To add press event from PressManager. <av-link to="/docs/wc/event" class="font-sm">More            info</av-link>    </li>    <li>@<i><span class="cn">$eventName</span></i> : To add event listener. <av-link to="/docs/wc/event" class="font-sm">More            info</av-link>    </li></ul><p>You can use interpolation inside tag content and normal attribute to have dynamic content. If you use <av-link to="/docs/wc/event">a property value</av-link>&nbsp;or&nbsp;<av-link to="/docs/wc/event">a        watch value</av-link> the content will be refreshed.</p><av-doc-wc-create-editor-4></av-doc-wc-create-editor-4><h2>The style</h2><p>This is just a simple SCSS file. The only think to know is that the style must be wrapped inside a :host{}.</p><av-code language="css" filename="TextRed.wcs.avt">    :host {    \tcolor: red; // This ll change the behavior of the current webcomponent    }</av-code></av-code><p>You can find more informations about the style <av-link to="/docs/wc/style">here.</av-link></p><h2>The logic</h2><p>When you create a new file *.wcl.avt you can notice that the file has region. This is set to allow developer to order    the code. Each region has a goal. You can remove it but we advice you to keep it.</p><ul>    <li>static : Where you can write the static properties or methods for your webcomponent.</li>    <li>props : Where you can define the <av-link to="/docs/wc/attribute">attributes</av-link>, the        <av-link to="/docs/wc/property">properties</av-link>&nbsp;and the <av-link to="/docs/wc/watch">watch variables.</av-link>    </li>    <li>variables : Where you can define the variables and the pointers on <av-link to="/docs/wc/element">view            element</av-link></li>    <li>constructor : Where you can override the constructor for your webcomponent.</li>    <li>methods : Where you can write the methods for your webcomponent.</li></ul><av-code language="typescript">    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region static    &nbsp;    \t//#endregion    &nbsp;    \t//#region props    &nbsp;    \t//#endregion    &nbsp;    \t//#region variables    &nbsp;    \t//#endregion    &nbsp;    \t//#region constructor    &nbsp;    \t//#endregion    &nbsp;    \t//#region methods    &nbsp;    \t//#endregion    &nbsp;    }</av-code></av-code><p>Over the classname you can add predefine Decorators :</p><ul>    <li><span class="cn">@TagName(name:string)</span> : to define the tag for the component</li>    <li><span class="cn">@Debugger({ writeCompiled?: boolean, enableWatchHistory?: boolean})</span> : to debug component        compilation and        to.    </li>    <li><span class="cn">@Dependances({ type: Type, strong?:boolean}[])</span> : to add dependance not written inside        component. The        strong boolean define if the dependance must be loaded before the class.</li>    <li><span class="cn">@OverrideView({ removeViewVariables?: string[] })</span> : to fully override parent view. You        can remove parent        ViewElement needed, but you have to be aware of what you are doing.</li>    <li><span class="cn">@Internal()</span> : to allow exporting class only in the current package but the class won't be usable for someone else that is using the package.</li>    <li><span class="cn">@Required()</span> : to force the class to be exported inside the *.js file.</li>    <li><span class="cn">@Convertible(name: string = "Fullname")</span> : to notify the compiler that the class can be converted from JSON. The parameter <span class="cn">name</span> define the key to detect the class to build.</li></ul><av-code language="typescript">    @TagName("my-tag-name")    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    }</av-code></av-code><h2>Lifecycle</h2><p>The webcomponent has the following lifecycle</p><av-img src="/img/doc/wc/create/lifecylce.png"></av-img><p>By default <span class="cn">postCreation</span> and <span class="cn">postDestruction</span> are empty.</p>` }
     });
 }
     getClassName() {
@@ -16154,7 +16281,7 @@ const DocRamCrud = class DocRamCrud extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>RAM - Operations</h1><p>To manage data inside your RAM, can perfom 4 kind of operations :</p><ul>    <li>Create - To add data inside your RAM</li>    <li>Read - To read data inside your RAM</li>    <li>Update - To update data inside your RAM</li>    <li>Delete - To delete data from your RAM</li></ul><h2>Basic operations</h2><p>Inside Aventus RAM, each function to perfom operation can be written in two format. The first format is the normal.    You call the function and get the result.</p><p>The second format is the detailed. You call the function with <span class="cn">WithError</span> at the end to obtain more    informations.</p><av-doc-ram-crud-editor-1></av-doc-ram-crud-editor-1><p>For the future explanations, only the functions in normal format will be explained</p><h3>Read</h3><div class="table">    <av-row class="header">        <av-col size="4" center>Function</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>getAll</av-col>        <av-col size="8" center>Return all items stored inside the RAM like {[index: Index] : T}        </av-col>    </av-row>    <av-row>        <av-col size="4" center>getList</av-col>        <av-col size="8" center>Return all items stored inside the RAM like T[]        </av-col>    </av-row>    <av-row>        <av-col size="4" center>getById</av-col>        <av-col size="8" center>Return the item where the index is egal to the parameter            provide</av-col>    </av-row>    <av-row>        <av-col size="4" center>get</av-col>        <av-col size="8" center><span>Alias for <span class="cn">getById</span></span></av-col>    </av-row>    <av-row>        <av-col size="4" center>getByIds</av-col>        <av-col size="8" center>Return all items where the index is inside the first parameter            provide</av-col>    </av-row></div><av-doc-ram-crud-editor-2></av-doc-ram-crud-editor-2><h3>Create</h3><div class="table">    <av-row class="header">        <av-col size="4" center>Function</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>create</av-col>        <av-col size="8" center>Store an item inside the RAM and return the element stored.</av-col>    </av-row>    <av-row>        <av-col size="4" center>createList</av-col>        <av-col size="8" center>Store a set of items inside the RAM and return the elements            stored.</av-col>    </av-row></div><av-doc-ram-crud-editor-3></av-doc-ram-crud-editor-3><h3>Update</h3><div class="table">    <av-row class="header">        <av-col size="4" center>Function</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>update</av-col>        <av-col size="8" center>Update an item inside the RAM and return the element updated.</av-col>    </av-row>    <av-row>        <av-col size="4" center>updateList</av-col>        <av-col size="8" center>Update a set of items inside the RAM and return the elements            stored.</av-col>    </av-row></div><av-doc-ram-crud-editor-4></av-doc-ram-crud-editor-4><h3>Delete</h3><div class="table">    <av-row class="header">        <av-col size="4" center>Function</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>delete</av-col>        <av-col size="8" center>Delete an item inside the RAM and return the element updated.</av-col>    </av-row>    <av-row>        <av-col size="4" center>deleteById</av-col>        <av-col size="8" center>Delete an item inside the RAM and return the element updated.</av-col>    </av-row>    <av-row>        <av-col size="4" center>deleteList</av-col>        <av-col size="8" center>Delete a set of items inside the RAM and return the elements            stored.</av-col>    </av-row></div><av-doc-ram-crud-editor-5></av-doc-ram-crud-editor-5><p>The last thing to know is that once an item a stored inside the ram, the item reference is always the same.</p><av-code language="typescript" filename="Test.lib.avt">    export async function test() {    \tlet person1: Person = await PersonRAM.getInstance().get(1);    \tperson1.name = "John Doe 2";    \tconst person: Person = await PersonRAM.getInstance().update(person1);    \t// person == person1 =&gt; true    }</av-code></av-code>` }
+        blocks: { 'default':`<h1>RAM - Operations</h1><p>To manage data inside your RAM, can perfom 4 kind of operations :</p><ul>    <li>Create - To add data inside your RAM</li>    <li>Read - To read data inside your RAM</li>    <li>Update - To update data inside your RAM</li>    <li>Delete - To delete data from your RAM</li></ul><h2>Basic operations</h2><p>Inside Aventus RAM, each function to perfom operation can be written in two format. The first format is the normal.    You call the function and get the result.</p><p>The second format is the detailed. You call the function with <span class="cn">WithError</span> at the end to obtain more    informations.</p><av-doc-ram-crud-editor-1></av-doc-ram-crud-editor-1><p>For the future explanations, only the functions in normal format will be explained</p><h3>Read</h3><div class="table">    <av-row class="header">        <av-col size="4" center>Function</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>getAll</av-col>        <av-col size="8">Return all items stored inside the RAM like {[index: Index] : T}        </av-col>    </av-row>    <av-row>        <av-col size="4" center>getList</av-col>        <av-col size="8">Return all items stored inside the RAM like T[]        </av-col>    </av-row>    <av-row>        <av-col size="4" center>getById</av-col>        <av-col size="8">Return the item where the index is egal to the parameter            provide</av-col>    </av-row>    <av-row>        <av-col size="4" center>get</av-col>        <av-col size="8"><span>Alias for <span class="cn">getById</span></span></av-col>    </av-row>    <av-row>        <av-col size="4" center>getByIds</av-col>        <av-col size="8">Return all items where the index is inside the first parameter            provide</av-col>    </av-row></div><av-doc-ram-crud-editor-2></av-doc-ram-crud-editor-2><h3>Create</h3><div class="table">    <av-row class="header">        <av-col size="4" center>Function</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>create</av-col>        <av-col size="8">Store an item inside the RAM and return the element stored.</av-col>    </av-row>    <av-row>        <av-col size="4" center>createList</av-col>        <av-col size="8">Store a set of items inside the RAM and return the elements            stored.</av-col>    </av-row></div><av-doc-ram-crud-editor-3></av-doc-ram-crud-editor-3><h3>Update</h3><div class="table">    <av-row class="header">        <av-col size="4" center>Function</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>update</av-col>        <av-col size="8">Update an item inside the RAM and return the element updated.</av-col>    </av-row>    <av-row>        <av-col size="4" center>updateList</av-col>        <av-col size="8">Update a set of items inside the RAM and return the elements            stored.</av-col>    </av-row></div><av-doc-ram-crud-editor-4></av-doc-ram-crud-editor-4><h3>Delete</h3><div class="table">    <av-row class="header">        <av-col size="4" center>Function</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>delete</av-col>        <av-col size="8">Delete an item inside the RAM and return the element updated.</av-col>    </av-row>    <av-row>        <av-col size="4" center>deleteById</av-col>        <av-col size="8">Delete an item inside the RAM and return the element updated.</av-col>    </av-row>    <av-row>        <av-col size="4" center>deleteList</av-col>        <av-col size="8">Delete a set of items inside the RAM and return the elements            stored.</av-col>    </av-row></div><av-doc-ram-crud-editor-5></av-doc-ram-crud-editor-5><p>The last thing to know is that once an item a stored inside the ram, the item reference is always the same.</p><av-code language="typescript" filename="Test.lib.avt">    export async function test() {    \tlet person1: Person = await PersonRAM.getInstance().get(1);     \tperson1.name = "John Doe 2";    \tconst person: Person = await PersonRAM.getInstance().update(person1);    \t// person == person1 =&gt; true    }</av-code></av-code>` }
     });
 }
     getClassName() {
@@ -16269,7 +16396,7 @@ __as1(_, 'DocDataCreate', DocDataCreate);
 if(!window.customElements.get('av-doc-data-create')){window.customElements.define('av-doc-data-create', DocDataCreate);Aventus.WebComponentInstance.registerDefinition(DocDataCreate);}
 
 const DocConfigLib = class DocConfigLib extends DocGenericPage {
-    static __style = `:host .table av-row:not(.header) av-col:nth-child(2){text-align:justify}:host .table av-row:not(.header) av-link,:host .table av-row:not(.header) b,:host .table av-row:not(.header) i{display:contents}:host .table .constraint{display:block;font-size:14px;margin-top:5px}`;
+    static __style = `:host av-col{flex-direction:column}:host .table av-row:not(.header) av-col:nth-child(2){text-align:justify}:host .table av-row:not(.header) av-link,:host .table av-row:not(.header) b,:host .table av-row:not(.header) i{display:contents}:host .table .constraint{display:block;font-size:14px;margin-top:5px}`;
     __getStatic() {
         return DocConfigLib;
     }
@@ -16280,7 +16407,7 @@ const DocConfigLib = class DocConfigLib extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Configuration - Libraries</h1><p>When you create a build, you might like to import a library to reuse some code parts. Here you are going to learn how    to define all libs that must be imported inside a build. You can find package to download by searching inside the    aventusjs store : <span class="cn"><a href="https://store.aventusjs.com">https://store.aventusjs.com</a></span></p><p>The easiest format is the following : </p><av-code language="json">    <pre>    {        "dependances": {            "MaterialIcon": "1.0.0",        }    }    </pre></av-code></av-code><p>By default, this will search inside the store. If you need to import other package you can define an object to have    more options.</p><h2>Properties</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Name</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>uri</av-col>        <av-col size="8" center>This is a string to define where to find the file to import. To have more            informations about this path, you can read the next chapter.        </av-col>    </av-row>    <av-row>        <av-col size="4" center>version</av-col>        <av-col size="8" center>            <div>This is a string to define which version of the code is needed.                <span class="constraint">Must satisfy: <span class="cn">^[0-9]+\\.[0-9]+\\.[0-9]+$</span></span>            </div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>isLocal</av-col>        <av-col size="8" center>            <div>This will search a package matching the name inside your locals projects. You can find all these                librairies by typing the command <span class="cn">Aventus : Open aventus storage</span> and then                navigate inside your file explorer under the <span class="cn">packages>@locals</span>. If you use a local package, you don't need to define a version.</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>include</av-col>        <av-col size="8" center>            <span>This is a string to define how the lib must be included inside output js file.</span>            <ul>                <li>none: No need to include the lib inside the output file.</li>                <li>need: Include only the needed code inside the output file. (This is the default value)</li>                <li>full: Include all the code of the lib inside the ouput file.</li>            </ul>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>subDependancesInclude</av-col>        <av-col size="8" center>            <span>This is a object where the key is the sub library name and the value is the inclusion pattern. The                will define how the library of the library must be included inside output js file.</span>            <ul>                <li>none: No need to include the sub lib inside the output file.</li>                <li>need: Include only the needed code inside the output file. (This is the default value)</li>                <li>full: Include all the code of the sub lib inside the ouput file.</li>            </ul>        </av-col>    </av-row></div><h2>Libraries name</h2><p>You can use a few name kinds to load a library. If you use a predefined name you don't need version. There are 5 libs    with predefined uri:</p><ul>    <li>Aventus@Main : This is the core of Aventus, if you omit this lib inside your build, it will be automaticaly        added.</li>    <li>Aventus@UI : This lib contains some useful webcomponent to create interface.</li>    <li>Aventus@I18n : This lib contains i18n tools. If you define <span class="cn">i18n</span> inside your configuration file, this lib will be automaticaly loaded.</li>    <li>Aventus@Php : This lib contains Aventus code base for project <span class="cn">Laraventus</span>.</li>    <li>Aventus@Sharp : This lib contains Aventus code base for project <span class="cn">AventusSharp</span>.</li></ul><av-code language="json">    <pre>    {        "dependances": {            "Aventus@UI": {},        }    }    </pre></av-code></av-code><h2>Store</h2><p>You can search packages inside the aventus store. This is the recommanded way to load package.</p><p><a href="https://store.aventusjs.com/packages"><av-button>Open the store</av-button></a></p><h2>File uri</h2><p>You can add directly an uri that resolve a <span class="cn">.package.avt</span> file to import it.</p><av-code language="json" filename="aventus.conf.avt">    <pre>        {            dependances: {                "Lib1@Main": {                    "uri": "./myLibs/Lib1@Main.package.avt"                },                "Lib2@Main": {                    "uri": "C:\\\\myLibs\\\\Lib2@Main.package.avt"                }            }        }    </pre></av-code></av-code><h2>File via http</h2><p>You can resolve dependance via http. Package will be stored inside the Aventus <span class="cn">storage&gt;packages&gt;http</span>. In this    folder, you must find    a list    of subfolder where the name is the md5 value of the uri that you set as uri. The entry point is a json named    <span class="cn">info.json</span></p><p>When a specific version is required, Aventus will use the uri to download the file and save it inside the folder as    <span class="cn">$name</span>#<span class="cn">$version</span> (ex: Aventus@Main#1.0.0.package.avt) and add a <span class="cn">localUri</span> property that will be    used inside the build.</p>` }
+        blocks: { 'default':`<h1>Configuration - Libraries</h1><p>When you create a build, you might like to import a library to reuse some code parts. Here you are going to learn how    to define all libs that must be imported inside a build. You can find package to download by searching inside the    aventusjs store : <span class="cn"><a href="https://store.aventusjs.com">https://store.aventusjs.com</a></span></p><p>The easiest format is the following : </p><av-code language="json">    <pre>    {        "dependances": {            "MaterialIcon": "1.0.0",        }    }    </pre></av-code></av-code><p>By default, this will search inside the store. If you need to import other package you can define an object to have    more options.</p><h2>Properties</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Name</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>uri</av-col>        <av-col size="8" center>This is a string to define where to find the file to import. To have more            informations about this path, you can read the next chapter.        </av-col>    </av-row>    <av-row>        <av-col size="4" center>version</av-col>        <av-col size="8" center>            <div>This is a string to define which version of the code is needed.                <span class="constraint">Must satisfy: <span class="cn">^[0-9]+\\.[0-9]+\\.[0-9]+$</span></span>            </div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>isLocal</av-col>        <av-col size="8" center>            <div>This will search a package matching the name inside your locals projects. You can find all these                librairies by typing the command <span class="cn">Aventus : Open aventus storage</span> and then                navigate inside your file explorer under the <span class="cn">packages>@locals</span>. If you use a local package, you don't need to define a version.</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>include</av-col>        <av-col size="8" center>            <span>This is a string to define how the lib must be included inside output js file.</span>            <ul>                <li>none: No need to include the lib inside the output file.</li>                <li>need: Include only the needed code inside the output file. (This is the default value)</li>                <li>full: Include all the code of the lib inside the ouput file.</li>            </ul>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>subDependancesInclude</av-col>        <av-col size="8" center>            <span>This is a object where the key is the sub library name and the value is the inclusion pattern. The                will define how the library of the library must be included inside output js file.</span>            <ul>                <li>none: No need to include the sub lib inside the output file.</li>                <li>need: Include only the needed code inside the output file. (This is the default value)</li>                <li>full: Include all the code of the sub lib inside the ouput file.</li>            </ul>        </av-col>    </av-row></div><h2>Libraries name</h2><p>You can use a few name kinds to load a library. If you use a predefined name you don't need version. There are 5 libs    with predefined uri:</p><ul>    <li>Aventus@Main : This is the core of Aventus, if you omit this lib inside your build, it will be automaticaly        added.</li>    <li>Aventus@UI : This lib contains some useful webcomponent to create interface.</li>    <li>Aventus@I18n : This lib contains i18n tools. If you define <span class="cn">i18n</span> inside your configuration file, this lib will be automaticaly loaded.</li>    <li>Aventus@Php : This lib contains Aventus code base for project <span class="cn">Laraventus</span>.</li>    <li>Aventus@Sharp : This lib contains Aventus code base for project <span class="cn">AventusSharp</span>.</li></ul><av-code language="json">    <pre>    {        "dependances": {            "Aventus@UI": {},        }    }    </pre></av-code></av-code><h2>Store</h2><p>You can search packages inside the aventus store. This is the recommanded way to load package.</p><p><a href="https://store.aventusjs.com/packages" target="_blank"><av-button>Open the store</av-button></a></p><h2>File uri</h2><p>You can add directly an uri that resolve a <span class="cn">.package.avt</span> file to import it.</p><av-code language="json" filename="aventus.conf.avt">    <pre>        {            dependances: {                "Lib1@Main": {                    "uri": "./myLibs/Lib1@Main.package.avt"                },                "Lib2@Main": {                    "uri": "C:\\\\myLibs\\\\Lib2@Main.package.avt"                }            }        }    </pre></av-code></av-code><h2>File via http</h2><p>You can resolve dependance via http. Package will be stored inside the Aventus <span class="cn">storage&gt;packages&gt;http</span>. In this    folder, you must find    a list    of subfolder where the name is the md5 value of the uri that you set as uri. The entry point is a json named    <span class="cn">info.json</span></p><p>When a specific version is required, Aventus will use the uri to download the file and save it inside the folder as    <span class="cn">$name</span>#<span class="cn">$version</span> (ex: Aventus@Main#1.0.0.package.avt) and add a <span class="cn">localUri</span> property that will be    used inside the build.</p>` }
     });
 }
     getClassName() {
@@ -16324,7 +16451,7 @@ const DocConfigStatic = class DocConfigStatic extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Configuration - Static</h1><p>Even if Aventus is great for your project, you will need others files like .html, .png, etc. You can put your source file inside a static folder that will be exported.</p><h2>Properties</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Name</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>name</av-col>        <av-col size="8" center>This is the name for the static part. This name is only use if you use the command "Aventus : Copy static" to allow the user to choose the right folder to export.        </av-col>    </av-row>    <av-row>        <av-col size="4" center>input</av-col>        <av-col size="8" center>This is a string to define which folder Aventus will watch. For            example, if you set "./src/static/*", all files inside the folder "src/static" will be exported.        </av-col>    </av-row>    <av-row>        <av-col size="4" center>output</av-col>        <av-col size="8" center>This is string to define where the static files will be exported.        </av-col>    </av-row></div><h2>Special files</h2><p>Inside the static folder, you can write some specials files that will be compiled to be supported by the browser.</p><h3>Sass</h3><p>You can write sass file inside the static folder that will be compiled to a css file. If your file name starts with a <span class="cn">_</span> Aventus will ignore it. (ex: _reset.scss)</p><h3>Global Style</h3><p>A good practice to develop a website is to declare theme variables and then use it inside your webcomponent. To do that, you can write a file <span class="cn">*.gs.avt</span> that will be compiled to a css file. The only goal of this file is to provide autocompletion for your css variables declared inside the <span class="cn">:root</span>.</p><av-code language="css" filename="theme.gs.avt">    :root {        --primary-color: #20232a;        --light-primary-color: #282c34;        --aventus-color: #e5540e;        --primary-font-color: white;        --link-color: #5680ed;        ...    }</av-code></av-code>` }
+        blocks: { 'default':`<h1>Configuration - Static</h1><p>Even if Aventus is great for your project, you will need others files like .html, .png, etc. You can put your source file inside a static folder that will be exported.</p><h2>Properties</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Name</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>name</av-col>        <av-col size="8" class="left">This is the name for the static part. This name is only use if you use the command "Aventus : Copy static" to allow the user to choose the right folder to export.        </av-col>    </av-row>    <av-row>        <av-col size="4" center>input</av-col>        <av-col size="8" class="left">This is a string to define which folder Aventus will watch. For            example, if you set "./src/static/*", all files inside the folder "src/static" will be exported.        </av-col>    </av-row>    <av-row>        <av-col size="4" center>output</av-col>        <av-col size="8" class="left">This is string to define where the static files will be exported.        </av-col>    </av-row></div><h2>Special files</h2><p>Inside the static folder, you can write some specials files that will be compiled to be supported by the browser.</p><h3>Sass</h3><p>You can write sass file inside the static folder that will be compiled to a css file. If your file name starts with a <span class="cn">_</span> Aventus will ignore it. (ex: _reset.scss)</p><h3>Global Style</h3><p>A good practice to develop a website is to declare theme variables and then use it inside your webcomponent. To do that, you can write a file <span class="cn">*.gs.avt</span> that will be compiled to a css file. The only goal of this file is to provide autocompletion for your css variables declared inside the <span class="cn">:root</span>.</p><av-code language="css" filename="theme.gs.avt">    :root {        --primary-color: #20232a;        --light-primary-color: #282c34;        --aventus-color: #e5540e;        --primary-font-color: white;        --link-color: #5680ed;        ...    }</av-code></av-code>` }
     });
 }
     getClassName() {
@@ -16357,7 +16484,7 @@ __as1(_, 'DocConfigStatic', DocConfigStatic);
 if(!window.customElements.get('av-doc-config-static')){window.customElements.define('av-doc-config-static', DocConfigStatic);Aventus.WebComponentInstance.registerDefinition(DocConfigStatic);}
 
 const DocConfigBuild = class DocConfigBuild extends DocGenericPage {
-    static __style = `:host .table av-row:not(.header) av-col{padding:3px;text-align:left}:host .table av-row:not(.header) av-col:nth-child(2){text-align:justify}:host .table av-row:not(.header) av-link,:host .table av-row:not(.header) b,:host .table av-row:not(.header) i{display:contents}:host .table av-row:not(.header):nth-child(odd){background-color:rgba(0,0,0,.2)}:host .table .constraint{display:block;font-size:14px;margin-top:5px}:host .table .lvl-1{margin-left:30px;position:relative;width:calc(100% - 30px)}:host .table .lvl-2{margin-left:50px;position:relative;width:calc(100% - 50px)}:host .table .lvl-3 av-col:first-child{padding-left:50px}`;
+    static __style = `:host av-col{flex-direction:column}:host .table av-row:not(.header) av-col{padding:3px;text-align:left}:host .table av-row:not(.header) av-col:nth-child(2){text-align:justify}:host .table av-row:not(.header) av-link,:host .table av-row:not(.header) b,:host .table av-row:not(.header) i{display:contents}:host .table av-row:not(.header):nth-child(odd){background-color:rgba(0,0,0,.2)}:host .table .constraint{display:block;font-size:14px;margin-top:5px}:host .table .lvl-1{margin-left:30px;position:relative;width:calc(100% - 30px)}:host .table .lvl-2{margin-left:50px;position:relative;width:calc(100% - 50px)}:host .table .lvl-3 av-col:first-child{padding-left:50px}`;
     __getStatic() {
         return DocConfigBuild;
     }
@@ -16401,7 +16528,7 @@ __as1(_, 'DocConfigBuild', DocConfigBuild);
 if(!window.customElements.get('av-doc-config-build')){window.customElements.define('av-doc-config-build', DocConfigBuild);Aventus.WebComponentInstance.registerDefinition(DocConfigBuild);}
 
 const DocConfigBasic = class DocConfigBasic extends DocGenericPage {
-    static __style = `:host .table av-row:not(.header) av-col:nth-child(2){text-align:justify}:host .table av-row:not(.header) av-link{display:contents}:host .table av-row:not(.header):nth-child(odd){background-color:rgba(0,0,0,.2)}:host .table .constraint{display:block;font-size:14px;margin-top:5px}:host .mandatory::after{content:"*";font-weight:bold;margin-left:5px}`;
+    static __style = `:host av-col{flex-direction:column}:host .table av-row:not(.header) av-col:nth-child(2){text-align:justify}:host .table av-row:not(.header) av-link{display:contents}:host .table av-row:not(.header):nth-child(odd){background-color:rgba(0,0,0,.2)}:host .table .constraint{display:block;font-size:14px;margin-top:5px}:host .mandatory::after{content:"*";font-weight:bold;margin-left:5px}`;
     __getStatic() {
         return DocConfigBasic;
     }
@@ -16456,7 +16583,7 @@ const DocFirstApp = class DocFirstApp extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Create your first project</h1><h2>Init the project</h2><p>In your file explorer create a new folder <span class="cn">HelloAventus</span> and open it with vscode.</p><p>You can create a new file named <span class="cn">aventus.conf.avt</span>. The minimal content for your config file is    the following</p><av-doc-first-app-editor-1></av-doc-first-app-editor-1><p>The section <span class="cn">module</span> define the container name for the compiled code. Following the best    practice, we minimize    the use of global variables by wrapping the final code inside module. In this example, you can reach your compiled    code    by typing <i>HelloWorld.*</i> inside the dev console.</p><p>The section <span class="cn">componentPrefix</span> define the prefix for the webcomponents. For example the tag name    for a    webcomponent class <i>Test</i> will be <i>ha-test</i>.</p><p>The section <span class="cn">build</span> define all builds informations. A build is a set of Aventus input file    compiled as a single    js file. You must provide at least 3 fields. <span class="cn">name</span> that define the unique name for your    build,    <span class="cn">src</span> that define where the compiler must look for Aventus file and <span class="cn">compile[0].output</span> that define where    the compiler must write the compiled file. For the example the field <i>includeBase</i> is added to auto import    Aventus source code.</p><p>When you save the config file a new file is created inside your workspace : <i>/dist/helloaventus.js</i>. The js file    is your code compiled. Actually the file is empty because we didn't write any code.</p><p>There are more options for the config file that you can read <av-link to="/docs/config/basic_prop">here</av-link></p><p>Now you can create a new folder named <span class="cn">src</span> and edit the field build.src like that</p><av-doc-first-app-editor-2></av-doc-first-app-editor-2><p>This means that any <span class="cn">*.avt</span> file found will be compiled inside this build.</p><p>Now it's time to create your first webcomponent. You can right click inside the explorer part and click on <span class="cn">Aventus        : Create...</span></p><av-img src="/img/doc/install/firstapp/create_option.png"></av-img><p>A dropdown appears. Select the option : <span class="cn">Component</span></p><av-img src="/img/doc/install/firstapp/create_menu.png"></av-img><p>Then you must enter the name for your WebComponent, call it MyComponent    (<span class="cn">&lt;ha-my-component&gt;&lt;/ha-my-component&gt;</span>), press enter and select multiple files.    Three new files are    created</p><ul>    <li><span class="cn">MyComponent.wcl.avt</span> - the file for the logic written in Typescript</li>    <li><span class="cn">MyComponent.wcs.avt</span> - the file for the style written in SCSS</li>    <li><span class="cn">MyComponent.wcv.avt</span> - the file for the view written in HTML</li></ul><p>We will add some code inside the component to write an hello Aventus text in orange</p><av-doc-first-app-editor-3></av-doc-first-app-editor-3><av-separator></av-separator><p>To show your first component you need an index file. Create a <span class="cn">/src/static</span> folder and a <span class="cn">/src/static/index.html</span> and add    the content below:</p><av-doc-first-app-editor-4></av-doc-first-app-editor-4><p>This code will load the compiled file <i>helloaventus.js</i> in your dist folder. To export static file, you need to    add a new section inside your config.</p><av-doc-first-app-editor-5></av-doc-first-app-editor-5><p>This code will export every file from <span class="cn">/static</span> to <span class="cn">/dist</span>. You can    save your config file.</p><p>Now you can launch the Aventus live server by clicking on the start server button.</p><av-img src="/img/doc/install/firstapp/start_server.png"></av-img><p>Well done, you created your first Aventus App.</p>` }
+        blocks: { 'default':`<h1>Create your first project</h1><h2>Init the project</h2><p>In your file explorer create a new folder <span class="cn">HelloAventus</span> and open it with vscode.</p><p>You can create a new file named <span class="cn">aventus.conf.avt</span>. The minimal content for your config file is    the following</p><av-doc-first-app-editor-1></av-doc-first-app-editor-1><p>The section <span class="cn">module</span> define the container name for the compiled code. Following the best    practice, we minimize    the use of global variables by wrapping the final code inside module. In this example, you can reach your compiled    code    by typing <i>HelloWorld.*</i> inside the dev console.</p><p>The section <span class="cn">componentPrefix</span> define the prefix for the webcomponents. For example the tag name    for a    webcomponent class <i>Test</i> will be <i>ha-test</i>.</p><p>The section <span class="cn">build</span> define all builds informations. A build is a set of Aventus input file    compiled as a single    js file. You must provide at least 3 fields. <span class="cn">name</span> that define the unique name for your    build,    <span class="cn">src</span> that define where the compiler must look for Aventus file and <span class="cn">compile[0].output</span> that define where    the compiler must write the compiled file. For the example the field <i>includeBase</i> is added to auto import    Aventus source code.</p><p>When you save the config file a new file is created inside your workspace : <i>/dist/helloaventus.js</i>. The js file    is your code compiled. Actually the file is empty because we didn't write any code.</p><p>There are more options for the config file that you can read <av-link to="/docs/config/basic_prop">here</av-link></p><p>Now you can create a new folder named <span class="cn">src</span> and edit the field build.src like that</p><av-doc-first-app-editor-2></av-doc-first-app-editor-2><p>This means that any <span class="cn">*.avt</span> file found will be compiled inside this build.</p><p>Now it's time to create your first webcomponent. You can right click inside the explorer part and click on <span class="cn">Aventus        : Create...</span></p><div class="img-cont">    <av-img src="/img/doc/install/firstapp/create_option.png"></av-img></div><p>A dropdown appears. Select the option : <span class="cn">Component</span></p><div class="img-cont">    <av-img src="/img/doc/install/firstapp/create_menu.png"></av-img></div><p>Then you must enter the name for your WebComponent, call it MyComponent    (<span class="cn">&lt;ha-my-component&gt;&lt;/ha-my-component&gt;</span>), press enter and select multiple files.    Three new files are    created</p><ul>    <li><span class="cn">MyComponent.wcl.avt</span> - the file for the logic written in Typescript</li>    <li><span class="cn">MyComponent.wcs.avt</span> - the file for the style written in SCSS</li>    <li><span class="cn">MyComponent.wcv.avt</span> - the file for the view written in HTML</li></ul><p>We will add some code inside the component to write an hello Aventus text in orange</p><av-doc-first-app-editor-3></av-doc-first-app-editor-3><av-separator></av-separator><p>To show your first component you need an index file. Create a <span class="cn">/static</span> folder and a <span class="cn">/static/index.html</span> and add    the content below:</p><av-doc-first-app-editor-4></av-doc-first-app-editor-4><p>This code will load the compiled file <i>helloaventus.js</i> in your dist folder. To export static file, you need to    add a new section inside your config.</p><av-doc-first-app-editor-5></av-doc-first-app-editor-5><p>This code will export every file from <span class="cn">/static</span> to <span class="cn">/dist</span>. You can    save your config file.</p><p>Now you can launch the Aventus live server by clicking on the start server button.</p><div class="img-cont">    <av-img src="/img/doc/install/firstapp/start_server.png"></av-img></div><p>Well done, you created your first Aventus App.</p>` }
     });
 }
     getClassName() {
@@ -16500,7 +16627,7 @@ const DocExperience = class DocExperience extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI and experience</h1><h2>Vscode UI</h2><p>The Aventus extension will edit vscode user interface to add some features.</p><h3>The create option</h3><p>When you right click on the vscode file explorer, you can notice that you have a new option named: <b>Aventus :        Create...</b>.</p><av-docu-img src="/img/doc/install/experience/aventus_create.png"></av-docu-img><p>If you click on it, a dropdown appears and you can select what you want to create.</p><ul class="list-commands">    <li><b>Init</b><av-icon icon="arrow-right"></av-icon> Create a new project</li>    <li><b>Component</b><av-icon icon="arrow-right"></av-icon> Create a display</li>    <li><b>Data</b><av-icon icon="arrow-right"></av-icon> Create a data struct</li>    <li><b>RAM</b><av-icon icon="arrow-right"></av-icon> Create a storage</li>    <li><b>Library</b><av-icon icon="arrow-right"></av-icon> Create a file to write any code</li>    <li><b>Socket</b><av-icon icon="arrow-right"></av-icon> Create a socket</li>    <li><b>State</b><av-icon icon="arrow-right"></av-icon> Create a state or a state manager</li>    <li><b>Custom</b><av-icon icon="arrow-right"></av-icon> Use one of your <av-link to="/advanced/templates">templates</av-link></li></ul><h3>The compilation informations</h3><p>If you have at least one build, on the bottom of the vscode you can see a tick and a time. If you hover this text,    you will see the last time your build was compiled.</p><av-img src="/img/doc/install/experience/last_compiled.png"></av-img><h3>The live server</h3><p>If you have at least one build, on the bottom of the vscode you can see a play button. If you click on it, the live    sever will start and a stop button will replace the play button.</p><av-img src="/img/doc/install/experience/last_compiled.png"></av-img><p>You can customize the live server inside the vscode    settings under <b>Aventus &gt; Liveserver</b>.</p>` }
+        blocks: { 'default':`<h1>UI and experience</h1><h2>Vscode UI</h2><p>The Aventus extension will edit vscode user interface to add some features.</p><h3>The create option</h3><p>When you right click on the vscode file explorer, you can notice that you have a new option named: <b>Aventus :        Create...</b>.</p><av-docu-img src="/img/doc/install/experience/aventus_create.png"></av-docu-img><p>If you click on it, a dropdown appears and you can select what you want to create.</p><ul class="list-commands">    <li><b>Init</b><av-icon icon="arrow-right"></av-icon> Create a new project</li>    <li><b>Component</b><av-icon icon="arrow-right"></av-icon> Create a webcomponent</li>    <li><b>Data</b><av-icon icon="arrow-right"></av-icon> Create a data structure</li>    <li><b>RAM</b><av-icon icon="arrow-right"></av-icon> Create a storage</li>    <li><b>Library</b><av-icon icon="arrow-right"></av-icon> Create a file to write any code</li>    <li><b>State</b><av-icon icon="arrow-right"></av-icon> Create a state or a state manager</li></ul><h3>The compilation informations</h3><p>If you have at least one build, on the bottom of the vscode you can see a tick and a time. If you hover this text,    you will see the last time your build was compiled.</p><div class="img-cont">    <av-img src="/img/doc/install/experience/last_compiled.png"></av-img></div><h3>The live server</h3><p>If you have at least one build, on the bottom of the vscode you can see a play button. If you click on it, the live    sever will start and a stop button will replace the play button.</p><div class="img-cont">    <av-img src="/img/doc/install/experience/start_server.png"></av-img></div><p>You can customize the live server inside the vscode    settings under <b>Aventus &gt; Liveserver</b>.</p>` }
     });
 }
     getClassName() {
@@ -17875,7 +18002,7 @@ const DocWcStyleEditor3 = class DocWcStyleEditor3 extends BaseEditor {
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Style">    <av-code language="json" filename="Style/aventus.conf.avt">        <pre>            {            	"module": "Style",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Style/src/@utility.wcs.avt">        <pre>            .red {            	color: red;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="Style/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Style&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &nbsp;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+        blocks: { 'default':`<av-code-editor name="Style">    <av-code language="json" filename="Style/aventus.conf.avt">        <pre>            {            	"module": "Style",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Style/src/@Utility.wcs.avt">        <pre>            .red {            	color: red;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="Style/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Style&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &nbsp;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
     });
 }
     getClassName() {
@@ -18505,7 +18632,7 @@ const DocWcCreateEditor3 = class DocWcCreateEditor3 extends BaseEditor {
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Component Example">    <av-code language="json" filename="ComponentExample/aventus.conf.avt">        <pre>            {                "module": "ComponentExample",                "componentPrefix": "av",                "build": [                    {                        "name": "Main",                        "src": [                            "./src/*"                        ],                        "compile": [                            {                                "output": "./dist/demo.js"                            }                        ]                    }                ],                "static": [{                    "name": "Static",                    "input": "./static/*",                    "output": "./dist/"                }]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="ComponentExample/src/Error/Error.wcl.avt">        <pre>            export class Error extends Aventus.Component implements Aventus.DefaultComponent {                &nbsp;                //#region static                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region props                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region variables                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region constructor                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region methods                &nbsp;                //#endregion                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/src/Error/Error.wcv.avt">        <pre>            &lt;slot&gt; &lt;!-- The default content appends here --&gt;&lt;/slot&gt;            &lt;slot style="color:red" name="error"&gt;&lt;!-- The errors appends here --&gt;&lt;/slot&gt;            &lt;slot style="color:green" name="success"&gt;&lt;!-- The success appends here --&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="css" filename="ComponentExample/src/Error/Error.wcs.avt">        <pre>            :host {            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="ComponentExample/src/ErrorYellow/ErrorYellow.wcl.avt">        <pre>            import { Error } from "../Error/Error.wcl.avt";            &nbsp;            export class ErrorYellow extends Error implements Aventus.DefaultComponent {                &nbsp;                //#region static                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region props                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region variables                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region constructor                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region methods                &nbsp;                //#endregion                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/src/ErrorYellow/ErrorYellow.wcv.avt">        <pre>            &lt;block name="error"&gt;                &lt;span style="color:yellow"&gt;                    &lt;!-- The errors will be displayed in yellow now --&gt;                    &lt;slot name="error"&gt;&lt;/slot&gt;                &lt;/span&gt;            &lt;/block>        </pre>    </av-code></av-code>    <av-code language="css" filename="ComponentExample/src/ErrorYellow/ErrorYellow.wcs.avt">        <pre>            :host {            }        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Aventus Demo&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-error&gt;                    &lt;p&gt;I'm the default content&lt;/p&gt;                    &lt;p slot=""&gt;I'm the default content too&lt;/p&gt;                    &lt;p slot="error"&gt;I'm an error in red&lt;/p&gt;                    &lt;p slot="success"&gt;I'm a success in green&lt;/p&gt;                &lt;/av-error&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot>    <av-doc-wc-create-editor-3-error-yellow slot="result">        <p>I'm the default content</p>        <p slot="">I'm the default content too</p>        <p slot="error">I'm an error in yellow</p>        <p slot="success">I'm a success in green</p>    </av-doc-wc-create-editor-3-error-yellow></av-code-editor>` }
+        blocks: { 'default':`<av-code-editor name="Component Example">    <av-code language="json" filename="ComponentExample/aventus.conf.avt">        <pre>            {                "module": "ComponentExample",                "componentPrefix": "av",                "build": [                    {                        "name": "Main",                        "src": [                            "./src/*"                        ],                        "compile": [                            {                                "output": "./dist/demo.js"                            }                        ]                    }                ],                "static": [{                    "name": "Static",                    "input": "./static/*",                    "output": "./dist/"                }]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="ComponentExample/src/Error/Error.wcl.avt">        <pre>            export class Error extends Aventus.Component implements Aventus.DefaultComponent {                &nbsp;                //#region static                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region props                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region variables                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region constructor                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region methods                &nbsp;                //#endregion                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/src/Error/Error.wcv.avt">        <pre>            &lt;slot&gt; &lt;!-- The default content appends here --&gt;&lt;/slot&gt;            &lt;slot style="color:red" name="error"&gt;&lt;!-- The errors appends here --&gt;&lt;/slot&gt;            &lt;slot style="color:green" name="success"&gt;&lt;!-- The success appends here --&gt;&lt;/slot&gt;        </pre>    </av-code></av-code>    <av-code language="css" filename="ComponentExample/src/Error/Error.wcs.avt">        <pre>            :host {            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="ComponentExample/src/ErrorYellow/ErrorYellow.wcl.avt">        <pre>            import { Error } from "../Error/Error.wcl.avt";            &nbsp;            export class ErrorYellow extends Error implements Aventus.DefaultComponent {                &nbsp;                //#region static                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region props                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region variables                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region constructor                &nbsp;                //#endregion                &nbsp;                &nbsp;                //#region methods                &nbsp;                //#endregion                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/src/ErrorYellow/ErrorYellow.wcv.avt">        <pre>            &lt;block name="error"&gt;                &lt;span style="color:yellow"&gt;                    &lt;!-- The errors will be displayed in yellow now --&gt;                    &lt;slot name="error"&gt;&lt;/slot&gt;                &lt;/span&gt;            &lt;/block>        </pre>    </av-code></av-code>    <av-code language="css" filename="ComponentExample/src/ErrorYellow/ErrorYellow.wcs.avt">        <pre>            :host {            }        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Aventus Demo&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-error&gt;                    &lt;p&gt;I'm the default content&lt;/p&gt;                    &lt;p slot=""&gt;I'm the default content too&lt;/p&gt;                    &lt;p slot="error"&gt;I'm an error in yellow&lt;/p&gt;                    &lt;p slot="success"&gt;I'm a success in green&lt;/p&gt;                 &lt;/av-error&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot>    <av-doc-wc-create-editor-3-error-yellow slot="result">        <p>I'm the default content</p>        <p slot="">I'm the default content too</p>        <p slot="error">I'm an error in yellow</p>        <p slot="success">I'm a success in green</p>    </av-doc-wc-create-editor-3-error-yellow></av-code-editor>` }
     });
 }
     getClassName() {
@@ -18568,13 +18695,41 @@ const DocWcCreateEditor1 = class DocWcCreateEditor1 extends BaseEditor {
         return "DocWcCreateEditor1";
     }
     startupFile() {
-        return "ComponentExample/static/index.html";
+        return "ComponentExample/src/Button/Button.wcl.avt";
     }
 }
 DocWcCreateEditor1.Namespace=`AventusWebsite`;
 DocWcCreateEditor1.Tag=`av-doc-wc-create-editor-1`;
 __as1(_, 'DocWcCreateEditor1', DocWcCreateEditor1);
 if(!window.customElements.get('av-doc-wc-create-editor-1')){window.customElements.define('av-doc-wc-create-editor-1', DocWcCreateEditor1);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor1);}
+
+const DocWcCreateEditor0 = class DocWcCreateEditor0 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocWcCreateEditor0;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocWcCreateEditor0.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Component Example">    <av-code language="json" filename="ComponentExample/aventus.conf.avt">        <pre>            {                "module": "ComponentExample",                "componentPrefix": "av",                "build": [                    {                        "name": "Main",                        "src": [                            "./src/*"                        ],                        "compile": [                            {                                "output": "./dist/demo.js"                            }                        ]                    }                ],                "static": [{                    "name": "Static",                    "input": "./static/*",                    "output": "./dist/"                }]            }        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/src/Button.wc.avt">        <pre>            &lt;script&gt;                export class Button extends Aventus.Component implements Aventus.DefaultComponent {                }            &lt;/script&gt;            &lt;template&gt;                &lt;slot&gt;&lt;/slot&gt;            &lt;/template&gt;            &lt;style&gt;                :host {                    background-color: #e5540e;                    border-radius: 5px;                    color: white;                    cursor: pointer;                    padding: 5px 15px;                    user-select: none;                }            &lt;/style&gt;        </pre>    </av-code></av-code>    <av-code language="html" filename="ComponentExample/static/index.html">        <pre>            &lt;!DOCTYPE html&gt;            &lt;html lang="en"&gt;            &lt;head&gt;                &lt;meta charset="UTF-8"&gt;                &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;                &lt;title&gt;Aventus Demo&lt;/title&gt;                &lt;script src="/demo.js"&gt;&lt;/script&gt;            &lt;/head&gt;            &lt;body&gt;                &lt;av-button&gt;Click me&lt;/av-button&gt;            &lt;/body&gt;            &lt;/html&gt;        </pre>    </av-code></av-code>    <slot></slot>    <av-doc-wc-create-editor-1-button slot="result">Click me</av-doc-wc-create-editor-1-button></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocWcCreateEditor0";
+    }
+    startupFile() {
+        return "ComponentExample/src/Button.wc.avt";
+    }
+}
+DocWcCreateEditor0.Namespace=`AventusWebsite`;
+DocWcCreateEditor0.Tag=`av-doc-wc-create-editor-0`;
+__as1(_, 'DocWcCreateEditor0', DocWcCreateEditor0);
+if(!window.customElements.get('av-doc-wc-create-editor-0')){window.customElements.define('av-doc-wc-create-editor-0', DocWcCreateEditor0);Aventus.WebComponentInstance.registerDefinition(DocWcCreateEditor0);}
 
 const DocWcConditionEditor1 = class DocWcConditionEditor1 extends BaseEditor {
     static __style = ``;
@@ -19609,7 +19764,7 @@ const DocRamCreateEditor2 = class DocRamCreateEditor2 extends DocRamCreateEditor
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code language="typescript" filename="ExampleRAM/src/Person.ram.avt">    <pre>        import { Person } from "./Person.data.avt";        &nbsp;        // now the key to identify a person must be a string        export class PersonRAM extends Aventus.GenericRam&lt;string, Person> implements Aventus.IRam {            &nbsp;            /**            * Create a singleton to store data            */            public static getInstance() {                return Aventus.Instance.get(PersonRAM);            }            &nbsp;            /**            * @inheritdoc            */            public override defineIndexKey(): keyof Person {                return 'id';            }            &nbsp;            /**            * @inheritdoc            */            protected override getTypeForData(objJson: Aventus.KeysObject&lt;Person> | Person): new () => Person {                return Person;            }            &nbsp;        }    </pre></av-code></av-code><slot></slot>` }
+        blocks: { 'default':`<av-code language="typescript" filename="ExampleRAM/src/Person.ram.avt">    <pre>        import { Person } from "./Person.data.avt";        &nbsp;        // now the key to identify a person must be a string        export class PersonRAM extends Aventus.GenericRam&lt;string, Person> implements Aventus.IRam {            &nbsp;            /**            * Create a singleton to store data            */            public static getInstance() {                return Aventus.Instance.get(PersonRAM);            }            &nbsp;            /**            * @inheritdoc            */            public override defineIndexKey(): keyof Person {                return 'id';            }            &nbsp;            /**            * @inheritdoc            */            protected override getTypeForData(objJson: Aventus.KeysObject&lt;Person> | Person): new () => Person {                return Person;            }            &nbsp;        }    </pre></av-code></av-code><av-code language="typescript" filename="ExampleRAM/src/Person.data.avt">    <pre>        export class Person extends Aventus.Data implements Aventus.IData {            public id: string = "";            public firstname!: string;            public lastname!: string;        }    </pre></av-code></av-code><slot></slot>` }
     });
 }
     getClassName() {
@@ -22924,7 +23079,14 @@ IconLib.Namespace=`AventusWebsite`;
 __as1(_, 'IconLib', IconLib);
 
 const Icon = class Icon extends Aventus.WebComponent {
-    static isFirstIcon = true;
+    static get observedAttributes() {return ["icon"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'icon'() { return this.getStringProp('icon') }
+    set 'icon'(val) { this.setStringAttr('icon', val) }    static isFirstIcon = true;
+    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("icon", ((target) => {
+    if (target.icon) {
+        target.spanEl.style.setProperty("--icon-code", IconLib.getIcon(target.icon));
+    }
+})); }
     static __style = `:host span{display:var(--fa-display, inline-block);font-family:"Font Awesome 6 Free";-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;font-style:normal;font-variant:normal;font-weight:900;line-height:1;text-rendering:auto}:host span:before{content:var(--icon-code)}`;
     constructor() {
         super();
@@ -22961,6 +23123,8 @@ const Icon = class Icon extends Aventus.WebComponent {
     getClassName() {
         return "Icon";
     }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('icon')){ this['icon'] = undefined; } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('icon'); }
     postCreation() {
         super.postCreation();
     }
@@ -23107,6 +23271,8 @@ const DocApp = class DocApp extends Aventus.Navigation.Router {
         this.addRoute("/docs/ui/toast", DocUIToast);
         this.addRoute("/docs/ui/link", DocUILink);
         this.addRoute("/docs/ui/page", DocUIPage);
+        this.addRoute("/docs/ui/page_form", DocUIPageForm);
+        this.addRoute("/docs/ui/page_form_http", DocUIPageFormRoute);
         this.addRoute("/docs/ui/router", DocUIRouter);
         this.addRoute("/docs/ui/process", DocUIProcess);
         this.addRoute("/docs/ui/shortcut", DocUIShortcut);
@@ -23129,6 +23295,284 @@ DocApp.Namespace=`AventusWebsite`;
 DocApp.Tag=`av-doc-app`;
 __as1(_, 'DocApp', DocApp);
 if(!window.customElements.get('av-doc-app')){window.customElements.define('av-doc-app', DocApp);Aventus.WebComponentInstance.registerDefinition(DocApp);}
+
+const DocUIModalEditor1Compiled = class DocUIModalEditor1Compiled extends Aventus.WebComponent {
+    get 'txt'() {
+						return this.__watch["txt"];
+					}
+					set 'txt'(val) {
+						this.__watch["txt"] = val;
+					}    __registerWatchesActions() {
+    this.__addWatchesActions("txt");    super.__registerWatchesActions();
+}
+    static __style = ``;
+    __getStatic() {
+        return DocUIModalEditor1Compiled;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIModalEditor1Compiled.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<button _id="docuimodaleditor1compiled_0">Open modal</button><div _id="docuimodaleditor1compiled_1"></div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "content": {
+    "docuimodaleditor1compiled_1°@HTML": {
+      "fct": (c) => `Result is : ${c.print(c.comp.__b4b8909be252c7621202c6451fcd0df6method0())}`,
+      "once": true
+    }
+  },
+  "pressEvents": [
+    {
+      "id": "docuimodaleditor1compiled_0",
+      "onPress": (e, pressInstance, c) => { c.comp.openModal(e, pressInstance); }
+    }
+  ]
+}); }
+    getClassName() {
+        return "DocUIModalEditor1Compiled";
+    }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["txt"] = undefined; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('txt'); }
+    async openModal() {
+        const confirm = new DocUIModalEditor1Modal();
+        confirm.question = "Do you accept?";
+        const isAccepted = await confirm.show();
+        if (isAccepted) {
+            this.txt = "Accepted";
+        }
+        else {
+            this.txt = "Refused";
+        }
+    }
+    __b4b8909be252c7621202c6451fcd0df6method0() {
+        return this.txt;
+    }
+}
+DocUIModalEditor1Compiled.Namespace=`AventusWebsite`;
+DocUIModalEditor1Compiled.Tag=`av-doc-u-i-modal-editor-1-compiled`;
+__as1(_, 'DocUIModalEditor1Compiled', DocUIModalEditor1Compiled);
+if(!window.customElements.get('av-doc-u-i-modal-editor-1-compiled')){window.customElements.define('av-doc-u-i-modal-editor-1-compiled', DocUIModalEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIModalEditor1Compiled);}
+
+const DocUIModalEditor1 = class DocUIModalEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUIModalEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIModalEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Modal">    <av-code language="typescript" filename="Example/Example.wcl.avt">        <pre>            import { Modal } from "../Modal/Modal.wcl.avt";            &nbsp;            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                @Watch()                public txt?: string;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods            &nbsp;                /**                 *                  */                protected async openModal() {                    const confirm = new Modal();                    confirm.question = "Do you accept?"                    const isAccepted = await confirm.show();                    &#105;f(isAccepted) {            			this.txt = "Accepted"                    }            		else {            			this.txt = "Refused"            		}                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Example/Example.wcs.avt">        <pre>            :host {                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="Example/Example.wcv.avt">        <pre>            &lt;button @press="openModal"&gt;Open modal&lt;/button&gt;            &lt;div&gt;Result is : &#123;&#123; this.txt &#125;&#125;&lt;/div&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Modal/Modal.wcl.avt">        <pre>            import { ModalElement } from "Aventus@UI:Aventus.Modal.package.avt";            &nbsp;            export class Modal extends ModalElement&lt;boolean&gt; implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                @Watch()                public question?: string;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                public override configure(): Aventus.Modal.ModalOptions&lt;boolean&gt; {                    return {                        closeWithClick: false,                        closeWithEsc: false,                    };                }            &nbsp;            &nbsp;                /**                 *                  */                protected accept() {                    this.resolve(true);                }            &nbsp;            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Modal/Modal.wcs.avt">        <pre>            :host {            	align-items: center;            	background: rgba(0, 0, 0, 0.7);            	display: flex;            	inset: 0;            	justify-content: center;            	position: fixed;            	z-index: 60;            	font-size: 16px;            &nbsp;            	.modal {            		background-color: var(--secondary-color);            		border-radius: 12px;            		box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);            		max-width: 500px;            		padding: 24px;            		position: relative;            		text-align: left;            		transform: translateZ(0);            		transition: all 0.2s ease-in-out;            		width: 100%;            &nbsp;            		.modal-header {            			align-items: flex-start;            			display: flex;            			justify-content: space-between;            &nbsp;            			.modal-title {            				color: #ffffff;            				line-height: 24px;            				margin: 0;            			}            &nbsp;            			.close {            				cursor: pointer;            				margin-right: -12px;            				margin-top: -12px;            			}            		}            &nbsp;            		.modal-body {            			color: var(--color-light);            			margin-top: 16px;            &nbsp;            			::slotted(p) {            				margin-bottom: 16px;            			}            		}            &nbsp;            		.footer {            			display: flex;            			gap: 8px;            			justify-content: flex-end;            			margin-top: 16px;            &nbsp;            			av-button {            				font-size: 14px;            			}            		}            	}            &nbsp;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Modal/Modal.wcv.avt">        <pre>            &lt;div class="modal-header"&gt;                &lt;h3 class="modal-title"&gt;Confirm&lt;/h3&gt;                &lt;mi-icon icon="close" class="close" @press="reject"&gt;&lt;/mi-icon&gt;            &lt;/div&gt;            &lt;div class="modal-body"&gt;&#123;&#123;this.question&#125;&#125;&lt;/div&gt;            &lt;div class="footer"&gt;                &lt;av-button @press="reject"&gt;No&lt;/av-button&gt;                &lt;av-button @press="accept"&gt;Yes&lt;/av-button&gt;            &lt;/div&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUIModalEditor1";
+    }
+    defineResult() {
+        return new DocUIModalEditor1Compiled();
+    }
+}
+DocUIModalEditor1.Namespace=`AventusWebsite`;
+DocUIModalEditor1.Tag=`av-doc-u-i-modal-editor-1`;
+__as1(_, 'DocUIModalEditor1', DocUIModalEditor1);
+if(!window.customElements.get('av-doc-u-i-modal-editor-1')){window.customElements.define('av-doc-u-i-modal-editor-1', DocUIModalEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIModalEditor1);}
+
+const DocUIToastEditor1Toast = class DocUIToastEditor1Toast extends Aventus.Toast.ToastElement {
+    get 'closing'() { return this.getBoolAttr('closing') }
+    set 'closing'(val) { this.setBoolAttr('closing', val) }    get 'toastTitle'() {
+						return this.__watch["toastTitle"];
+					}
+					set 'toastTitle'(val) {
+						this.__watch["toastTitle"] = val;
+					}get 'toastMessage'() {
+						return this.__watch["toastMessage"];
+					}
+					set 'toastMessage'(val) {
+						this.__watch["toastMessage"] = val;
+					}    icon;
+    __registerWatchesActions() {
+    this.__addWatchesActions("toastTitle");this.__addWatchesActions("toastMessage");    super.__registerWatchesActions();
+}
+    static __style = `:host{background-color:var(--light-primary-color);border-radius:8px;box-shadow:0 25px 50px rgba(0,0,0,.25);max-width:384px;overflow:hidden;pointer-events:auto;transition:top .2s linear,opacity .2s linear,visibility .2s linear;width:100%}:host .toast-content{padding:16px}:host .toast-flex{align-items:flex-start;display:flex}:host .toast-icon-wrapper{flex-shrink:0}:host .toast-icon{align-items:center;display:flex;font-size:24px;height:24px;justify-content:center;width:24px}:host .toast-message-wrapper{flex:1;margin-left:12px;padding-top:2px}:host .toast-title{color:#fff;font-size:14px;font-weight:500;margin:0}:host .toast-message{color:#fff;font-size:14px;margin-top:4px;margin-bottom:0}:host .toast-close-wrapper{flex-shrink:0;margin-left:16px}:host .toast-close-wrapper .toast-close-button{background-color:rgba(0,0,0,0);border:none;border-radius:6px;color:#fff;cursor:pointer;display:inline-flex;margin-right:-4px;margin-top:-4px;padding:4px;transition:color .2s}:host .toast-close-wrapper .toast-close-button:hover{color:var(--hover-light)}:host .toast-close-wrapper .toast-close-button:focus{box-shadow:0 0 0 2px var(--color-accent);outline:none}:host .toast-close-wrapper .toast-close-icon{align-items:center;display:flex;font-size:20px;height:20px;justify-content:center;width:20px}:host([closing]){opacity:0;visibility:hidden}`;
+    __getStatic() {
+        return DocUIToastEditor1Toast;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIToastEditor1Toast.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<div class="toast-content">    <div class="toast-flex">        <div class="toast-icon-wrapper">            <mi-icon class="toast-icon" aria-hidden="true" _id="docuitoasteditor1toast_0"></mi-icon>        </div>        <div class="toast-message-wrapper">            <p class="toast-title" _id="docuitoasteditor1toast_1"></p>            <template _id="docuitoasteditor1toast_2"></template>        </div>        <div class="toast-close-wrapper">            <button class="toast-close-button" _id="docuitoasteditor1toast_4">                <mi-icon icon="close" class="toast-close-icon"></mi-icon>            </button>        </div>    </div></div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "content": {
+    "docuitoasteditor1toast_0°icon": {
+      "fct": (c) => `${c.print(c.comp.__1109dd386d1a9ab31e5808d5bad01916method1())}`,
+      "once": true
+    },
+    "docuitoasteditor1toast_1°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__1109dd386d1a9ab31e5808d5bad01916method2())}`,
+      "once": true
+    }
+  },
+  "events": [
+    {
+      "eventName": "click",
+      "id": "docuitoasteditor1toast_4",
+      "fct": (e, c) => c.comp.close(e)
+    }
+  ]
+});const templ0 = new Aventus.Template(this);templ0.setTemplate(`                <p class="toast-message" _id="docuitoasteditor1toast_3"></p>            `);templ0.setActions({
+  "content": {
+    "docuitoasteditor1toast_3°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__1109dd386d1a9ab31e5808d5bad01916method3())}`,
+      "once": true
+    }
+  }
+});this.__getStatic().__template.addIf({
+                    anchorId: 'docuitoasteditor1toast_2',
+                    parts: [{once: true,
+                    condition: (c) => c.comp.__1109dd386d1a9ab31e5808d5bad01916method0(),
+                    template: templ0
+                }]
+            }); }
+    getClassName() {
+        return "DocUIToastEditor1Toast";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('closing')) { this.attributeChangedCallback('closing', false, false); } }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["toastTitle"] = "";w["toastMessage"] = ""; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('closing');this.__correctGetter('toastTitle');this.__correctGetter('toastMessage'); }
+    __listBoolProps() { return ["closing"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    close() {
+        if (this.onHideCallback) {
+            this.closing = true;
+            this.is_active = false;
+            this.onHideCallback(false);
+            Aventus.sleep(300).then(() => {
+                this.remove();
+            });
+        }
+    }
+    setOptions(options) {
+        if (options.icon != undefined)
+            this.icon = options.icon;
+        if (options.title != undefined)
+            this.toastTitle = options.title;
+        if (options.message != undefined)
+            this.toastMessage = options.message;
+    }
+    getIcon() {
+        if (this.icon !== undefined)
+            return this.icon;
+        return 'error';
+    }
+    __1109dd386d1a9ab31e5808d5bad01916method1() {
+        return this.getIcon();
+    }
+    __1109dd386d1a9ab31e5808d5bad01916method2() {
+        return this.toastTitle;
+    }
+    __1109dd386d1a9ab31e5808d5bad01916method3() {
+        return this.toastMessage;
+    }
+    __1109dd386d1a9ab31e5808d5bad01916method0() {
+        return this.toastMessage;
+    }
+    static add(options) {
+        return super.add(options);
+    }
+}
+DocUIToastEditor1Toast.Namespace=`AventusWebsite`;
+DocUIToastEditor1Toast.Tag=`av-doc-u-i-toast-editor-1-toast`;
+__as1(_, 'DocUIToastEditor1Toast', DocUIToastEditor1Toast);
+if(!window.customElements.get('av-doc-u-i-toast-editor-1-toast')){window.customElements.define('av-doc-u-i-toast-editor-1-toast', DocUIToastEditor1Toast);Aventus.WebComponentInstance.registerDefinition(DocUIToastEditor1Toast);}
+
+const DocUIToastEditor1Compiled = class DocUIToastEditor1Compiled extends Aventus.WebComponent {
+    static __style = ``;
+    __getStatic() {
+        return DocUIToastEditor1Compiled;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIToastEditor1Compiled.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<button _id="docuitoasteditor1compiled_0">Show toast</button>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "pressEvents": [
+    {
+      "id": "docuitoasteditor1compiled_0",
+      "onPress": (e, pressInstance, c) => { c.comp.showToast(e, pressInstance); }
+    }
+  ]
+}); }
+    getClassName() {
+        return "DocUIToastEditor1Compiled";
+    }
+    showToast() {
+        DocUIToastEditor1Toast.add({
+            icon: "done_all",
+            message: "Aventus is so fun to use",
+            title: "It's working",
+        });
+    }
+    postCreation() {
+        Aventus.Toast.ToastManager.configure({
+            defaultDelay: 5000,
+            defaultPosition: "top right",
+            defaultToast: DocUIToastEditor1Toast,
+            heightLimitPercent: 50
+        });
+    }
+}
+DocUIToastEditor1Compiled.Namespace=`AventusWebsite`;
+DocUIToastEditor1Compiled.Tag=`av-doc-u-i-toast-editor-1-compiled`;
+__as1(_, 'DocUIToastEditor1Compiled', DocUIToastEditor1Compiled);
+if(!window.customElements.get('av-doc-u-i-toast-editor-1-compiled')){window.customElements.define('av-doc-u-i-toast-editor-1-compiled', DocUIToastEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIToastEditor1Compiled);}
+
+const DocUIToastEditor1 = class DocUIToastEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUIToastEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIToastEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Tabs">    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUIToastEditor1";
+    }
+    defineResult() {
+        return new DocUIToastEditor1Compiled();
+    }
+}
+DocUIToastEditor1.Namespace=`AventusWebsite`;
+DocUIToastEditor1.Tag=`av-doc-u-i-toast-editor-1`;
+__as1(_, 'DocUIToastEditor1', DocUIToastEditor1);
+if(!window.customElements.get('av-doc-u-i-toast-editor-1')){window.customElements.define('av-doc-u-i-toast-editor-1', DocUIToastEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIToastEditor1);}
 
 const DocWcStyleEditor2Child = class DocWcStyleEditor2Child extends DocWcStyleEditor2Parent {
     static __style = `:host .title{color:blue}`;
@@ -23787,284 +24231,6 @@ TutorialIntroductionEditor1.Namespace=`AventusWebsite`;
 TutorialIntroductionEditor1.Tag=`av-tutorial-introduction-editor-1`;
 __as1(_, 'TutorialIntroductionEditor1', TutorialIntroductionEditor1);
 if(!window.customElements.get('av-tutorial-introduction-editor-1')){window.customElements.define('av-tutorial-introduction-editor-1', TutorialIntroductionEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialIntroductionEditor1);}
-
-const DocUIModalEditor1Compiled = class DocUIModalEditor1Compiled extends Aventus.WebComponent {
-    get 'txt'() {
-						return this.__watch["txt"];
-					}
-					set 'txt'(val) {
-						this.__watch["txt"] = val;
-					}    __registerWatchesActions() {
-    this.__addWatchesActions("txt");    super.__registerWatchesActions();
-}
-    static __style = ``;
-    __getStatic() {
-        return DocUIModalEditor1Compiled;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIModalEditor1Compiled.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<button _id="docuimodaleditor1compiled_0">Open modal</button><div _id="docuimodaleditor1compiled_1"></div>` }
-    });
-}
-    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
-  "content": {
-    "docuimodaleditor1compiled_1°@HTML": {
-      "fct": (c) => `Result is : ${c.print(c.comp.__b4b8909be252c7621202c6451fcd0df6method0())}`,
-      "once": true
-    }
-  },
-  "pressEvents": [
-    {
-      "id": "docuimodaleditor1compiled_0",
-      "onPress": (e, pressInstance, c) => { c.comp.openModal(e, pressInstance); }
-    }
-  ]
-}); }
-    getClassName() {
-        return "DocUIModalEditor1Compiled";
-    }
-    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["txt"] = undefined; }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('txt'); }
-    async openModal() {
-        const confirm = new DocUIModalEditor1Modal();
-        confirm.question = "Do you accept?";
-        const isAccepted = await confirm.show();
-        if (isAccepted) {
-            this.txt = "Accepted";
-        }
-        else {
-            this.txt = "Refused";
-        }
-    }
-    __b4b8909be252c7621202c6451fcd0df6method0() {
-        return this.txt;
-    }
-}
-DocUIModalEditor1Compiled.Namespace=`AventusWebsite`;
-DocUIModalEditor1Compiled.Tag=`av-doc-u-i-modal-editor-1-compiled`;
-__as1(_, 'DocUIModalEditor1Compiled', DocUIModalEditor1Compiled);
-if(!window.customElements.get('av-doc-u-i-modal-editor-1-compiled')){window.customElements.define('av-doc-u-i-modal-editor-1-compiled', DocUIModalEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIModalEditor1Compiled);}
-
-const DocUIModalEditor1 = class DocUIModalEditor1 extends BaseEditor {
-    static __style = ``;
-    __getStatic() {
-        return DocUIModalEditor1;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIModalEditor1.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Modal">    <av-code language="typescript" filename="Example/Example.wcl.avt">        <pre>            import { Modal } from "../Modal/Modal.wcl.avt";            &nbsp;            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                @Watch()                public txt?: string;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods            &nbsp;                /**                 *                  */                protected async openModal() {                    const confirm = new Modal();                    confirm.question = "Do you accept?"                    const isAccepted = await confirm.show();                    &#105;f(isAccepted) {            			this.txt = "Accepted"                    }            		else {            			this.txt = "Refused"            		}                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Example/Example.wcs.avt">        <pre>            :host {                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="Example/Example.wcv.avt">        <pre>            &lt;button @press="openModal"&gt;Open modal&lt;/button&gt;            &lt;div&gt;Result is : &#123;&#123; this.txt &#125;&#125;&lt;/div&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Modal/Modal.wcl.avt">        <pre>            import { ModalElement } from "Aventus@UI:Aventus.Modal.package.avt";            &nbsp;            export class Modal extends ModalElement&lt;boolean&gt; implements Aventus.DefaultComponent {            &nbsp;                //#region static            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region props            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region variables                @Watch()                public question?: string;                //#endregion            &nbsp;            &nbsp;                //#region constructor            &nbsp;                //#endregion            &nbsp;            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                public override configure(): Aventus.Modal.ModalOptions&lt;boolean&gt; {                    return {                        closeWithClick: false,                        closeWithEsc: false,                    };                }            &nbsp;            &nbsp;                /**                 *                  */                protected accept() {                    this.resolve(true);                }            &nbsp;            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="Modal/Modal.wcs.avt">        <pre>            :host {            	align-items: center;            	background: rgba(0, 0, 0, 0.7);            	display: flex;            	inset: 0;            	justify-content: center;            	position: fixed;            	z-index: 60;            	font-size: 16px;            &nbsp;            	.modal {            		background-color: var(--secondary-color);            		border-radius: 12px;            		box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);            		max-width: 500px;            		padding: 24px;            		position: relative;            		text-align: left;            		transform: translateZ(0);            		transition: all 0.2s ease-in-out;            		width: 100%;            &nbsp;            		.modal-header {            			align-items: flex-start;            			display: flex;            			justify-content: space-between;            &nbsp;            			.modal-title {            				color: #ffffff;            				line-height: 24px;            				margin: 0;            			}            &nbsp;            			.close {            				cursor: pointer;            				margin-right: -12px;            				margin-top: -12px;            			}            		}            &nbsp;            		.modal-body {            			color: var(--color-light);            			margin-top: 16px;            &nbsp;            			::slotted(p) {            				margin-bottom: 16px;            			}            		}            &nbsp;            		.footer {            			display: flex;            			gap: 8px;            			justify-content: flex-end;            			margin-top: 16px;            &nbsp;            			av-button {            				font-size: 14px;            			}            		}            	}            &nbsp;            }            &nbsp;        </pre>    </av-code></av-code>    <av-code language="html" filename="Modal/Modal.wcv.avt">        <pre>            &lt;div class="modal-header"&gt;                &lt;h3 class="modal-title"&gt;Confirm&lt;/h3&gt;                &lt;mi-icon icon="close" class="close" @press="reject"&gt;&lt;/mi-icon&gt;            &lt;/div&gt;            &lt;div class="modal-body"&gt;&#123;&#123;this.question&#125;&#125;&lt;/div&gt;            &lt;div class="footer"&gt;                &lt;av-button @press="reject"&gt;No&lt;/av-button&gt;                &lt;av-button @press="accept"&gt;Yes&lt;/av-button&gt;            &lt;/div&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
-    });
-}
-    getClassName() {
-        return "DocUIModalEditor1";
-    }
-    defineResult() {
-        return new DocUIModalEditor1Compiled();
-    }
-}
-DocUIModalEditor1.Namespace=`AventusWebsite`;
-DocUIModalEditor1.Tag=`av-doc-u-i-modal-editor-1`;
-__as1(_, 'DocUIModalEditor1', DocUIModalEditor1);
-if(!window.customElements.get('av-doc-u-i-modal-editor-1')){window.customElements.define('av-doc-u-i-modal-editor-1', DocUIModalEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIModalEditor1);}
-
-const DocUIToastEditor1Toast = class DocUIToastEditor1Toast extends Aventus.Toast.ToastElement {
-    get 'closing'() { return this.getBoolAttr('closing') }
-    set 'closing'(val) { this.setBoolAttr('closing', val) }    get 'toastTitle'() {
-						return this.__watch["toastTitle"];
-					}
-					set 'toastTitle'(val) {
-						this.__watch["toastTitle"] = val;
-					}get 'toastMessage'() {
-						return this.__watch["toastMessage"];
-					}
-					set 'toastMessage'(val) {
-						this.__watch["toastMessage"] = val;
-					}    icon;
-    __registerWatchesActions() {
-    this.__addWatchesActions("toastTitle");this.__addWatchesActions("toastMessage");    super.__registerWatchesActions();
-}
-    static __style = `:host{background-color:var(--light-primary-color);border-radius:8px;box-shadow:0 25px 50px rgba(0,0,0,.25);max-width:384px;overflow:hidden;pointer-events:auto;transition:top .2s linear,opacity .2s linear,visibility .2s linear;width:100%}:host .toast-content{padding:16px}:host .toast-flex{align-items:flex-start;display:flex}:host .toast-icon-wrapper{flex-shrink:0}:host .toast-icon{align-items:center;display:flex;font-size:24px;height:24px;justify-content:center;width:24px}:host .toast-message-wrapper{flex:1;margin-left:12px;padding-top:2px}:host .toast-title{color:#fff;font-size:14px;font-weight:500;margin:0}:host .toast-message{color:#fff;font-size:14px;margin-top:4px;margin-bottom:0}:host .toast-close-wrapper{flex-shrink:0;margin-left:16px}:host .toast-close-wrapper .toast-close-button{background-color:rgba(0,0,0,0);border:none;border-radius:6px;color:#fff;cursor:pointer;display:inline-flex;margin-right:-4px;margin-top:-4px;padding:4px;transition:color .2s}:host .toast-close-wrapper .toast-close-button:hover{color:var(--hover-light)}:host .toast-close-wrapper .toast-close-button:focus{box-shadow:0 0 0 2px var(--color-accent);outline:none}:host .toast-close-wrapper .toast-close-icon{align-items:center;display:flex;font-size:20px;height:20px;justify-content:center;width:20px}:host([closing]){opacity:0;visibility:hidden}`;
-    __getStatic() {
-        return DocUIToastEditor1Toast;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIToastEditor1Toast.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<div class="toast-content">    <div class="toast-flex">        <div class="toast-icon-wrapper">            <mi-icon class="toast-icon" aria-hidden="true" _id="docuitoasteditor1toast_0"></mi-icon>        </div>        <div class="toast-message-wrapper">            <p class="toast-title" _id="docuitoasteditor1toast_1"></p>            <template _id="docuitoasteditor1toast_2"></template>        </div>        <div class="toast-close-wrapper">            <button class="toast-close-button" _id="docuitoasteditor1toast_4">                <mi-icon icon="close" class="toast-close-icon"></mi-icon>            </button>        </div>    </div></div>` }
-    });
-}
-    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
-  "content": {
-    "docuitoasteditor1toast_0°icon": {
-      "fct": (c) => `${c.print(c.comp.__1109dd386d1a9ab31e5808d5bad01916method1())}`,
-      "once": true
-    },
-    "docuitoasteditor1toast_1°@HTML": {
-      "fct": (c) => `${c.print(c.comp.__1109dd386d1a9ab31e5808d5bad01916method2())}`,
-      "once": true
-    }
-  },
-  "events": [
-    {
-      "eventName": "click",
-      "id": "docuitoasteditor1toast_4",
-      "fct": (e, c) => c.comp.close(e)
-    }
-  ]
-});const templ0 = new Aventus.Template(this);templ0.setTemplate(`                <p class="toast-message" _id="docuitoasteditor1toast_3"></p>            `);templ0.setActions({
-  "content": {
-    "docuitoasteditor1toast_3°@HTML": {
-      "fct": (c) => `${c.print(c.comp.__1109dd386d1a9ab31e5808d5bad01916method3())}`,
-      "once": true
-    }
-  }
-});this.__getStatic().__template.addIf({
-                    anchorId: 'docuitoasteditor1toast_2',
-                    parts: [{once: true,
-                    condition: (c) => c.comp.__1109dd386d1a9ab31e5808d5bad01916method0(),
-                    template: templ0
-                }]
-            }); }
-    getClassName() {
-        return "DocUIToastEditor1Toast";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('closing')) { this.attributeChangedCallback('closing', false, false); } }
-    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["toastTitle"] = "";w["toastMessage"] = ""; }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('closing');this.__correctGetter('toastTitle');this.__correctGetter('toastMessage'); }
-    __listBoolProps() { return ["closing"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-    close() {
-        if (this.onHideCallback) {
-            this.closing = true;
-            this.is_active = false;
-            this.onHideCallback(false);
-            Aventus.sleep(300).then(() => {
-                this.remove();
-            });
-        }
-    }
-    setOptions(options) {
-        if (options.icon != undefined)
-            this.icon = options.icon;
-        if (options.title != undefined)
-            this.toastTitle = options.title;
-        if (options.message != undefined)
-            this.toastMessage = options.message;
-    }
-    getIcon() {
-        if (this.icon !== undefined)
-            return this.icon;
-        return 'error';
-    }
-    __1109dd386d1a9ab31e5808d5bad01916method1() {
-        return this.getIcon();
-    }
-    __1109dd386d1a9ab31e5808d5bad01916method2() {
-        return this.toastTitle;
-    }
-    __1109dd386d1a9ab31e5808d5bad01916method3() {
-        return this.toastMessage;
-    }
-    __1109dd386d1a9ab31e5808d5bad01916method0() {
-        return this.toastMessage;
-    }
-    static add(options) {
-        return super.add(options);
-    }
-}
-DocUIToastEditor1Toast.Namespace=`AventusWebsite`;
-DocUIToastEditor1Toast.Tag=`av-doc-u-i-toast-editor-1-toast`;
-__as1(_, 'DocUIToastEditor1Toast', DocUIToastEditor1Toast);
-if(!window.customElements.get('av-doc-u-i-toast-editor-1-toast')){window.customElements.define('av-doc-u-i-toast-editor-1-toast', DocUIToastEditor1Toast);Aventus.WebComponentInstance.registerDefinition(DocUIToastEditor1Toast);}
-
-const DocUIToastEditor1Compiled = class DocUIToastEditor1Compiled extends Aventus.WebComponent {
-    static __style = ``;
-    __getStatic() {
-        return DocUIToastEditor1Compiled;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIToastEditor1Compiled.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<button _id="docuitoasteditor1compiled_0">Show toast</button>` }
-    });
-}
-    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
-  "pressEvents": [
-    {
-      "id": "docuitoasteditor1compiled_0",
-      "onPress": (e, pressInstance, c) => { c.comp.showToast(e, pressInstance); }
-    }
-  ]
-}); }
-    getClassName() {
-        return "DocUIToastEditor1Compiled";
-    }
-    showToast() {
-        DocUIToastEditor1Toast.add({
-            icon: "done_all",
-            message: "Aventus is so fun to use",
-            title: "It's working",
-        });
-    }
-    postCreation() {
-        Aventus.Toast.ToastManager.configure({
-            defaultDelay: 5000,
-            defaultPosition: "top right",
-            defaultToast: DocUIToastEditor1Toast,
-            heightLimitPercent: 50
-        });
-    }
-}
-DocUIToastEditor1Compiled.Namespace=`AventusWebsite`;
-DocUIToastEditor1Compiled.Tag=`av-doc-u-i-toast-editor-1-compiled`;
-__as1(_, 'DocUIToastEditor1Compiled', DocUIToastEditor1Compiled);
-if(!window.customElements.get('av-doc-u-i-toast-editor-1-compiled')){window.customElements.define('av-doc-u-i-toast-editor-1-compiled', DocUIToastEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIToastEditor1Compiled);}
-
-const DocUIToastEditor1 = class DocUIToastEditor1 extends BaseEditor {
-    static __style = ``;
-    __getStatic() {
-        return DocUIToastEditor1;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIToastEditor1.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Tabs">    <slot></slot></av-code-editor>` }
-    });
-}
-    getClassName() {
-        return "DocUIToastEditor1";
-    }
-    defineResult() {
-        return new DocUIToastEditor1Compiled();
-    }
-}
-DocUIToastEditor1.Namespace=`AventusWebsite`;
-DocUIToastEditor1.Tag=`av-doc-u-i-toast-editor-1`;
-__as1(_, 'DocUIToastEditor1', DocUIToastEditor1);
-if(!window.customElements.get('av-doc-u-i-toast-editor-1')){window.customElements.define('av-doc-u-i-toast-editor-1', DocUIToastEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIToastEditor1);}
 
 
 for(let key in _) { AventusWebsite[key] = _[key] }

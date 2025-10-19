@@ -94,7 +94,7 @@
 
 <h2>Store</h2>
 <p>You can search packages inside the aventus store. This is the recommanded way to load package.</p>
-<p><a href="https://store.aventusjs.com/packages"><av-button>Open the store</av-button></a></p>
+<p><a href="https://store.aventusjs.com/packages" target="_blank"><av-button>Open the store</av-button></a></p>
 
 
 <h2>File uri</h2>

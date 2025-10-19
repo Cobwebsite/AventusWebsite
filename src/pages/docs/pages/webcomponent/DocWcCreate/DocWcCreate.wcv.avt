@@ -22,6 +22,7 @@
     <li><span class="cn">&lt;style&gt;</span> : for Scss part</li>
     <li><span class="cn">&lt;script&gt;</span> : for Js part</li>
 </ul>
+<av-doc-wc-create-editor-0></av-doc-wc-create-editor-0>
 <p>or inside 3 different file. (This option is the adviced one because it allows developer to keep a well knowed
     architecture.)</p>
 <ul>

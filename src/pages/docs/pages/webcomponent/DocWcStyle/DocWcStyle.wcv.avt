@@ -28,12 +28,11 @@
         class="cn">@*.wcs.avt</span> for Global WebComponent Style, then you can include this file inside component.
     This file is also a SCSS file.</p>
 <h3>Create the file</h3>
-<p>You can create the global style file where you want, but you have to add it inside the <span
-        class="cn">aventus.conf.avt</span> under the section <span class="cn">build.src</span>.</p>
+<p>You can create the global style file where you want.</p>
 <av-doc-wc-style-editor-3></av-doc-wc-style-editor-3>
 
-<p>This will register the file <span class="cn">@utility.wcs.avt</span> inside the <span class="cn">Aventus.Style</span>
-    lib with the name <span class="cn">@utility</span>.</p>
+<p>This will register the file <span class="cn">@Utility.wcs.avt</span> inside the <span class="cn">Aventus.Style</span>
+    lib with the name <span class="cn">@Utility</span>.</p>
 <av-img src="/img/doc/wc/style/stylemanager.png"></av-img>
 <p>If you want to use an external lib as a style for your component, you can use the <span class="cn">load</span>
     function. For example to load the bootstrap class : </p>

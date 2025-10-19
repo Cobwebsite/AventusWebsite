@@ -131,6 +131,8 @@
                     <ul>
                         <li><av-link to="/docs/ui/link">Link</av-link></li>
                         <li><av-link to="/docs/ui/page">Page</av-link></li>
+                        <li><av-link to="/docs/ui/page_form">Page Form</av-link></li>
+                        <li><av-link to="/docs/ui/page_form_http">Page Form Http</av-link></li>
                         <li><av-link to="/docs/ui/router">Router</av-link></li>
                     </ul>
                 </av-collapse>

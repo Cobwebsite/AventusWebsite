@@ -13,7 +13,6 @@
 
 	av-col {
 		--col-padding: 8px;
-		flex-direction: column;
 	}
 	av-link {
 		display: inline-block;

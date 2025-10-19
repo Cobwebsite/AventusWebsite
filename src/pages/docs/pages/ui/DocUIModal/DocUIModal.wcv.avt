@@ -30,20 +30,20 @@
 
 <div class="table">
     <av-row class="header">
-        <av-col size="6">Method</av-col>
-        <av-col size="6">Description</av-col>
+        <av-col size="6" center>Method</av-col>
+        <av-col size="6" center>Description</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">show(element?: Element): Promise&lt;T | null&gt;</av-col>
-        <av-col size="6">Displays the modal and returns a Promise that resolves when the modal is either resolved or rejected.</av-col>
+        <av-col size="6" center>show(element?: Element): Promise&lt;T | null&gt;</av-col>
+        <av-col size="6" center>Displays the modal and returns a Promise that resolves when the modal is either resolved or rejected.</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">resolve(response: T, no_close?: boolean)</av-col>
-        <av-col size="6">Resolves the modal with a given response value. If no_close=true, the modal remains open after resolving.</av-col>
+        <av-col size="6" center>resolve(response: T, no_close?: boolean)</av-col>
+        <av-col size="6" center>Resolves the modal with a given response value. If no_close=true, the modal remains open after resolving.</av-col>
     </av-row>
     <av-row>
-        <av-col size="6">reject(no_close?: boolean)</av-col>
-        <av-col size="6">Rejects the modal with the defined rejectValue. If no_close=true, the modal remains open after rejecting.</av-col>
+        <av-col size="6" center>reject(no_close?: boolean)</av-col>
+        <av-col size="6" center>Rejects the modal with the defined rejectValue. If no_close=true, the modal remains open after rejecting.</av-col>
     </av-row>
 </div>
 
@@ -54,28 +54,28 @@
 <p>Defines the modal's configurable behaviors.</p>
 <div class="table">
     <av-row class="header">
-        <av-col size="2">Option</av-col>
-        <av-col size="2">Type</av-col>
-        <av-col size="2">Default</av-col>
-        <av-col size="6">Description</av-col>
+        <av-col size="2" center>Option</av-col>
+        <av-col size="2" center>Type</av-col>
+        <av-col size="2" center>Default</av-col>
+        <av-col size="6" center>Description</av-col>
     </av-row>
     <av-row>
-        <av-col size="2">closeWithEsc</av-col>
-        <av-col size="2">boolean</av-col>
-        <av-col size="2">true</av-col>
-        <av-col size="6">Whether the modal should close when pressing the Escape key.</av-col>
+        <av-col size="2" center>closeWithEsc</av-col>
+        <av-col size="2" center>boolean</av-col>
+        <av-col size="2" center>true</av-col>
+        <av-col size="6" center>Whether the modal should close when pressing the Escape key.</av-col>
     </av-row>
     <av-row>
-        <av-col size="2">closeWithClick</av-col>
-        <av-col size="2">boolean</av-col>
-        <av-col size="2">true</av-col>
-        <av-col size="6">Whether clicking outside the modal should close it.</av-col>
+        <av-col size="2" center>closeWithClick</av-col>
+        <av-col size="2" center>boolean</av-col>
+        <av-col size="2" center>true</av-col>
+        <av-col size="6" center>Whether clicking outside the modal should close it.</av-col>
     </av-row>
     <av-row>
-        <av-col size="2">rejectValue</av-col>
-        <av-col size="2">T | null</av-col>
-        <av-col size="2">null</av-col>
-        <av-col size="6">The value returned when the modal is dismissed or canceled.</av-col>
+        <av-col size="2" center>rejectValue</av-col>
+        <av-col size="2" center>T | null</av-col>
+        <av-col size="2" center>null</av-col>
+        <av-col size="6" center>The value returned when the modal is dismissed or canceled.</av-col>
     </av-row>
 </div>
 

@@ -22,26 +22,26 @@
     </av-row>
     <av-row>
         <av-col size="4" center>getAll</av-col>
-        <av-col size="8" center>Return all items stored inside the RAM like {[index: Index] : T}
+        <av-col size="8">Return all items stored inside the RAM like {[index: Index] : T}
         </av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>getList</av-col>
-        <av-col size="8" center>Return all items stored inside the RAM like T[]
+        <av-col size="8">Return all items stored inside the RAM like T[]
         </av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>getById</av-col>
-        <av-col size="8" center>Return the item where the index is egal to the parameter
+        <av-col size="8">Return the item where the index is egal to the parameter
             provide</av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>get</av-col>
-        <av-col size="8" center><span>Alias for <span class="cn">getById</span></span></av-col>
+        <av-col size="8"><span>Alias for <span class="cn">getById</span></span></av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>getByIds</av-col>
-        <av-col size="8" center>Return all items where the index is inside the first parameter
+        <av-col size="8">Return all items where the index is inside the first parameter
             provide</av-col>
     </av-row>
 </div>
@@ -54,11 +54,11 @@
     </av-row>
     <av-row>
         <av-col size="4" center>create</av-col>
-        <av-col size="8" center>Store an item inside the RAM and return the element stored.</av-col>
+        <av-col size="8">Store an item inside the RAM and return the element stored.</av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>createList</av-col>
-        <av-col size="8" center>Store a set of items inside the RAM and return the elements
+        <av-col size="8">Store a set of items inside the RAM and return the elements
             stored.</av-col>
     </av-row>
 </div>
@@ -71,11 +71,11 @@
     </av-row>
     <av-row>
         <av-col size="4" center>update</av-col>
-        <av-col size="8" center>Update an item inside the RAM and return the element updated.</av-col>
+        <av-col size="8">Update an item inside the RAM and return the element updated.</av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>updateList</av-col>
-        <av-col size="8" center>Update a set of items inside the RAM and return the elements
+        <av-col size="8">Update a set of items inside the RAM and return the elements
             stored.</av-col>
     </av-row>
 </div>
@@ -88,15 +88,15 @@
     </av-row>
     <av-row>
         <av-col size="4" center>delete</av-col>
-        <av-col size="8" center>Delete an item inside the RAM and return the element updated.</av-col>
+        <av-col size="8">Delete an item inside the RAM and return the element updated.</av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>deleteById</av-col>
-        <av-col size="8" center>Delete an item inside the RAM and return the element updated.</av-col>
+        <av-col size="8">Delete an item inside the RAM and return the element updated.</av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>deleteList</av-col>
-        <av-col size="8" center>Delete a set of items inside the RAM and return the elements
+        <av-col size="8">Delete a set of items inside the RAM and return the elements
             stored.</av-col>
     </av-row>
 </div>
@@ -104,7 +104,7 @@
 <p>The last thing to know is that once an item a stored inside the ram, the item reference is always the same.</p>
 <av-code language="typescript" filename="Test.lib.avt">
     export async function test() {
-    \tlet person1: Person = await PersonRAM.getInstance().get(1);
+    \tlet person1: Person = await PersonRAM.getInstance().get(1); 
     \tperson1.name = "John Doe 2";
     \tconst person: Person = await PersonRAM.getInstance().update(person1);
     \t// person == person1 =&gt; true
