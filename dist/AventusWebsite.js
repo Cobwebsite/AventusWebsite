@@ -6658,15 +6658,15 @@ Layout.GridGuideHelper = class GridGuideHelper extends Aventus.WebComponent {
         return Math.abs(div - valuePx) < m ? div : valuePx;
     }
     onMoveX(e) {
-        const valuePx = this.applyMagnetic(e.pageY - this.container.getBoundingClientRect().y);
+        const valuePx = this.applyMagnetic(e.pageY);
         this.style.top = valuePx + 'px';
-        this.positionEl.style.left = e.pageX - this.container.getBoundingClientRect().x + 10 + 'px';
+        this.positionEl.style.left = e.pageX + 10 + 'px';
         this.displayValue(valuePx);
     }
     onMoveY(e) {
-        const valuePx = this.applyMagnetic(e.pageX - this.container.getBoundingClientRect().x);
+        const valuePx = this.applyMagnetic(e.pageX);
         this.style.left = valuePx + 'px';
-        this.positionEl.style.top = e.pageY - this.container.getBoundingClientRect().y - 20 + 'px';
+        this.positionEl.style.top = e.pageY - 20 + 'px';
         this.displayValue(valuePx);
     }
     onStop() {
@@ -7407,9 +7407,6 @@ Navigation.Page = class Page extends Aventus.WebComponent {
     isAllowed(state, pattern, router) {
         return true;
     }
-    loadData(state) {
-        return true;
-    }
 }
 Navigation.Page.Namespace=`Aventus.Navigation`;
 __as1(_.Navigation, 'Page', Navigation.Page);
@@ -7541,14 +7538,6 @@ Navigation.Router = class Router extends Aventus.WebComponent {
                             return;
                         }
                         this.navigate(canResult, { replace: true });
-                        return;
-                    }
-                    const loadDataResult = await element.loadData(currentState);
-                    if (loadDataResult !== true) {
-                        if (loadDataResult === false) {
-                            return;
-                        }
-                        this.navigate(loadDataResult, { replace: true });
                         return;
                     }
                     if (isNew)
@@ -10437,6 +10426,10 @@ __as1(_.Layout.Tabs, 'TabHeader', Layout.Tabs.TabHeader);
 Layout.Tabs.Tab = class Tab extends Aventus.WebComponent {
     get 'selected'() { return this.getBoolAttr('selected') }
     set 'selected'(val) { this.setBoolAttr('selected', val) }    tabHeader;
+    get headerContent() {
+        let elements = this.getElementsInSlot("header");
+        return elements;
+    }
     static __style = ``;
     constructor() {
         super();
@@ -10454,15 +10447,15 @@ Layout.Tabs.Tab = class Tab extends Aventus.WebComponent {
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
+        slots: { 'default':`<slot></slot>`,'header':`<slot name="header"></slot>` }, 
+        blocks: { 'default':`<slot></slot><div class="slot-header">    <slot name="header"></slot></div>` }
     });
 }
     getClassName() {
         return "Tab";
     }
     __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('selected')) { this.attributeChangedCallback('selected', false, false); } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('selected'); }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('headerContent');this.__upgradeProperty('selected'); }
     __listBoolProps() { return ["selected"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
 }
 Layout.Tabs.Tab.Namespace=`Aventus.Layout.Tabs`;
