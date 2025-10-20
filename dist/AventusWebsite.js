@@ -14827,7 +14827,7 @@ __as1(_, 'DocAdvancedNpmExport', DocAdvancedNpmExport);
 if(!window.customElements.get('av-doc-advanced-npm-export')){window.customElements.define('av-doc-advanced-npm-export', DocAdvancedNpmExport);Aventus.WebComponentInstance.registerDefinition(DocAdvancedNpmExport);}
 
 const DocAdvancedTemplate = class DocAdvancedTemplate extends DocGenericPage {
-    static __style = `:host av-row:not(.header) av-col:nth-child(1){text-align:left}:host av-row:not(.header) av-col:nth-child(2){text-align:justify}:host av-row:not(.header) av-link{display:contents}:host av-row:not(.header):nth-child(odd){background-color:rgba(0,0,0,.2)}`;
+    static __style = `:host av-col{flex-direction:column}:host av-row:not(.header) av-col:nth-child(1){text-align:left}:host av-row:not(.header) av-col:nth-child(2){text-align:justify}:host av-row:not(.header) av-link{display:contents}:host av-row:not(.header):nth-child(odd){background-color:rgba(0,0,0,.2)}`;
     __getStatic() {
         return DocAdvancedTemplate;
     }
