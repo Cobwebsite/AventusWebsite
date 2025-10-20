@@ -89,7 +89,7 @@
 				padding-top: 10px;
 				position: absolute;
 				right: 0;
-				top: 30px;
+				top: 29px;
 				z-index: 99;
 
 				.drop-item {
