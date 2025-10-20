@@ -70,16 +70,6 @@ var HttpErrorCode;
 })(HttpErrorCode || (HttpErrorCode = {}));
 __as1(_, 'HttpErrorCode', HttpErrorCode);
 
-var HttpMethod;
-(function (HttpMethod) {
-    HttpMethod["GET"] = "GET";
-    HttpMethod["POST"] = "POST";
-    HttpMethod["DELETE"] = "DELETE";
-    HttpMethod["PUT"] = "PUT";
-    HttpMethod["OPTION"] = "OPTION";
-})(HttpMethod || (HttpMethod = {}));
-__as1(_, 'HttpMethod', HttpMethod);
-
 let DateConverter=class DateConverter {
     static __converter = new DateConverter();
     static get converter() {
@@ -103,6 +93,16 @@ let DateConverter=class DateConverter {
 }
 DateConverter.Namespace=`Aventus`;
 __as1(_, 'DateConverter', DateConverter);
+
+var HttpMethod;
+(function (HttpMethod) {
+    HttpMethod["GET"] = "GET";
+    HttpMethod["POST"] = "POST";
+    HttpMethod["DELETE"] = "DELETE";
+    HttpMethod["PUT"] = "PUT";
+    HttpMethod["OPTION"] = "OPTION";
+})(HttpMethod || (HttpMethod = {}));
+__as1(_, 'HttpMethod', HttpMethod);
 
 let isClass=function isClass(v) {
     return typeof v === 'function' && /^\s*class\s+/.test(v.toString());
@@ -5807,6 +5807,11 @@ let ResultWithError=class ResultWithError extends VoidWithError {
 ResultWithError.Namespace=`Aventus`;
 __as1(_, 'ResultWithError', ResultWithError);
 
+let HttpError=class HttpError extends GenericError {
+}
+HttpError.Namespace=`Aventus`;
+__as1(_, 'HttpError', HttpError);
+
 let Json=class Json {
     /**
      * Converts a JavaScript class instance to a JSON object.
@@ -5895,6 +5900,56 @@ let Json=class Json {
 }
 Json.Namespace=`Aventus`;
 __as1(_, 'Json', Json);
+
+let Data=class Data {
+    /**
+     * The schema for the class
+     */
+    static $schema;
+    /**
+     * The current namespace
+     */
+    static Namespace = "";
+    /**
+     * Get the unique type for the data. Define it as the namespace + class name
+     */
+    static get Fullname() { return this.Namespace + "." + this.name; }
+    /**
+     * The current namespace
+     */
+    get namespace() {
+        return this.constructor['Namespace'];
+    }
+    /**
+     * Get the unique type for the data. Define it as the namespace + class name
+     */
+    get $type() {
+        return this.constructor['Fullname'];
+    }
+    /**
+     * Get the name of the class
+     */
+    get className() {
+        return this.constructor.name;
+    }
+    /**
+     * Get a JSON for the current object
+     */
+    toJSON() {
+        let toAvoid = ['className', 'namespace'];
+        return Json.classToJson(this, {
+            isValidKey: (key) => !toAvoid.includes(key)
+        });
+    }
+    /**
+     * Clone the object by transforming a parsed JSON string back into the original type
+     */
+    clone() {
+        return Converter.transform(JSON.parse(JSON.stringify(this)));
+    }
+}
+Data.Namespace=`Aventus`;
+__as1(_, 'Data', Data);
 
 let ConverterTransform=class ConverterTransform {
     transform(data) {
@@ -6098,61 +6153,6 @@ let Converter=class Converter {
 }
 Converter.Namespace=`Aventus`;
 __as1(_, 'Converter', Converter);
-
-let Data=class Data {
-    /**
-     * The schema for the class
-     */
-    static $schema;
-    /**
-     * The current namespace
-     */
-    static Namespace = "";
-    /**
-     * Get the unique type for the data. Define it as the namespace + class name
-     */
-    static get Fullname() { return this.Namespace + "." + this.name; }
-    /**
-     * The current namespace
-     */
-    get namespace() {
-        return this.constructor['Namespace'];
-    }
-    /**
-     * Get the unique type for the data. Define it as the namespace + class name
-     */
-    get $type() {
-        return this.constructor['Fullname'];
-    }
-    /**
-     * Get the name of the class
-     */
-    get className() {
-        return this.constructor.name;
-    }
-    /**
-     * Get a JSON for the current object
-     */
-    toJSON() {
-        let toAvoid = ['className', 'namespace'];
-        return Json.classToJson(this, {
-            isValidKey: (key) => !toAvoid.includes(key)
-        });
-    }
-    /**
-     * Clone the object by transforming a parsed JSON string back into the original type
-     */
-    clone() {
-        return Converter.transform(JSON.parse(JSON.stringify(this)));
-    }
-}
-Data.Namespace=`Aventus`;
-__as1(_, 'Data', Data);
-
-let HttpError=class HttpError extends GenericError {
-}
-HttpError.Namespace=`Aventus`;
-__as1(_, 'HttpError', HttpError);
 
 let HttpRequest=class HttpRequest {
     static options;
@@ -10215,6 +10215,61 @@ Modal.ModalElement = class ModalElement extends Aventus.WebComponent {
 Modal.ModalElement.Namespace=`Aventus.Modal`;
 __as1(_.Modal, 'ModalElement', Modal.ModalElement);
 
+Navigation.PageFormRoute = class PageFormRoute extends Navigation.PageForm {
+    static __style = ``;
+    constructor() {
+        super();
+        if (this.constructor == PageFormRoute) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return PageFormRoute;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(PageFormRoute.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "PageFormRoute";
+    }
+    async defineSubmit(submit) {
+        await this.beforeSubmit();
+        const info = this.route();
+        let router;
+        let key = "";
+        if (Array.isArray(info)) {
+            router = new info[0];
+            key = info[1];
+        }
+        else {
+            router = new info;
+            const fcts = Object.getOwnPropertyNames(info.prototype).filter(m => m !== "constructor");
+            if (fcts.length == 1) {
+                key = fcts[0];
+            }
+            else {
+                const result = new Aventus.VoidWithError();
+                result.errors.push(new Aventus.GenericError(500, "More than one fonction is defined"));
+                return result;
+            }
+        }
+        const result = await submit(router[key]);
+        this.onResult(result);
+        return result;
+    }
+    beforeSubmit() { }
+}
+Navigation.PageFormRoute.Namespace=`Aventus.Navigation`;
+__as1(_.Navigation, 'PageFormRoute', Navigation.PageFormRoute);
+
 Toast.ToastElement = class ToastElement extends Aventus.WebComponent {
     get 'position'() { return this.getStringAttr('position') }
     set 'position'(val) { this.setStringAttr('position', val) }get 'delay'() { return this.getNumberAttr('delay') }
@@ -10645,61 +10700,6 @@ Toast.ToastManager.Tag=`av-toast-manager`;
 __as1(_.Toast, 'ToastManager', Toast.ToastManager);
 if(!window.customElements.get('av-toast-manager')){window.customElements.define('av-toast-manager', Toast.ToastManager);Aventus.WebComponentInstance.registerDefinition(Toast.ToastManager);}
 
-Navigation.PageFormRoute = class PageFormRoute extends Navigation.PageForm {
-    static __style = ``;
-    constructor() {
-        super();
-        if (this.constructor == PageFormRoute) {
-            throw "can't instanciate an abstract class";
-        }
-    }
-    __getStatic() {
-        return PageFormRoute;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(PageFormRoute.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
-    });
-}
-    getClassName() {
-        return "PageFormRoute";
-    }
-    async defineSubmit(submit) {
-        await this.beforeSubmit();
-        const info = this.route();
-        let router;
-        let key = "";
-        if (Array.isArray(info)) {
-            router = new info[0];
-            key = info[1];
-        }
-        else {
-            router = new info;
-            const fcts = Object.getOwnPropertyNames(info.prototype).filter(m => m !== "constructor");
-            if (fcts.length == 1) {
-                key = fcts[0];
-            }
-            else {
-                const result = new Aventus.VoidWithError();
-                result.errors.push(new Aventus.GenericError(500, "More than one fonction is defined"));
-                return result;
-            }
-        }
-        const result = await submit(router[key]);
-        this.onResult(result);
-        return result;
-    }
-    beforeSubmit() { }
-}
-Navigation.PageFormRoute.Namespace=`Aventus.Navigation`;
-__as1(_.Navigation, 'PageFormRoute', Navigation.PageFormRoute);
-
 
 for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
@@ -10713,43 +10713,6 @@ const _ = {};
 
 
 let _n;
-const DocUIPageFormRouteEditor2 = class DocUIPageFormRouteEditor2 extends Aventus.WebComponent {
-    static __style = ``;
-    __getStatic() {
-        return DocUIPageFormRouteEditor2;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIPageFormRouteEditor2.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Page With Form And HTTP">    <av-code language="typescript" filename="LoginAction.lib.avt">        <pre>            &nbsp;            export class LoginRequest {                public username!: string;                public password!: string;            }            &nbsp;            &nbsp;            export class LoginController extends Aventus.HttpRoute {                @BindThis()                public async login(body: LoginRequest): Promise&lt;Aventus.ResultWithError&lt;string&gt;&gt; {                    const request = new Aventus.HttpRequest(&#96;\${this.getPrefix()}/api/login&#96;, Aventus.HttpMethod.POST);                    request.setBody(body);                    return await request.queryJSON&lt;string&gt;(this.router);                }            &nbsp;                @BindThis()                public async logout(): Promise&lt;Aventus.ResultWithError&lt;boolean&gt;&gt; {                    const request = new Aventus.HttpRequest(&#96;\${this.getPrefix()}/api/logout&#96;, Aventus.HttpMethod.POST);                    return await request.queryJSON&lt;boolean&gt;(this.router);                }            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="LoginPage/LoginPage.wcl.avt">        <pre>            import { PageFormRoute } from "Aventus@UI:Aventus.Navigation.package.avt";            import { LoginController, type LoginRequest } from "../LoginAction.lib.avt";            import type { ResultWithError } from "Aventus@Main:Aventus.package.avt";            import { Required } from "Aventus@UI:Aventus.Form.Validators.package.avt";            &nbsp;            export class LoginPage extends PageFormRoute&lt;typeof LoginController, 'login'&gt; implements Aventus.DefaultComponent {            &nbsp;            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                public override route(): [typeof LoginController, 'login'] {                    return [LoginController, 'login'];                }                /**                 * @inheritdoc                 */                public override onResult(result: ResultWithError&lt;string&gt; | null): Aventus.Asyncable&lt;void&gt; {                    &#105;f(result?.success) {                        //...                    }                }                /**                 * @inheritdoc                 */                protected override &#102;ormSchema(): Aventus.Form.FormSchema&lt;LoginRequest&gt; {                    return {                        username: Required,                        password: Required                    };                }                /**                 * @inheritdoc                 */                public override configure(): Aventus.Asyncable&lt;Aventus.Navigation.Page.PageConfig&gt; {                    return {                        title: "Login"                    };                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="LoginPage/LoginPage.wcs.avt">        <pre>            :host {                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="LoginPage/LoginPage.wcv.avt">        <pre>            &lt;my-input name="username" :form="this.form.parts.username"&gt;&lt;/my-input&gt; &lt;!-- Link input to the &#102;orm --&gt;            &lt;my-input type="password" name="password" :form="this.form.parts.password"&gt;&lt;/my-input&gt;            &lt;button-element type="submit"&gt;Login&lt;/button-element&gt; &lt;!-- will submit the &#102;orm --&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
-    });
-}
-    getClassName() {
-        return "DocUIPageFormRouteEditor2";
-    }
-}
-DocUIPageFormRouteEditor2.Namespace=`AventusWebsite`;
-DocUIPageFormRouteEditor2.Tag=`av-doc-u-i-page-form-route-editor-2`;
-__as1(_, 'DocUIPageFormRouteEditor2', DocUIPageFormRouteEditor2);
-if(!window.customElements.get('av-doc-u-i-page-form-route-editor-2')){window.customElements.define('av-doc-u-i-page-form-route-editor-2', DocUIPageFormRouteEditor2);Aventus.WebComponentInstance.registerDefinition(DocUIPageFormRouteEditor2);}
-
-let DocUIPageFormRouteEditor1LoginRequest=class DocUIPageFormRouteEditor1LoginRequest {
-    username;
-    password;
-}
-DocUIPageFormRouteEditor1LoginRequest.Namespace=`AventusWebsite`;
-__as1(_, 'DocUIPageFormRouteEditor1LoginRequest', DocUIPageFormRouteEditor1LoginRequest);
-
-let DocUIPageFormEditor1LoginAction=function DocUIPageFormEditor1LoginAction(form) {
-    throw 'not implemented';
-}
-__as1(_, 'DocUIPageFormEditor1LoginAction', DocUIPageFormEditor1LoginAction);
-
 let DocWcWatchEditor1Person=class DocWcWatchEditor1Person extends Aventus.Data {
     id = 0;
     name = "John Doe";
@@ -12680,6 +12643,127 @@ DocUIScrollableEditor1Compiled.Namespace=`AventusWebsite`;
 DocUIScrollableEditor1Compiled.Tag=`av-doc-u-i-scrollable-editor-1-compiled`;
 __as1(_, 'DocUIScrollableEditor1Compiled', DocUIScrollableEditor1Compiled);
 if(!window.customElements.get('av-doc-u-i-scrollable-editor-1-compiled')){window.customElements.define('av-doc-u-i-scrollable-editor-1-compiled', DocUIScrollableEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIScrollableEditor1Compiled);}
+
+const DocUIPageFormRouteEditor2 = class DocUIPageFormRouteEditor2 extends Aventus.WebComponent {
+    static __style = ``;
+    __getStatic() {
+        return DocUIPageFormRouteEditor2;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIPageFormRouteEditor2.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Page With Form And HTTP">    <av-code language="typescript" filename="LoginAction.lib.avt">        <pre>            &nbsp;            export class LoginRequest {                public username!: string;                public password!: string;            }            &nbsp;            &nbsp;            export class LoginController extends Aventus.HttpRoute {                @BindThis()                public async login(body: LoginRequest): Promise&lt;Aventus.ResultWithError&lt;string&gt;&gt; {                    const request = new Aventus.HttpRequest(&#96;\${this.getPrefix()}/api/login&#96;, Aventus.HttpMethod.POST);                    request.setBody(body);                    return await request.queryJSON&lt;string&gt;(this.router);                }            &nbsp;                @BindThis()                public async logout(): Promise&lt;Aventus.ResultWithError&lt;boolean&gt;&gt; {                    const request = new Aventus.HttpRequest(&#96;\${this.getPrefix()}/api/logout&#96;, Aventus.HttpMethod.POST);                    return await request.queryJSON&lt;boolean&gt;(this.router);                }            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="LoginPage/LoginPage.wcl.avt">        <pre>            import { PageFormRoute } from "Aventus@UI:Aventus.Navigation.package.avt";            import { LoginController, type LoginRequest } from "../LoginAction.lib.avt";            import type { ResultWithError } from "Aventus@Main:Aventus.package.avt";            import { Required } from "Aventus@UI:Aventus.Form.Validators.package.avt";            &nbsp;            export class LoginPage extends PageFormRoute&lt;typeof LoginController, 'login'&gt; implements Aventus.DefaultComponent {            &nbsp;            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                public override route(): [typeof LoginController, 'login'] {                    return [LoginController, 'login'];                }                /**                 * @inheritdoc                 */                public override onResult(result: ResultWithError&lt;string&gt; | null): Aventus.Asyncable&lt;void&gt; {                    &#105;f(result?.success) {                        //...                    }                }                /**                 * @inheritdoc                 */                protected override &#102;ormSchema(): Aventus.Form.FormSchema&lt;LoginRequest&gt; {                    return {                        username: Required,                        password: Required                    };                }                /**                 * @inheritdoc                 */                public override configure(): Aventus.Asyncable&lt;Aventus.Navigation.Page.PageConfig&gt; {                    return {                        title: "Login"                    };                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="LoginPage/LoginPage.wcs.avt">        <pre>            :host {                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="LoginPage/LoginPage.wcv.avt">        <pre>            &lt;my-input name="username" :form="this.form.parts.username"&gt;&lt;/my-input&gt; &lt;!-- Link input to the &#102;orm --&gt;            &lt;my-input type="password" name="password" :form="this.form.parts.password"&gt;&lt;/my-input&gt;            &lt;button-element type="submit"&gt;Login&lt;/button-element&gt; &lt;!-- will submit the &#102;orm --&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUIPageFormRouteEditor2";
+    }
+}
+DocUIPageFormRouteEditor2.Namespace=`AventusWebsite`;
+DocUIPageFormRouteEditor2.Tag=`av-doc-u-i-page-form-route-editor-2`;
+__as1(_, 'DocUIPageFormRouteEditor2', DocUIPageFormRouteEditor2);
+if(!window.customElements.get('av-doc-u-i-page-form-route-editor-2')){window.customElements.define('av-doc-u-i-page-form-route-editor-2', DocUIPageFormRouteEditor2);Aventus.WebComponentInstance.registerDefinition(DocUIPageFormRouteEditor2);}
+
+let DocUIPageFormRouteEditor1LoginRequest=class DocUIPageFormRouteEditor1LoginRequest {
+    username;
+    password;
+}
+DocUIPageFormRouteEditor1LoginRequest.Namespace=`AventusWebsite`;
+__as1(_, 'DocUIPageFormRouteEditor1LoginRequest', DocUIPageFormRouteEditor1LoginRequest);
+
+let DocUIPageFormRouteEditor1LoginController=class DocUIPageFormRouteEditor1LoginController extends Aventus.HttpRoute {
+    constructor(router) {
+        super(router);
+        this.login = this.login.bind(this);
+        this.logout = this.logout.bind(this);
+    }
+    async login(body) {
+        const request = new Aventus.HttpRequest(`/api/login`, Aventus.HttpMethod.POST);
+        request.setBody(body);
+        return await request.queryJSON(this.router);
+    }
+    async logout() {
+        const request = new Aventus.HttpRequest(`/api/logout`, Aventus.HttpMethod.POST);
+        return await request.queryJSON(this.router);
+    }
+}
+DocUIPageFormRouteEditor1LoginController.Namespace=`AventusWebsite`;
+__as1(_, 'DocUIPageFormRouteEditor1LoginController', DocUIPageFormRouteEditor1LoginController);
+
+const DocUIPageFormRouteEditor1Compiled = class DocUIPageFormRouteEditor1Compiled extends Aventus.Navigation.PageFormRoute {
+    static __style = ``;
+    __getStatic() {
+        return DocUIPageFormRouteEditor1Compiled;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIPageFormRouteEditor1Compiled.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<my-input name="username" _id="docuipageformrouteeditor1compiled_0"></my-input><my-input type="password" name="password" _id="docuipageformrouteeditor1compiled_1"></my-input><button-element type="submit">Login</button-element>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "injection": [
+    {
+      "id": "docuipageformrouteeditor1compiled_0",
+      "injectionName": "form",
+      "inject": (c) => c.comp.__66feedbc217ae63b95f0403a3bcd6174method0(),
+      "once": true
+    },
+    {
+      "id": "docuipageformrouteeditor1compiled_1",
+      "injectionName": "form",
+      "inject": (c) => c.comp.__66feedbc217ae63b95f0403a3bcd6174method1(),
+      "once": true
+    }
+  ]
+}); }
+    getClassName() {
+        return "DocUIPageFormRouteEditor1Compiled";
+    }
+    route() {
+        return [DocUIPageFormRouteEditor1LoginController, 'login'];
+    }
+    onResult(result) {
+        if (result?.success) {
+            //...
+        }
+    }
+    formSchema() {
+        return {
+            username: Aventus.Form.Validators.Required,
+            password: Aventus.Form.Validators.Required
+        };
+    }
+    configure() {
+        return {
+            title: "Login"
+        };
+    }
+    __66feedbc217ae63b95f0403a3bcd6174method0() {
+        return this.form.parts.username;
+    }
+    __66feedbc217ae63b95f0403a3bcd6174method1() {
+        return this.form.parts.password;
+    }
+}
+DocUIPageFormRouteEditor1Compiled.Namespace=`AventusWebsite`;
+DocUIPageFormRouteEditor1Compiled.Tag=`av-doc-u-i-page-form-route-editor-1-compiled`;
+__as1(_, 'DocUIPageFormRouteEditor1Compiled', DocUIPageFormRouteEditor1Compiled);
+if(!window.customElements.get('av-doc-u-i-page-form-route-editor-1-compiled')){window.customElements.define('av-doc-u-i-page-form-route-editor-1-compiled', DocUIPageFormRouteEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIPageFormRouteEditor1Compiled);}
+
+let DocUIPageFormEditor1LoginAction=function DocUIPageFormEditor1LoginAction(form) {
+    throw 'not implemented';
+}
+__as1(_, 'DocUIPageFormEditor1LoginAction', DocUIPageFormEditor1LoginAction);
 
 const DocUIModalEditor1Modal = class DocUIModalEditor1Modal extends Aventus.Modal.ModalElement {
     get 'question'() {
@@ -14619,76 +14703,6 @@ const DocGenericPage = class DocGenericPage extends Page {
 }
 DocGenericPage.Namespace=`AventusWebsite`;
 __as1(_, 'DocGenericPage', DocGenericPage);
-
-const DocErrorIntroduction = class DocErrorIntroduction extends DocGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return DocErrorIntroduction;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocErrorIntroduction.__style);
-        return arrStyle;
-    }
-    getClassName() {
-        return "DocErrorIntroduction";
-    }
-    Title() {
-        return "Error Handling in Aventus";
-    }
-    Description() {
-        return "Learn how to handle errors effectively in Aventus using GenericError, VoidWithError, and ResultWithError. Discover how these wrappers help you manage failure scenarios, return structured results, and write cleaner, more reliable code.";
-    }
-    Keywords() {
-        return [
-            "Aventus error handling",
-            "GenericError Aventus",
-            "VoidWithError Aventus",
-            "ResultWithError Aventus",
-            "Aventus error strategy",
-            "Error management Aventus",
-            "Function error Aventus",
-            "Aventus result wrapper",
-        ];
-    }
-}
-DocErrorIntroduction.Namespace=`AventusWebsite`;
-DocErrorIntroduction.Tag=`av-doc-error-introduction`;
-__as1(_, 'DocErrorIntroduction', DocErrorIntroduction);
-if(!window.customElements.get('av-doc-error-introduction')){window.customElements.define('av-doc-error-introduction', DocErrorIntroduction);Aventus.WebComponentInstance.registerDefinition(DocErrorIntroduction);}
-
-const DocLibTools = class DocLibTools extends DocGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return DocLibTools;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocLibTools.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Library - Tools</h1><p>Finally you can use the tools provided to help you.</p>` }
-    });
-}
-    getClassName() {
-        return "DocLibTools";
-    }
-    Title() {
-        return "AventusJs - Tools";
-    }
-    Description() {
-        return "Use predefined function to simplify code";
-    }
-    Keywords() {
-        return ['compareObject', 'getValueFromObject', 'setValueToObject', 'Json', 'Converter', 'Mutex', 'sleep', 'UUID', 'Error'];
-    }
-}
-DocLibTools.Namespace=`AventusWebsite`;
-DocLibTools.Tag=`av-doc-lib-tools`;
-__as1(_, 'DocLibTools', DocLibTools);
-if(!window.customElements.get('av-doc-lib-tools')){window.customElements.define('av-doc-lib-tools', DocLibTools);Aventus.WebComponentInstance.registerDefinition(DocLibTools);}
 
 const DocAdvancedStorybook = class DocAdvancedStorybook extends DocGenericPage {
     static __style = ``;
@@ -18613,143 +18627,6 @@ BaseEditor.Tag=`av-base-editor`;
 __as1(_, 'BaseEditor', BaseEditor);
 if(!window.customElements.get('av-base-editor')){window.customElements.define('av-base-editor', BaseEditor);Aventus.WebComponentInstance.registerDefinition(BaseEditor);}
 
-const DocLibMutexEditor1 = class DocLibMutexEditor1 extends BaseEditor {
-    static __style = ``;
-    __getStatic() {
-        return DocLibMutexEditor1;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocLibMutexEditor1.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Tools">    <av-code language="json" filename="Tools/aventus.conf.avt">        <pre>            {            	"module": "Tools",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Test.lib.avt">        <pre>            export class Test {                // Create a mutex instance                private static mutex: Aventus.Mutex = new Aventus.Mutex();            &nbsp;                private static counter: number = 0;                private static numThreads: number = 100;            &nbsp;                // Function to update the shared counter variable                private static async updateCounter() {                    // Wait &#102;or the mutex to become available                    await this.mutex.waitOne();                    try {                        // Increment the counter                        this.counter++;                        console.log(this.counter);                        await Aventus.sleep(100);                    } finally {                        // Release the mutex                        this.mutex.release();                    }                }            &nbsp;                private static async updateCounter2() {                    // Wait &#102;or the mutex to become available                    await this.mutex.safeRunAsync(async () =&gt; {                        this.counter++;                        console.log(this.counter);                        await Aventus.sleep(100);                    })                }            &nbsp;            &nbsp;                public static run() {                    // Multiple threads call the updateCounter function concurrently                    &#102;or(let i = 0; i &lt; this.numThreads; i++) {                        this.updateCounter();                    }                    console.log("loop done");                }            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
-    });
-}
-    getClassName() {
-        return "DocLibMutexEditor1";
-    }
-}
-DocLibMutexEditor1.Namespace=`AventusWebsite`;
-DocLibMutexEditor1.Tag=`av-doc-lib-mutex-editor-1`;
-__as1(_, 'DocLibMutexEditor1', DocLibMutexEditor1);
-if(!window.customElements.get('av-doc-lib-mutex-editor-1')){window.customElements.define('av-doc-lib-mutex-editor-1', DocLibMutexEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibMutexEditor1);}
-
-const DocLibConverterEditor1 = class DocLibConverterEditor1 extends BaseEditor {
-    static __style = ``;
-    __getStatic() {
-        return DocLibConverterEditor1;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocLibConverterEditor1.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Tools">    <av-code language="json" filename="Tools/aventus.conf.avt">        <pre>            {            	"module": "Tools",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Parser.lib.avt">        <pre>            import { Person } from "./Person.data.avt";            &nbsp;            export class Parser {                public static parse() {                    // JSON data received from an API with $type indicating the class name                    const jsonDataWithType = JSON.parse('{"$type": "Tools.Person", "id": 1, "name": "John", "age": 30}');            &nbsp;                    // Convert JSON data to JavaScript object using Converter.transform                    const personWithType = Aventus.Converter.transform&lt;Person&gt;(jsonDataWithType);            &nbsp;                    console.log(personWithType); // Output: Person { id: 1, name: 'John', age: 30 }                    console.log(personWithType instanceof Person); // Output: true                }            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Person.data.avt">        <pre>            export class Person extends Aventus.Data implements Aventus.IData {                // The static field Fullname = 'Tools.Person'            	public id: number = 0;            	public name: string = "";            	public age: number = 0;            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
-    });
-}
-    getClassName() {
-        return "DocLibConverterEditor1";
-    }
-    startupFile() {
-        return 'Tools/src/Parser.lib.avt';
-    }
-}
-DocLibConverterEditor1.Namespace=`AventusWebsite`;
-DocLibConverterEditor1.Tag=`av-doc-lib-converter-editor-1`;
-__as1(_, 'DocLibConverterEditor1', DocLibConverterEditor1);
-if(!window.customElements.get('av-doc-lib-converter-editor-1')){window.customElements.define('av-doc-lib-converter-editor-1', DocLibConverterEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibConverterEditor1);}
-
-const DocErrorResultEditor1 = class DocErrorResultEditor1 extends BaseEditor {
-    static __style = ``;
-    __getStatic() {
-        return DocErrorResultEditor1;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocErrorResultEditor1.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Tools">    <av-code language="json" filename="Tools/aventus.conf.avt">        <pre>            {            	"module": "Tools",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/StringExtension.lib.avt">        <pre>            // List of available codes            export enum StringErrorCode {                EmptyString = 400            }            &nbsp;            // Error            export class StringError extends Aventus.GenericError&lt;StringErrorCode&gt; { }            &nbsp;            // Result of the function ( = container)            export class StringResult extends Aventus.ResultWithError&lt;{ lower: string; }, StringError&gt; { }            &nbsp;            export class StringExtension {            &nbsp;                public static toLower(txt: string): StringResult {                    let result = new StringResult();                    &#105;f(!txt) {                        let error = new StringError(StringErrorCode.EmptyString, "Please provide a string");                        result.errors.push(error);                    }                    else {                        result.result = { lower: txt.toLowerCase() };                    }            &nbsp;                    return result;                }            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Test.lib.avt">        <pre>            import { StringExtension } from "./StringExtension.lib.avt";            &nbsp;            export class Test {                public static run() {            		const result = StringExtension.toLower("");            		/*            			result.success = false            			result.errors = [ { code: 400, message: "Please provide a string" } ]            			result.result = undefined            		*/            &nbsp;            		const result2 = StringExtension.toLower("HELLO");            		/*            			result.success = true            			result.errors = []            			result.result = { lower: 'hello' }            		*/            	}            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
-    });
-}
-    getClassName() {
-        return "DocErrorResultEditor1";
-    }
-    hightlightFiles() {
-        return [
-            'Tools/src/StringExtension.lib.avt',
-            'Tools/src/Test.lib.avt'
-        ];
-    }
-    startupFile() {
-        return 'Tools/src/StringExtension.lib.avt';
-    }
-}
-DocErrorResultEditor1.Namespace=`AventusWebsite`;
-DocErrorResultEditor1.Tag=`av-doc-error-result-editor-1`;
-__as1(_, 'DocErrorResultEditor1', DocErrorResultEditor1);
-if(!window.customElements.get('av-doc-error-result-editor-1')){window.customElements.define('av-doc-error-result-editor-1', DocErrorResultEditor1);Aventus.WebComponentInstance.registerDefinition(DocErrorResultEditor1);}
-
-const DocUIPageFormRouteEditor1 = class DocUIPageFormRouteEditor1 extends BaseEditor {
-    static __style = ``;
-    __getStatic() {
-        return DocUIPageFormRouteEditor1;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIPageFormRouteEditor1.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Page With Form And HTTP">    <av-code language="typescript" filename="LoginAction.lib.avt">        <pre>            &nbsp;            export class LoginRequest {                public username!: string;                public password!: string;            }            &nbsp;            &nbsp;            export class LoginController extends Aventus.HttpRoute {                @BindThis()                public async request(body: LoginRequest): Promise&lt;Aventus.ResultWithError&lt;string&gt;&gt; {                    const request = new Aventus.HttpRequest(&#96;\${this.getPrefix()}/api/login&#96;, Aventus.HttpMethod.POST);                    request.setBody(body);                    return await request.queryJSON&lt;string&gt;(this.router);                }            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="LoginPage/LoginPage.wcl.avt">        <pre>            import { PageFormRoute } from "Aventus@UI:Aventus.Navigation.package.avt";            import { LoginController, type LoginRequest } from "../LoginAction.lib.avt";            import type { ResultWithError } from "Aventus@Main:Aventus.package.avt";            import { Required } from "Aventus@UI:Aventus.Form.Validators.package.avt";            &nbsp;            export class LoginPage extends PageFormRoute&lt;typeof LoginController&gt; implements Aventus.DefaultComponent {            &nbsp;            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                public override route(): typeof LoginController {                    return LoginController;                }                /**                 * @inheritdoc                 */                public override onResult(result: ResultWithError&lt;string&gt; | null): Aventus.Asyncable&lt;void&gt; {                    &#105;f(result?.success) {                        //...                    }                }                /**                 * @inheritdoc                 */                protected override &#102;ormSchema(): Aventus.Form.FormSchema&lt;LoginRequest&gt; {                    return {                        username: Required,                        password: Required                    };                }                /**                 * @inheritdoc                 */                public override configure(): Aventus.Asyncable&lt;Aventus.Navigation.Page.PageConfig&gt; {                    return {                        title: "Login"                    };                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="LoginPage/LoginPage.wcs.avt">        <pre>            :host {                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="LoginPage/LoginPage.wcv.avt">        <pre>            &lt;my-input name="username" :form="this.form.parts.username"&gt;&lt;/my-input&gt; &lt;!-- Link input to the &#102;orm --&gt;            &lt;my-input type="password" name="password" :form="this.form.parts.password"&gt;&lt;/my-input&gt;            &lt;button-element type="submit"&gt;Login&lt;/button-element&gt; &lt;!-- will submit the &#102;orm --&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
-    });
-}
-    getClassName() {
-        return "DocUIPageFormRouteEditor1";
-    }
-}
-DocUIPageFormRouteEditor1.Namespace=`AventusWebsite`;
-DocUIPageFormRouteEditor1.Tag=`av-doc-u-i-page-form-route-editor-1`;
-__as1(_, 'DocUIPageFormRouteEditor1', DocUIPageFormRouteEditor1);
-if(!window.customElements.get('av-doc-u-i-page-form-route-editor-1')){window.customElements.define('av-doc-u-i-page-form-route-editor-1', DocUIPageFormRouteEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIPageFormRouteEditor1);}
-
-const DocUIPageFormEditor1 = class DocUIPageFormEditor1 extends BaseEditor {
-    static __style = ``;
-    __getStatic() {
-        return DocUIPageFormEditor1;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIPageFormEditor1.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Page With Form">    <av-code language="typescript" filename="LoginPage/LoginPage.wcl.avt">        <pre>            import { PageForm } from "Aventus@UI:Aventus.Navigation.package.avt";            import { LoginAction, type LoginForm, type LoginResponse } from "../LoginAction.lib.avt";            import { Email, Required } from "Aventus@UI:Aventus.Form.Validators.package.avt";            import type { FormSchema, SubmitFunction } from "Aventus@UI:Aventus.Form.package.avt";            import type { ResultWithError } from "Aventus@Main:Aventus.package.avt";            import type { PageConfig } from "Aventus@UI:Aventus.Navigation.Page.package.avt";            &nbsp;            export class LoginPage extends PageForm&lt;LoginForm, LoginResponse&gt; implements Aventus.DefaultComponent {            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                protected override &#102;ormSchema(): FormSchema&lt;LoginForm&gt; {                    return {                        email: [Required, Email],                        password: Required                    };                }                /**                 * @inheritdoc                 */                protected override async defineSubmit(submit: (fct: SubmitFunction&lt;LoginForm, LoginResponse&gt;) =&gt; Promise&lt;ResultWithError&lt;LoginResponse&gt; | null&gt;): Promise&lt;ResultWithError&lt;LoginResponse&gt; | null&gt; {                    return await submit(LoginAction);                }                /**                 * @inheritdoc                 */                public override configure(): PageConfig {                    return {                        title: "Login",                        description: "Login page",                        destroy: true                    };                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="LoginPage/LoginPage.wcs.avt">        <pre>            :host {                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="LoginPage/LoginPage.wcv.avt">        <pre>            &lt;my-input name="email" :form="this.form.parts.email"&gt;&lt;/my-input&gt; &lt;!-- Link input to the &#102;orm --&gt;            &lt;my-input type="password" name="password" :form="this.form.parts.password"&gt;&lt;/my-input&gt;            &lt;button-element type="submit"&gt;Login&lt;/button-element&gt; &lt;!-- will submit the &#102;orm --&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="LoginAction.lib.avt">        <pre>            import type { ResultWithError } from "Aventus@Main:Aventus.package.avt";            &nbsp;            export type LoginForm = { email: string; password: string; };            export type LoginResponse = { token: string; };            &nbsp;            export function LoginAction(form: LoginForm): Promise&lt;ResultWithError&lt;LoginResponse&gt;&gt; {                // login action            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
-    });
-}
-    getClassName() {
-        return "DocUIPageFormEditor1";
-    }
-}
-DocUIPageFormEditor1.Namespace=`AventusWebsite`;
-DocUIPageFormEditor1.Tag=`av-doc-u-i-page-form-editor-1`;
-__as1(_, 'DocUIPageFormEditor1', DocUIPageFormEditor1);
-if(!window.customElements.get('av-doc-u-i-page-form-editor-1')){window.customElements.define('av-doc-u-i-page-form-editor-1', DocUIPageFormEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIPageFormEditor1);}
-
 const TutorialInitEditor3 = class TutorialInitEditor3 extends BaseEditor {
     static __style = ``;
     __getStatic() {
@@ -20249,6 +20126,56 @@ DocUIScrollableEditor1.Tag=`av-doc-u-i-scrollable-editor-1`;
 __as1(_, 'DocUIScrollableEditor1', DocUIScrollableEditor1);
 if(!window.customElements.get('av-doc-u-i-scrollable-editor-1')){window.customElements.define('av-doc-u-i-scrollable-editor-1', DocUIScrollableEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIScrollableEditor1);}
 
+const DocUIPageFormRouteEditor1 = class DocUIPageFormRouteEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUIPageFormRouteEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIPageFormRouteEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Page With Form And HTTP">    <av-code language="typescript" filename="LoginAction.lib.avt">        <pre>            &nbsp;            export class LoginRequest {                public username!: string;                public password!: string;            }            &nbsp;            &nbsp;            export class LoginController extends Aventus.HttpRoute {                @BindThis()                public async request(body: LoginRequest): Promise&lt;Aventus.ResultWithError&lt;string&gt;&gt; {                    const request = new Aventus.HttpRequest(&#96;\${this.getPrefix()}/api/login&#96;, Aventus.HttpMethod.POST);                    request.setBody(body);                    return await request.queryJSON&lt;string&gt;(this.router);                }            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="LoginPage/LoginPage.wcl.avt">        <pre>            import { PageFormRoute } from "Aventus@UI:Aventus.Navigation.package.avt";            import { LoginController, type LoginRequest } from "../LoginAction.lib.avt";            import type { ResultWithError } from "Aventus@Main:Aventus.package.avt";            import { Required } from "Aventus@UI:Aventus.Form.Validators.package.avt";            &nbsp;            export class LoginPage extends PageFormRoute&lt;typeof LoginController&gt; implements Aventus.DefaultComponent {            &nbsp;            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                public override route(): typeof LoginController {                    return LoginController;                }                /**                 * @inheritdoc                 */                public override onResult(result: ResultWithError&lt;string&gt; | null): Aventus.Asyncable&lt;void&gt; {                    &#105;f(result?.success) {                        //...                    }                }                /**                 * @inheritdoc                 */                protected override &#102;ormSchema(): Aventus.Form.FormSchema&lt;LoginRequest&gt; {                    return {                        username: Required,                        password: Required                    };                }                /**                 * @inheritdoc                 */                public override configure(): Aventus.Asyncable&lt;Aventus.Navigation.Page.PageConfig&gt; {                    return {                        title: "Login"                    };                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="LoginPage/LoginPage.wcs.avt">        <pre>            :host {                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="LoginPage/LoginPage.wcv.avt">        <pre>            &lt;my-input name="username" :form="this.form.parts.username"&gt;&lt;/my-input&gt; &lt;!-- Link input to the &#102;orm --&gt;            &lt;my-input type="password" name="password" :form="this.form.parts.password"&gt;&lt;/my-input&gt;            &lt;button-element type="submit"&gt;Login&lt;/button-element&gt; &lt;!-- will submit the &#102;orm --&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUIPageFormRouteEditor1";
+    }
+}
+DocUIPageFormRouteEditor1.Namespace=`AventusWebsite`;
+DocUIPageFormRouteEditor1.Tag=`av-doc-u-i-page-form-route-editor-1`;
+__as1(_, 'DocUIPageFormRouteEditor1', DocUIPageFormRouteEditor1);
+if(!window.customElements.get('av-doc-u-i-page-form-route-editor-1')){window.customElements.define('av-doc-u-i-page-form-route-editor-1', DocUIPageFormRouteEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIPageFormRouteEditor1);}
+
+const DocUIPageFormEditor1 = class DocUIPageFormEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUIPageFormEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIPageFormEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Page With Form">    <av-code language="typescript" filename="LoginPage/LoginPage.wcl.avt">        <pre>            import { PageForm } from "Aventus@UI:Aventus.Navigation.package.avt";            import { LoginAction, type LoginForm, type LoginResponse } from "../LoginAction.lib.avt";            import { Email, Required } from "Aventus@UI:Aventus.Form.Validators.package.avt";            import type { FormSchema, SubmitFunction } from "Aventus@UI:Aventus.Form.package.avt";            import type { ResultWithError } from "Aventus@Main:Aventus.package.avt";            import type { PageConfig } from "Aventus@UI:Aventus.Navigation.Page.package.avt";            &nbsp;            export class LoginPage extends PageForm&lt;LoginForm, LoginResponse&gt; implements Aventus.DefaultComponent {            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                protected override &#102;ormSchema(): FormSchema&lt;LoginForm&gt; {                    return {                        email: [Required, Email],                        password: Required                    };                }                /**                 * @inheritdoc                 */                protected override async defineSubmit(submit: (fct: SubmitFunction&lt;LoginForm, LoginResponse&gt;) =&gt; Promise&lt;ResultWithError&lt;LoginResponse&gt; | null&gt;): Promise&lt;ResultWithError&lt;LoginResponse&gt; | null&gt; {                    return await submit(LoginAction);                }                /**                 * @inheritdoc                 */                public override configure(): PageConfig {                    return {                        title: "Login",                        description: "Login page",                        destroy: true                    };                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="LoginPage/LoginPage.wcs.avt">        <pre>            :host {                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="LoginPage/LoginPage.wcv.avt">        <pre>            &lt;my-input name="email" :form="this.form.parts.email"&gt;&lt;/my-input&gt; &lt;!-- Link input to the &#102;orm --&gt;            &lt;my-input type="password" name="password" :form="this.form.parts.password"&gt;&lt;/my-input&gt;            &lt;button-element type="submit"&gt;Login&lt;/button-element&gt; &lt;!-- will submit the &#102;orm --&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="LoginAction.lib.avt">        <pre>            import type { ResultWithError } from "Aventus@Main:Aventus.package.avt";            &nbsp;            export type LoginForm = { email: string; password: string; };            export type LoginResponse = { token: string; };            &nbsp;            export function LoginAction(form: LoginForm): Promise&lt;ResultWithError&lt;LoginResponse&gt;&gt; {                // login action            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUIPageFormEditor1";
+    }
+}
+DocUIPageFormEditor1.Namespace=`AventusWebsite`;
+DocUIPageFormEditor1.Tag=`av-doc-u-i-page-form-editor-1`;
+__as1(_, 'DocUIPageFormEditor1', DocUIPageFormEditor1);
+if(!window.customElements.get('av-doc-u-i-page-form-editor-1')){window.customElements.define('av-doc-u-i-page-form-editor-1', DocUIPageFormEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIPageFormEditor1);}
+
 const DocUIGridHelperEditor1 = class DocUIGridHelperEditor1 extends BaseEditor {
     static __style = ``;
     __getStatic() {
@@ -21053,93 +20980,6 @@ DocLibWatcherEditor1.Tag=`av-doc-lib-watcher-editor-1`;
 __as1(_, 'DocLibWatcherEditor1', DocLibWatcherEditor1);
 if(!window.customElements.get('av-doc-lib-watcher-editor-1')){window.customElements.define('av-doc-lib-watcher-editor-1', DocLibWatcherEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibWatcherEditor1);}
 
-const DocLibToolsEditor3 = class DocLibToolsEditor3 extends BaseEditor {
-    static __style = ``;
-    __getStatic() {
-        return DocLibToolsEditor3;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocLibToolsEditor3.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Tools">    <av-code language="json" filename="Tools/aventus.conf.avt">        <pre>            {            	"module": "Tools",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Test.lib.avt">        <pre>            export class Test {                // Create a mutex instance                private static mutex: Aventus.Mutex = new Aventus.Mutex();            &nbsp;                private static counter: number = 0;                private static numThreads: number = 100;            &nbsp;                // Function to update the shared counter variable                private static async updateCounter() {                    // Wait &#102;or the mutex to become available                    await this.mutex.waitOne();                    try {                        // Increment the counter                        this.counter++;                        console.log(this.counter);                        await Aventus.sleep(100);                    } finally {                        // Release the mutex                        this.mutex.release();                    }                }            &nbsp;                private static async updateCounter2() {                    // Wait &#102;or the mutex to become available                    await this.mutex.safeRunAsync(async () =&gt; {                        this.counter++;                        console.log(this.counter);                        await Aventus.sleep(100);                    })                }            &nbsp;            &nbsp;                public static run() {                    // Multiple threads call the updateCounter function concurrently                    &#102;or(let i = 0; i &lt; this.numThreads; i++) {                        this.updateCounter();                    }                    console.log("loop done");                }            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
-    });
-}
-    getClassName() {
-        return "DocLibToolsEditor3";
-    }
-}
-DocLibToolsEditor3.Namespace=`AventusWebsite`;
-DocLibToolsEditor3.Tag=`av-doc-lib-tools-editor-3`;
-__as1(_, 'DocLibToolsEditor3', DocLibToolsEditor3);
-if(!window.customElements.get('av-doc-lib-tools-editor-3')){window.customElements.define('av-doc-lib-tools-editor-3', DocLibToolsEditor3);Aventus.WebComponentInstance.registerDefinition(DocLibToolsEditor3);}
-
-const DocLibToolsEditor2 = class DocLibToolsEditor2 extends BaseEditor {
-    static __style = ``;
-    __getStatic() {
-        return DocLibToolsEditor2;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocLibToolsEditor2.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Tools">    <av-code language="json" filename="Tools/aventus.conf.avt">        <pre>            {            	"module": "Tools",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/StringExtension.lib.avt">        <pre>            // List of available codes            export enum StringErrorCode {                EmptyString = 400            }            &nbsp;            // Error            export class StringError extends Aventus.GenericError&lt;StringErrorCode&gt; { }            &nbsp;            // Result of the function ( = container)            export class StringResult extends Aventus.ResultWithError&lt;{ lower: string; }, StringError&gt; { }            &nbsp;            export class StringExtension {            &nbsp;                public static toLower(txt: string): StringResult {                    let result = new StringResult();                    &#105;f(!txt) {                        let error = new StringError(StringErrorCode.EmptyString, "Please provide a string");                        result.errors.push(error);                    }                    else {                        result.result = { lower: txt.toLowerCase() };                    }            &nbsp;                    return result;                }            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Test.lib.avt">        <pre>            import { StringExtension } from "./StringExtension.lib.avt";            &nbsp;            export class Test {                public static run() {            		const result = StringExtension.toLower("");            		/*            			result.success = false            			result.errors = [ { code: 400, message: "Please provide a string" } ]            			result.result = undefined            		*/            &nbsp;            		const result2 = StringExtension.toLower("HELLO");            		/*            			result.success = true            			result.errors = []            			result.result = { lower: 'hello' }            		*/            	}            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
-    });
-}
-    getClassName() {
-        return "DocLibToolsEditor2";
-    }
-    hightlightFiles() {
-        return [
-            'Tools/src/StringExtension.lib.avt',
-            'Tools/src/Test.lib.avt'
-        ];
-    }
-    startupFile() {
-        return 'Tools/src/StringExtension.lib.avt';
-    }
-}
-DocLibToolsEditor2.Namespace=`AventusWebsite`;
-DocLibToolsEditor2.Tag=`av-doc-lib-tools-editor-2`;
-__as1(_, 'DocLibToolsEditor2', DocLibToolsEditor2);
-if(!window.customElements.get('av-doc-lib-tools-editor-2')){window.customElements.define('av-doc-lib-tools-editor-2', DocLibToolsEditor2);Aventus.WebComponentInstance.registerDefinition(DocLibToolsEditor2);}
-
-const DocLibToolsEditor1 = class DocLibToolsEditor1 extends BaseEditor {
-    static __style = ``;
-    __getStatic() {
-        return DocLibToolsEditor1;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocLibToolsEditor1.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Tools">    <av-code language="json" filename="Tools/aventus.conf.avt">        <pre>            {            	"module": "Tools",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Parser.lib.avt">        <pre>            import { Person } from "./Person.data.avt";            &nbsp;            export class Parser {                public static parse() {                    // JSON data received from an API with $type indicating the class name                    const jsonDataWithType = JSON.parse('{"$type": "Tools.Person", "id": 1, "name": "John", "age": 30}');            &nbsp;                    // Convert JSON data to JavaScript object using Converter.transform                    const personWithType = Aventus.Converter.transform&lt;Person&gt;(jsonDataWithType);            &nbsp;                    console.log(personWithType); // Output: Person { id: 1, name: 'John', age: 30 }                    console.log(personWithType instanceof Person); // Output: true                }            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Person.data.avt">        <pre>            export class Person extends Aventus.Data implements Aventus.IData {                // The static field Fullname = 'Tools.Person'            	public id: number = 0;            	public name: string = "";            	public age: number = 0;            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
-    });
-}
-    getClassName() {
-        return "DocLibToolsEditor1";
-    }
-    startupFile() {
-        return 'Tools/src/Parser.lib.avt';
-    }
-}
-DocLibToolsEditor1.Namespace=`AventusWebsite`;
-DocLibToolsEditor1.Tag=`av-doc-lib-tools-editor-1`;
-__as1(_, 'DocLibToolsEditor1', DocLibToolsEditor1);
-if(!window.customElements.get('av-doc-lib-tools-editor-1')){window.customElements.define('av-doc-lib-tools-editor-1', DocLibToolsEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibToolsEditor1);}
-
 const DocLibResourceLoaderEditor1 = class DocLibResourceLoaderEditor1 extends BaseEditor {
     static __style = ``;
     __getStatic() {
@@ -21221,6 +21061,31 @@ DocLibPressManagerEditor1.Tag=`av-doc-lib-press-manager-editor-1`;
 __as1(_, 'DocLibPressManagerEditor1', DocLibPressManagerEditor1);
 if(!window.customElements.get('av-doc-lib-press-manager-editor-1')){window.customElements.define('av-doc-lib-press-manager-editor-1', DocLibPressManagerEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibPressManagerEditor1);}
 
+const DocLibMutexEditor1 = class DocLibMutexEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocLibMutexEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibMutexEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Tools">    <av-code language="json" filename="Tools/aventus.conf.avt">        <pre>            {            	"module": "Tools",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Test.lib.avt">        <pre>            export class Test {                // Create a mutex instance                private static mutex: Aventus.Mutex = new Aventus.Mutex();            &nbsp;                private static counter: number = 0;                private static numThreads: number = 100;            &nbsp;                // Function to update the shared counter variable                private static async updateCounter() {                    // Wait &#102;or the mutex to become available                    await this.mutex.waitOne();                    try {                        // Increment the counter                        this.counter++;                        console.log(this.counter);                        await Aventus.sleep(100);                    } finally {                        // Release the mutex                        this.mutex.release();                    }                }            &nbsp;                private static async updateCounter2() {                    // Wait &#102;or the mutex to become available                    await this.mutex.safeRunAsync(async () =&gt; {                        this.counter++;                        console.log(this.counter);                        await Aventus.sleep(100);                    })                }            &nbsp;            &nbsp;                public static run() {                    // Multiple threads call the updateCounter function concurrently                    &#102;or(let i = 0; i &lt; this.numThreads; i++) {                        this.updateCounter();                    }                    console.log("loop done");                }            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocLibMutexEditor1";
+    }
+}
+DocLibMutexEditor1.Namespace=`AventusWebsite`;
+DocLibMutexEditor1.Tag=`av-doc-lib-mutex-editor-1`;
+__as1(_, 'DocLibMutexEditor1', DocLibMutexEditor1);
+if(!window.customElements.get('av-doc-lib-mutex-editor-1')){window.customElements.define('av-doc-lib-mutex-editor-1', DocLibMutexEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibMutexEditor1);}
+
 const DocLibInstanceEditor1 = class DocLibInstanceEditor1 extends BaseEditor {
     static __style = ``;
     __getStatic() {
@@ -21273,6 +21138,34 @@ DocLibDragAndDropEditor1.Namespace=`AventusWebsite`;
 DocLibDragAndDropEditor1.Tag=`av-doc-lib-drag-and-drop-editor-1`;
 __as1(_, 'DocLibDragAndDropEditor1', DocLibDragAndDropEditor1);
 if(!window.customElements.get('av-doc-lib-drag-and-drop-editor-1')){window.customElements.define('av-doc-lib-drag-and-drop-editor-1', DocLibDragAndDropEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibDragAndDropEditor1);}
+
+const DocLibConverterEditor1 = class DocLibConverterEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocLibConverterEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibConverterEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Tools">    <av-code language="json" filename="Tools/aventus.conf.avt">        <pre>            {            	"module": "Tools",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Parser.lib.avt">        <pre>            import { Person } from "./Person.data.avt";            &nbsp;            export class Parser {                public static parse() {                    // JSON data received from an API with $type indicating the class name                    const jsonDataWithType = JSON.parse('{"$type": "Tools.Person", "id": 1, "name": "John", "age": 30}');            &nbsp;                    // Convert JSON data to JavaScript object using Converter.transform                    const personWithType = Aventus.Converter.transform&lt;Person&gt;(jsonDataWithType);            &nbsp;                    console.log(personWithType); // Output: Person { id: 1, name: 'John', age: 30 }                    console.log(personWithType instanceof Person); // Output: true                }            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Person.data.avt">        <pre>            export class Person extends Aventus.Data implements Aventus.IData {                // The static field Fullname = 'Tools.Person'            	public id: number = 0;            	public name: string = "";            	public age: number = 0;            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocLibConverterEditor1";
+    }
+    startupFile() {
+        return 'Tools/src/Parser.lib.avt';
+    }
+}
+DocLibConverterEditor1.Namespace=`AventusWebsite`;
+DocLibConverterEditor1.Tag=`av-doc-lib-converter-editor-1`;
+__as1(_, 'DocLibConverterEditor1', DocLibConverterEditor1);
+if(!window.customElements.get('av-doc-lib-converter-editor-1')){window.customElements.define('av-doc-lib-converter-editor-1', DocLibConverterEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibConverterEditor1);}
 
 const DocLibCallbackEditor3 = class DocLibCallbackEditor3 extends BaseEditor {
     static __style = ``;
@@ -21536,6 +21429,40 @@ DocFirstAppEditor5.Namespace=`AventusWebsite`;
 DocFirstAppEditor5.Tag=`av-doc-first-app-editor-5`;
 __as1(_, 'DocFirstAppEditor5', DocFirstAppEditor5);
 if(!window.customElements.get('av-doc-first-app-editor-5')){window.customElements.define('av-doc-first-app-editor-5', DocFirstAppEditor5);Aventus.WebComponentInstance.registerDefinition(DocFirstAppEditor5);}
+
+const DocErrorResultEditor1 = class DocErrorResultEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocErrorResultEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocErrorResultEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Tools">    <av-code language="json" filename="Tools/aventus.conf.avt">        <pre>            {            	"module": "Tools",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/StringExtension.lib.avt">        <pre>            // List of available codes            export enum StringErrorCode {                EmptyString = 400            }            &nbsp;            // Error            export class StringError extends Aventus.GenericError&lt;StringErrorCode&gt; { }            &nbsp;            // Result of the function ( = container)            export class StringResult extends Aventus.ResultWithError&lt;{ lower: string; }, StringError&gt; { }            &nbsp;            export class StringExtension {            &nbsp;                public static toLower(txt: string): StringResult {                    let result = new StringResult();                    &#105;f(!txt) {                        let error = new StringError(StringErrorCode.EmptyString, "Please provide a string");                        result.errors.push(error);                    }                    else {                        result.result = { lower: txt.toLowerCase() };                    }            &nbsp;                    return result;                }            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Test.lib.avt">        <pre>            import { StringExtension } from "./StringExtension.lib.avt";            &nbsp;            export class Test {                public static run() {            		const result = StringExtension.toLower("");            		/*            			result.success = false            			result.errors = [ { code: 400, message: "Please provide a string" } ]            			result.result = undefined            		*/            &nbsp;            		const result2 = StringExtension.toLower("HELLO");            		/*            			result.success = true            			result.errors = []            			result.result = { lower: 'hello' }            		*/            	}            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocErrorResultEditor1";
+    }
+    hightlightFiles() {
+        return [
+            'Tools/src/StringExtension.lib.avt',
+            'Tools/src/Test.lib.avt'
+        ];
+    }
+    startupFile() {
+        return 'Tools/src/StringExtension.lib.avt';
+    }
+}
+DocErrorResultEditor1.Namespace=`AventusWebsite`;
+DocErrorResultEditor1.Tag=`av-doc-error-result-editor-1`;
+__as1(_, 'DocErrorResultEditor1', DocErrorResultEditor1);
+if(!window.customElements.get('av-doc-error-result-editor-1')){window.customElements.define('av-doc-error-result-editor-1', DocErrorResultEditor1);Aventus.WebComponentInstance.registerDefinition(DocErrorResultEditor1);}
 
 const DocDateCreateEditor1 = class DocDateCreateEditor1 extends BaseEditor {
     static __style = ``;
@@ -24655,6 +24582,74 @@ DocUIModalEditor1.Tag=`av-doc-u-i-modal-editor-1`;
 __as1(_, 'DocUIModalEditor1', DocUIModalEditor1);
 if(!window.customElements.get('av-doc-u-i-modal-editor-1')){window.customElements.define('av-doc-u-i-modal-editor-1', DocUIModalEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIModalEditor1);}
 
+const DocUIPageFormEditor1Compiled = class DocUIPageFormEditor1Compiled extends Aventus.Navigation.PageForm {
+    static __style = ``;
+    __getStatic() {
+        return DocUIPageFormEditor1Compiled;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIPageFormEditor1Compiled.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<my-input name="email" _id="docuipageformeditor1compiled_0"></my-input><my-input type="password" name="password" _id="docuipageformeditor1compiled_1"></my-input><button-element type="submit">Login</button-element>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "injection": [
+    {
+      "id": "docuipageformeditor1compiled_0",
+      "injectionName": "form",
+      "inject": (c) => c.comp.__f91daac574433e72bf91bb79e3c5a5e3method0(),
+      "once": true
+    },
+    {
+      "id": "docuipageformeditor1compiled_1",
+      "injectionName": "form",
+      "inject": (c) => c.comp.__f91daac574433e72bf91bb79e3c5a5e3method1(),
+      "once": true
+    }
+  ]
+}); }
+    getClassName() {
+        return "DocUIPageFormEditor1Compiled";
+    }
+    formSchema() {
+        return {
+            email: [Aventus.Form.Validators.Required, Aventus.Form.Validators.Email],
+            password: Aventus.Form.Validators.Required
+        };
+    }
+    async defineSubmit(submit) {
+        return await submit(DocUIPageFormEditor1LoginAction);
+    }
+    configure() {
+        return {
+            title: "Login",
+            description: "Login page",
+            destroy: true
+        };
+    }
+    pageConfig() {
+        return {
+            autoLoading: true, // if true, any registered submit buttons will automatically show a loading state during form submission. Default is true.
+            submitWithEnter: true, // if true, pressing Enter on the last registered form field automatically submits the form. Default is true.
+        };
+    }
+    __f91daac574433e72bf91bb79e3c5a5e3method0() {
+        return this.form.parts.email;
+    }
+    __f91daac574433e72bf91bb79e3c5a5e3method1() {
+        return this.form.parts.password;
+    }
+}
+DocUIPageFormEditor1Compiled.Namespace=`AventusWebsite`;
+DocUIPageFormEditor1Compiled.Tag=`av-doc-u-i-page-form-editor-1-compiled`;
+__as1(_, 'DocUIPageFormEditor1Compiled', DocUIPageFormEditor1Compiled);
+if(!window.customElements.get('av-doc-u-i-page-form-editor-1-compiled')){window.customElements.define('av-doc-u-i-page-form-editor-1-compiled', DocUIPageFormEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIPageFormEditor1Compiled);}
+
 const DocUIToastEditor1Toast = class DocUIToastEditor1Toast extends Aventus.Toast.ToastElement {
     get 'closing'() { return this.getBoolAttr('closing') }
     set 'closing'(val) { this.setBoolAttr('closing', val) }    get 'toastTitle'() {
@@ -25500,158 +25495,6 @@ TutorialIntroductionEditor1.Namespace=`AventusWebsite`;
 TutorialIntroductionEditor1.Tag=`av-tutorial-introduction-editor-1`;
 __as1(_, 'TutorialIntroductionEditor1', TutorialIntroductionEditor1);
 if(!window.customElements.get('av-tutorial-introduction-editor-1')){window.customElements.define('av-tutorial-introduction-editor-1', TutorialIntroductionEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialIntroductionEditor1);}
-
-const DocUIPageFormEditor1Compiled = class DocUIPageFormEditor1Compiled extends Aventus.Navigation.PageForm {
-    static __style = ``;
-    __getStatic() {
-        return DocUIPageFormEditor1Compiled;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIPageFormEditor1Compiled.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<my-input name="email" _id="docuipageformeditor1compiled_0"></my-input><my-input type="password" name="password" _id="docuipageformeditor1compiled_1"></my-input><button-element type="submit">Login</button-element>` }
-    });
-}
-    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
-  "injection": [
-    {
-      "id": "docuipageformeditor1compiled_0",
-      "injectionName": "form",
-      "inject": (c) => c.comp.__f91daac574433e72bf91bb79e3c5a5e3method0(),
-      "once": true
-    },
-    {
-      "id": "docuipageformeditor1compiled_1",
-      "injectionName": "form",
-      "inject": (c) => c.comp.__f91daac574433e72bf91bb79e3c5a5e3method1(),
-      "once": true
-    }
-  ]
-}); }
-    getClassName() {
-        return "DocUIPageFormEditor1Compiled";
-    }
-    formSchema() {
-        return {
-            email: [Aventus.Form.Validators.Required, Aventus.Form.Validators.Email],
-            password: Aventus.Form.Validators.Required
-        };
-    }
-    async defineSubmit(submit) {
-        return await submit(DocUIPageFormEditor1LoginAction);
-    }
-    configure() {
-        return {
-            title: "Login",
-            description: "Login page",
-            destroy: true
-        };
-    }
-    pageConfig() {
-        return {
-            autoLoading: true, // if true, any registered submit buttons will automatically show a loading state during form submission. Default is true.
-            submitWithEnter: true, // if true, pressing Enter on the last registered form field automatically submits the form. Default is true.
-        };
-    }
-    __f91daac574433e72bf91bb79e3c5a5e3method0() {
-        return this.form.parts.email;
-    }
-    __f91daac574433e72bf91bb79e3c5a5e3method1() {
-        return this.form.parts.password;
-    }
-}
-DocUIPageFormEditor1Compiled.Namespace=`AventusWebsite`;
-DocUIPageFormEditor1Compiled.Tag=`av-doc-u-i-page-form-editor-1-compiled`;
-__as1(_, 'DocUIPageFormEditor1Compiled', DocUIPageFormEditor1Compiled);
-if(!window.customElements.get('av-doc-u-i-page-form-editor-1-compiled')){window.customElements.define('av-doc-u-i-page-form-editor-1-compiled', DocUIPageFormEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIPageFormEditor1Compiled);}
-
-let DocUIPageFormRouteEditor1LoginController=class DocUIPageFormRouteEditor1LoginController extends Aventus.HttpRoute {
-    constructor(router) {
-        super(router);
-        this.login = this.login.bind(this);
-        this.logout = this.logout.bind(this);
-    }
-    async login(body) {
-        const request = new Aventus.HttpRequest(`/api/login`, Aventus.HttpMethod.POST);
-        request.setBody(body);
-        return await request.queryJSON(this.router);
-    }
-    async logout() {
-        const request = new Aventus.HttpRequest(`/api/logout`, Aventus.HttpMethod.POST);
-        return await request.queryJSON(this.router);
-    }
-}
-DocUIPageFormRouteEditor1LoginController.Namespace=`AventusWebsite`;
-__as1(_, 'DocUIPageFormRouteEditor1LoginController', DocUIPageFormRouteEditor1LoginController);
-
-const DocUIPageFormRouteEditor1Compiled = class DocUIPageFormRouteEditor1Compiled extends Aventus.Navigation.PageFormRoute {
-    static __style = ``;
-    __getStatic() {
-        return DocUIPageFormRouteEditor1Compiled;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIPageFormRouteEditor1Compiled.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<my-input name="username" _id="docuipageformrouteeditor1compiled_0"></my-input><my-input type="password" name="password" _id="docuipageformrouteeditor1compiled_1"></my-input><button-element type="submit">Login</button-element>` }
-    });
-}
-    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
-  "injection": [
-    {
-      "id": "docuipageformrouteeditor1compiled_0",
-      "injectionName": "form",
-      "inject": (c) => c.comp.__66feedbc217ae63b95f0403a3bcd6174method0(),
-      "once": true
-    },
-    {
-      "id": "docuipageformrouteeditor1compiled_1",
-      "injectionName": "form",
-      "inject": (c) => c.comp.__66feedbc217ae63b95f0403a3bcd6174method1(),
-      "once": true
-    }
-  ]
-}); }
-    getClassName() {
-        return "DocUIPageFormRouteEditor1Compiled";
-    }
-    route() {
-        return [DocUIPageFormRouteEditor1LoginController, 'login'];
-    }
-    onResult(result) {
-        if (result?.success) {
-            //...
-        }
-    }
-    formSchema() {
-        return {
-            username: Aventus.Form.Validators.Required,
-            password: Aventus.Form.Validators.Required
-        };
-    }
-    configure() {
-        return {
-            title: "Login"
-        };
-    }
-    __66feedbc217ae63b95f0403a3bcd6174method0() {
-        return this.form.parts.username;
-    }
-    __66feedbc217ae63b95f0403a3bcd6174method1() {
-        return this.form.parts.password;
-    }
-}
-DocUIPageFormRouteEditor1Compiled.Namespace=`AventusWebsite`;
-DocUIPageFormRouteEditor1Compiled.Tag=`av-doc-u-i-page-form-route-editor-1-compiled`;
-__as1(_, 'DocUIPageFormRouteEditor1Compiled', DocUIPageFormRouteEditor1Compiled);
-if(!window.customElements.get('av-doc-u-i-page-form-route-editor-1-compiled')){window.customElements.define('av-doc-u-i-page-form-route-editor-1-compiled', DocUIPageFormRouteEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIPageFormRouteEditor1Compiled);}
 
 
 for(let key in _) { AventusWebsite[key] = _[key] }
