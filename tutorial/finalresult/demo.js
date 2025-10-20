@@ -9,6 +9,71 @@ const _ = {};
 
 
 let _n;
+var RamErrorCode;
+(function (RamErrorCode) {
+    RamErrorCode[RamErrorCode["unknow"] = 0] = "unknow";
+    RamErrorCode[RamErrorCode["noId"] = 1] = "noId";
+    RamErrorCode[RamErrorCode["noItemInsideRam"] = 2] = "noItemInsideRam";
+})(RamErrorCode || (RamErrorCode = {}));
+
+_.RamErrorCode=RamErrorCode;
+const ActionGuard=class ActionGuard {
+    /**
+     * Map to store actions that are currently running.
+     * @type {Map<any[], ((res: any) => void)[]>}
+     * @private
+     */
+    runningAction = new Map();
+    /**
+     * Executes an action uniquely based on the specified keys.
+     * @template T
+     * @param {any[]} keys - The keys associated with the action.
+     * @param {() => Promise<T>} action - The action to execute.
+     * @returns {Promise<T>} A promise that resolves with the result of the action.
+     * @example
+     *
+     *
+     * const actionGuard = new Aventus.ActionGuard();
+     *
+     *
+     * const keys = ["key1", "key2"];
+     *
+     *
+     * const action = async () => {
+     *
+     *     await new Promise(resolve => setTimeout(resolve, 1000));
+     *     return "Action executed";
+     * };
+     *
+     *
+     * await actionGuard.run(keys, action)
+     *
+     */
+    run(keys, action) {
+        return new Promise(async (resolve) => {
+            let actions = this.runningAction.get(keys);
+            if (actions) {
+                actions.push((res) => {
+                    resolve(res);
+                });
+            }
+            else {
+                this.runningAction.set(keys, []);
+                let res = await action();
+                let actions = this.runningAction.get(keys);
+                if (actions) {
+                    for (let action of actions) {
+                        action(res);
+                    }
+                }
+                this.runningAction.delete(keys);
+                resolve(res);
+            }
+        });
+    }
+}
+ActionGuard.Namespace=`${moduleName}`;
+_.ActionGuard=ActionGuard;
 var WatchAction;
 (function (WatchAction) {
     WatchAction[WatchAction["CREATED"] = 0] = "CREATED";
@@ -277,36 +342,43 @@ const ElementExtension=class ElementExtension {
      * Get element inside slot
      */
     static getElementsInSlot(element, slotName) {
+        let result = [];
         if (element.shadowRoot) {
             let slotEl;
             if (slotName) {
                 slotEl = element.shadowRoot.querySelector('slot[name="' + slotName + '"]');
             }
             else {
-                slotEl = element.shadowRoot.querySelector("slot");
+                slotEl = element.shadowRoot.querySelector("slot:not([name])");
+                if (!slotEl) {
+                    slotEl = element.shadowRoot.querySelector("slot");
+                }
             }
             while (true) {
                 if (!slotEl) {
-                    return [];
+                    return result;
                 }
                 var listChild = Array.from(slotEl.assignedElements());
                 if (!listChild) {
-                    return [];
+                    return result;
                 }
                 let slotFound = false;
                 for (let i = 0; i < listChild.length; i++) {
+                    let child = listChild[i];
                     if (listChild[i].nodeName == "SLOT") {
                         slotEl = listChild[i];
                         slotFound = true;
-                        break;
+                    }
+                    else if (child instanceof HTMLElement) {
+                        result.push(child);
                     }
                 }
                 if (!slotFound) {
-                    return listChild;
+                    return result;
                 }
             }
         }
-        return [];
+        return result;
     }
     /**
      * Get deeper element inside dom at the position X and Y
@@ -362,7 +434,7 @@ const Style=class Style {
     static instance;
     static noAnimation;
     static defaultStyleSheets = {
-        "@general": `:host{display:inline-block;box-sizing:border-box}:host *{box-sizing:border-box}`,
+        "@default": `:host{display:inline-block;box-sizing:border-box}:host *{box-sizing:border-box}`,
     };
     static store(name, content) {
         this.getInstance().store(name, content);
@@ -1231,6 +1303,9 @@ const Watcher=class Watcher {
                         if (element instanceof Computed) {
                             return element;
                         }
+                        if (element instanceof HTMLElement) {
+                            return element;
+                        }
                         if (element instanceof Object) {
                             newProxy = new Proxy(element, this);
                         }
@@ -1322,6 +1397,12 @@ const Watcher=class Watcher {
                 else if (prop == "disableHistory") {
                     return () => {
                         this.useHistory = false;
+                    };
+                }
+                else if (prop == "getTarget") {
+                    return () => {
+                        clearReservedNames(target);
+                        return target;
                     };
                 }
                 else if (prop == "toJSON") {
@@ -1764,6 +1845,24 @@ const Uri=class Uri {
         }
         return from.regex.test(current);
     }
+    static normalize(path) {
+        const isAbsolute = path.startsWith('/');
+        const parts = path.split('/');
+        const normalizedParts = [];
+        for (let i = 0; i < parts.length; i++) {
+            if (parts[i] === '..') {
+                normalizedParts.pop();
+            }
+            else if (parts[i] !== '.' && parts[i] !== '') {
+                normalizedParts.push(parts[i]);
+            }
+        }
+        let normalizedPath = normalizedParts.join('/');
+        if (isAbsolute) {
+            normalizedPath = '/' + normalizedPath;
+        }
+        return normalizedPath;
+    }
 }
 Uri.Namespace=`${moduleName}`;
 _.Uri=Uri;
@@ -1814,6 +1913,7 @@ const StateManager=class StateManager {
     }
     activeState;
     changeStateMutex = new Mutex();
+    canChangeStateCbs = [];
     afterStateChanged = new Callback();
     /**
      * Subscribe actions for a state or a state list
@@ -1936,6 +2036,9 @@ const StateManager=class StateManager {
     assignDefaultState(stateName) {
         return new EmptyState(stateName);
     }
+    canChangeState(cb) {
+        this.canChangeStateCbs.push(cb);
+    }
     /**
      * Activate a current state
      */
@@ -1952,6 +2055,11 @@ const StateManager=class StateManager {
                 this._log("state is undefined", "error");
                 this.changeStateMutex.release();
                 return false;
+            }
+            for (let cb of this.canChangeStateCbs) {
+                if (!(await cb(stateToUse))) {
+                    return false;
+                }
             }
             let canChange = true;
             if (this.activeState) {
@@ -3120,7 +3228,7 @@ const WebComponent=class WebComponent extends HTMLElement {
     static __template;
     __templateInstance;
     styleBefore(addStyle) {
-        addStyle("@general");
+        addStyle("@default");
     }
     styleAfter(addStyle) {
     }
@@ -3614,133 +3722,6 @@ const WebComponentInstance=class WebComponentInstance {
 }
 WebComponentInstance.Namespace=`${moduleName}`;
 _.WebComponentInstance=WebComponentInstance;
-const ResizeObserver=class ResizeObserver {
-    callback;
-    targets;
-    fpsInterval = -1;
-    nextFrame;
-    entriesChangedEvent;
-    willTrigger;
-    static resizeObserverClassByObject = {};
-    static uniqueInstance;
-    static getUniqueInstance() {
-        if (!ResizeObserver.uniqueInstance) {
-            ResizeObserver.uniqueInstance = new window.ResizeObserver(entries => {
-                let allClasses = [];
-                for (let j = 0; j < entries.length; j++) {
-                    let entry = entries[j];
-                    let index = entry.target['sourceIndex'];
-                    if (ResizeObserver.resizeObserverClassByObject[index]) {
-                        for (let i = 0; i < ResizeObserver.resizeObserverClassByObject[index].length; i++) {
-                            let classTemp = ResizeObserver.resizeObserverClassByObject[index][i];
-                            classTemp.entryChanged(entry);
-                            if (allClasses.indexOf(classTemp) == -1) {
-                                allClasses.push(classTemp);
-                            }
-                        }
-                    }
-                }
-                for (let i = 0; i < allClasses.length; i++) {
-                    allClasses[i].triggerCb();
-                }
-            });
-        }
-        return ResizeObserver.uniqueInstance;
-    }
-    constructor(options) {
-        let realOption;
-        if (options instanceof Function) {
-            realOption = {
-                callback: options,
-            };
-        }
-        else {
-            realOption = options;
-        }
-        this.callback = realOption.callback;
-        this.targets = [];
-        if (!realOption.fps) {
-            realOption.fps = 60;
-        }
-        if (realOption.fps != -1) {
-            this.fpsInterval = 1000 / realOption.fps;
-        }
-        this.nextFrame = 0;
-        this.entriesChangedEvent = {};
-        this.willTrigger = false;
-    }
-    /**
-     * Observe size changing for the element
-     */
-    observe(target) {
-        if (!target["sourceIndex"]) {
-            target["sourceIndex"] = Math.random().toString(36);
-            this.targets.push(target);
-            ResizeObserver.resizeObserverClassByObject[target["sourceIndex"]] = [];
-            ResizeObserver.getUniqueInstance().observe(target);
-        }
-        if (ResizeObserver.resizeObserverClassByObject[target["sourceIndex"]].indexOf(this) == -1) {
-            ResizeObserver.resizeObserverClassByObject[target["sourceIndex"]].push(this);
-        }
-    }
-    /**
-     * Stop observing size changing for the element
-     */
-    unobserve(target) {
-        for (let i = 0; this.targets.length; i++) {
-            let tempTarget = this.targets[i];
-            if (tempTarget == target) {
-                let position = ResizeObserver.resizeObserverClassByObject[target['sourceIndex']].indexOf(this);
-                if (position != -1) {
-                    ResizeObserver.resizeObserverClassByObject[target['sourceIndex']].splice(position, 1);
-                }
-                if (ResizeObserver.resizeObserverClassByObject[target['sourceIndex']].length == 0) {
-                    delete ResizeObserver.resizeObserverClassByObject[target['sourceIndex']];
-                }
-                ResizeObserver.getUniqueInstance().unobserve(target);
-                this.targets.splice(i, 1);
-                return;
-            }
-        }
-    }
-    /**
-     * Destroy the resize observer
-     */
-    disconnect() {
-        for (let i = 0; this.targets.length; i++) {
-            this.unobserve(this.targets[i]);
-        }
-    }
-    entryChanged(entry) {
-        let index = entry.target.sourceIndex;
-        this.entriesChangedEvent[index] = entry;
-    }
-    triggerCb() {
-        if (!this.willTrigger) {
-            this.willTrigger = true;
-            this._triggerCb();
-        }
-    }
-    _triggerCb() {
-        let now = window.performance.now();
-        let elapsed = now - this.nextFrame;
-        if (this.fpsInterval != -1 && elapsed <= this.fpsInterval) {
-            requestAnimationFrame(() => {
-                this._triggerCb();
-            });
-            return;
-        }
-        this.nextFrame = now - (elapsed % this.fpsInterval);
-        let changed = Object.values(this.entriesChangedEvent);
-        this.entriesChangedEvent = {};
-        this.willTrigger = false;
-        setTimeout(() => {
-            this.callback(changed);
-        }, 0);
-    }
-}
-ResizeObserver.Namespace=`${moduleName}`;
-_.ResizeObserver=ResizeObserver;
 const ResourceLoader=class ResourceLoader {
     static headerLoaded = {};
     static headerWaiting = {};
@@ -3910,6 +3891,1595 @@ const ResourceLoader=class ResourceLoader {
 }
 ResourceLoader.Namespace=`${moduleName}`;
 _.ResourceLoader=ResourceLoader;
+const ResizeObserver=class ResizeObserver {
+    callback;
+    targets;
+    fpsInterval = -1;
+    nextFrame;
+    entriesChangedEvent;
+    willTrigger;
+    static resizeObserverClassByObject = {};
+    static uniqueInstance;
+    static getUniqueInstance() {
+        if (!ResizeObserver.uniqueInstance) {
+            ResizeObserver.uniqueInstance = new window.ResizeObserver(entries => {
+                let allClasses = [];
+                for (let j = 0; j < entries.length; j++) {
+                    let entry = entries[j];
+                    let index = entry.target['sourceIndex'];
+                    if (ResizeObserver.resizeObserverClassByObject[index]) {
+                        for (let i = 0; i < ResizeObserver.resizeObserverClassByObject[index].length; i++) {
+                            let classTemp = ResizeObserver.resizeObserverClassByObject[index][i];
+                            classTemp.entryChanged(entry);
+                            if (allClasses.indexOf(classTemp) == -1) {
+                                allClasses.push(classTemp);
+                            }
+                        }
+                    }
+                }
+                for (let i = 0; i < allClasses.length; i++) {
+                    allClasses[i].triggerCb();
+                }
+            });
+        }
+        return ResizeObserver.uniqueInstance;
+    }
+    constructor(options) {
+        let realOption;
+        if (options instanceof Function) {
+            realOption = {
+                callback: options,
+            };
+        }
+        else {
+            realOption = options;
+        }
+        this.callback = realOption.callback;
+        this.targets = [];
+        if (!realOption.fps) {
+            realOption.fps = 60;
+        }
+        if (realOption.fps != -1) {
+            this.fpsInterval = 1000 / realOption.fps;
+        }
+        this.nextFrame = 0;
+        this.entriesChangedEvent = {};
+        this.willTrigger = false;
+    }
+    /**
+     * Observe size changing for the element
+     */
+    observe(target) {
+        if (!target["sourceIndex"]) {
+            target["sourceIndex"] = Math.random().toString(36);
+            this.targets.push(target);
+            ResizeObserver.resizeObserverClassByObject[target["sourceIndex"]] = [];
+            ResizeObserver.getUniqueInstance().observe(target);
+        }
+        if (ResizeObserver.resizeObserverClassByObject[target["sourceIndex"]].indexOf(this) == -1) {
+            ResizeObserver.resizeObserverClassByObject[target["sourceIndex"]].push(this);
+        }
+    }
+    /**
+     * Stop observing size changing for the element
+     */
+    unobserve(target) {
+        for (let i = 0; this.targets.length; i++) {
+            let tempTarget = this.targets[i];
+            if (tempTarget == target) {
+                let position = ResizeObserver.resizeObserverClassByObject[target['sourceIndex']].indexOf(this);
+                if (position != -1) {
+                    ResizeObserver.resizeObserverClassByObject[target['sourceIndex']].splice(position, 1);
+                }
+                if (ResizeObserver.resizeObserverClassByObject[target['sourceIndex']].length == 0) {
+                    delete ResizeObserver.resizeObserverClassByObject[target['sourceIndex']];
+                }
+                ResizeObserver.getUniqueInstance().unobserve(target);
+                this.targets.splice(i, 1);
+                return;
+            }
+        }
+    }
+    /**
+     * Destroy the resize observer
+     */
+    disconnect() {
+        for (let i = 0; this.targets.length; i++) {
+            this.unobserve(this.targets[i]);
+        }
+    }
+    entryChanged(entry) {
+        let index = entry.target.sourceIndex;
+        this.entriesChangedEvent[index] = entry;
+    }
+    triggerCb() {
+        if (!this.willTrigger) {
+            this.willTrigger = true;
+            this._triggerCb();
+        }
+    }
+    _triggerCb() {
+        let now = window.performance.now();
+        let elapsed = now - this.nextFrame;
+        if (this.fpsInterval != -1 && elapsed <= this.fpsInterval) {
+            requestAnimationFrame(() => {
+                this._triggerCb();
+            });
+            return;
+        }
+        this.nextFrame = now - (elapsed % this.fpsInterval);
+        let changed = Object.values(this.entriesChangedEvent);
+        this.entriesChangedEvent = {};
+        this.willTrigger = false;
+        setTimeout(() => {
+            this.callback(changed);
+        }, 0);
+    }
+}
+ResizeObserver.Namespace=`${moduleName}`;
+_.ResizeObserver=ResizeObserver;
+const Animation=class Animation {
+    /**
+     * Default FPS for all Animation if not set inside options
+     */
+    static FPS_DEFAULT = 60;
+    options;
+    nextFrame = 0;
+    fpsInterval;
+    continueAnimation = false;
+    frame_id = 0;
+    constructor(options) {
+        if (!options.animate) {
+            options.animate = () => { };
+        }
+        if (!options.stopped) {
+            options.stopped = () => { };
+        }
+        if (!options.fps) {
+            options.fps = Animation.FPS_DEFAULT;
+        }
+        this.options = options;
+        this.fpsInterval = 1000 / options.fps;
+    }
+    animate() {
+        let now = window.performance.now();
+        let elapsed = now - this.nextFrame;
+        if (elapsed <= this.fpsInterval) {
+            this.frame_id = requestAnimationFrame(() => this.animate());
+            return;
+        }
+        this.nextFrame = now - (elapsed % this.fpsInterval);
+        setTimeout(() => {
+            this.options.animate();
+        }, 0);
+        if (this.continueAnimation) {
+            this.frame_id = requestAnimationFrame(() => this.animate());
+        }
+        else {
+            this.options.stopped();
+        }
+    }
+    /**
+     * Start the of animation
+     */
+    start() {
+        if (this.continueAnimation == false) {
+            this.continueAnimation = true;
+            this.nextFrame = window.performance.now();
+            this.animate();
+        }
+    }
+    /**
+     * Stop the animation
+     */
+    stop() {
+        this.continueAnimation = false;
+    }
+    /**
+     * Stop the animation
+     */
+    immediateStop() {
+        cancelAnimationFrame(this.frame_id);
+        this.continueAnimation = false;
+        this.options.stopped();
+    }
+    /**
+     * Get the FPS
+     */
+    getFPS() {
+        return this.options.fps;
+    }
+    /**
+     * Set the FPS
+     */
+    setFPS(fps) {
+        this.options.fps = fps;
+        this.fpsInterval = 1000 / this.options.fps;
+    }
+    /**
+     * Get the animation status (true if animation is running)
+     */
+    isStarted() {
+        return this.continueAnimation;
+    }
+}
+Animation.Namespace=`${moduleName}`;
+_.Animation=Animation;
+const DragAndDrop=class DragAndDrop {
+    /**
+     * Default offset before drag element
+     */
+    static defaultOffsetDrag = 20;
+    pressManager;
+    options;
+    startCursorPosition = { x: 0, y: 0 };
+    startElementPosition = { x: 0, y: 0 };
+    isEnable = true;
+    draggableElement;
+    constructor(options) {
+        this.options = this.getDefaultOptions(options.element);
+        this.mergeProperties(options);
+        this.mergeFunctions(options);
+        this.options.elementTrigger.style.touchAction = 'none';
+        this.pressManager = new PressManager({
+            element: this.options.elementTrigger,
+            onPressStart: this.onPressStart.bind(this),
+            onPressEnd: this.onPressEnd.bind(this),
+            onDragStart: this.onDragStart.bind(this),
+            onDrag: this.onDrag.bind(this),
+            onDragEnd: this.onDragEnd.bind(this),
+            offsetDrag: this.options.offsetDrag,
+            stopPropagation: this.options.stopPropagation
+        });
+    }
+    getDefaultOptions(element) {
+        return {
+            applyDrag: true,
+            element: element,
+            elementTrigger: element,
+            offsetDrag: DragAndDrop.defaultOffsetDrag,
+            shadow: {
+                enable: false,
+                container: document.body,
+                removeOnStop: true,
+                transform: () => { }
+            },
+            strict: false,
+            targets: [],
+            usePercent: false,
+            stopPropagation: true,
+            isDragEnable: () => true,
+            getZoom: () => 1,
+            getOffsetX: () => 0,
+            getOffsetY: () => 0,
+            onPointerDown: (e) => { },
+            onPointerUp: (e) => { },
+            onStart: (e) => { },
+            onMove: (e) => { },
+            onStop: (e) => { },
+            onDrop: (element, targets) => { },
+            correctPosition: (position) => position
+        };
+    }
+    mergeProperties(options) {
+        if (options.element === void 0) {
+            throw "You must define the element for the drag&drop";
+        }
+        this.options.element = options.element;
+        if (options.elementTrigger === void 0) {
+            this.options.elementTrigger = this.options.element;
+        }
+        else {
+            this.options.elementTrigger = options.elementTrigger;
+        }
+        this.defaultMerge(options, "applyDrag");
+        this.defaultMerge(options, "offsetDrag");
+        this.defaultMerge(options, "strict");
+        this.defaultMerge(options, "targets");
+        this.defaultMerge(options, "usePercent");
+        this.defaultMerge(options, "stopPropagation");
+        if (options.shadow !== void 0) {
+            this.options.shadow.enable = options.shadow.enable;
+            if (options.shadow.container !== void 0) {
+                this.options.shadow.container = options.shadow.container;
+            }
+            else {
+                this.options.shadow.container = document.body;
+            }
+            if (options.shadow.removeOnStop !== void 0) {
+                this.options.shadow.removeOnStop = options.shadow.removeOnStop;
+            }
+            if (options.shadow.transform !== void 0) {
+                this.options.shadow.transform = options.shadow.transform;
+            }
+        }
+    }
+    mergeFunctions(options) {
+        this.defaultMerge(options, "isDragEnable");
+        this.defaultMerge(options, "getZoom");
+        this.defaultMerge(options, "getOffsetX");
+        this.defaultMerge(options, "getOffsetY");
+        this.defaultMerge(options, "onPointerDown");
+        this.defaultMerge(options, "onPointerUp");
+        this.defaultMerge(options, "onStart");
+        this.defaultMerge(options, "onMove");
+        this.defaultMerge(options, "onStop");
+        this.defaultMerge(options, "onDrop");
+        this.defaultMerge(options, "correctPosition");
+    }
+    defaultMerge(options, name) {
+        if (options[name] !== void 0) {
+            this.options[name] = options[name];
+        }
+    }
+    positionShadowRelativeToElement = { x: 0, y: 0 };
+    onPressStart(e) {
+        this.options.onPointerDown(e);
+    }
+    onPressEnd(e) {
+        this.options.onPointerUp(e);
+    }
+    onDragStart(e) {
+        this.isEnable = this.options.isDragEnable();
+        if (!this.isEnable) {
+            return;
+        }
+        let draggableElement = this.options.element;
+        this.startCursorPosition = {
+            x: e.pageX,
+            y: e.pageY
+        };
+        this.startElementPosition = {
+            x: draggableElement.offsetLeft,
+            y: draggableElement.offsetTop
+        };
+        if (this.options.shadow.enable) {
+            draggableElement = this.options.element.cloneNode(true);
+            let elBox = this.options.element.getBoundingClientRect();
+            let containerBox = this.options.shadow.container.getBoundingClientRect();
+            this.positionShadowRelativeToElement = {
+                x: elBox.x - containerBox.x,
+                y: elBox.y - containerBox.y
+            };
+            if (this.options.applyDrag) {
+                draggableElement.style.position = "absolute";
+                draggableElement.style.top = this.positionShadowRelativeToElement.y + this.options.getOffsetY() + 'px';
+                draggableElement.style.left = this.positionShadowRelativeToElement.x + this.options.getOffsetX() + 'px';
+            }
+            this.options.shadow.transform(draggableElement);
+            this.options.shadow.container.appendChild(draggableElement);
+        }
+        this.draggableElement = draggableElement;
+        this.options.onStart(e);
+    }
+    onDrag(e) {
+        if (!this.isEnable) {
+            return;
+        }
+        let zoom = this.options.getZoom();
+        let diff = {
+            x: 0,
+            y: 0
+        };
+        if (this.options.shadow.enable) {
+            diff = {
+                x: (e.pageX - this.startCursorPosition.x) + this.positionShadowRelativeToElement.x + this.options.getOffsetX(),
+                y: (e.pageY - this.startCursorPosition.y) + this.positionShadowRelativeToElement.y + this.options.getOffsetY(),
+            };
+        }
+        else {
+            diff = {
+                x: (e.pageX - this.startCursorPosition.x) / zoom + this.startElementPosition.x + this.options.getOffsetX(),
+                y: (e.pageY - this.startCursorPosition.y) / zoom + this.startElementPosition.y + this.options.getOffsetY()
+            };
+        }
+        let newPos = this.setPosition(diff);
+        this.options.onMove(e, newPos);
+    }
+    onDragEnd(e) {
+        if (!this.isEnable) {
+            return;
+        }
+        let targets = this.getMatchingTargets();
+        let draggableElement = this.draggableElement;
+        if (this.options.shadow.enable && this.options.shadow.removeOnStop) {
+            draggableElement.parentNode?.removeChild(draggableElement);
+        }
+        if (targets.length > 0) {
+            this.options.onDrop(this.options.element, targets);
+        }
+        this.options.onStop(e);
+    }
+    setPosition(position) {
+        let draggableElement = this.draggableElement;
+        if (this.options.usePercent) {
+            let elementParent = draggableElement.offsetParent;
+            let percentPosition = {
+                x: (position.x / elementParent.offsetWidth) * 100,
+                y: (position.y / elementParent.offsetHeight) * 100
+            };
+            percentPosition = this.options.correctPosition(percentPosition);
+            if (this.options.applyDrag) {
+                draggableElement.style.left = percentPosition.x + '%';
+                draggableElement.style.top = percentPosition.y + '%';
+            }
+            return percentPosition;
+        }
+        else {
+            position = this.options.correctPosition(position);
+            if (this.options.applyDrag) {
+                draggableElement.style.left = position.x + 'px';
+                draggableElement.style.top = position.y + 'px';
+            }
+        }
+        return position;
+    }
+    /**
+     * Get targets within the current element position is matching
+     */
+    getMatchingTargets() {
+        let draggableElement = this.draggableElement;
+        let matchingTargets = [];
+        for (let target of this.options.targets) {
+            const elementCoordinates = draggableElement.getBoundingClientRect();
+            const targetCoordinates = target.getBoundingClientRect();
+            let offsetX = this.options.getOffsetX();
+            let offsetY = this.options.getOffsetY();
+            let zoom = this.options.getZoom();
+            targetCoordinates.x += offsetX;
+            targetCoordinates.y += offsetY;
+            targetCoordinates.width *= zoom;
+            targetCoordinates.height *= zoom;
+            if (this.options.strict) {
+                if ((elementCoordinates.x >= targetCoordinates.x && elementCoordinates.x + elementCoordinates.width <= targetCoordinates.x + targetCoordinates.width) &&
+                    (elementCoordinates.y >= targetCoordinates.y && elementCoordinates.y + elementCoordinates.height <= targetCoordinates.y + targetCoordinates.height)) {
+                    matchingTargets.push(target);
+                }
+            }
+            else {
+                let elementLeft = elementCoordinates.x;
+                let elementRight = elementCoordinates.x + elementCoordinates.width;
+                let elementTop = elementCoordinates.y;
+                let elementBottom = elementCoordinates.y + elementCoordinates.height;
+                let targetLeft = targetCoordinates.x;
+                let targetRight = targetCoordinates.x + targetCoordinates.width;
+                let targetTop = targetCoordinates.y;
+                let targetBottom = targetCoordinates.y + targetCoordinates.height;
+                if (!(elementRight < targetLeft ||
+                    elementLeft > targetRight ||
+                    elementBottom < targetTop ||
+                    elementTop > targetBottom)) {
+                    matchingTargets.push(target);
+                }
+            }
+        }
+        return matchingTargets;
+    }
+    /**
+     * Get element currently dragging
+     */
+    getElementDrag() {
+        return this.options.element;
+    }
+    /**
+     * Set targets where to drop
+     */
+    setTargets(targets) {
+        this.options.targets = targets;
+    }
+    /**
+     * Destroy the current drag&drop instance
+     */
+    destroy() {
+        this.pressManager.destroy();
+    }
+}
+DragAndDrop.Namespace=`${moduleName}`;
+_.DragAndDrop=DragAndDrop;
+const Json=class Json {
+    static classToJson(obj, options) {
+        const realOptions = {
+            isValidKey: options?.isValidKey ?? (() => true),
+            replaceKey: options?.replaceKey ?? ((key) => key),
+            transformValue: options?.transformValue ?? ((key, value) => value),
+            beforeEnd: options?.beforeEnd ?? ((res) => res)
+        };
+        return this.__classToJson(obj, realOptions);
+    }
+    static __classToJson(obj, options) {
+        let result = {};
+        let descriptors = Object.getOwnPropertyDescriptors(obj);
+        for (let key in descriptors) {
+            if (options.isValidKey(key))
+                result[options.replaceKey(key)] = options.transformValue(key, descriptors[key].value);
+        }
+        let cst = obj.constructor;
+        while (cst.prototype && cst != Object.prototype) {
+            let descriptorsClass = Object.getOwnPropertyDescriptors(cst.prototype);
+            for (let key in descriptorsClass) {
+                if (options.isValidKey(key)) {
+                    let descriptor = descriptorsClass[key];
+                    if (descriptor?.get) {
+                        result[options.replaceKey(key)] = options.transformValue(key, obj[key]);
+                    }
+                }
+            }
+            cst = Object.getPrototypeOf(cst);
+        }
+        result = options.beforeEnd(result);
+        return result;
+    }
+    static classfromJson(obj, data, options) {
+        let realOptions = {
+            transformValue: options?.transformValue ?? ((key, value) => value),
+        };
+        return this.__classfromJson(obj, data, realOptions);
+    }
+    static __classfromJson(obj, data, options) {
+        let props = Object.getOwnPropertyNames(obj);
+        for (let prop of props) {
+            let propUpperFirst = prop[0].toUpperCase() + prop.slice(1);
+            let value = data[prop] === undefined ? data[propUpperFirst] : data[prop];
+            if (value !== undefined) {
+                let propInfo = Object.getOwnPropertyDescriptor(obj, prop);
+                if (propInfo?.writable) {
+                    obj[prop] = options.transformValue(prop, value);
+                }
+            }
+        }
+        let cstTemp = obj.constructor;
+        while (cstTemp.prototype && cstTemp != Object.prototype) {
+            props = Object.getOwnPropertyNames(cstTemp.prototype);
+            for (let prop of props) {
+                let propUpperFirst = prop[0].toUpperCase() + prop.slice(1);
+                let value = data[prop] === undefined ? data[propUpperFirst] : data[prop];
+                if (value !== undefined) {
+                    let propInfo = Object.getOwnPropertyDescriptor(cstTemp.prototype, prop);
+                    if (propInfo?.set) {
+                        obj[prop] = options.transformValue(prop, value);
+                    }
+                }
+            }
+            cstTemp = Object.getPrototypeOf(cstTemp);
+        }
+        return obj;
+    }
+}
+Json.Namespace=`${moduleName}`;
+_.Json=Json;
+const ConverterTransform=class ConverterTransform {
+    transform(data) {
+        return this.transformLoop(data);
+    }
+    createInstance(data) {
+        if (data.$type) {
+            let cst = Converter.info.get(data.$type);
+            if (cst) {
+                return new cst();
+            }
+        }
+        return undefined;
+    }
+    beforeTransformObject(obj) {
+    }
+    afterTransformObject(obj) {
+    }
+    transformLoop(data) {
+        if (data === null) {
+            return data;
+        }
+        if (Array.isArray(data)) {
+            let result = [];
+            for (let element of data) {
+                result.push(this.transformLoop(element));
+            }
+            return result;
+        }
+        if (data instanceof Date) {
+            return data;
+        }
+        if (typeof data === 'object' && !/^\s*class\s+/.test(data.toString())) {
+            let objTemp = this.createInstance(data);
+            if (objTemp) {
+                let obj = objTemp;
+                this.beforeTransformObject(obj);
+                if (obj.fromJSON) {
+                    obj.fromJSON(data);
+                }
+                else {
+                    obj = Json.classfromJson(obj, data, {
+                        transformValue: (key, value) => {
+                            if (obj[key] instanceof Date) {
+                                return value ? new Date(value) : null;
+                            }
+                            else if (obj[key] instanceof Map) {
+                                let map = new Map();
+                                for (const keyValue of value) {
+                                    map.set(this.transformLoop(keyValue[0]), this.transformLoop(keyValue[1]));
+                                }
+                                return map;
+                            }
+                            return this.transformLoop(value);
+                        }
+                    });
+                }
+                this.afterTransformObject(obj);
+                return obj;
+            }
+            let result = {};
+            for (let key in data) {
+                result[key] = this.transformLoop(data[key]);
+            }
+            return result;
+        }
+        return data;
+    }
+    copyValuesClass(target, src, options) {
+        const realOptions = {
+            isValidKey: options?.isValidKey ?? (() => true),
+            replaceKey: options?.replaceKey ?? ((key) => key),
+            transformValue: options?.transformValue ?? ((key, value) => value),
+        };
+        this.__classCopyValues(target, src, realOptions);
+    }
+    __classCopyValues(target, src, options) {
+        let props = Object.getOwnPropertyNames(target);
+        for (let prop of props) {
+            let propInfo = Object.getOwnPropertyDescriptor(target, prop);
+            if (propInfo?.writable) {
+                if (options.isValidKey(prop))
+                    target[options.replaceKey(prop)] = options.transformValue(prop, src[prop]);
+            }
+        }
+        let cstTemp = target.constructor;
+        while (cstTemp.prototype && cstTemp != Object.prototype) {
+            props = Object.getOwnPropertyNames(cstTemp.prototype);
+            for (let prop of props) {
+                let propInfo = Object.getOwnPropertyDescriptor(cstTemp.prototype, prop);
+                if (propInfo?.set && propInfo.get) {
+                    if (options.isValidKey(prop))
+                        target[options.replaceKey(prop)] = options.transformValue(prop, src[prop]);
+                }
+            }
+            cstTemp = Object.getPrototypeOf(cstTemp);
+        }
+    }
+}
+ConverterTransform.Namespace=`${moduleName}`;
+_.ConverterTransform=ConverterTransform;
+const Converter=class Converter {
+    static info = new Map();
+    static schema = new Map();
+    static __converter = new ConverterTransform();
+    static get converterTransform() {
+        return this.__converter;
+    }
+    static setConverter(converter) {
+        this.__converter = converter;
+    }
+    /**
+     * Register a unique string type for any class
+     */
+    static register($type, cst, schema) {
+        this.info.set($type, cst);
+        if (schema) {
+            this.schema.set($type, schema);
+        }
+    }
+    static transform(data, converter) {
+        if (!converter) {
+            converter = this.converterTransform;
+        }
+        return converter.transform(data);
+    }
+    static copyValuesClass(to, from, options, converter) {
+        if (!converter) {
+            converter = this.converterTransform;
+        }
+        return converter.copyValuesClass(to, from, options);
+    }
+}
+Converter.Namespace=`${moduleName}`;
+_.Converter=Converter;
+const DataManager=class DataManager {
+    static info = new Map();
+    /**
+     * Register a unique string type for a data
+     */
+    static register($type, cst) {
+        this.info.set($type, cst);
+    }
+    /**
+     * Get the contructor for the unique string type
+     */
+    static getConstructor($type) {
+        let result = this.info.get($type);
+        if (result) {
+            return result;
+        }
+        return null;
+    }
+    /**
+     * Clone the object to keep real type
+     */
+    static clone(data) {
+        return Converter.transform(JSON.parse(JSON.stringify(data)));
+    }
+}
+DataManager.Namespace=`${moduleName}`;
+_.DataManager=DataManager;
+const Data=class Data {
+    /**
+     * The schema for the class
+     */
+    static get $schema() { return {}; }
+    /**
+     * The current namespace
+     */
+    static Namespace = "";
+    /**
+     * Get the unique type for the data. Define it as the namespace + class name
+     */
+    static get Fullname() { return this.Namespace + "." + this.name; }
+    /**
+     * The current namespace
+     */
+    get namespace() {
+        return this.constructor['Namespace'];
+    }
+    /**
+     * Get the unique type for the data. Define it as the namespace + class name
+     */
+    get $type() {
+        return this.constructor['Fullname'];
+    }
+    /**
+     * Get the name of the class
+     */
+    get className() {
+        return this.constructor.name;
+    }
+    /**
+     * Get a JSON for the current object
+     */
+    toJSON() {
+        let toAvoid = ['className', 'namespace'];
+        return Json.classToJson(this, {
+            isValidKey: (key) => !toAvoid.includes(key)
+        });
+    }
+}
+Data.Namespace=`${moduleName}`;
+_.Data=Data;
+const GenericError=class GenericError {
+    /**
+     * Code for the error
+     */
+    code;
+    /**
+     * Description of the error
+     */
+    message;
+    details = [];
+    constructor(code, message) {
+        this.code = code;
+        this.message = message;
+    }
+}
+GenericError.Namespace=`${moduleName}`;
+_.GenericError=GenericError;
+const VoidWithError=class VoidWithError {
+    /**
+     * Determine if the action is a success
+     */
+    get success() {
+        return this.errors.length == 0;
+    }
+    /**
+     * List of errors
+     */
+    errors = [];
+    toGeneric() {
+        const result = new VoidWithError();
+        result.errors = this.errors;
+        return result;
+    }
+    containsCode(code, type) {
+        if (type) {
+            for (let error of this.errors) {
+                if (error instanceof type) {
+                    if (error.code == code) {
+                        return true;
+                    }
+                }
+            }
+        }
+        else {
+            for (let error of this.errors) {
+                if (error.code == code) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}
+VoidWithError.Namespace=`${moduleName}`;
+_.VoidWithError=VoidWithError;
+const ResultWithError=class ResultWithError extends VoidWithError {
+    /**
+     * Result
+     */
+    result;
+    toGeneric() {
+        const result = new ResultWithError();
+        result.errors = this.errors;
+        result.result = this.result;
+        return result;
+    }
+}
+ResultWithError.Namespace=`${moduleName}`;
+_.ResultWithError=ResultWithError;
+const RamError=class RamError extends GenericError {
+}
+RamError.Namespace=`${moduleName}`;
+_.RamError=RamError;
+const ResultRamWithError=class ResultRamWithError extends ResultWithError {
+}
+ResultRamWithError.Namespace=`${moduleName}`;
+_.ResultRamWithError=ResultRamWithError;
+const GenericRam=class GenericRam {
+    /**
+     * The current namespace
+     */
+    static get Namespace() { return ""; }
+    /**
+     * Get the unique type for the data. Define it as the namespace + class name
+     */
+    static get Fullname() { return this.Namespace + "." + this.name; }
+    subscribers = {
+        created: [],
+        updated: [],
+        deleted: [],
+    };
+    recordsSubscribers = new Map();
+    /**
+     * List of stored item by index key
+     */
+    records = new Map();
+    actionGuard = new ActionGuard();
+    constructor() {
+        if (this.constructor == GenericRam) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    /**
+     * Get item id
+     */
+    getIdWithError(item) {
+        let action = new ResultRamWithError();
+        let idTemp = item[this.defineIndexKey()];
+        if (idTemp !== undefined) {
+            action.result = idTemp;
+        }
+        else {
+            action.errors.push(new RamError(RamErrorCode.noId, "no key found for item"));
+        }
+        return action;
+    }
+    /**
+     * Get item id
+     */
+    getId(item) {
+        let result = this.getIdWithError(item);
+        if (result.success) {
+            return result.result;
+        }
+        throw 'no key found for item';
+    }
+    /**
+     * Prevent adding Watch element
+     */
+    removeWatch(element) {
+        let byPass = element;
+        if (byPass.__isProxy) {
+            return byPass.getTarget();
+        }
+        return element;
+    }
+    /**
+     * Add function update, onUpdate, offUpdate, delete, onDelete, offDelete
+     */
+    addRamAction(Base) {
+        let that = this;
+        return class ActionClass extends Base {
+            static get className() {
+                return Base.className || Base.name;
+            }
+            get className() {
+                return Base.className || Base.name;
+            }
+            async update(newData = {}) {
+                let id = that.getId(this);
+                let oldData = that.records.get(id);
+                if (oldData) {
+                    that.mergeObject(oldData, newData);
+                    let result = await that.update(oldData);
+                    return result;
+                }
+                return undefined;
+            }
+            onUpdate(callback) {
+                let id = that.getId(this);
+                if (!that.recordsSubscribers.has(id)) {
+                    that.recordsSubscribers.set(id, {
+                        created: [],
+                        updated: [],
+                        deleted: []
+                    });
+                }
+                let sub = that.recordsSubscribers.get(id);
+                if (sub && !sub.updated.includes(callback)) {
+                    sub.updated.push(callback);
+                }
+            }
+            offUpdate(callback) {
+                let id = that.getId(this);
+                let sub = that.recordsSubscribers.get(id);
+                if (sub) {
+                    let index = sub.updated.indexOf(callback);
+                    if (index != -1) {
+                        sub.updated.splice(index, 1);
+                    }
+                }
+            }
+            async delete() {
+                let id = that.getId(this);
+                await that.deleteById(id);
+            }
+            onDelete(callback) {
+                let id = that.getId(this);
+                if (!that.recordsSubscribers.has(id)) {
+                    that.recordsSubscribers.set(id, {
+                        created: [],
+                        updated: [],
+                        deleted: []
+                    });
+                }
+                let sub = that.recordsSubscribers.get(id);
+                if (sub && !sub.deleted.includes(callback)) {
+                    sub.deleted.push(callback);
+                }
+            }
+            offDelete(callback) {
+                let id = that.getId(this);
+                let sub = that.recordsSubscribers.get(id);
+                if (sub) {
+                    let index = sub.deleted.indexOf(callback);
+                    if (index != -1) {
+                        sub.deleted.splice(index, 1);
+                    }
+                }
+            }
+        };
+    }
+    /**
+     * Transform the object into the object stored inside Ram
+     */
+    getObjectForRam(objJson) {
+        let T = this.addRamAction(this.getTypeForData(objJson));
+        let item = new T();
+        this.mergeObject(item, objJson);
+        return item;
+    }
+    /**
+     * Add element inside Ram or update it. The instance inside the ram is unique and ll never be replaced
+     */
+    addOrUpdateData(item, result) {
+        try {
+            let idWithError = this.getIdWithError(item);
+            if (idWithError.success && idWithError.result !== undefined) {
+                let id = idWithError.result;
+                if (this.records.has(id)) {
+                    this.mergeObject(this.records.get(id), item);
+                }
+                else {
+                    let realObject = this.getObjectForRam(item);
+                    this.records.set(id, realObject);
+                }
+                result.result = this.records.get(id);
+            }
+            else {
+                result.errors = [...result.errors, ...idWithError.errors];
+            }
+        }
+        catch (e) {
+            result.errors.push(new RamError(RamErrorCode.unknow, e));
+        }
+    }
+    /**
+     * Merge object and create real instance of class
+     */
+    mergeObject(item, objJson) {
+        if (!item) {
+            return;
+        }
+        Json.classfromJson(item, objJson);
+    }
+    publish(type, data) {
+        [...this.subscribers[type]].forEach(callback => callback(data));
+        let sub = this.recordsSubscribers.get(this.getId(data));
+        if (sub) {
+            [...sub[type]].forEach(callback => callback(data));
+        }
+    }
+    subscribe(type, cb) {
+        if (!this.subscribers[type].includes(cb)) {
+            this.subscribers[type].push(cb);
+        }
+    }
+    unsubscribe(type, cb) {
+        let index = this.subscribers[type].indexOf(cb);
+        if (index != -1) {
+            this.subscribers[type].splice(index, 1);
+        }
+    }
+    /**
+    * Add a callback that ll be triggered when a new item is stored
+    */
+    onCreated(cb) {
+        this.subscribe('created', cb);
+    }
+    /**
+     * Remove a created callback
+     */
+    offCreated(cb) {
+        this.unsubscribe('created', cb);
+    }
+    /**
+     * Add a callback that ll be triggered when an item is updated
+     */
+    onUpdated(cb) {
+        this.subscribe('updated', cb);
+    }
+    /**
+     * Remove an updated callback
+     */
+    offUpdated(cb) {
+        this.unsubscribe('updated', cb);
+    }
+    /**
+     * Add a callback that ll be triggered when an item is deleted
+     */
+    onDeleted(cb) {
+        this.subscribe('deleted', cb);
+    }
+    /**
+     * Remove an deleted callback
+     */
+    offDeleted(cb) {
+        this.unsubscribe('deleted', cb);
+    }
+    /**
+     * Get an item by id if exist (alias for getById)
+     */
+    async get(id) {
+        return await this.getById(id);
+    }
+    ;
+    /**
+     * Get an item by id if exist (alias for getById)
+     */
+    async getWithError(id) {
+        return await this.getByIdWithError(id);
+    }
+    ;
+    /**
+     * Get an item by id if exist
+     */
+    async getById(id) {
+        let action = await this.getByIdWithError(id);
+        if (action.success) {
+            return action.result;
+        }
+        return undefined;
+    }
+    /**
+     * Get an item by id if exist
+     */
+    async getByIdWithError(id) {
+        return this.actionGuard.run(['getByIdWithError', id], async () => {
+            let action = new ResultRamWithError();
+            await this.beforeGetById(id, action);
+            if (action.success) {
+                if (this.records.has(id)) {
+                    action.result = this.records.get(id);
+                    await this.afterGetById(action);
+                }
+                else {
+                    action.errors.push(new RamError(RamErrorCode.noItemInsideRam, "can't find the item " + id + " inside ram"));
+                }
+            }
+            return action;
+        });
+    }
+    /**
+     * Trigger before getting an item by id
+     */
+    async beforeGetById(id, result) { }
+    ;
+    /**
+     * Trigger after getting an item by id
+     */
+    async afterGetById(result) { }
+    ;
+    /**
+     * Get multiple items by ids
+     */
+    async getByIds(ids) {
+        let result = await this.getByIdsWithError(ids);
+        if (result.success) {
+            return result.result ?? [];
+        }
+        return [];
+    }
+    ;
+    /**
+     * Get multiple items by ids
+     */
+    async getByIdsWithError(ids) {
+        return this.actionGuard.run(['getByIdsWithError', ids], async () => {
+            let action = new ResultRamWithError();
+            action.result = [];
+            await this.beforeGetByIds(ids, action);
+            if (action.success) {
+                for (let id of ids) {
+                    let rec = this.records.get(id);
+                    if (rec) {
+                        action.result.push(rec);
+                    }
+                    else {
+                        action.errors.push(new RamError(RamErrorCode.noItemInsideRam, "can't find the item " + id + " inside ram"));
+                    }
+                }
+                if (action.success) {
+                    await this.afterGetByIds(action);
+                }
+            }
+            return action;
+        });
+    }
+    ;
+    /**
+     * Trigger before getting a list of items by id
+     */
+    async beforeGetByIds(ids, result) { }
+    ;
+    /**
+     * Trigger after getting a list of items by id
+     */
+    async afterGetByIds(result) { }
+    ;
+    /**
+     * Get all elements inside the Ram
+     */
+    async getAll() {
+        let result = await this.getAllWithError();
+        if (result.success) {
+            return result.result ?? new Map();
+        }
+        return new Map();
+    }
+    ;
+    /**
+     * Get all elements inside the Ram
+     */
+    async getAllWithError() {
+        return this.actionGuard.run(['getAllWithError'], async () => {
+            let action = new ResultRamWithError();
+            action.result = new Map();
+            await this.beforeGetAll(action);
+            if (action.success) {
+                action.result = this.records;
+                await this.afterGetAll(action);
+            }
+            return action;
+        });
+    }
+    ;
+    /**
+     * Trigger before getting all items inside Ram
+     */
+    async beforeGetAll(result) { }
+    ;
+    /**
+     * Trigger after getting all items inside Ram
+     */
+    async afterGetAll(result) { }
+    ;
+    /**
+     * Get all elements inside the Ram
+     */
+    async getList() {
+        let data = await this.getAll();
+        return Array.from(data.values());
+    }
+    ;
+    /**
+     * Get all elements inside the Ram
+     */
+    async getListWithError() {
+        let action = new ResultRamWithError();
+        action.result = [];
+        let result = await this.getAllWithError();
+        if (result.success) {
+            if (result.result) {
+                action.result = Array.from(result.result.values());
+            }
+            else {
+                action.result = [];
+            }
+        }
+        else {
+            action.errors = result.errors;
+        }
+        return action;
+    }
+    /**
+     * Create a list of items inside ram
+     */
+    async createList(list) {
+        let result = await this.createListWithError(list);
+        return result.result ?? [];
+    }
+    /**
+     * Create a list of items inside ram
+     */
+    async createListWithError(list) {
+        list = this.removeWatch(list);
+        let action = new ResultRamWithError();
+        action.result = [];
+        await this.beforeCreateList(list, action);
+        if (action.success) {
+            if (action.result.length > 0) {
+                list = action.result;
+            }
+            for (let item of list) {
+                let resultItem = await this._create(item, true);
+                if (resultItem.success && resultItem.result) {
+                    action.result.push(resultItem.result);
+                }
+                else {
+                    action.errors = [...action.errors, ...resultItem.errors];
+                }
+            }
+            if (action.success) {
+                await this.afterCreateList(action);
+            }
+        }
+        return action;
+    }
+    /**
+     * Create an item inside ram
+     */
+    async create(item, ...args) {
+        let action = await this.createWithError(item, args);
+        if (action.success) {
+            return action.result;
+        }
+        return undefined;
+    }
+    /**
+     * Create an item inside ram
+     */
+    async createWithError(item, ...args) {
+        return await this._create(item, false);
+    }
+    async _create(item, fromList) {
+        item = this.removeWatch(item);
+        return this.actionGuard.run(['_create', item], async () => {
+            let action = new ResultRamWithError();
+            await this.beforeCreateItem(item, fromList, action);
+            if (action.success) {
+                if (action.result) {
+                    item = action.result;
+                }
+                let resultTemp = this.getIdWithError(item);
+                if (resultTemp.success) {
+                    this.addOrUpdateData(item, action);
+                    if (!action.success) {
+                        return action;
+                    }
+                    await this.afterCreateItem(action, fromList);
+                    if (!action.success) {
+                        action.result = undefined;
+                    }
+                    else if (action.result) {
+                        this.publish('created', action.result);
+                    }
+                }
+                else {
+                    action.errors = resultTemp.errors;
+                }
+            }
+            return action;
+        });
+    }
+    /**
+     * Trigger before creating a list of items
+     */
+    async beforeCreateList(list, result) {
+    }
+    ;
+    /**
+     * Trigger before creating an item
+     */
+    async beforeCreateItem(item, fromList, result) {
+    }
+    ;
+    /**
+     * Trigger after creating an item
+     */
+    async afterCreateItem(result, fromList) {
+    }
+    ;
+    /**
+     * Trigger after creating a list of items
+     */
+    async afterCreateList(result) {
+    }
+    ;
+    /**
+     * Update a list of items inside ram
+     */
+    async updateList(list) {
+        let result = await this.updateListWithError(list);
+        return result.result ?? [];
+    }
+    ;
+    /**
+     * Update a list of items inside ram
+     */
+    async updateListWithError(list) {
+        list = this.removeWatch(list);
+        let action = new ResultRamWithError();
+        action.result = [];
+        await this.beforeUpdateList(list, action);
+        if (action.success) {
+            if (action.result.length > 0) {
+                list = action.result;
+            }
+            for (let item of list) {
+                let resultItem = await this._update(item, true);
+                if (resultItem.success && resultItem.result) {
+                    action.result.push(resultItem.result);
+                }
+                else {
+                    action.errors = [...action.errors, ...resultItem.errors];
+                }
+            }
+            if (action.success) {
+                await this.afterUpdateList(action);
+            }
+        }
+        return action;
+    }
+    ;
+    /**
+     * Update an item inside ram
+     */
+    async update(item, ...args) {
+        let action = await this.updateWithError(item, args);
+        if (action.success) {
+            return action.result;
+        }
+        return undefined;
+    }
+    /**
+     * Update an item inside ram
+     */
+    async updateWithError(item, ...args) {
+        return await this._update(item, false);
+    }
+    async _update(item, fromList) {
+        item = this.removeWatch(item);
+        return this.actionGuard.run(['_update', item], async () => {
+            let action = new ResultRamWithError();
+            let resultTemp = await this.getIdWithError(item);
+            if (resultTemp.success && resultTemp.result !== undefined) {
+                let key = resultTemp.result;
+                if (this.records.has(key)) {
+                    await this.beforeUpdateItem(item, fromList, action);
+                    if (!action.success) {
+                        return action;
+                    }
+                    if (action.result) {
+                        item = action.result;
+                    }
+                    this.addOrUpdateData(item, action);
+                    if (!action.success) {
+                        return action;
+                    }
+                    await this.afterUpdateItem(action, fromList);
+                    if (!action.success) {
+                        action.result = undefined;
+                    }
+                    else if (action.result) {
+                        this.publish('updated', action.result);
+                    }
+                }
+                else {
+                    action.errors.push(new RamError(RamErrorCode.noItemInsideRam, "can't update the item " + key + " because it wasn't found inside ram"));
+                }
+            }
+            else {
+                action.errors = resultTemp.errors;
+            }
+            return action;
+        });
+    }
+    ;
+    /**
+     * Trigger before updating a list of items
+     */
+    async beforeUpdateList(list, result) {
+    }
+    ;
+    /**
+    * Trigger before updating an item
+    */
+    async beforeUpdateItem(item, fromList, result) {
+    }
+    ;
+    /**
+     * Trigger after updating an item
+     */
+    async afterUpdateItem(result, fromList) {
+    }
+    ;
+    /**
+     * Trigger after updating a list of items
+     */
+    async afterUpdateList(result) {
+    }
+    ;
+    /**
+     * Delete a list of items inside ram
+     */
+    async deleteList(list) {
+        let result = await this.deleteListWithError(list);
+        return result.result ?? [];
+    }
+    ;
+    /**
+     * Delete a list of items inside ram
+     */
+    async deleteListWithError(list) {
+        list = this.removeWatch(list);
+        let action = new ResultRamWithError();
+        action.result = [];
+        let deleteResult = new VoidWithError();
+        await this.beforeDeleteList(list, deleteResult);
+        if (!deleteResult.success) {
+            action.errors = deleteResult.errors;
+        }
+        for (let item of list) {
+            let resultItem = await this._delete(item, true);
+            if (resultItem.success && resultItem.result) {
+                action.result.push(resultItem.result);
+            }
+            else {
+                action.errors = [...action.errors, ...resultItem.errors];
+            }
+        }
+        if (action.success) {
+            await this.afterDeleteList(action);
+        }
+        return action;
+    }
+    ;
+    /**
+     * Delete an item inside ram
+     */
+    async delete(item, ...args) {
+        let action = await this.deleteWithError(item, args);
+        if (action.success) {
+            return action.result;
+        }
+        return undefined;
+    }
+    ;
+    /**
+    * Delete an item inside ram
+    */
+    async deleteWithError(item, ...args) {
+        return await this._delete(item, false);
+    }
+    ;
+    /**
+     * Delete an item by id inside ram
+     */
+    async deleteById(id) {
+        let action = await this.deleteByIdWithError(id);
+        if (action.success) {
+            return action.result;
+        }
+        return undefined;
+    }
+    /**
+    * Delete an item by id inside ram
+    */
+    async deleteByIdWithError(id) {
+        let item = this.records.get(id);
+        if (item) {
+            return await this._delete(item, false);
+        }
+        let result = new ResultRamWithError();
+        result.errors.push(new RamError(RamErrorCode.noItemInsideRam, "can't update the item " + id + " because it wasn't found inside ram"));
+        return result;
+    }
+    async _delete(item, fromList) {
+        item = this.removeWatch(item);
+        return this.actionGuard.run(['_delete', item], async () => {
+            let action = new ResultRamWithError();
+            let resultTemp = await this.getIdWithError(item);
+            if (resultTemp.success && resultTemp.result) {
+                let key = resultTemp.result;
+                let oldItem = this.records.get(key);
+                if (oldItem) {
+                    let deleteResult = new VoidWithError();
+                    await this.beforeDeleteItem(oldItem, fromList, deleteResult);
+                    if (!deleteResult.success) {
+                        action.errors = deleteResult.errors;
+                        return action;
+                    }
+                    this.records.delete(key);
+                    action.result = oldItem;
+                    await this.afterDeleteItem(action, fromList);
+                    if (!action.success) {
+                        action.result = undefined;
+                    }
+                    else {
+                        this.publish('deleted', action.result);
+                    }
+                    this.recordsSubscribers.delete(key);
+                }
+                else {
+                    action.errors.push(new RamError(RamErrorCode.noItemInsideRam, "can't delete the item " + key + " because it wasn't found inside ram"));
+                }
+            }
+            else {
+                action.errors = resultTemp.errors;
+            }
+            return action;
+        });
+    }
+    /**
+     * Trigger before deleting a list of items
+     */
+    async beforeDeleteList(list, result) { }
+    ;
+    /**
+     * Trigger before deleting an item
+     */
+    async beforeDeleteItem(item, fromList, result) { }
+    ;
+    /**
+     * Trigger after deleting an item
+     */
+    async afterDeleteItem(result, fromList) { }
+    ;
+    /**
+     * Trigger after deleting a list of items
+     */
+    async afterDeleteList(result) { }
+}
+GenericRam.Namespace=`${moduleName}`;
+_.GenericRam=GenericRam;
+const Ram=class Ram extends GenericRam {
+}
+Ram.Namespace=`${moduleName}`;
+_.Ram=Ram;
 
 for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
@@ -3920,289 +5490,1443 @@ var Aventus;
 const moduleName = `Aventus`;
 const _ = {};
 
-
+const Navigation = {};
+_.Navigation = {};
+const Layout = {};
+_.Layout = {};
 let _n;
-const Img = class Img extends Aventus.WebComponent {
-    static get observedAttributes() {return ["src", "mode"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
-    get 'cache'() { return this.getBoolAttr('cache') }
-    set 'cache'(val) { this.setBoolAttr('cache', val) }    get 'src'() { return this.getStringProp('src') }
-    set 'src'(val) { this.setStringAttr('src', val) }get 'mode'() { return this.getStringProp('mode') }
-    set 'mode'(val) { this.setStringAttr('mode', val) }    isCalculing;
-    maxCalculateSize = 10;
-    ratio = 1;
-    resizeObserver;
-    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("src", ((target) => {
-    target.onSrcChanged();
-}));this.__addPropertyActions("mode", ((target) => {
-    if (target.src != "") {
-        target.calculateSize();
+const Tracker=class Tracker {
+    velocityMultiplier = window.devicePixelRatio;
+    updateTime = Date.now();
+    delta = { x: 0, y: 0 };
+    velocity = { x: 0, y: 0 };
+    lastPosition = { x: 0, y: 0 };
+    constructor(touch) {
+        this.lastPosition = this.getPosition(touch);
     }
-})); }
-    static __style = `:host{--internal-img-color: var(--img-color);--internal-img-stroke-color: var(--img-stroke-color, var(--internal-img-color));--internal-img-fill-color: var(--img-fill-color, var(--internal-img-color));--internal-img-color-transition: var(--img-color-transition, none)}:host{display:inline-block;overflow:hidden;font-size:0}:host *{box-sizing:border-box}:host img{opacity:0;transition:filter .3s linear}:host .svg{display:none;height:100%;width:100%}:host .svg svg{height:100%;width:100%}:host([src$=".svg"]) img{display:none}:host([src$=".svg"]) .svg{display:flex}:host([src$=".svg"]) .svg svg{transition:var(--internal-img-color-transition);stroke:var(--internal-img-stroke-color);fill:var(--internal-img-fill-color)}:host([display_bigger]) img{cursor:pointer}:host([display_bigger]) img:hover{filter:brightness(50%)}`;
+    update(touch) {
+        const { velocity, updateTime, lastPosition, } = this;
+        const now = Date.now();
+        const position = this.getPosition(touch);
+        const delta = {
+            x: -(position.x - lastPosition.x),
+            y: -(position.y - lastPosition.y),
+        };
+        const duration = (now - updateTime) || 16.7;
+        const vx = delta.x / duration * 16.7;
+        const vy = delta.y / duration * 16.7;
+        velocity.x = vx * this.velocityMultiplier;
+        velocity.y = vy * this.velocityMultiplier;
+        this.delta = delta;
+        this.updateTime = now;
+        this.lastPosition = position;
+    }
+    getPointerData(evt) {
+        return evt.touches ? evt.touches[evt.touches.length - 1] : evt;
+    }
+    getPosition(evt) {
+        const data = this.getPointerData(evt);
+        return {
+            x: data.clientX,
+            y: data.clientY,
+        };
+    }
+}
+Tracker.Namespace=`${moduleName}`;
+_.Tracker=Tracker;
+const RouterStateManager=class RouterStateManager extends Aventus.StateManager {
+    static getInstance() {
+        return Aventus.Instance.get(RouterStateManager);
+    }
+}
+RouterStateManager.Namespace=`${moduleName}`;
+_.RouterStateManager=RouterStateManager;
+Navigation.RouterLink = class RouterLink extends Aventus.WebComponent {
+    get 'state'() { return this.getStringAttr('state') }
+    set 'state'(val) { this.setStringAttr('state', val) }get 'active_state'() { return this.getStringAttr('active_state') }
+    set 'active_state'(val) { this.setStringAttr('active_state', val) }    onActiveChange = new Aventus.Callback();
+    static __style = ``;
     __getStatic() {
-        return Img;
+        return RouterLink;
     }
     __getStyle() {
         let arrStyle = super.__getStyle();
-        arrStyle.push(Img.__style);
+        arrStyle.push(RouterLink.__style);
         return arrStyle;
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<img _id="img_0" /><div class="svg" _id="img_1"></div>` }
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "RouterLink";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('state')){ this['state'] = undefined; }if(!this.hasAttribute('active_state')){ this['active_state'] = undefined; } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('state');this.__upgradeProperty('active_state'); }
+    addClickEvent() {
+        new Aventus.PressManager({
+            element: this,
+            onPress: () => {
+                if (this.state === undefined)
+                    return;
+                let state = this.state;
+                if (this.state.startsWith(".")) {
+                    state = Aventus.Instance.get(RouterStateManager).getState()?.name ?? "";
+                    if (!state.endsWith("/")) {
+                        state += "/";
+                    }
+                    state += this.state;
+                    state = Aventus.Uri.normalize(state);
+                }
+                Aventus.State.activate(state, Aventus.Instance.get(RouterStateManager));
+            }
+        });
+    }
+    registerActiveStateListener() {
+        let activeState = this.state;
+        if (this.active_state) {
+            activeState = this.active_state;
+        }
+        if (activeState === undefined)
+            return;
+        Aventus.Instance.get(RouterStateManager).subscribe(activeState, {
+            active: () => {
+                this.classList.add("active");
+                this.onActiveChange.trigger([true]);
+            },
+            inactive: () => {
+                this.classList.remove("active");
+                this.onActiveChange.trigger([false]);
+            }
+        });
+    }
+    postCreation() {
+        this.registerActiveStateListener();
+        this.addClickEvent();
+    }
+}
+Navigation.RouterLink.Namespace=`${moduleName}.Navigation`;
+Navigation.RouterLink.Tag=`av-router-link`;
+_.Navigation.RouterLink=Navigation.RouterLink;
+if(!window.customElements.get('av-router-link')){window.customElements.define('av-router-link', Navigation.RouterLink);Aventus.WebComponentInstance.registerDefinition(Navigation.RouterLink);}
+
+Navigation.Page = class Page extends Aventus.WebComponent {
+    static get observedAttributes() {return ["visible"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'visible'() { return this.getBoolProp('visible') }
+    set 'visible'(val) { this.setBoolAttr('visible', val) }    currentRouter;
+    currentState;
+    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("visible", ((target) => {
+    if (target.visible) {
+        target.onShow();
+    }
+    else {
+        target.onHide();
+    }
+})); }
+    static __style = `:host{display:none}:host([visible]){display:block}`;
+    constructor() { super(); if (this.constructor == Page) { throw "can't instanciate an abstract class"; } }
+    __getStatic() {
+        return Page;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Page.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "Page";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('visible')) { this.attributeChangedCallback('visible', false, false); } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('visible'); }
+    __listBoolProps() { return ["visible"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    pageTitle() {
+        return undefined;
+    }
+    async show(state) {
+        this.currentState = state;
+        this.visible = true;
+    }
+    async hide() {
+        this.visible = false;
+        this.currentState = undefined;
+    }
+    onShow() {
+    }
+    onHide() {
+    }
+}
+Navigation.Page.Namespace=`${moduleName}.Navigation`;
+_.Navigation.Page=Navigation.Page;
+
+Navigation.Router = class Router extends Aventus.WebComponent {
+    oldPage;
+    allRoutes = {};
+    activePath = "";
+    activeState;
+    oneStateActive = false;
+    showPageMutex = new Aventus.Mutex();
+    get stateManager() {
+        return Aventus.Instance.get(RouterStateManager);
+    }
+    page404;
+    static __style = `:host{display:block}`;
+    constructor() {            super();            this.validError404 = this.validError404.bind(this);            this.canChangeState = this.canChangeState.bind(this);            this.stateManager.canChangeState(this.canChangeState);if (this.constructor == Router) { throw "can't instanciate an abstract class"; } }
+    __getStatic() {
+        return Router;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Router.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'before':`<slot name="before"></slot>`,'after':`<slot name="after"></slot>` }, 
+        blocks: { 'default':`<slot name="before"></slot><div class="content" _id="router_0"></div><slot name="after"></slot>` }
     });
 }
     __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
   "elements": [
     {
-      "name": "imgEl",
+      "name": "contentEl",
       "ids": [
-        "img_0"
-      ]
-    },
-    {
-      "name": "svgEl",
-      "ids": [
-        "img_1"
+        "router_0"
       ]
     }
   ]
 }); }
     getClassName() {
-        return "Img";
+        return "Router";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('cache')) { this.attributeChangedCallback('cache', false, false); }if(!this.hasAttribute('src')){ this['src'] = undefined; }if(!this.hasAttribute('mode')){ this['mode'] = "contains"; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('cache');this.__upgradeProperty('src');this.__upgradeProperty('mode'); }
-    __listBoolProps() { return ["cache"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-    calculateSize(attempt = 0) {
-        if (this.isCalculing || !this.imgEl || !this.svgEl) {
-            return;
-        }
-        if (this.src == "") {
-            return;
-        }
-        this.isCalculing = true;
-        if (getComputedStyle(this).display == 'none') {
-            return;
-        }
-        if (attempt == this.maxCalculateSize) {
-            this.isCalculing = false;
-            return;
-        }
-        let element = this.imgEl;
-        if (this.src?.endsWith(".svg")) {
-            element = this.svgEl;
-        }
-        this.style.width = '';
-        this.style.height = '';
-        element.style.width = '';
-        element.style.height = '';
-        if (element.offsetWidth == 0 && element.offsetHeight == 0) {
-            setTimeout(() => {
-                this.isCalculing = false;
-                this.calculateSize(attempt + 1);
-            }, 100);
-            return;
-        }
-        let style = getComputedStyle(this);
-        let addedY = Number(style.paddingTop.replace("px", "")) + Number(style.paddingBottom.replace("px", "")) + Number(style.borderTopWidth.replace("px", "")) + Number(style.borderBottomWidth.replace("px", ""));
-        let addedX = Number(style.paddingLeft.replace("px", "")) + Number(style.paddingRight.replace("px", "")) + Number(style.borderLeftWidth.replace("px", "")) + Number(style.borderRightWidth.replace("px", ""));
-        let availableHeight = this.offsetHeight - addedY;
-        let availableWidth = this.offsetWidth - addedX;
-        let sameWidth = (element.offsetWidth == availableWidth);
-        let sameHeight = (element.offsetHeight == availableHeight);
-        this.ratio = element.offsetWidth / element.offsetHeight;
-        if (sameWidth && !sameHeight) {
-            // height is set
-            element.style.width = (availableHeight * this.ratio) + 'px';
-            element.style.height = availableHeight + 'px';
-        }
-        else if (!sameWidth && sameHeight) {
-            // width is set
-            element.style.width = availableWidth + 'px';
-            element.style.height = (availableWidth / this.ratio) + 'px';
-        }
-        else if (!sameWidth && !sameHeight) {
-            if (this.mode == "stretch") {
-                element.style.width = '100%';
-                element.style.height = '100%';
-            }
-            else if (this.mode == "contains") {
-                // suppose this height is max
-                let newWidth = (availableHeight * this.ratio);
-                if (newWidth <= availableWidth) {
-                    //we can apply this value
-                    element.style.width = newWidth + 'px';
-                    element.style.height = availableHeight + 'px';
-                }
-                else {
-                    element.style.width = availableWidth + 'px';
-                    element.style.height = (availableWidth / this.ratio) + 'px';
-                }
-            }
-            else if (this.mode == "cover") {
-                // suppose this height is min
-                let newWidth = (availableHeight * this.ratio);
-                if (newWidth >= availableWidth) {
-                    //we can apply this value
-                    element.style.width = newWidth + 'px';
-                    element.style.height = availableHeight + 'px';
-                }
-                else {
-                    element.style.width = availableWidth + 'px';
-                    element.style.height = (availableWidth / this.ratio) + 'px';
-                }
+    addRouteAsync(options) {
+        this.allRoutes[options.route] = options;
+    }
+    addRoute(route, elementCtr) {
+        this.allRoutes[route] = {
+            route: route,
+            scriptUrl: '',
+            render: () => elementCtr
+        };
+    }
+    register() {
+        try {
+            this.defineRoutes();
+            this.stateManager.onAfterStateChanged(this.validError404);
+            for (let key in this.allRoutes) {
+                this.initRoute(key);
             }
         }
-        //center img
-        let diffTop = (this.offsetHeight - element.offsetHeight - addedY) / 2;
-        let diffLeft = (this.offsetWidth - element.offsetWidth - addedX) / 2;
-        element.style.transform = "translate(" + diffLeft + "px, " + diffTop + "px)";
-        element.style.opacity = '1';
-        this.isCalculing = false;
-    }
-    async onSrcChanged() {
-        if (!this.src || !this.svgEl || !this.imgEl) {
-            return;
-        }
-        if (this.src.endsWith(".svg")) {
-            let svgContent = await Aventus.ResourceLoader.load(this.src);
-            this.svgEl.innerHTML = svgContent;
-            this.calculateSize();
-        }
-        else if (this.cache) {
-            let base64 = await Aventus.ResourceLoader.load({
-                url: this.src,
-                type: 'img'
-            });
-            this.imgEl.setAttribute("src", base64);
-            this.calculateSize();
-        }
-        else {
-            this.imgEl.setAttribute("src", this.src);
-            this.calculateSize();
+        catch (e) {
+            console.log(e);
         }
     }
-    postDestruction() {
-        this.resizeObserver?.disconnect();
-        this.resizeObserver = undefined;
-    }
-    postCreation() {
-        this.resizeObserver = new Aventus.ResizeObserver({
-            fps: 10,
-            callback: () => {
-                this.calculateSize();
+    initRoute(path) {
+        let element = undefined;
+        let allRoutes = this.allRoutes;
+        this.stateManager.subscribe(path, {
+            active: (currentState) => {
+                this.oneStateActive = true;
+                this.showPageMutex.safeRunLastAsync(async () => {
+                    if (!element) {
+                        let options = allRoutes[path];
+                        if (options.scriptUrl != "") {
+                            await Aventus.ResourceLoader.loadInHead(options.scriptUrl);
+                        }
+                        let cst = options.render();
+                        element = new cst;
+                        element.currentRouter = this;
+                        this.contentEl.appendChild(element);
+                    }
+                    if (this.oldPage && this.oldPage != element) {
+                        await this.oldPage.hide();
+                    }
+                    let oldPage = this.oldPage;
+                    let oldUrl = this.activePath;
+                    this.oldPage = element;
+                    this.activePath = path;
+                    this.activeState = currentState;
+                    await element.show(currentState);
+                    let title = element.pageTitle();
+                    if (title !== undefined)
+                        document.title = title;
+                    if (this.bindToUrl() && window.location.pathname != currentState.name) {
+                        let newUrl = window.location.origin + currentState.name;
+                        window.history.pushState({}, title ?? "", newUrl);
+                    }
+                    this.onNewPage(oldUrl, oldPage, path, element);
+                });
+            },
+            inactive: () => {
+                this.oneStateActive = false;
             }
         });
-        this.resizeObserver.observe(this);
+    }
+    async validError404() {
+        if (!this.oneStateActive) {
+            let Page404 = this.error404(this.stateManager.getState());
+            if (Page404) {
+                if (!this.page404) {
+                    this.page404 = new Page404();
+                    this.page404.currentRouter = this;
+                    this.contentEl.appendChild(this.page404);
+                }
+                if (this.oldPage && this.oldPage != this.page404) {
+                    await this.oldPage.hide();
+                }
+                this.activeState = undefined;
+                this.oldPage = this.page404;
+                this.activePath = '';
+                await this.page404.show(this.activeState);
+            }
+        }
+    }
+    error404(state) {
+        return null;
+    }
+    onNewPage(oldUrl, oldPage, newUrl, newPage) {
+    }
+    getSlugs() {
+        return this.stateManager.getStateSlugs(this.activePath);
+    }
+    async canChangeState(newState) {
+        return true;
+    }
+    navigate(state) {
+        return this.stateManager.setState(state);
+    }
+    bindToUrl() {
+        return true;
+    }
+    defaultUrl() {
+        return "/";
+    }
+    postCreation() {
+        this.register();
+        let oldUrl = window.localStorage.getItem("navigation_url");
+        if (oldUrl !== null) {
+            Aventus.State.activate(oldUrl, this.stateManager);
+            window.localStorage.removeItem("navigation_url");
+        }
+        else if (this.bindToUrl()) {
+            Aventus.State.activate(window.location.pathname, this.stateManager);
+        }
+        else {
+            let defaultUrl = this.defaultUrl();
+            if (defaultUrl) {
+                Aventus.State.activate(defaultUrl, this.stateManager);
+            }
+        }
+        if (this.bindToUrl()) {
+            window.onpopstate = (e) => {
+                if (window.location.pathname != this.stateManager.getState()?.name) {
+                    Aventus.State.activate(window.location.pathname, this.stateManager);
+                }
+            };
+        }
     }
 }
-Img.Namespace=`${moduleName}`;
-Img.Tag=`av-img`;
-_.Img=Img;
-if(!window.customElements.get('av-img')){window.customElements.define('av-img', Img);Aventus.WebComponentInstance.registerDefinition(Img);}
+Navigation.Router.Namespace=`${moduleName}.Navigation`;
+_.Navigation.Router=Navigation.Router;
+
+const TouchRecord=class TouchRecord {
+    _activeTouchID;
+    _touchList = {};
+    get _primitiveValue() {
+        return { x: 0, y: 0 };
+    }
+    isActive() {
+        return this._activeTouchID !== undefined;
+    }
+    getDelta() {
+        const tracker = this._getActiveTracker();
+        if (!tracker) {
+            return this._primitiveValue;
+        }
+        return { ...tracker.delta };
+    }
+    getVelocity() {
+        const tracker = this._getActiveTracker();
+        if (!tracker) {
+            return this._primitiveValue;
+        }
+        return { ...tracker.velocity };
+    }
+    getEasingDistance(damping) {
+        const deAcceleration = 1 - damping;
+        let distance = {
+            x: 0,
+            y: 0,
+        };
+        const vel = this.getVelocity();
+        Object.keys(vel).forEach(dir => {
+            let v = Math.abs(vel[dir]) <= 10 ? 0 : vel[dir];
+            while (v !== 0) {
+                distance[dir] += v;
+                v = (v * deAcceleration) | 0;
+            }
+        });
+        return distance;
+    }
+    track(evt) {
+        const { targetTouches, } = evt;
+        Array.from(targetTouches).forEach(touch => {
+            this._add(touch);
+        });
+        return this._touchList;
+    }
+    update(evt) {
+        const { touches, changedTouches, } = evt;
+        Array.from(touches).forEach(touch => {
+            this._renew(touch);
+        });
+        this._setActiveID(changedTouches);
+        return this._touchList;
+    }
+    release(evt) {
+        delete this._activeTouchID;
+        Array.from(evt.changedTouches).forEach(touch => {
+            this._delete(touch);
+        });
+    }
+    _add(touch) {
+        if (this._has(touch)) {
+            this._delete(touch);
+        }
+        const tracker = new Tracker(touch);
+        this._touchList[touch.identifier] = tracker;
+    }
+    _renew(touch) {
+        if (!this._has(touch)) {
+            return;
+        }
+        const tracker = this._touchList[touch.identifier];
+        tracker.update(touch);
+    }
+    _delete(touch) {
+        delete this._touchList[touch.identifier];
+    }
+    _has(touch) {
+        return this._touchList.hasOwnProperty(touch.identifier);
+    }
+    _setActiveID(touches) {
+        this._activeTouchID = touches[touches.length - 1].identifier;
+    }
+    _getActiveTracker() {
+        const { _touchList, _activeTouchID, } = this;
+        if (_activeTouchID !== undefined) {
+            return _touchList[_activeTouchID];
+        }
+        return undefined;
+    }
+}
+TouchRecord.Namespace=`${moduleName}`;
+_.TouchRecord=TouchRecord;
+Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
+    static get observedAttributes() {return ["zoom"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'y_scroll_visible'() { return this.getBoolAttr('y_scroll_visible') }
+    set 'y_scroll_visible'(val) { this.setBoolAttr('y_scroll_visible', val) }get 'x_scroll_visible'() { return this.getBoolAttr('x_scroll_visible') }
+    set 'x_scroll_visible'(val) { this.setBoolAttr('x_scroll_visible', val) }get 'floating_scroll'() { return this.getBoolAttr('floating_scroll') }
+    set 'floating_scroll'(val) { this.setBoolAttr('floating_scroll', val) }get 'x_scroll'() { return this.getBoolAttr('x_scroll') }
+    set 'x_scroll'(val) { this.setBoolAttr('x_scroll', val) }get 'y_scroll'() { return this.getBoolAttr('y_scroll') }
+    set 'y_scroll'(val) { this.setBoolAttr('y_scroll', val) }get 'auto_hide'() { return this.getBoolAttr('auto_hide') }
+    set 'auto_hide'(val) { this.setBoolAttr('auto_hide', val) }get 'break'() { return this.getNumberAttr('break') }
+    set 'break'(val) { this.setNumberAttr('break', val) }get 'disable'() { return this.getBoolAttr('disable') }
+    set 'disable'(val) { this.setBoolAttr('disable', val) }get 'no_user_select'() { return this.getBoolAttr('no_user_select') }
+    set 'no_user_select'(val) { this.setBoolAttr('no_user_select', val) }    get 'zoom'() { return this.getNumberProp('zoom') }
+    set 'zoom'(val) { this.setNumberAttr('zoom', val) }    observer;
+    display = { x: 0, y: 0 };
+    max = {
+        x: 0,
+        y: 0
+    };
+    margin = {
+        x: 0,
+        y: 0
+    };
+    position = {
+        x: 0,
+        y: 0
+    };
+    momentum = { x: 0, y: 0 };
+    contentWrapperSize = { x: 0, y: 0 };
+    scroller = {
+        x: () => {
+            if (!this.horizontalScroller) {
+                throw 'can\'t find the horizontalScroller';
+            }
+            return this.horizontalScroller;
+        },
+        y: () => {
+            if (!this.verticalScroller) {
+                throw 'can\'t find the verticalScroller';
+            }
+            return this.verticalScroller;
+        }
+    };
+    scrollerContainer = {
+        x: () => {
+            if (!this.horizontalScrollerContainer) {
+                throw 'can\'t find the horizontalScrollerContainer';
+            }
+            return this.horizontalScrollerContainer;
+        },
+        y: () => {
+            if (!this.verticalScrollerContainer) {
+                throw 'can\'t find the verticalScrollerContainer';
+            }
+            return this.verticalScrollerContainer;
+        }
+    };
+    hideDelay = { x: 0, y: 0 };
+    touchRecord;
+    pointerCount = 0;
+    savedBreak = 1;
+    get x() {
+        return this.position.x;
+    }
+    get y() {
+        return this.position.y;
+    }
+    onScrollChange = new Aventus.Callback();
+    renderAnimation;
+    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("zoom", ((target) => {
+    target.changeZoom();
+})); }
+    static __style = `:host{--internal-scrollbar-container-color: var(--scrollbar-container-color, transparent);--internal-scrollbar-color: var(--scrollbar-color, #757575);--internal-scrollbar-active-color: var(--scrollbar-active-color, #858585);--internal-scroller-width: var(--scroller-width, 6px);--internal-scroller-top: var(--scroller-top, 3px);--internal-scroller-bottom: var(--scroller-bottom, 3px);--internal-scroller-right: var(--scroller-right, 3px);--internal-scroller-left: var(--scroller-left, 3px);--_scrollbar-content-padding: var(--scrollbar-content-padding, 0);--_scrollbar-container-display: var(--scrollbar-container-display, inline-block)}:host{display:block;height:100%;overflow:hidden;position:relative;-webkit-user-drag:none;-khtml-user-drag:none;-moz-user-drag:none;-o-user-drag:none;width:100%}:host .scroll-main-container{display:block;height:100%;position:relative;width:100%}:host .scroll-main-container .content-zoom{display:block;height:100%;position:relative;transform-origin:0 0;width:100%;z-index:4}:host .scroll-main-container .content-zoom .content-hidder{display:block;height:100%;overflow:hidden;position:relative;width:100%}:host .scroll-main-container .content-zoom .content-hidder .content-wrapper{display:var(--_scrollbar-container-display);height:100%;min-height:100%;min-width:100%;padding:var(--_scrollbar-content-padding);position:relative;width:100%}:host .scroll-main-container .scroller-wrapper .container-scroller{display:none;overflow:hidden;position:absolute;transition:transform .2s linear;z-index:5}:host .scroll-main-container .scroller-wrapper .container-scroller .shadow-scroller{background-color:var(--internal-scrollbar-container-color);border-radius:5px}:host .scroll-main-container .scroller-wrapper .container-scroller .shadow-scroller .scroller{background-color:var(--internal-scrollbar-color);border-radius:5px;cursor:pointer;position:absolute;-webkit-tap-highlight-color:rgba(0,0,0,0);touch-action:none;z-index:5}:host .scroll-main-container .scroller-wrapper .container-scroller .scroller.active{background-color:var(--internal-scrollbar-active-color)}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical{height:calc(100% - var(--internal-scroller-bottom)*2 - var(--internal-scroller-width));padding-left:var(--internal-scroller-left);right:var(--internal-scroller-right);top:var(--internal-scroller-bottom);transform:0;width:calc(var(--internal-scroller-width) + var(--internal-scroller-left))}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical.hide{transform:translateX(calc(var(--internal-scroller-width) + var(--internal-scroller-left)))}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical .shadow-scroller{height:100%}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical .shadow-scroller .scroller{width:calc(100% - var(--internal-scroller-left))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal{bottom:var(--internal-scroller-bottom);height:calc(var(--internal-scroller-width) + var(--internal-scroller-top));left:var(--internal-scroller-right);padding-top:var(--internal-scroller-top);transform:0;width:calc(100% - var(--internal-scroller-right)*2 - var(--internal-scroller-width))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal.hide{transform:translateY(calc(var(--internal-scroller-width) + var(--internal-scroller-top)))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal .shadow-scroller{height:100%}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal .shadow-scroller .scroller{height:calc(100% - var(--internal-scroller-top))}:host([y_scroll]) .scroll-main-container .content-zoom .content-hidder .content-wrapper{height:auto}:host([x_scroll]) .scroll-main-container .content-zoom .content-hidder .content-wrapper{width:auto}:host([y_scroll_visible]) .scroll-main-container .scroller-wrapper .container-scroller.vertical{display:block}:host([x_scroll_visible]) .scroll-main-container .scroller-wrapper .container-scroller.horizontal{display:block}:host([no_user_select]) .content-wrapper *{user-select:none}:host([no_user_select]) ::slotted{user-select:none}`;
+    constructor() {            super();            this.renderAnimation = this.createAnimation();            this.onWheel = this.onWheel.bind(this);            this.onTouchStart = this.onTouchStart.bind(this);            this.onTouchMove = this.onTouchMove.bind(this);            this.onTouchEnd = this.onTouchEnd.bind(this);            this.touchRecord = new TouchRecord();        }
+    __getStatic() {
+        return Scrollable;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Scrollable.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<div class="scroll-main-container" _id="scrollable_0">    <div class="content-zoom" _id="scrollable_1">        <div class="content-hidder" _id="scrollable_2">            <div class="content-wrapper" _id="scrollable_3">                <slot></slot>            </div>        </div>    </div>    <div class="scroller-wrapper">        <div class="container-scroller vertical" _id="scrollable_4">            <div class="shadow-scroller">                <div class="scroller" _id="scrollable_5"></div>            </div>        </div>        <div class="container-scroller horizontal" _id="scrollable_6">            <div class="shadow-scroller">                <div class="scroller" _id="scrollable_7"></div>            </div>        </div>    </div></div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "mainContainer",
+      "ids": [
+        "scrollable_0"
+      ]
+    },
+    {
+      "name": "contentZoom",
+      "ids": [
+        "scrollable_1"
+      ]
+    },
+    {
+      "name": "contentHidder",
+      "ids": [
+        "scrollable_2"
+      ]
+    },
+    {
+      "name": "contentWrapper",
+      "ids": [
+        "scrollable_3"
+      ]
+    },
+    {
+      "name": "verticalScrollerContainer",
+      "ids": [
+        "scrollable_4"
+      ]
+    },
+    {
+      "name": "verticalScroller",
+      "ids": [
+        "scrollable_5"
+      ]
+    },
+    {
+      "name": "horizontalScrollerContainer",
+      "ids": [
+        "scrollable_6"
+      ]
+    },
+    {
+      "name": "horizontalScroller",
+      "ids": [
+        "scrollable_7"
+      ]
+    }
+  ]
+}); }
+    getClassName() {
+        return "Scrollable";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('y_scroll_visible')) { this.attributeChangedCallback('y_scroll_visible', false, false); }if(!this.hasAttribute('x_scroll_visible')) { this.attributeChangedCallback('x_scroll_visible', false, false); }if(!this.hasAttribute('floating_scroll')) { this.attributeChangedCallback('floating_scroll', false, false); }if(!this.hasAttribute('x_scroll')) { this.attributeChangedCallback('x_scroll', false, false); }if(!this.hasAttribute('y_scroll')) {this.setAttribute('y_scroll' ,'true'); }if(!this.hasAttribute('auto_hide')) { this.attributeChangedCallback('auto_hide', false, false); }if(!this.hasAttribute('break')){ this['break'] = 0.1; }if(!this.hasAttribute('disable')) { this.attributeChangedCallback('disable', false, false); }if(!this.hasAttribute('no_user_select')) { this.attributeChangedCallback('no_user_select', false, false); }if(!this.hasAttribute('zoom')){ this['zoom'] = 1; } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('y_scroll_visible');this.__upgradeProperty('x_scroll_visible');this.__upgradeProperty('floating_scroll');this.__upgradeProperty('x_scroll');this.__upgradeProperty('y_scroll');this.__upgradeProperty('auto_hide');this.__upgradeProperty('break');this.__upgradeProperty('disable');this.__upgradeProperty('no_user_select');this.__upgradeProperty('zoom'); }
+    __listBoolProps() { return ["y_scroll_visible","x_scroll_visible","floating_scroll","x_scroll","y_scroll","auto_hide","disable","no_user_select"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    createAnimation() {
+        return new Aventus.Animation({
+            fps: 60,
+            animate: () => {
+                const nextX = this.nextPosition('x');
+                const nextY = this.nextPosition('y');
+                this.momentum.x = nextX.momentum;
+                this.momentum.y = nextY.momentum;
+                this.scrollDirection('x', nextX.position);
+                this.scrollDirection('y', nextY.position);
+                if (!this.momentum.x && !this.momentum.y) {
+                    this.renderAnimation.stop();
+                }
+            },
+            stopped: () => {
+                if (this.momentum.x || this.momentum.y) {
+                    this.renderAnimation.start();
+                }
+            }
+        });
+    }
+    nextPosition(direction) {
+        const current = this.position[direction];
+        const remain = this.momentum[direction];
+        let result = {
+            momentum: 0,
+            position: 0,
+        };
+        if (Math.abs(remain) <= 0.1) {
+            result.position = current + remain;
+        }
+        else {
+            let nextMomentum = remain * (1 - this.break);
+            nextMomentum |= 0;
+            result.momentum = nextMomentum;
+            result.position = current + remain - nextMomentum;
+        }
+        let correctPosition = this.correctScrollValue(result.position, direction);
+        if (correctPosition != result.position) {
+            result.position = correctPosition;
+            result.momentum = 0;
+        }
+        return result;
+    }
+    scrollDirection(direction, value) {
+        const max = this.max[direction];
+        if (max != 0) {
+            this.position[direction] = this.correctScrollValue(value, direction);
+        }
+        else {
+            this.position[direction] = 0;
+        }
+        let container = this.scrollerContainer[direction]();
+        let scroller = this.scroller[direction]();
+        if (this.auto_hide) {
+            container.classList.remove("hide");
+            clearTimeout(this.hideDelay[direction]);
+            this.hideDelay[direction] = setTimeout(() => {
+                container.classList.add("hide");
+            }, 1000);
+        }
+        let containerSize = direction == 'y' ? container.offsetHeight : container.offsetWidth;
+        if (this.contentWrapperSize[direction] != 0) {
+            let scrollPosition = this.position[direction] / this.contentWrapperSize[direction] * containerSize;
+            scroller.style.transform = `translate${direction.toUpperCase()}(${scrollPosition}px)`;
+            this.contentWrapper.style.transform = `translate3d(${-1 * this.x}px, ${-1 * this.y}px, 0)`;
+        }
+        this.triggerScrollChange();
+    }
+    correctScrollValue(value, direction) {
+        if (value < 0) {
+            value = 0;
+        }
+        else if (value > this.max[direction]) {
+            value = this.max[direction];
+        }
+        return value;
+    }
+    triggerScrollChange() {
+        this.onScrollChange.trigger([this.x, this.y]);
+    }
+    scrollToPosition(x, y) {
+        this.scrollDirection('x', x);
+        this.scrollDirection('y', y);
+    }
+    scrollX(x) {
+        this.scrollDirection('x', x);
+    }
+    scrollY(y) {
+        this.scrollDirection('y', y);
+    }
+    addAction() {
+        this.addEventListener("wheel", this.onWheel);
+        this.addEventListener("touchstart", this.onTouchStart);
+        this.addEventListener("touchmove", this.onTouchMove);
+        this.addEventListener("touchcancel", this.onTouchEnd);
+        this.addEventListener("touchend", this.onTouchEnd);
+        this.addScrollDrag('x');
+        this.addScrollDrag('y');
+    }
+    addScrollDrag(direction) {
+        let scroller = this.scroller[direction]();
+        scroller.addEventListener("touchstart", (e) => {
+            e.stopPropagation();
+        });
+        let startPosition = 0;
+        new Aventus.DragAndDrop({
+            element: scroller,
+            applyDrag: false,
+            usePercent: true,
+            offsetDrag: 0,
+            isDragEnable: () => !this.disable,
+            onStart: (e) => {
+                this.no_user_select = true;
+                scroller.classList.add("active");
+                startPosition = this.position[direction];
+            },
+            onMove: (e, position) => {
+                let delta = position[direction] / 100 * this.contentWrapperSize[direction];
+                let value = startPosition + delta;
+                this.scrollDirection(direction, value);
+            },
+            onStop: () => {
+                this.no_user_select = false;
+                scroller.classList.remove("active");
+            }
+        });
+    }
+    addDelta(delta) {
+        if (this.disable) {
+            return;
+        }
+        this.momentum.x += delta.x;
+        this.momentum.y += delta.y;
+        this.renderAnimation?.start();
+    }
+    onWheel(e) {
+        const DELTA_MODE = [1.0, 28.0, 500.0];
+        const mode = DELTA_MODE[e.deltaMode] || DELTA_MODE[0];
+        let newValue = {
+            x: 0,
+            y: e.deltaY * mode,
+        };
+        if (!this.y_scroll && this.x_scroll) {
+            newValue = {
+                x: e.deltaY * mode,
+                y: 0,
+            };
+            if ((newValue.x > 0 && this.x != this.max.x) ||
+                (newValue.x <= 0 && this.x != 0)) {
+                e.stopPropagation();
+            }
+        }
+        else {
+            if ((newValue.y > 0 && this.y != this.max.y) ||
+                (newValue.y <= 0 && this.y != 0)) {
+                e.stopPropagation();
+            }
+        }
+        this.addDelta(newValue);
+    }
+    onTouchStart(e) {
+        this.touchRecord.track(e);
+        this.momentum = {
+            x: 0,
+            y: 0
+        };
+        if (this.pointerCount === 0) {
+            this.savedBreak = this.break;
+            this.break = Math.max(this.break, 0.5); // less frames on touchmove
+        }
+        this.pointerCount++;
+    }
+    onTouchMove(e) {
+        this.touchRecord.update(e);
+        const delta = this.touchRecord.getDelta();
+        this.addDelta(delta);
+    }
+    onTouchEnd(e) {
+        const delta = this.touchRecord.getEasingDistance(this.savedBreak);
+        this.addDelta(delta);
+        this.pointerCount--;
+        if (this.pointerCount === 0) {
+            this.break = this.savedBreak;
+        }
+        this.touchRecord.release(e);
+    }
+    calculateRealSize() {
+        if (!this.contentZoom || !this.mainContainer || !this.contentWrapper) {
+            return;
+        }
+        const currentOffsetWidth = this.contentZoom.offsetWidth;
+        const currentOffsetHeight = this.contentZoom.offsetHeight;
+        this.contentWrapperSize.x = this.contentWrapper.offsetWidth;
+        this.contentWrapperSize.y = this.contentWrapper.offsetHeight;
+        if (this.zoom < 1) {
+            // scale the container for zoom
+            this.contentZoom.style.width = this.mainContainer.offsetWidth / this.zoom + 'px';
+            this.contentZoom.style.height = this.mainContainer.offsetHeight / this.zoom + 'px';
+            this.display.y = currentOffsetHeight;
+            this.display.x = currentOffsetWidth;
+        }
+        else {
+            this.display.y = currentOffsetHeight / this.zoom;
+            this.display.x = currentOffsetWidth / this.zoom;
+        }
+    }
+    calculatePositionScrollerContainer(direction) {
+        if (direction == 'y') {
+            this.calculatePositionScrollerContainerY();
+        }
+        else {
+            this.calculatePositionScrollerContainerX();
+        }
+    }
+    calculatePositionScrollerContainerY() {
+        const leftMissing = this.mainContainer.offsetWidth - this.verticalScrollerContainer.offsetLeft;
+        if (leftMissing > 0 && this.y_scroll_visible && !this.floating_scroll) {
+            this.contentHidder.style.width = 'calc(100% - ' + leftMissing + 'px)';
+            this.contentHidder.style.marginRight = leftMissing + 'px';
+            this.margin.x = leftMissing;
+        }
+        else {
+            this.contentHidder.style.width = '';
+            this.contentHidder.style.marginRight = '';
+            this.margin.x = 0;
+        }
+    }
+    calculatePositionScrollerContainerX() {
+        const topMissing = this.mainContainer.offsetHeight - this.horizontalScrollerContainer.offsetTop;
+        if (topMissing > 0 && this.x_scroll_visible && !this.floating_scroll) {
+            this.contentHidder.style.height = 'calc(100% - ' + topMissing + 'px)';
+            this.contentHidder.style.marginBottom = topMissing + 'px';
+            this.margin.y = topMissing;
+        }
+        else {
+            this.contentHidder.style.height = '';
+            this.contentHidder.style.marginBottom = '';
+            this.margin.y = 0;
+        }
+    }
+    calculateSizeScroller(direction) {
+        const scrollerSize = ((this.display[direction] - this.margin[direction]) / this.contentWrapperSize[direction] * 100);
+        if (direction == "y") {
+            this.scroller[direction]().style.height = scrollerSize + '%';
+        }
+        else {
+            this.scroller[direction]().style.width = scrollerSize + '%';
+        }
+        let maxScrollContent = this.contentWrapperSize[direction] - this.display[direction];
+        if (maxScrollContent < 0) {
+            maxScrollContent = 0;
+        }
+        this.max[direction] = maxScrollContent + this.margin[direction];
+    }
+    changeZoom() {
+        this.contentZoom.style.transform = 'scale(' + this.zoom + ')';
+        this.dimensionRefreshed();
+    }
+    dimensionRefreshed() {
+        this.calculateRealSize();
+        if (this.contentWrapperSize.y - this.display.y > 0) {
+            if (!this.y_scroll_visible) {
+                this.y_scroll_visible = true;
+                this.calculatePositionScrollerContainer('y');
+            }
+            this.calculateSizeScroller('y');
+            this.scrollDirection('y', this.y);
+        }
+        else if (this.y_scroll_visible) {
+            this.y_scroll_visible = false;
+            this.calculatePositionScrollerContainer('y');
+            this.calculateSizeScroller('y');
+            this.scrollDirection('y', 0);
+        }
+        if (this.contentWrapperSize.x - this.display.x > 0) {
+            if (!this.x_scroll_visible) {
+                this.x_scroll_visible = true;
+                this.calculatePositionScrollerContainer('x');
+            }
+            this.calculateSizeScroller('x');
+            this.scrollDirection('x', this.x);
+        }
+        else if (this.x_scroll_visible) {
+            this.x_scroll_visible = false;
+            this.calculatePositionScrollerContainer('x');
+            this.calculateSizeScroller('x');
+            this.scrollDirection('x', 0);
+        }
+    }
+    createResizeObserver() {
+        let inProgress = false;
+        return new Aventus.ResizeObserver({
+            callback: entries => {
+                if (inProgress) {
+                    return;
+                }
+                inProgress = true;
+                this.dimensionRefreshed();
+                inProgress = false;
+            },
+            fps: 30
+        });
+    }
+    addResizeObserver() {
+        if (this.observer == undefined) {
+            this.observer = this.createResizeObserver();
+        }
+        this.observer.observe(this.contentWrapper);
+        this.observer.observe(this);
+    }
+    postCreation() {
+        this.addResizeObserver();
+        this.addAction();
+    }
+}
+Layout.Scrollable.Namespace=`${moduleName}.Layout`;
+Layout.Scrollable.Tag=`av-scrollable`;
+_.Layout.Scrollable=Layout.Scrollable;
+if(!window.customElements.get('av-scrollable')){window.customElements.define('av-scrollable', Layout.Scrollable);Aventus.WebComponentInstance.registerDefinition(Layout.Scrollable);}
 
 
 for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
 
-var AventusWebsite;
-(AventusWebsite||(AventusWebsite = {}));
-(function (AventusWebsite) {
-const moduleName = `AventusWebsite`;
+var TodoDemo;
+(TodoDemo||(TodoDemo = {}));
+(function (TodoDemo) {
+const moduleName = `TodoDemo`;
 const _ = {};
-
+Aventus.Style.store("@default", `:host{box-sizing:border-box;display:inline-block}:host *{box-sizing:border-box}.card{background-color:var(--color-surface-mixed-200);border-radius:10px;padding:15px}`)
 
 let _n;
-const Countdown = class Countdown extends Aventus.WebComponent {
-    static get observedAttributes() {return ["nb_days", "nb_hours", "nb_minutes", "nb_seconds"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
-    get 'nb_days'() { return this.getNumberProp('nb_days') }
-    set 'nb_days'(val) { this.setNumberAttr('nb_days', val) }get 'nb_hours'() { return this.getNumberProp('nb_hours') }
-    set 'nb_hours'(val) { this.setNumberAttr('nb_hours', val) }get 'nb_minutes'() { return this.getNumberProp('nb_minutes') }
-    set 'nb_minutes'(val) { this.setNumberAttr('nb_minutes', val) }get 'nb_seconds'() { return this.getNumberProp('nb_seconds') }
-    set 'nb_seconds'(val) { this.setNumberAttr('nb_seconds', val) }    rDate = new Date('2023-06-16T10:00:00.000Z');
-    static __style = `:host{height:100%;overflow:hidden;position:relative;width:100%}:host .info{align-items:center;background-color:var(--primary-color);display:flex;flex-direction:column;font-size:25px;height:100%;justify-content:center;padding:16px;width:100%;z-index:9999}:host h1{color:var(--aventus-color);z-index:9999;text-align:center}:host .row{align-items:center;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;z-index:9999}:host .row .row-split{display:flex;gap:10px}:host .row .row-split .square{align-items:center;background-color:var(--light-primary-color);color:var(--aventus-color);display:flex;font-size:25px;font-weight:bold;height:100px;justify-content:center;width:100px}:host av-img{--img-color: rgb(200, 200, 200);height:150%;left:-200px;opacity:.1;pointer-events:none;position:absolute;top:-25px;z-index:1}:host av-img:last-child{left:auto;right:-200px;top:30px;transform:rotate(180deg)}@media screen and (max-width: 1100px){:host av-img{left:-50%;top:25%}:host av-img:last-child{right:-50%;top:-75%}}`;
+const Button = class Button extends Aventus.WebComponent {
+    static __style = `:host{align-items:center;background-color:var(--color-primary-300);border-radius:500px;cursor:pointer;display:flex;justify-content:center;min-width:100px;padding:10px;transition:background-color .2s linear;width:fit-content}:host(:hover){background-color:var(--color-primary-400)}`;
     __getStatic() {
-        return Countdown;
+        return Button;
     }
     __getStyle() {
         let arrStyle = super.__getStyle();
-        arrStyle.push(Countdown.__style);
+        arrStyle.push(Button.__style);
         return arrStyle;
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<div class="info">    <h1>Beta release on 16th June</h1>    <div class="row">        <div class="row-split">            <div class="square" _id="countdown_0"></div>            <div class="square" _id="countdown_1"></div>        </div>        <div class="row-split">            <div class="square" _id="countdown_2"></div>            <div class="square" _id="countdown_3"></div>        </div>    </div></div><av-img src="/img/logo.svg"></av-img><av-img src="/img/logo.svg"></av-img>` }
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "Button";
+    }
+}
+Button.Namespace=`${moduleName}`;
+Button.Tag=`td-button`;
+_.Button=Button;
+if(!window.customElements.get('td-button')){window.customElements.define('td-button', Button);Aventus.WebComponentInstance.registerDefinition(Button);}
+
+const Input = class Input extends Aventus.WebComponent {
+    static get observedAttributes() {return ["label", "value"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'label'() { return this.getStringProp('label') }
+    set 'label'(val) { this.setStringAttr('label', val) }get 'value'() { return this.getStringProp('value') }
+    set 'value'(val) { this.setStringAttr('value', val) }    change = new Aventus.Callback();
+    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("value", ((target) => {
+    target.inputEl.value = target.value;
+})); }
+    static __style = `:host{background-color:var(--color-surface-mixed-600);border-radius:10px;display:flex;flex-direction:column;height:fit-content;overflow:hidden;width:100%}:host label{background-color:var(--color-surface-mixed-500);padding:5px 15px;width:100%}:host input{background-color:rgba(0,0,0,0);border:none;box-shadow:none;color:#fff;height:100%;margin:0;outline:none;padding:15px 25px;width:100%}`;
+    __getStatic() {
+        return Input;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Input.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<label for="input" _id="input_0"></label><input id="input" type="text" _id="input_1" />` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "inputEl",
+      "ids": [
+        "input_1"
+      ]
+    }
+  ],
+  "content": {
+    "input_0°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__caec6225dbfc2b97ddbe916dd1c08733method0())}`,
+      "once": true
+    }
+  },
+  "events": [
+    {
+      "eventName": "change",
+      "id": "input_1",
+      "fct": (e, c) => c.comp.updateValue(e)
+    }
+  ]
+}); }
+    getClassName() {
+        return "Input";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('label')){ this['label'] = undefined; }if(!this.hasAttribute('value')){ this['value'] = ""; } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('label');this.__upgradeProperty('value'); }
+    updateValue() {
+        this.value = this.inputEl.value;
+        this.change.trigger([this.value]);
+    }
+    __caec6225dbfc2b97ddbe916dd1c08733method0() {
+        return this.label;
+    }
+}
+Input.Namespace=`${moduleName}`;
+Input.Tag=`td-input`;
+_.Input=Input;
+if(!window.customElements.get('td-input')){window.customElements.define('td-input', Input);Aventus.WebComponentInstance.registerDefinition(Input);}
+
+const Task=class Task extends Aventus.Data {
+    id = 0;
+    name = "";
+}
+Task.$schema={"id":"number","name":"string"};Aventus.DataManager.register(Task.Fullname, Task);Task.Namespace=`${moduleName}`;
+_.Task=Task;
+const GenericPage = class GenericPage extends Aventus.Navigation.Page {
+    static __style = `:host{height:100%;overflow:hidden;width:100%}:host av-scrollable{height:100%;width:100%;--scrollbar-content-padding: 15px}:host av-scrollable .page-title{height:50px;width:100%;display:flex;align-items:center;justify-content:center;font-size:30px;margin:30px 0}`;
+    constructor() { super(); if (this.constructor == GenericPage) { throw "can't instanciate an abstract class"; } }
+    __getStatic() {
+        return GenericPage;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(GenericPage.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-scrollable>    <div class="page-title" _id="genericpage_0"></div>    <slot></slot></av-scrollable>` }
     });
 }
     __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
   "content": {
-    "countdown_0°@HTML": {
-      "fct": (c) => `${c.print(c.comp.__e519e6757436770b6e63f3b55b73a93bmethod0())}d`,
-      "once": true
-    },
-    "countdown_1°@HTML": {
-      "fct": (c) => `${c.print(c.comp.__e519e6757436770b6e63f3b55b73a93bmethod1())}h`,
-      "once": true
-    },
-    "countdown_2°@HTML": {
-      "fct": (c) => `${c.print(c.comp.__e519e6757436770b6e63f3b55b73a93bmethod2())}m`,
-      "once": true
-    },
-    "countdown_3°@HTML": {
-      "fct": (c) => `${c.print(c.comp.__e519e6757436770b6e63f3b55b73a93bmethod3())}s`,
+    "genericpage_0°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__a9579f75aa8381a3bcefb3bce28ea454method0())}`,
       "once": true
     }
   }
 }); }
     getClassName() {
-        return "Countdown";
+        return "GenericPage";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('nb_days')){ this['nb_days'] = undefined; }if(!this.hasAttribute('nb_hours')){ this['nb_hours'] = undefined; }if(!this.hasAttribute('nb_minutes')){ this['nb_minutes'] = undefined; }if(!this.hasAttribute('nb_seconds')){ this['nb_seconds'] = undefined; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('nb_days');this.__upgradeProperty('nb_hours');this.__upgradeProperty('nb_minutes');this.__upgradeProperty('nb_seconds'); }
-    change() {
-        let now = new Date();
-        var delta = Math.abs(this.rDate.getTime() - now.getTime()) / 1000;
-        // calculate (and subtract) whole days
-        var days = Math.floor(delta / 86400);
-        delta -= days * 86400;
-        // calculate (and subtract) whole hours
-        var hours = Math.floor(delta / 3600) % 24;
-        delta -= hours * 3600;
-        // calculate (and subtract) whole minutes
-        var minutes = Math.floor(delta / 60) % 60;
-        delta -= minutes * 60;
-        // what's left is seconds
-        var seconds = Math.floor(delta % 60);
-        this.nb_days = days;
-        this.nb_hours = hours;
-        this.nb_minutes = minutes;
-        this.nb_seconds = seconds;
-    }
-    postCreation() {
-        this.change();
-        setInterval(() => {
-            this.change();
-        }, 1000);
-    }
-    __e519e6757436770b6e63f3b55b73a93bmethod0() {
-        return this.nb_days;
-    }
-    __e519e6757436770b6e63f3b55b73a93bmethod1() {
-        return this.nb_hours;
-    }
-    __e519e6757436770b6e63f3b55b73a93bmethod2() {
-        return this.nb_minutes;
-    }
-    __e519e6757436770b6e63f3b55b73a93bmethod3() {
-        return this.nb_seconds;
+    __a9579f75aa8381a3bcefb3bce28ea454method0() {
+        return this.definePageTitle();
     }
 }
-Countdown.Namespace=`${moduleName}`;
-Countdown.Tag=`av-countdown`;
-_.Countdown=Countdown;
-if(!window.customElements.get('av-countdown')){window.customElements.define('av-countdown', Countdown);Aventus.WebComponentInstance.registerDefinition(Countdown);}
+GenericPage.Namespace=`${moduleName}`;
+_.GenericPage=GenericPage;
+
+const Todo=class Todo extends Aventus.Data {
+    id = 0;
+    name = "";
+    tasks = [];
+}
+Todo.$schema={"id":"number","name":"string","tasks":""+moduleName+".Task"};Aventus.DataManager.register(Todo.Fullname, Todo);Todo.Namespace=`${moduleName}`;
+_.Todo=Todo;
+const TodoCreateState=class TodoCreateState extends Aventus.State {
+    editing;
+    /**
+     * @inheritdoc
+     */
+    get name() {
+        return TodoEditPage.pageUrl;
+    }
+    onActivate() {
+        let newTodo = new Todo();
+        newTodo.name = "My todo";
+        this.editing = newTodo;
+    }
+}
+TodoCreateState.Namespace=`${moduleName}`;
+_.TodoCreateState=TodoCreateState;
+const TodoRAM=class TodoRAM extends Aventus.Ram {
+    isLoaded = false;
+    static maxId = 0;
+    /**
+     * Create a singleton to store data
+     */
+    static getInstance() {
+        return Aventus.Instance.get(TodoRAM);
+    }
+    /**
+     * @inheritdoc
+     */
+    defineIndexKey() {
+        return 'id';
+    }
+    /**
+     * @inheritdoc
+     */
+    getTypeForData(objJson) {
+        return this.addTodoMethod(Todo);
+    }
+    /**
+     * Mixin pattern to add methods
+     */
+    addTodoMethod(Base) {
+        return class Extension extends Base {
+            static get className() {
+                return Base.className || Base.name;
+            }
+            get className() {
+                return Base.className || Base.name;
+            }
+            validate() {
+            }
+        };
+    }
+    saveToStorage() {
+        let values = Array.from(this.records.values());
+        localStorage.setItem("todos", JSON.stringify(values));
+    }
+    reloadFromStorage(result) {
+        let maxId = 0;
+        let data = JSON.parse(localStorage.getItem("todos") ?? "[]");
+        let values = Aventus.Converter.transform(data);
+        for (let value of values) {
+            let resultTemp = new Aventus.ResultWithError();
+            if (value.id > maxId) {
+                maxId = value.id;
+            }
+            this.addOrUpdateData(value, resultTemp);
+            if (!resultTemp.success) {
+                result.errors = [...result.errors, ...resultTemp.errors];
+            }
+        }
+        TodoRAM.maxId = maxId;
+    }
+    async beforeCreateItem(item, fromList, result) {
+        TodoRAM.maxId++;
+        item.id = TodoRAM.maxId;
+    }
+    async afterCreateItem(result, fromList) {
+        super.afterCreateItem(result, fromList);
+        this.saveToStorage();
+    }
+    async afterUpdateItem(result, fromList) {
+        super.afterUpdateItem(result, fromList);
+        this.saveToStorage();
+    }
+    async afterDeleteItem(result, fromList) {
+        super.afterDeleteItem(result, fromList);
+        this.saveToStorage();
+    }
+    async beforeGetAll(result) {
+        if (!this.isLoaded) {
+            this.reloadFromStorage(result);
+            this.isLoaded = true;
+        }
+    }
+}
+TodoRAM.Namespace=`${moduleName}`;
+_.TodoRAM=TodoRAM;
+const TodoListPage = class TodoListPage extends GenericPage {
+    get 'todos'() {
+						return this.__watch["todos"];
+					}
+					set 'todos'(val) {
+						this.__watch["todos"] = val;
+					}    static pageUrl = "/";
+    __registerWatchesActions() {
+    this.__addWatchesActions("todos");    super.__registerWatchesActions();
+}
+    static __style = `:host{height:100%;width:100%}`;
+    __getStatic() {
+        return TodoListPage;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TodoListPage.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<div class="card">    <ul>        <template _id="todolistpage_0"></template>    </ul></div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();const templ0 = new Aventus.Template(this);templ0.setTemplate(`             <li>                <span _id="todolistpage_1"></span>                <ul>                    <template _id="todolistpage_2"></template>                </ul>            </li>        `);templ0.setActions({
+  "content": {
+    "todolistpage_1°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__76dd530e84276b51e9aa2274f7490716method2(c.data.todo))}`,
+      "once": true
+    }
+  }
+});this.__getStatic().__template.addLoop({
+                    anchorId: 'todolistpage_0',
+                    template: templ0,
+                simple:{data: "this.todos",item:"todo"}});const templ1 = new Aventus.Template(this);templ1.setTemplate(`                        <li _id="todolistpage_3"></li>                    `);templ1.setActions({
+  "content": {
+    "todolistpage_3°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__76dd530e84276b51e9aa2274f7490716method3(c.data.task))}`,
+      "once": true
+    }
+  }
+});templ0.addLoop({
+                    anchorId: 'todolistpage_2',
+                    template: templ1,
+                simple:{data: "todo.tasks",item:"task"}}); }
+    getClassName() {
+        return "TodoListPage";
+    }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["todos"] = []; }
+    definePageTitle() {
+        return "List todo";
+    }
+    async loadRAMData() {
+        this.todos = await TodoRAM.getInstance().getList();
+        TodoRAM.getInstance().onCreated((todo) => {
+            this.todos.push(todo);
+        });
+        TodoRAM.getInstance().onUpdated((todo) => {
+            let index = this.todos.findIndex(t => t.id == todo.id);
+            if (index == -1) {
+                this.todos.push(todo);
+            }
+            else {
+                this.todos.splice(index, 1, todo);
+            }
+        });
+        TodoRAM.getInstance().onDeleted((todo) => {
+            let index = this.todos.findIndex(t => t.id == todo.id);
+            this.todos.splice(index, 1);
+        });
+    }
+    postCreation() {
+        this.loadRAMData();
+    }
+    __76dd530e84276b51e9aa2274f7490716method2(todo) {
+        return todo.name;
+    }
+    __76dd530e84276b51e9aa2274f7490716method3(task) {
+        return task.name;
+    }
+}
+TodoListPage.Namespace=`${moduleName}`;
+TodoListPage.Tag=`td-todo-list-page`;
+_.TodoListPage=TodoListPage;
+if(!window.customElements.get('td-todo-list-page')){window.customElements.define('td-todo-list-page', TodoListPage);Aventus.WebComponentInstance.registerDefinition(TodoListPage);}
+
+const Icon = class Icon extends Aventus.WebComponent {
+    static get observedAttributes() {return ["icon"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'icon'() { return this.getStringProp('icon') }
+    set 'icon'(val) { this.setStringAttr('icon', val) }    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("icon", ((target) => {
+    target.loadFont();
+})); }
+    static __style = `:host{--_material-icon-animation-duration: var(--material-icon-animation-duration, 1.75s)}:host{direction:ltr;display:inline-block;font-family:"Material Icons";-moz-font-feature-settings:"liga";font-size:24px;-moz-osx-font-smoothing:grayscale;font-style:normal;font-weight:normal;letter-spacing:normal;line-height:1;text-transform:none;white-space:nowrap;word-wrap:normal}:host([spin]){animation:spin var(--_material-icon-animation-duration) linear infinite}:host([reverse_spin]){animation:reverse-spin var(--_material-icon-animation-duration) linear infinite}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes reverse-spin{0%{transform:rotate(360deg)}100%{transform:rotate(0deg)}}`;
+    __getStatic() {
+        return Icon;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Icon.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`` }
+    });
+}
+    getClassName() {
+        return "Icon";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('icon')){ this['icon'] = "check_box_outline_blank"; } }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('icon'); }
+    async loadFont() {
+        await Aventus.ResourceLoader.loadInHead({
+            type: "css",
+            url: "https://fonts.googleapis.com/icon?family=Material+Icons"
+        });
+        this.shadowRoot.innerHTML = this.icon;
+    }
+    postCreation() {
+        this.loadFont();
+    }
+}
+Icon.Namespace=`${moduleName}`;
+Icon.Tag=`td-icon`;
+_.Icon=Icon;
+if(!window.customElements.get('td-icon')){window.customElements.define('td-icon', Icon);Aventus.WebComponentInstance.registerDefinition(Icon);}
+
+const TodoEditPage = class TodoEditPage extends GenericPage {
+    get 'todo'() {
+						return this.__watch["todo"];
+					}
+					set 'todo'(val) {
+						this.__watch["todo"] = val;
+					}    static pageUrl = "/todo/create";
+    __registerWatchesActions() {
+    this.__addWatchesActions("todo");    super.__registerWatchesActions();
+}
+    static __style = `:host .card{display:flex;flex-direction:column;gap:10px;margin:auto;max-width:500px}:host .card .tasks{display:flex;flex-direction:column;gap:10px;padding:0 15px;width:100%}:host .card .tasks .sub-title{font-size:20px}:host .card .tasks .new-task{align-items:center;display:flex;gap:10px}:host .card .tasks .new-task av-input{flex-grow:1}:host .card .tasks .new-task av-icon{flex-shrink:0}:host .card .create-container{display:flex;width:100%;flex-direction:row;justify-content:flex-end;margin-top:15px}`;
+    __getStatic() {
+        return TodoEditPage;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TodoEditPage.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<div class="card">    <td-input label="Todo name" _id="todoeditpage_0"></td-input>    <div class="tasks">        <div class="sub-title">Tasks</div>        <ul class="list">            <template _id="todoeditpage_1"></template>        </ul>        <div class="new-task">            <td-input label="Task name" _id="todoeditpage_3"></td-input>            <td-icon icon="add_circle" _id="todoeditpage_4"></td-icon>        </div>    </div>    <div class="create-container">        <td-button class="create-btn" _id="todoeditpage_5">Create</td-button>    </div></div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "taskNameEl",
+      "ids": [
+        "todoeditpage_3"
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "id": "todoeditpage_0",
+      "injectionName": "value",
+      "eventNames": [
+        "change"
+      ],
+      "inject": (c) => c.comp.__ca507cb9943fcea178255739460df3cfmethod1(),
+      "extract": (c, v) => c.comp.__ca507cb9943fcea178255739460df3cfmethod2(v),
+      "isCallback": true
+    }
+  ],
+  "pressEvents": [
+    {
+      "id": "todoeditpage_4",
+      "onPress": (e, pressInstance, c) => { c.comp.addTask(e, pressInstance); }
+    },
+    {
+      "id": "todoeditpage_5",
+      "onPress": (e, pressInstance, c) => { c.comp.save(e, pressInstance); }
+    }
+  ]
+});const templ0 = new Aventus.Template(this);templ0.setTemplate(`                <li _id="todoeditpage_2"></li>            `);templ0.setActions({
+  "content": {
+    "todoeditpage_2°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__ca507cb9943fcea178255739460df3cfmethod3(c.data.task))}`,
+      "once": true
+    }
+  }
+});this.__getStatic().__template.addLoop({
+                    anchorId: 'todoeditpage_1',
+                    template: templ0,
+                simple:{data: "this.todo.tasks",item:"task"}}); }
+    getClassName() {
+        return "TodoEditPage";
+    }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["todo"] = new Todo(); }
+    onShow() {
+        if (this.currentState instanceof TodoCreateState && this.currentState.editing) {
+            this.todo = this.currentState.editing;
+        }
+        else {
+            MainApp.instance.navigate("/");
+        }
+    }
+    definePageTitle() {
+        return "Create todo";
+    }
+    addTask() {
+        if (this.taskNameEl.value && this.todo) {
+            let newTask = new Task();
+            newTask.name = this.taskNameEl.value;
+            this.todo.tasks.push(newTask);
+            this.taskNameEl.value = "";
+        }
+    }
+    save() {
+        TodoRAM.getInstance().create(this.todo);
+    }
+    __ca507cb9943fcea178255739460df3cfmethod3(task) {
+        return task.name;
+    }
+    __ca507cb9943fcea178255739460df3cfmethod1() {
+        return this.todo?.name;
+    }
+    __ca507cb9943fcea178255739460df3cfmethod2(v) {
+        if (this.todo) {
+            this.todo.name = v;
+        }
+    }
+}
+TodoEditPage.Namespace=`${moduleName}`;
+TodoEditPage.Tag=`td-todo-edit-page`;
+_.TodoEditPage=TodoEditPage;
+if(!window.customElements.get('td-todo-edit-page')){window.customElements.define('td-todo-edit-page', TodoEditPage);Aventus.WebComponentInstance.registerDefinition(TodoEditPage);}
+
+const MainApp = class MainApp extends Aventus.Navigation.Router {
+    static instance;
+    static __style = `:host{background-color:var(--color-surface-mixed-100);display:flex;flex-direction:row;height:100%;overflow:hidden;width:100%}:host .nav{background-color:var(--color-surface-mixed-300);height:100%;padding-top:30px;width:200px}:host .nav .nav-item{align-items:center;cursor:pointer;display:flex;margin:5px 0;padding:5px 15px;width:100%;transition:background-color .2s linear}:host .nav .nav-item av-icon{margin-right:15px}:host .nav .nav-item.active{background-color:var(--color-surface-mixed-600)}:host .nav .nav-item:not(.active):hover{background-color:var(--color-surface-mixed-500)}:host .content{width:calc(100% - 200px);height:100%}`;
+    __getStatic() {
+        return MainApp;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(MainApp.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'before':`    <div class="nav">        <av-router-link class="nav-item" state="/">            <td-icon icon="list"></td-icon>            <span class="name">Todo list</span>        </av-router-link>        <av-router-link class="nav-item" active_state="/todo/create" _id="mainapp_0">            <td-icon icon="add"></td-icon>            <span class="name">Create todo</span>        </av-router-link>    </div>`,'default':`<slot></slot>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "pressEvents": [
+    {
+      "id": "mainapp_0",
+      "onPress": (e, pressInstance, c) => { c.comp.setCreateState(e, pressInstance); }
+    }
+  ]
+}); }
+    getClassName() {
+        return "MainApp";
+    }
+    defineRoutes() {
+        this.addRoute(TodoListPage.pageUrl, TodoListPage);
+        this.addRoute(TodoEditPage.pageUrl, TodoEditPage);
+    }
+    bindToUrl() {
+        return false;
+    }
+    defaultUrl() {
+        return "/";
+    }
+    setCreateState() {
+        this.stateManager.setState(new TodoCreateState());
+    }
+    postCreation() {
+        super.postCreation();
+        MainApp.instance = this;
+    }
+}
+MainApp.Namespace=`${moduleName}`;
+MainApp.Tag=`td-main-app`;
+_.MainApp=MainApp;
+if(!window.customElements.get('td-main-app')){window.customElements.define('td-main-app', MainApp);Aventus.WebComponentInstance.registerDefinition(MainApp);}
 
 
-for(let key in _) { AventusWebsite[key] = _[key] }
-})(AventusWebsite);
+for(let key in _) { TodoDemo[key] = _[key] }
+})(TodoDemo);
