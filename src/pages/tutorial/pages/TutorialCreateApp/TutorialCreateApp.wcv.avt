@@ -158,9 +158,9 @@
     </pre>
 </av-code>
 
-<p>The tag <span class="cn">av-link</span> come from the package <span class="cn">AventusUI</span>. It allows you
+<p>The tag <span class="cn">av-link</span> come from the package <span class="cn">Aventus@UI</span>. It allows you
     to define what will be the state when a user click on it. When the state is matching the <span
-        class="cn">active_state</span> if defined or the <span class="cn">to</span>, an <span
+        class="cn">active_pattern</span> if defined or the <span class="cn">to</span>, an <span
         class="cn">active</span> class will added to the HtmlElement.</p>
 
 <av-tutorial-create-app-editor-5></av-tutorial-create-app-editor-5>
@@ -171,7 +171,7 @@
     <span class="cn">abstract</span>.
 </p>
 <p>In addition, for all the pages, if the content is bigger than the screen, we must show a scrollbar.
-    Inside <span class="cn">AventusUI</span>, you can find a component named <span class="cn">av-scrollable</span> that
+    Inside <span class="cn">Aventus@UI</span>, you can find a component named <span class="cn">av-scrollable</span> that
     you can use to wrap your content.</p>
 
 <av-code language="typescript" filename="Demo/src/apps/MainApp/pages/GenericPage/GenericPage.wcl.avt">

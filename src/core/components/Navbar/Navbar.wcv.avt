@@ -6,11 +6,11 @@
         <av-icon class="menu-close-icon" icon="close" @press="closeMenu"></av-icon>
         <div class="menu-title">Aventus</div>
         <av-link to="/" class="menu">Home</av-link>
-        <av-link to="/docs/installation" active_state="^/docs/installation*$"
+        <av-link to="/docs/installation" active_pattern="^/docs/installation*$"
             class="menu">Install</av-link>
-        <av-link to="/docs/introduction" active_state="^/docs/(?!installation)*$"
+        <av-link to="/docs/introduction" active_pattern="^/docs/(?!installation)*$"
             class="menu">Docs</av-link>
-        <av-link to="/tutorial/introduction" active_state="^/tutorial/.*$"
+        <av-link to="/tutorial/introduction" active_pattern="^/tutorial/.*$"
             class="menu">Tutorial</av-link>
         <av-link to="/about" class="menu">About</av-link>
         <div class="menu drop">

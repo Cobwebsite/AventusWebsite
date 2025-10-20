@@ -5,11 +5,9 @@
             	"module": "TodoDemo",
             	"componentPrefix": "td",
             	"hideWarnings": true,
-            	"dependances": [
-            		{
-            			"uri": "@AventusUI"
-            		}
-            	],
+            	"dependances": {
+                    "Aventus@UI":{}
+                },
             	"build": [
             		{
             			"name": "Main",

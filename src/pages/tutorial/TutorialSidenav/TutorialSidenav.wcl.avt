@@ -29,7 +29,7 @@ export class TutorialSidenav extends Aventus.WebComponent implements Aventus.Def
             next: null,
             previous: null
         };
-        let active = this.shadowRoot.querySelector<Aventus.Navigation.Link>(`av-link[state="${state}"]`);
+        let active = this.shadowRoot.querySelector<Aventus.Navigation.Link>(`av-link[to="${state}"]`);
         if(active) {
             let all = Array.from(this.shadowRoot.querySelectorAll<Aventus.Navigation.Link>("av-link"));
             let index = all.indexOf(active);
