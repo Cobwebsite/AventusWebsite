@@ -9,32 +9,32 @@
     </url>
     <url>
         <loc>https://aventusjs.com/docs/introduction</loc>
-        <lastmod>2023-06-16</lastmod>
+        <lastmod>2025-10-20</lastmod>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://aventusjs.com/docs/installation</loc>
-        <lastmod>2023-06-16</lastmod>
+        <lastmod>2025-10-20</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
         <loc>https://aventusjs.com/docs/experience</loc>
-        <lastmod>2023-06-16</lastmod>
+        <lastmod>2025-10-20</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
         <loc>https://aventusjs.com/docs/first_app</loc>
-        <lastmod>2023-06-16</lastmod>
+        <lastmod>2025-10-20</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
         <loc>https://aventusjs.com/docs/config/basic_prop</loc>
-        <lastmod>2025-09-26</lastmod>
+        <lastmod>2025-10-20</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
         <loc>https://aventusjs.com/docs/config/build</loc>
-        <lastmod>2025-09-26</lastmod>
+        <lastmod>2025-10-20</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
@@ -44,12 +44,47 @@
     </url>
     <url>
         <loc>https://aventusjs.com/docs/config/lib</loc>
-        <lastmod>2025-09-26</lastmod>
+        <lastmod>2025-10-20</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
         <loc>https://aventusjs.com/docs/data/create</loc>
         <lastmod>2023-06-16</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/error/generic</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/error/void</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/error/result</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/http/introduction</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/http/request</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/http/router</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/http/route</loc>
+        <lastmod>2025-10-20</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
@@ -88,21 +123,6 @@
         <priority>0.5</priority>
     </url>
     <url>
-        <loc>https://aventusjs.com/docs/socket/create</loc>
-        <lastmod>2023-06-16</lastmod>
-        <priority>0.5</priority>
-    </url>
-    <url>
-        <loc>https://aventusjs.com/docs/socket/receive</loc>
-        <lastmod>2023-06-16</lastmod>
-        <priority>0.5</priority>
-    </url>
-    <url>
-        <loc>https://aventusjs.com/docs/socket/send</loc>
-        <lastmod>2023-06-16</lastmod>
-        <priority>0.5</priority>
-    </url>
-    <url>
         <loc>https://aventusjs.com/docs/wc/create</loc>
         <lastmod>2023-06-16</lastmod>
         <priority>0.5</priority>
@@ -124,12 +144,12 @@
     </url>
     <url>
         <loc>https://aventusjs.com/docs/wc/watch</loc>
-        <lastmod>2025-09-26</lastmod>
+        <lastmod>2025-10-20</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
         <loc>https://aventusjs.com/docs/wc/signal</loc>
-        <lastmod>2025-09-26</lastmod>
+        <lastmod>2025-10-20</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
@@ -188,6 +208,16 @@
         <priority>0.5</priority>
     </url>
     <url>
+        <loc>https://aventusjs.com/docs/lib/compare_object</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/lib/converter</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
         <loc>https://aventusjs.com/docs/lib/press_manager</loc>
         <lastmod>2023-06-16</lastmod>
         <priority>0.5</priority>
@@ -203,6 +233,16 @@
         <priority>0.5</priority>
     </url>
     <url>
+        <loc>https://aventusjs.com/docs/lib/json</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/lib/mutex</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
         <loc>https://aventusjs.com/docs/lib/resize_observer</loc>
         <lastmod>2023-06-16</lastmod>
         <priority>0.5</priority>
@@ -213,33 +253,138 @@
         <priority>0.5</priority>
     </url>
     <url>
-        <loc>https://aventusjs.com/docs/lib/watcher</loc>
-        <lastmod>2025-09-26</lastmod>
+        <loc>https://aventusjs.com/docs/lib/sleep</loc>
+        <lastmod>2025-10-20</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
-        <loc>https://aventusjs.com/docs/lib/tools</loc>
-        <lastmod>2023-06-16</lastmod>
+        <loc>https://aventusjs.com/docs/lib/uuid</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/lib/value_from_object</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/lib/watcher</loc>
+        <lastmod>2025-10-20</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
         <loc>https://aventusjs.com/docs/i18n/config</loc>
-        <lastmod>2025-09-26</lastmod>
+        <lastmod>2025-10-20</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
         <loc>https://aventusjs.com/docs/i18n/usage</loc>
-        <lastmod>2025-09-26</lastmod>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/introduction</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/button</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/form</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/form_element</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/col_row</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/collapse</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/grid_helper</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/image</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/scrollable</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/tabs</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/modal</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/toast</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/link</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/page</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/page_form</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/page_form_http</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/router</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/process</loc>
+        <lastmod>2025-10-20</lastmod>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://aventusjs.com/docs/ui/shortcut</loc>
+        <lastmod>2025-10-20</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
         <loc>https://aventusjs.com/docs/advanced/template</loc>
-        <lastmod>2025-09-26</lastmod>
+        <lastmod>2025-10-20</lastmod>
         <priority>0.5</priority>
     </url>
     <url>
         <loc>https://aventusjs.com/docs/advanced/store</loc>
-        <lastmod>2025-09-26</lastmod>
+        <lastmod>2025-10-20</lastmod>
         <priority>0.5</priority>
     </url>
      <url>
