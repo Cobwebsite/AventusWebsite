@@ -1,15 +1,31 @@
 <script>
 	export class DocIntroductionButton extends Aventus.WebComponent implements Aventus.DefaultComponent {
-	    @Property()
+	    @Attribute()
+		private visible:boolean = true;
+		@Property()
 	    private count: number = 0;
+		@Signal()
+		private msg:string = "";
+
 	    private onClick(): void {
 	        this.count++;
+			
+			if(this.count > 5) {
+				this.msg = "That's enough!";
+				this.visible = false;
+			}
+			else if(this.count > 3) {
+				this.msg = "Go read the doc instead of clicking this dummy button"
+			}
 	    }
 	}
 </script>
 
 <template>	
-	<button @click="onClick">Count is {{this.count}}</button>
+	<button @click="onClick">Count is {{ this.count }}</button>
+	if(this.msg) {
+		<p>{{ this.msg }}</p>
+	}
 </template>
 
 <style>	
@@ -21,6 +37,11 @@
 			color: white;
 			cursor: pointer;
 			padding: 5px 15px;
+		}
+	}
+	:host(:not([visible])) {
+		button {
+			display: none;
 		}
 	}
 </style>

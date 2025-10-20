@@ -13387,8 +13387,15 @@ if(!window.customElements.get('av-doc-lib-animation-editor-1-example')){window.c
 
 const DocIntroductionButton = class DocIntroductionButton extends Aventus.WebComponent {
     static get observedAttributes() {return ["count"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
-    get 'count'() { return this.getNumberProp('count') }
-    set 'count'(val) { this.setNumberAttr('count', val) }    static __style = `:host button{background-color:#e5540e;border:none;border-radius:5px;color:#fff;cursor:pointer;padding:5px 15px}`;
+    get 'visible'() { return this.getBoolAttr('visible') }
+    set 'visible'(val) { this.setBoolAttr('visible', val) }    get 'count'() { return this.getNumberProp('count') }
+    set 'count'(val) { this.setNumberAttr('count', val) }    get 'msg'() {
+						return this.__signals["msg"].value;
+					}
+					set 'msg'(val) {
+						this.__signals["msg"].value = val;
+					}    __registerSignalsActions() { this.__signals["msg"] = null; super.__registerSignalsActions();  }
+    static __style = `:host button{background-color:#e5540e;border:none;border-radius:5px;color:#fff;cursor:pointer;padding:5px 15px}:host(:not([visible])) button{display:none}`;
     __getStatic() {
         return DocIntroductionButton;
     }
@@ -13399,13 +13406,13 @@ const DocIntroductionButton = class DocIntroductionButton extends Aventus.WebCom
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<button _id="docintroductionbutton_0"></button>` }
+        blocks: { 'default':`<button _id="docintroductionbutton_0"></button><template _id="docintroductionbutton_1"></template>` }
     });
 }
     __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
   "content": {
     "docintroductionbutton_0°@HTML": {
-      "fct": (c) => `Count is ${c.print(c.comp.__33f75d5e73a3504bfb45e6d176287749method0())}`,
+      "fct": (c) => `Count is ${c.print(c.comp.__33f75d5e73a3504bfb45e6d176287749method1())}`,
       "once": true
     }
   },
@@ -13416,17 +13423,45 @@ const DocIntroductionButton = class DocIntroductionButton extends Aventus.WebCom
       "fct": (e, c) => c.comp.onClick(e)
     }
   ]
-}); }
+});const templ0 = new Aventus.Template(this);templ0.setTemplate(`		<p _id="docintroductionbutton_2"></p>	`);templ0.setActions({
+  "content": {
+    "docintroductionbutton_2°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__33f75d5e73a3504bfb45e6d176287749method2())}`,
+      "once": true
+    }
+  }
+});this.__getStatic().__template.addIf({
+                    anchorId: 'docintroductionbutton_1',
+                    parts: [{once: true,
+                    condition: (c) => c.comp.__33f75d5e73a3504bfb45e6d176287749method0(),
+                    template: templ0
+                }]
+            }); }
     getClassName() {
         return "DocIntroductionButton";
     }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('count')){ this['count'] = 0; } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('count'); }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('visible')) {this.setAttribute('visible' ,'true'); }if(!this.hasAttribute('count')){ this['count'] = 0; } }
+    __defaultValuesSignal(s) { super.__defaultValuesSignal(s); s["msg"] = ""; }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('visible');this.__upgradeProperty('count');this.__correctGetter('msg'); }
+    __listBoolProps() { return ["visible"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
     onClick() {
         this.count++;
+        if (this.count > 5) {
+            this.msg = "That's enough!";
+            this.visible = false;
+        }
+        else if (this.count > 3) {
+            this.msg = "Go read the doc instead of clicking this dummy button";
+        }
+    }
+    __33f75d5e73a3504bfb45e6d176287749method1() {
+        return this.count;
+    }
+    __33f75d5e73a3504bfb45e6d176287749method2() {
+        return this.msg;
     }
     __33f75d5e73a3504bfb45e6d176287749method0() {
-        return this.count;
+        return this.msg;
     }
 }
 DocIntroductionButton.Namespace=`AventusWebsite`;
@@ -24325,7 +24360,7 @@ const DocIntroduction = class DocIntroduction extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Introduction</h1><p>Aventus is a framework that allow you to create complex user interfaces by splitting common parts of a    front-end application in several well knowned files. It builds on top of standard HTML, CSS, JavaScript    and provide a way to keep your development under control.</p><p>Here is a minimal example:</p><av-code-editor name="Button example">    <av-code language="typescript" tab="1" filename="Button/Button.wcl.avt">        export class DocIntroductionButton extends Aventus.WebComponent implements Aventus.DefaultComponent {            @Property()            private count: number = 0;            private onClick(): void {                this.count++;            }        }    </av-code></av-code>    <av-code language="html" tab="1" filename="Button/Button.wcv.avt">        <button @click="onClick">Count is {{ this.count }}</button>    </av-code></av-code>    <av-code language="css" tab="1" filename="Button/Button.wcs.avt">        :host {            button {                background-color: #e5540e;                border: none;                border-radius: 5px;                color: white;                cursor: pointer;                padding: 5px 15px;            }        }    </av-code></av-code>    <av-doc-introduction-button slot="result"></av-doc-introduction-button></av-code-editor><p>To understand the capabilities of Aventus, you need to learn about the following:</p><ul>    <li><span class="cn">Webcomponent</span></li>    <li><span class="cn">Data / Storage</span></li>    <li><span class="cn">States</span></li>    <li><span class="cn">Http Request</span></li></ul>` }
+        blocks: { 'default':`<h1>Introduction</h1><p>Aventus is a framework that allow you to create complex user interfaces by splitting common parts of a    front-end application in several well knowned files. It builds on top of standard HTML, CSS, JavaScript    and provide a way to keep your development under control.</p><p>Here is a minimal example:</p><av-code-editor name="Button example">    <av-code language="typescript" tab="1" filename="Button/Button.wcl.avt">        export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {            @Attribute()            private visible: boolean = true;            &nbsp;            @Property()            private count: number = 0;            &nbsp;            @Signal()            private msg: string = "";            &nbsp;            private onClick(): void {                this.count++;                &nbsp;                &#105;f(this.count > 5) {                    this.msg = "That's enough!";                    this.visible = false;                }                else &#105;f(this.count > 3) {                    this.msg = "Go read the doc instead of clicking this dummy button"                }            }        }    </av-code></av-code>    <av-code language="html" tab="1" filename="Button/Button.wcv.avt">        <pre>&lt;button @click="onClick"&gt;Count is \{\{ this.count }}&lt;/button&gt;&#105;f(this.msg) {    &lt;p&gt;\{\{ this.msg }}&lt;/p&gt;}        </pre>    </av-code></av-code>    <av-code language="css" tab="1" filename="Button/Button.wcs.avt">        :host {            button {                background-color: #e5540e;                border: none;                border-radius: 5px;                color: white;                cursor: pointer;                padding: 5px 15px;            }        }        :host(:not([visible])) {            button {                display: none;            }        }    </av-code></av-code>    <av-doc-introduction-button slot="result"></av-doc-introduction-button></av-code-editor><p>To understand the capabilities of Aventus, you need to learn about the following:</p><ul>    <li><span class="cn">Webcomponent</span></li>    <li><span class="cn">Data / Storage</span></li>    <li><span class="cn">States</span></li>    <li><span class="cn">Http Request</span></li></ul>` }
     });
 }
     getClassName() {
