@@ -1,3 +1,30 @@
+var npmCompilation;
+(npmCompilation||(npmCompilation = {}));
+(function (npmCompilation) {
+	var _ = (function () {
+	'use strict';
+
+	var FileSaver_min = {exports: {}};
+
+	(function (module, exports) {
+		(function(a,b){b();})(this,function(){function b(a,b){return "undefined"==typeof b?b={autoBom:!1}:"object"!=typeof b&&(console.warn("Deprecated: Expected third argument to be a object"),b={autoBom:!b}),b.autoBom&&/^\s*(?:text\/\S*|application\/xml|\S*\/\S*\+xml)\s*;.*charset\s*=\s*utf-8/i.test(a.type)?new Blob(["\uFEFF",a],{type:a.type}):a}function c(a,b,c){var d=new XMLHttpRequest;d.open("GET",a),d.responseType="blob",d.onload=function(){g(d.response,b,c);},d.onerror=function(){console.error("could not download file");},d.send();}function d(a){var b=new XMLHttpRequest;b.open("HEAD",a,!1);try{b.send();}catch(a){}return 200<=b.status&&299>=b.status}function e(a){try{a.dispatchEvent(new MouseEvent("click"));}catch(c){var b=document.createEvent("MouseEvents");b.initMouseEvent("click",!0,!0,window,0,0,0,80,20,!1,!1,!1,!1,0,null),a.dispatchEvent(b);}}var f="object"==typeof window&&window.window===window?window:"object"==typeof self&&self.self===self?self:"object"==typeof global&&global.global===global?global:void 0,a=f.navigator&&/Macintosh/.test(navigator.userAgent)&&/AppleWebKit/.test(navigator.userAgent)&&!/Safari/.test(navigator.userAgent),g=f.saveAs||("object"!=typeof window||window!==f?function(){}:"download"in HTMLAnchorElement.prototype&&!a?function(b,g,h){var i=f.URL||f.webkitURL,j=document.createElement("a");g=g||b.name||"download",j.download=g,j.rel="noopener","string"==typeof b?(j.href=b,j.origin===location.origin?e(j):d(j.href)?c(b,g,h):e(j,j.target="_blank")):(j.href=i.createObjectURL(b),setTimeout(function(){i.revokeObjectURL(j.href);},4E4),setTimeout(function(){e(j);},0));}:"msSaveOrOpenBlob"in navigator?function(f,g,h){if(g=g||f.name||"download","string"!=typeof f)navigator.msSaveOrOpenBlob(b(f,h),g);else if(d(f))c(f,g,h);else {var i=document.createElement("a");i.href=f,i.target="_blank",setTimeout(function(){e(i);});}}:function(b,d,e,g){if(g=g||open("","_blank"),g&&(g.document.title=g.document.body.innerText="downloading..."),"string"==typeof b)return c(b,d,e);var h="application/octet-stream"===b.type,i=/constructor/i.test(f.HTMLElement)||f.safari,j=/CriOS\/[\d]+/.test(navigator.userAgent);if((j||h&&i||a)&&"undefined"!=typeof FileReader){var k=new FileReader;k.onloadend=function(){var a=k.result;a=j?a:a.replace(/^data:[^;]*;/,"data:attachment/file;"),g?g.location.href=a:location=a,g=null;},k.readAsDataURL(b);}else {var l=f.URL||f.webkitURL,m=l.createObjectURL(b);g?g.location=m:location.href=m,g=null,setTimeout(function(){l.revokeObjectURL(m);},4E4);}});f.saveAs=g.saveAs=g,(module.exports=g);});
+
+		
+	} (FileSaver_min));
+
+	var FileSaver_minExports = FileSaver_min.exports;
+
+	var _virtual_index = { saveAs: FileSaver_minExports.saveAs };
+
+	return _virtual_index;
+
+})();
+
+
+	npmCompilation['c940c285ff5c6f70f9e3538ac79e1aec'] = {};
+npmCompilation['c940c285ff5c6f70f9e3538ac79e1aec']['saveAs'] = _['saveAs'];
+
+})(npmCompilation);
 if(!Object.hasOwn(window, "AvInstance")) {
 	Object.defineProperty(window, "AvInstance", {
 		get() {return Aventus.Instance;}
@@ -6631,15 +6658,15 @@ Layout.GridGuideHelper = class GridGuideHelper extends Aventus.WebComponent {
         return Math.abs(div - valuePx) < m ? div : valuePx;
     }
     onMoveX(e) {
-        const valuePx = this.applyMagnetic(e.pageY);
+        const valuePx = this.applyMagnetic(e.pageY - this.container.getBoundingClientRect().y);
         this.style.top = valuePx + 'px';
-        this.positionEl.style.left = e.pageX + 10 + 'px';
+        this.positionEl.style.left = e.pageX - this.container.getBoundingClientRect().x + 10 + 'px';
         this.displayValue(valuePx);
     }
     onMoveY(e) {
-        const valuePx = this.applyMagnetic(e.pageX);
+        const valuePx = this.applyMagnetic(e.pageX - this.container.getBoundingClientRect().x);
         this.style.left = valuePx + 'px';
-        this.positionEl.style.top = e.pageY - 20 + 'px';
+        this.positionEl.style.top = e.pageY - this.container.getBoundingClientRect().y - 20 + 'px';
         this.displayValue(valuePx);
     }
     onStop() {
@@ -7380,6 +7407,9 @@ Navigation.Page = class Page extends Aventus.WebComponent {
     isAllowed(state, pattern, router) {
         return true;
     }
+    loadData(state) {
+        return true;
+    }
 }
 Navigation.Page.Namespace=`Aventus.Navigation`;
 __as1(_.Navigation, 'Page', Navigation.Page);
@@ -7511,6 +7541,14 @@ Navigation.Router = class Router extends Aventus.WebComponent {
                             return;
                         }
                         this.navigate(canResult, { replace: true });
+                        return;
+                    }
+                    const loadDataResult = await element.loadData(currentState);
+                    if (loadDataResult !== true) {
+                        if (loadDataResult === false) {
+                            return;
+                        }
+                        this.navigate(loadDataResult, { replace: true });
                         return;
                     }
                     if (isNew)
@@ -8044,7 +8082,7 @@ Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
         }
         let containerSize = direction == 'y' ? container.offsetHeight : container.offsetWidth;
         if (this.contentWrapperSize[direction] != 0) {
-            let scrollPosition = this.position[direction] / this.contentWrapperSize[direction] * containerSize;
+            let scrollPosition = this.div(this.position[direction], this.contentWrapperSize[direction]) * containerSize;
             scroller.style.transform = `translate${direction.toUpperCase()}(${scrollPosition}px)`;
             this.contentWrapper.style.transform = `translate3d(${-1 * this.x}px, ${-1 * this.y}px, 0)`;
         }
@@ -8219,7 +8257,7 @@ Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
         else {
             newScale = Math.max(this.min_zoom, newZoom);
         }
-        let scaleDiff = newScale / oldScale;
+        let scaleDiff = this.div(newScale, oldScale);
         const matrix = this.createMatrix()
             .translate(this.x, this.y)
             .translate(mousePositionRelativeToTarget.x, mousePositionRelativeToTarget.y)
@@ -8244,7 +8282,7 @@ Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
             const originY = (positioningElRect.top + this.y - this.startTranslate.y) - prevMidpoint.y;
             const newDistance = this.getDistance(touches[0], touches[1]);
             const prevDistance = this.previousDistance;
-            let scaleDiff = prevDistance ? newDistance / prevDistance : 1;
+            let scaleDiff = prevDistance ? this.div(newDistance, prevDistance) : 1;
             const panX = prevMidpoint.x - newMidpoint.x;
             const panY = prevMidpoint.y - newMidpoint.y;
             let oldScale = this.zoom;
@@ -8255,7 +8293,7 @@ Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
             else {
                 newScale = Math.max(this.min_zoom, oldScale * scaleDiff);
             }
-            scaleDiff = newScale / oldScale;
+            scaleDiff = this.div(newScale, oldScale);
             const matrix = this.createMatrix()
                 .translate(panX, panY)
                 .translate(originX, originY)
@@ -8509,17 +8547,17 @@ Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
         this.contentWrapperSize.y = this.contentWrapper.offsetHeight;
         if (this.zoom < 1) {
             // scale the container for zoom
-            this.contentZoom.style.width = this.mainContainer.offsetWidth / this.zoom + 'px';
-            this.contentZoom.style.height = this.mainContainer.offsetHeight / this.zoom + 'px';
-            this.contentZoom.style.maxHeight = this.mainContainer.offsetHeight / this.zoom + 'px';
+            this.contentZoom.style.width = this.div(this.mainContainer.offsetWidth, this.zoom) + 'px';
+            this.contentZoom.style.height = this.div(this.mainContainer.offsetHeight, this.zoom) + 'px';
+            this.contentZoom.style.maxHeight = this.div(this.mainContainer.offsetHeight, this.zoom) + 'px';
             if (currentOffsetHeight != this.display.y || currentOffsetWidth != this.display.x)
                 hasChanged = true;
             this.display.y = currentOffsetHeight;
             this.display.x = currentOffsetWidth;
         }
         else {
-            const newX = currentOffsetWidth / this.zoom;
-            const newY = currentOffsetHeight / this.zoom;
+            const newX = this.div(currentOffsetWidth, this.zoom);
+            const newY = this.div(currentOffsetHeight, this.zoom);
             if (newY != this.display.y || newX != this.display.x)
                 hasChanged = true;
             this.display.y = newY;
@@ -8565,7 +8603,7 @@ Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
         }
     }
     calculateSizeScroller(direction) {
-        const scrollerSize = ((this.display[direction] - this.margin[direction]) / this.contentWrapperSize[direction] * 100);
+        const scrollerSize = (this.div((this.display[direction] - this.margin[direction]), this.contentWrapperSize[direction]) * 100);
         if (direction == "y") {
             this.scroller[direction]().style.height = scrollerSize + '%';
         }
@@ -8593,8 +8631,8 @@ Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
         }
         else if (this.loadedOnce) {
             this.savedPercent = {
-                x: this.position.x / this.contentWrapperSize.x,
-                y: this.position.y / this.contentWrapperSize.y
+                x: this.div(this.position.x, this.contentWrapperSize.x),
+                y: this.div(this.position.y, this.contentWrapperSize.y)
             };
         }
         if (!this.calculateRealSize() && !force) {
@@ -8649,6 +8687,11 @@ Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
         }
         this.observer.observe(this.contentWrapper);
         this.observer.observe(this);
+    }
+    div(nb1, nb2) {
+        if (!nb2)
+            return nb1;
+        return nb1 / nb2;
     }
     postCreation() {
         this.dimensionRefreshed();
@@ -8816,7 +8859,7 @@ Lib.ShortcutManager=class ShortcutManager {
             }
         }
     }
-    static onKeyDown(e) {
+    static async onKeyDown(e) {
         if (e.ctrlKey) {
             let txt = Lib.SpecialTouch[Lib.SpecialTouch.Control];
             if (!this.arrayKeys.includes(txt)) {
@@ -8853,7 +8896,7 @@ Lib.ShortcutManager=class ShortcutManager {
             }
             this.arrayKeys = [];
             for (let cb of Lib.ShortcutManager.memory[key]) {
-                const result = cb();
+                const result = await cb();
                 if (result === false) {
                     preventDefault = result;
                 }
@@ -8897,6 +8940,15 @@ Lib.ShortcutManager=class ShortcutManager {
         });
         document.body.addEventListener("keydown", this.onKeyDown);
         document.body.addEventListener("keyup", this.onKeyUp);
+    }
+    static setAutoPrevents(combinaisons) {
+        if (!Lib.ShortcutManager.isInit) {
+            this.init();
+        }
+        Lib.ShortcutManager.autoPrevents = [];
+        for (let combinaison of combinaisons) {
+            Lib.ShortcutManager.autoPrevents.push(this.getText(combinaison));
+        }
     }
     static uninit() {
         document.body.removeEventListener("keydown", this.onKeyDown);
@@ -10399,10 +10451,6 @@ __as1(_.Layout.Tabs, 'TabHeader', Layout.Tabs.TabHeader);
 Layout.Tabs.Tab = class Tab extends Aventus.WebComponent {
     get 'selected'() { return this.getBoolAttr('selected') }
     set 'selected'(val) { this.setBoolAttr('selected', val) }    tabHeader;
-    get headerContent() {
-        let elements = this.getElementsInSlot("header");
-        return elements;
-    }
     static __style = ``;
     constructor() {
         super();
@@ -10420,15 +10468,15 @@ Layout.Tabs.Tab = class Tab extends Aventus.WebComponent {
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>`,'header':`<slot name="header"></slot>` }, 
-        blocks: { 'default':`<slot></slot><div class="slot-header">    <slot name="header"></slot></div>` }
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
     });
 }
     getClassName() {
         return "Tab";
     }
     __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('selected')) { this.attributeChangedCallback('selected', false, false); } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('headerContent');this.__upgradeProperty('selected'); }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('selected'); }
     __listBoolProps() { return ["selected"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
 }
 Layout.Tabs.Tab.Namespace=`Aventus.Layout.Tabs`;
