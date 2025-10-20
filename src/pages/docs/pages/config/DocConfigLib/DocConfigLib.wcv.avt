@@ -27,7 +27,7 @@
     <av-row>
         <av-col size="4" center>uri</av-col>
         <av-col size="8" center>This is a string to define where to find the file to import. To have more
-            informations about this path, you can read the next chapter.
+            information about this path, you can read the next chapter.
         </av-col>
     </av-row>
     <av-row>

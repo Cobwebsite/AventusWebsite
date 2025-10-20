@@ -1,6 +1,6 @@
 <h1>Installation</h1>
 <h2>Basic install</h2>
-<p>Aventus is actually only available as a <a target="_blank" href="https://marketplace.visualstudio.com/items?itemName=Cobwebsite.aventus" rel="noopener noreferrer">vscode extension</a>. You can download it directly inside the vscode extensions
+<p>Aventus is actually available as a <a target="_blank" href="https://marketplace.visualstudio.com/items?itemName=Cobwebsite.aventus" rel="noopener noreferrer">vscode extension</a>. You can download it directly inside the vscode extensions
     tab by searching "Aventus" in the marketplace. Nothing else is required because everything is wrapped inside the
     extension.
 </p>
@@ -16,6 +16,14 @@
     <li><b>Aventus : Import projects</b> <av-icon icon="arrow-right"></av-icon> To import Aventus projects</li>
     <li><b>Aventus : Open storage</b> <av-icon icon="arrow-right"></av-icon> To open the folder where Aventus store data</li>
 </ul>
+
+<h2>CLI</h2>
+<p>Aventus also provides a <b>CLI</b> for DevOps tasks and automation. It can be installed via npm using:</p>
+<av-code language="bash">
+    <pre>npm i @aventusjs/cli</pre>
+</av-code>
+<p>While the CLI is powerful for scripting and automation, it is still recommended to use the VSCode extension for development, as it includes all necessary tools in a user-friendly interface.</p>
+
 
 <h2>Source code</h2>
 <p>The Aventus source code can be downloaded on <a href="https://github.com/Cobwebsite/Aventus" target="_blank" rel="noopener noreferrer">github.</a></p>

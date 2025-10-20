@@ -33,7 +33,9 @@
 
 <p>This will register the file <span class="cn">@Utility.wcs.avt</span> inside the <span class="cn">Aventus.Style</span>
     lib with the name <span class="cn">@Utility</span>.</p>
-<av-img src="/img/doc/wc/style/stylemanager.png"></av-img>
+<div class="img-cont">
+    <av-img src="/img/doc/wc/style/stylemanager.png"></av-img>
+</div>
 <p>If you want to use an external lib as a style for your component, you can use the <span class="cn">load</span>
     function. For example to load the bootstrap class : </p>
 <av-doc-wc-style-editor-4></av-doc-wc-style-editor-4>

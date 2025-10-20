@@ -1,0 +1,21 @@
+
+export class DocUIPageFormRouteEditor1LoginRequest {
+    public username!: string;
+    public password!: string;
+}
+
+
+export class DocUIPageFormRouteEditor1LoginController extends Aventus.HttpRoute {
+    @BindThis()
+    public async login(body: DocUIPageFormRouteEditor1LoginRequest): Promise<Aventus.ResultWithError<string>> {
+        const request = new Aventus.HttpRequest(`/api/login`, Aventus.HttpMethod.POST);
+        request.setBody(body);
+        return await request.queryJSON<string>(this.router);
+    }
+
+    @BindThis()
+    public async logout(): Promise<Aventus.ResultWithError<boolean>> {
+        const request = new Aventus.HttpRequest(`/api/logout`, Aventus.HttpMethod.POST);
+        return await request.queryJSON<boolean>(this.router);
+    }
+}

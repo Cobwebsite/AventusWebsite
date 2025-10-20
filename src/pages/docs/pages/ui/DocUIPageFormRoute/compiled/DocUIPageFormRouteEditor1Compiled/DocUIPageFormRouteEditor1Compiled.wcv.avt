@@ -1,0 +1,3 @@
+<my-input name="username" :form="this.form.parts.username"></my-input> <!-- Link input to the form -->
+<my-input type="password" name="password" :form="this.form.parts.password"></my-input>
+<button-element type="submit">Login</button-element> <!-- will submit the form -->

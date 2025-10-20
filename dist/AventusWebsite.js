@@ -64,6 +64,22 @@ const _ = {};
 
 
 let _n;
+var HttpErrorCode;
+(function (HttpErrorCode) {
+    HttpErrorCode[HttpErrorCode["unknow"] = 0] = "unknow";
+})(HttpErrorCode || (HttpErrorCode = {}));
+__as1(_, 'HttpErrorCode', HttpErrorCode);
+
+var HttpMethod;
+(function (HttpMethod) {
+    HttpMethod["GET"] = "GET";
+    HttpMethod["POST"] = "POST";
+    HttpMethod["DELETE"] = "DELETE";
+    HttpMethod["PUT"] = "PUT";
+    HttpMethod["OPTION"] = "OPTION";
+})(HttpMethod || (HttpMethod = {}));
+__as1(_, 'HttpMethod', HttpMethod);
+
 let DateConverter=class DateConverter {
     static __converter = new DateConverter();
     static get converter() {
@@ -5771,6 +5787,26 @@ let VoidWithError=class VoidWithError {
 VoidWithError.Namespace=`Aventus`;
 __as1(_, 'VoidWithError', VoidWithError);
 
+let ResultWithError=class ResultWithError extends VoidWithError {
+    /**
+      * The result value of the action.
+      * @type {U | undefined}
+      */
+    result;
+    /**
+     * Converts the current instance to a ResultWithError object.
+     * @returns {ResultWithError<U>} A new instance of ResultWithError with the same error list and result value.
+     */
+    toGeneric() {
+        const result = new ResultWithError();
+        result.errors = this.errors;
+        result.result = this.result;
+        return result;
+    }
+}
+ResultWithError.Namespace=`Aventus`;
+__as1(_, 'ResultWithError', ResultWithError);
+
 let Json=class Json {
     /**
      * Converts a JavaScript class instance to a JSON object.
@@ -6113,6 +6149,312 @@ let Data=class Data {
 Data.Namespace=`Aventus`;
 __as1(_, 'Data', Data);
 
+let HttpError=class HttpError extends GenericError {
+}
+HttpError.Namespace=`Aventus`;
+__as1(_, 'HttpError', HttpError);
+
+let HttpRequest=class HttpRequest {
+    static options;
+    static configure(options) {
+        this.options = options;
+    }
+    request;
+    url;
+    methodSpoofing = false;
+    constructor(url, method = HttpMethod.GET, body, methodSpoofing = false) {
+        this.url = url;
+        this.request = {};
+        this.methodSpoofing = methodSpoofing;
+        this.setMethod(method);
+        this.prepareBody(body);
+    }
+    setUrl(url) {
+        this.url = url;
+    }
+    toString() {
+        return this.url + " : " + JSON.stringify(this.request);
+    }
+    setBody(body) {
+        this.prepareBody(body);
+    }
+    setMethod(method) {
+        this.request.method = method;
+    }
+    /**
+     * Replace method Put/Delete by _method:"put" inside a form
+     */
+    enableMethodSpoofing() {
+        this.methodSpoofing = true;
+    }
+    objectToFormData(obj, formData, parentKey) {
+        formData = formData || new FormData();
+        let byPass = obj;
+        if (byPass.__isProxy) {
+            obj = byPass.getTarget();
+        }
+        const keys = obj.toJSON ? Object.keys(obj.toJSON()) : Object.keys(obj);
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+            let value = obj[key];
+            const newKey = parentKey ? `${parentKey}[${key}]` : key;
+            if (value instanceof Date) {
+                formData.append(newKey, DateConverter.converter.toString(value));
+            }
+            else if (typeof value === 'object' &&
+                value !== null &&
+                !(value instanceof File)) {
+                if (Array.isArray(value)) {
+                    for (let j = 0; j < value.length; j++) {
+                        const arrayKey = `${newKey}[${j}]`;
+                        this.objectToFormData({ [arrayKey]: value[j] }, formData);
+                    }
+                }
+                else {
+                    this.objectToFormData(value, formData, newKey);
+                }
+            }
+            else {
+                if (value === undefined || value === null) {
+                    value = "";
+                }
+                else if (Watcher.is(value)) {
+                    value = Watcher.extract(value);
+                }
+                formData.append(newKey, value);
+            }
+        }
+        return formData;
+    }
+    jsonReplacer(key, value) {
+        if (this[key] instanceof Date) {
+            return DateConverter.converter.toString(this[key]);
+        }
+        return value;
+    }
+    prepareBody(data) {
+        if (!data) {
+            return;
+        }
+        else if (data instanceof FormData) {
+            this.request.body = data;
+        }
+        else {
+            let useFormData = false;
+            const analyseFormData = (obj) => {
+                for (let key in obj) {
+                    if (obj[key] instanceof File) {
+                        useFormData = true;
+                        break;
+                    }
+                    else if (Array.isArray(obj[key]) && obj[key].length > 0 && obj[key][0] instanceof File) {
+                        useFormData = true;
+                        break;
+                    }
+                    else if (typeof obj[key] == 'object' && !Array.isArray(obj[key]) && !(obj[key] instanceof Date)) {
+                        analyseFormData(obj[key]);
+                        if (useFormData) {
+                            break;
+                        }
+                    }
+                }
+            };
+            analyseFormData(data);
+            if (useFormData) {
+                this.request.body = this.objectToFormData(data);
+            }
+            else {
+                this.request.body = JSON.stringify(data, this.jsonReplacer);
+                this.setHeader("Content-Type", "Application/json");
+            }
+        }
+        if (this.methodSpoofing) {
+            if (this.request.method?.toUpperCase() == Aventus.HttpMethod.PUT) {
+                if (this.request.body instanceof FormData) {
+                    this.request.body.append("_method", Aventus.HttpMethod.PUT);
+                    this.request.method = Aventus.HttpMethod.POST;
+                }
+            }
+            else if (this.request.method?.toUpperCase() == Aventus.HttpMethod.DELETE) {
+                if (this.request.body instanceof FormData) {
+                    this.request.body.append("_method", Aventus.HttpMethod.DELETE);
+                    this.request.method = Aventus.HttpMethod.POST;
+                }
+            }
+        }
+    }
+    setHeader(name, value) {
+        if (!this.request.headers) {
+            this.request.headers = [];
+        }
+        this.request.headers.push([name, value]);
+    }
+    setCredentials(credentials) {
+        this.request.credentials = credentials;
+    }
+    async _query(router) {
+        let result = new ResultWithError();
+        try {
+            const isFull = this.url.match("https?://");
+            if (!this.url.startsWith("/") && !isFull) {
+                this.url = "/" + this.url;
+            }
+            if (HttpRequest.options?.beforeSend) {
+                const beforeSendResult = await HttpRequest.options.beforeSend(this);
+                result.errors = beforeSendResult.errors;
+            }
+            const fullUrl = isFull ? this.url : router ? router.options.url + this.url : this.url;
+            result.result = await fetch(fullUrl, this.request);
+        }
+        catch (e) {
+            result.errors.push(new HttpError(HttpErrorCode.unknow, e));
+        }
+        return result;
+    }
+    async query(router) {
+        let result = await this._query(router);
+        if (HttpRequest.options?.responseMiddleware) {
+            result = await HttpRequest.options.responseMiddleware(result, this);
+        }
+        return result;
+    }
+    async queryVoid(router) {
+        let resultTemp = await this.query(router);
+        let result = new VoidWithError();
+        if (!resultTemp.success) {
+            result.errors = resultTemp.errors;
+            return result;
+        }
+        try {
+            if (!resultTemp.result) {
+                return result;
+            }
+            if (resultTemp.result.status != 204) {
+                let tempResult = Converter.transform(await resultTemp.result.json());
+                if (tempResult instanceof VoidWithError) {
+                    for (let error of tempResult.errors) {
+                        result.errors.push(error);
+                    }
+                }
+            }
+        }
+        catch (e) {
+        }
+        return result;
+    }
+    async queryJSON(router) {
+        let resultTemp = await this.query(router);
+        let result = new ResultWithError();
+        if (!resultTemp.success) {
+            result.errors = resultTemp.errors;
+            return result;
+        }
+        try {
+            if (!resultTemp.result) {
+                return result;
+            }
+            let tempResult = Converter.transform(await resultTemp.result.json());
+            if (tempResult instanceof VoidWithError) {
+                for (let error of tempResult.errors) {
+                    result.errors.push(error);
+                }
+                if (tempResult instanceof ResultWithError) {
+                    result.result = tempResult.result;
+                }
+            }
+            else {
+                result.result = tempResult;
+            }
+        }
+        catch (e) {
+            result.errors.push(new HttpError(HttpErrorCode.unknow, e));
+        }
+        return result;
+    }
+    async queryTxt(router) {
+        let resultTemp = await this.query(router);
+        let result = new ResultWithError();
+        if (!resultTemp.success) {
+            result.errors = resultTemp.errors;
+            return result;
+        }
+        try {
+            if (!resultTemp.result) {
+                return result;
+            }
+            result.result = await resultTemp.result.text();
+        }
+        catch (e) {
+            result.errors.push(new HttpError(HttpErrorCode.unknow, e));
+        }
+        return result;
+    }
+    async queryBlob(router) {
+        let resultTemp = await this.query(router);
+        let result = new ResultWithError();
+        if (!resultTemp.success) {
+            result.errors = resultTemp.errors;
+            return result;
+        }
+        try {
+            if (!resultTemp.result) {
+                return result;
+            }
+            result.result = await resultTemp.result.blob();
+        }
+        catch (e) {
+            result.errors.push(new HttpError(HttpErrorCode.unknow, e));
+        }
+        return result;
+    }
+}
+HttpRequest.Namespace=`Aventus`;
+__as1(_, 'HttpRequest', HttpRequest);
+
+let HttpRouter=class HttpRouter {
+    options;
+    constructor() {
+        this.options = this.defineOptions(this.defaultOptionsValue());
+    }
+    defaultOptionsValue() {
+        return {
+            url: location.protocol + "//" + location.host
+        };
+    }
+    defineOptions(options) {
+        return options;
+    }
+    async get(url) {
+        return await new HttpRequest(url).queryJSON(this);
+    }
+    async post(url, data) {
+        return await new HttpRequest(url, HttpMethod.POST, data).queryJSON(this);
+    }
+    async put(url, data) {
+        return await new HttpRequest(url, HttpMethod.PUT, data).queryJSON(this);
+    }
+    async delete(url, data) {
+        return await new HttpRequest(url, HttpMethod.DELETE, data).queryJSON(this);
+    }
+    async option(url, data) {
+        return await new HttpRequest(url, HttpMethod.OPTION, data).queryJSON(this);
+    }
+}
+HttpRouter.Namespace=`Aventus`;
+__as1(_, 'HttpRouter', HttpRouter);
+
+let HttpRoute=class HttpRoute {
+    router;
+    constructor(router) {
+        this.router = router ?? new HttpRouter();
+    }
+    getPrefix() {
+        return "";
+    }
+}
+HttpRoute.Namespace=`Aventus`;
+__as1(_, 'HttpRoute', HttpRoute);
+
 
 for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
@@ -6242,43 +6584,23 @@ const __as1 = (o, k, c) => { if (o[k] !== undefined) for (let w in o[k]) { c[w] 
 const moduleName = `Aventus`;
 const _ = {};
 
-let Lib = {};
-_.Lib = Aventus.Lib ?? {};
 let Layout = {};
 _.Layout = Aventus.Layout ?? {};
 let Form = {};
 _.Form = Aventus.Form ?? {};
+let Lib = {};
+_.Lib = Aventus.Lib ?? {};
 let Navigation = {};
 _.Navigation = Aventus.Navigation ?? {};
 Layout.Tabs = {};
 _.Layout.Tabs = Aventus.Layout?.Tabs ?? {};
+Form.Validators = {};
+_.Form.Validators = Aventus.Form?.Validators ?? {};
 let Modal = {};
 _.Modal = Aventus.Modal ?? {};
 let Toast = {};
 _.Toast = Aventus.Toast ?? {};
 let _n;
-(function (SpecialTouch) {
-    SpecialTouch[SpecialTouch["Backspace"] = 0] = "Backspace";
-    SpecialTouch[SpecialTouch["Insert"] = 1] = "Insert";
-    SpecialTouch[SpecialTouch["End"] = 2] = "End";
-    SpecialTouch[SpecialTouch["PageDown"] = 3] = "PageDown";
-    SpecialTouch[SpecialTouch["PageUp"] = 4] = "PageUp";
-    SpecialTouch[SpecialTouch["Escape"] = 5] = "Escape";
-    SpecialTouch[SpecialTouch["AltGraph"] = 6] = "AltGraph";
-    SpecialTouch[SpecialTouch["Control"] = 7] = "Control";
-    SpecialTouch[SpecialTouch["Alt"] = 8] = "Alt";
-    SpecialTouch[SpecialTouch["Shift"] = 9] = "Shift";
-    SpecialTouch[SpecialTouch["CapsLock"] = 10] = "CapsLock";
-    SpecialTouch[SpecialTouch["Tab"] = 11] = "Tab";
-    SpecialTouch[SpecialTouch["Delete"] = 12] = "Delete";
-    SpecialTouch[SpecialTouch["ArrowRight"] = 13] = "ArrowRight";
-    SpecialTouch[SpecialTouch["ArrowLeft"] = 14] = "ArrowLeft";
-    SpecialTouch[SpecialTouch["ArrowUp"] = 15] = "ArrowUp";
-    SpecialTouch[SpecialTouch["ArrowDown"] = 16] = "ArrowDown";
-    SpecialTouch[SpecialTouch["Enter"] = 17] = "Enter";
-})(Lib.SpecialTouch || (Lib.SpecialTouch = {}));
-__as1(_.Lib, 'SpecialTouch', Lib.SpecialTouch);
-
 Layout.GridGuideHelper = class GridGuideHelper extends Aventus.WebComponent {
     get 'direction'() { return this.getStringAttr('direction') }
     set 'direction'(val) { this.setStringAttr('direction', val) }get 'moving'() { return this.getBoolAttr('moving') }
@@ -6336,15 +6658,15 @@ Layout.GridGuideHelper = class GridGuideHelper extends Aventus.WebComponent {
         return Math.abs(div - valuePx) < m ? div : valuePx;
     }
     onMoveX(e) {
-        const valuePx = this.applyMagnetic(e.pageY);
+        const valuePx = this.applyMagnetic(e.pageY - this.container.getBoundingClientRect().y);
         this.style.top = valuePx + 'px';
-        this.positionEl.style.left = e.pageX + 10 + 'px';
+        this.positionEl.style.left = e.pageX - this.container.getBoundingClientRect().x + 10 + 'px';
         this.displayValue(valuePx);
     }
     onMoveY(e) {
-        const valuePx = this.applyMagnetic(e.pageX);
+        const valuePx = this.applyMagnetic(e.pageX - this.container.getBoundingClientRect().x);
         this.style.left = valuePx + 'px';
-        this.positionEl.style.top = e.pageY - 20 + 'px';
+        this.positionEl.style.top = e.pageY - this.container.getBoundingClientRect().y - 20 + 'px';
         this.displayValue(valuePx);
     }
     onStop() {
@@ -6472,6 +6794,28 @@ Form.ButtonElement = class ButtonElement extends Aventus.WebComponent {
 }
 Form.ButtonElement.Namespace=`Aventus.Form`;
 __as1(_.Form, 'ButtonElement', Form.ButtonElement);
+
+(function (SpecialTouch) {
+    SpecialTouch[SpecialTouch["Backspace"] = 0] = "Backspace";
+    SpecialTouch[SpecialTouch["Insert"] = 1] = "Insert";
+    SpecialTouch[SpecialTouch["End"] = 2] = "End";
+    SpecialTouch[SpecialTouch["PageDown"] = 3] = "PageDown";
+    SpecialTouch[SpecialTouch["PageUp"] = 4] = "PageUp";
+    SpecialTouch[SpecialTouch["Escape"] = 5] = "Escape";
+    SpecialTouch[SpecialTouch["AltGraph"] = 6] = "AltGraph";
+    SpecialTouch[SpecialTouch["Control"] = 7] = "Control";
+    SpecialTouch[SpecialTouch["Alt"] = 8] = "Alt";
+    SpecialTouch[SpecialTouch["Shift"] = 9] = "Shift";
+    SpecialTouch[SpecialTouch["CapsLock"] = 10] = "CapsLock";
+    SpecialTouch[SpecialTouch["Tab"] = 11] = "Tab";
+    SpecialTouch[SpecialTouch["Delete"] = 12] = "Delete";
+    SpecialTouch[SpecialTouch["ArrowRight"] = 13] = "ArrowRight";
+    SpecialTouch[SpecialTouch["ArrowLeft"] = 14] = "ArrowLeft";
+    SpecialTouch[SpecialTouch["ArrowUp"] = 15] = "ArrowUp";
+    SpecialTouch[SpecialTouch["ArrowDown"] = 16] = "ArrowDown";
+    SpecialTouch[SpecialTouch["Enter"] = 17] = "Enter";
+})(Lib.SpecialTouch || (Lib.SpecialTouch = {}));
+__as1(_.Lib, 'SpecialTouch', Lib.SpecialTouch);
 
 const Img = class Img extends Aventus.WebComponent {
     static get observedAttributes() {return ["src", "mode"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
@@ -7063,6 +7407,9 @@ Navigation.Page = class Page extends Aventus.WebComponent {
     isAllowed(state, pattern, router) {
         return true;
     }
+    loadData(state) {
+        return true;
+    }
 }
 Navigation.Page.Namespace=`Aventus.Navigation`;
 __as1(_.Navigation, 'Page', Navigation.Page);
@@ -7194,6 +7541,14 @@ Navigation.Router = class Router extends Aventus.WebComponent {
                             return;
                         }
                         this.navigate(canResult, { replace: true });
+                        return;
+                    }
+                    const loadDataResult = await element.loadData(currentState);
+                    if (loadDataResult !== true) {
+                        if (loadDataResult === false) {
+                            return;
+                        }
+                        this.navigate(loadDataResult, { replace: true });
                         return;
                     }
                     if (isNew)
@@ -8409,6 +8764,188 @@ Layout.Col.Tag=`av-col`;
 __as1(_.Layout, 'Col', Layout.Col);
 if(!window.customElements.get('av-col')){window.customElements.define('av-col', Layout.Col);Aventus.WebComponentInstance.registerDefinition(Layout.Col);}
 
+Lib.ShortcutManager=class ShortcutManager {
+    static memory = {};
+    static autoPrevents = [];
+    static isInit = false;
+    static arrayKeys = [];
+    static options = new Map();
+    static replacingMemory = {};
+    static isTxt(touch) {
+        return touch.match(/[a-zA-Z0-9_\+\-]/g);
+    }
+    static getText(combinaison) {
+        let allTouches = [];
+        for (let touch of combinaison) {
+            let realTouch = "";
+            if (typeof touch == "number" && Lib.SpecialTouch[touch] !== undefined) {
+                realTouch = Lib.SpecialTouch[touch];
+            }
+            else if (this.isTxt(touch)) {
+                realTouch = touch;
+            }
+            else {
+                throw "I can't use " + touch + " to add a shortcut";
+            }
+            allTouches.push(realTouch);
+        }
+        allTouches.sort();
+        return allTouches.join("+");
+    }
+    static subscribe(combinaison, cb, options) {
+        if (!Array.isArray(combinaison)) {
+            combinaison = [combinaison];
+        }
+        let key = this.getText(combinaison);
+        if (options?.replaceTemp) {
+            if (Lib.ShortcutManager.memory[key]) {
+                if (!this.replacingMemory[key]) {
+                    this.replacingMemory[key] = [];
+                }
+                this.replacingMemory[key].push(Lib.ShortcutManager.memory[key]);
+                delete Lib.ShortcutManager.memory[key];
+            }
+        }
+        if (!Lib.ShortcutManager.memory[key]) {
+            Lib.ShortcutManager.memory[key] = [];
+        }
+        if (!Lib.ShortcutManager.memory[key].includes(cb)) {
+            Lib.ShortcutManager.memory[key].push(cb);
+            if (options) {
+                this.options.set(cb, options);
+            }
+        }
+        if (!Lib.ShortcutManager.isInit) {
+            Lib.ShortcutManager.init();
+        }
+    }
+    static unsubscribe(combinaison, cb) {
+        if (!Array.isArray(combinaison)) {
+            combinaison = [combinaison];
+        }
+        let key = this.getText(combinaison);
+        if (Lib.ShortcutManager.memory[key]) {
+            let index = Lib.ShortcutManager.memory[key].indexOf(cb);
+            if (index != -1) {
+                Lib.ShortcutManager.memory[key].splice(index, 1);
+                let options = this.options.get(cb);
+                if (options) {
+                    this.options.delete(cb);
+                }
+                if (Lib.ShortcutManager.memory[key].length == 0) {
+                    delete Lib.ShortcutManager.memory[key];
+                    if (options?.replaceTemp) {
+                        if (this.replacingMemory[key]) {
+                            if (this.replacingMemory[key].length > 0) {
+                                Lib.ShortcutManager.memory[key] = this.replacingMemory[key].pop();
+                                if (this.replacingMemory[key].length == 0) {
+                                    delete this.replacingMemory[key];
+                                }
+                            }
+                            else {
+                                delete this.replacingMemory[key];
+                            }
+                        }
+                    }
+                }
+                if (Object.keys(Lib.ShortcutManager.memory).length == 0 && Lib.ShortcutManager.isInit) {
+                    //ShortcutManager.uninit();
+                }
+            }
+        }
+    }
+    static onKeyDown(e) {
+        if (e.ctrlKey) {
+            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Control];
+            if (!this.arrayKeys.includes(txt)) {
+                this.arrayKeys.push(txt);
+            }
+        }
+        if (e.altKey) {
+            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Alt];
+            if (!this.arrayKeys.includes(txt)) {
+                this.arrayKeys.push(txt);
+            }
+        }
+        if (e.shiftKey) {
+            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Shift];
+            if (!this.arrayKeys.includes(txt)) {
+                this.arrayKeys.push(txt);
+            }
+        }
+        if (this.isTxt(e.key) && !this.arrayKeys.includes(e.key)) {
+            this.arrayKeys.push(e.key);
+        }
+        else if (Lib.SpecialTouch[e.key] !== undefined && !this.arrayKeys.includes(e.key)) {
+            this.arrayKeys.push(e.key);
+        }
+        this.arrayKeys.sort();
+        let key = this.arrayKeys.join("+");
+        if (Lib.ShortcutManager.memory[key]) {
+            let preventDefault = true;
+            for (let cb of Lib.ShortcutManager.memory[key]) {
+                let options = this.options.get(cb);
+                if (options && options.preventDefault === false) {
+                    preventDefault = false;
+                }
+            }
+            this.arrayKeys = [];
+            for (let cb of Lib.ShortcutManager.memory[key]) {
+                const result = cb();
+                if (result === false) {
+                    preventDefault = result;
+                }
+            }
+            if (preventDefault) {
+                e.preventDefault();
+            }
+        }
+        else if (Lib.ShortcutManager.autoPrevents.includes(key)) {
+            e.preventDefault();
+        }
+    }
+    static onKeyUp(e) {
+        let index = this.arrayKeys.indexOf(e.key);
+        if (index != -1) {
+            this.arrayKeys.splice(index, 1);
+        }
+    }
+    static init() {
+        if (Lib.ShortcutManager.isInit)
+            return;
+        Lib.ShortcutManager.isInit = true;
+        this.onKeyDown = this.onKeyDown.bind(this);
+        this.onKeyUp = this.onKeyUp.bind(this);
+        Lib.ShortcutManager.autoPrevents = [
+            this.getText([Lib.SpecialTouch.Control, "s"]),
+            this.getText([Lib.SpecialTouch.Control, "p"]),
+            this.getText([Lib.SpecialTouch.Control, "l"]),
+            this.getText([Lib.SpecialTouch.Control, "k"]),
+            this.getText([Lib.SpecialTouch.Control, "j"]),
+            this.getText([Lib.SpecialTouch.Control, "h"]),
+            this.getText([Lib.SpecialTouch.Control, "g"]),
+            this.getText([Lib.SpecialTouch.Control, "f"]),
+            this.getText([Lib.SpecialTouch.Control, "d"]),
+            this.getText([Lib.SpecialTouch.Control, "o"]),
+            this.getText([Lib.SpecialTouch.Control, "u"]),
+            this.getText([Lib.SpecialTouch.Control, "e"]),
+        ];
+        window.addEventListener("blur", () => {
+            this.arrayKeys = [];
+        });
+        document.body.addEventListener("keydown", this.onKeyDown);
+        document.body.addEventListener("keyup", this.onKeyUp);
+    }
+    static uninit() {
+        document.body.removeEventListener("keydown", this.onKeyDown);
+        document.body.removeEventListener("keyup", this.onKeyUp);
+        this.arrayKeys = [];
+        Lib.ShortcutManager.isInit = false;
+    }
+}
+Lib.ShortcutManager.Namespace=`Aventus.Lib`;
+__as1(_.Lib, 'ShortcutManager', Lib.ShortcutManager);
+
 Form.Validator=class Validator {
     constructor() { this.validate = this.validate.bind(this); }
     static async Test(validators, value, name, globalValidation) {
@@ -8436,6 +8973,53 @@ Form.Validator=class Validator {
 }
 Form.Validator.Namespace=`Aventus.Form`;
 __as1(_.Form, 'Validator', Form.Validator);
+
+Form.Validators.Email=class Email extends _.Form.Validator {
+    static msg = "Merci de saisir un email valide";
+    _msg;
+    constructor(msg) {
+        super();
+        this._msg = msg ?? Form.Validators.Email.msg;
+    }
+    /**
+     * @inheritdoc
+     */
+    validate(value, name, globalValidation) {
+        if (typeof value == "string" && value) {
+            if (value.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b/) != null) {
+                return true;
+            }
+            return this._msg.replace(/\{ *name *\}/g, name);
+        }
+        return true;
+    }
+}
+Form.Validators.Email.Namespace=`Aventus.Form.Validators`;
+__as1(_.Form.Validators, 'Email', Form.Validators.Email);
+
+Form.Validators.Required=class Required extends _.Form.Validator {
+    static msg = "Le champs {name} est requis";
+    _msg;
+    constructor(msg) {
+        super();
+        this._msg = msg ?? Form.Validators.Required.msg;
+    }
+    /**
+     * @inheritdoc
+     */
+    validate(value, name, globalValidation) {
+        const txt = this._msg.replace(/\{ *name *\}/g, name);
+        if (value === undefined || value === null) {
+            return txt;
+        }
+        if (typeof value == 'string' && value.trim() == "") {
+            return txt;
+        }
+        return true;
+    }
+}
+Form.Validators.Required.Namespace=`Aventus.Form.Validators`;
+__as1(_.Form.Validators, 'Required', Form.Validators.Required);
 
 Navigation.PageForm = class PageForm extends Navigation.Page {
     _form;
@@ -9045,188 +9629,6 @@ Form.FormElement = class FormElement extends Aventus.WebComponent {
 }
 Form.FormElement.Namespace=`Aventus.Form`;
 __as1(_.Form, 'FormElement', Form.FormElement);
-
-Lib.ShortcutManager=class ShortcutManager {
-    static memory = {};
-    static autoPrevents = [];
-    static isInit = false;
-    static arrayKeys = [];
-    static options = new Map();
-    static replacingMemory = {};
-    static isTxt(touch) {
-        return touch.match(/[a-zA-Z0-9_\+\-]/g);
-    }
-    static getText(combinaison) {
-        let allTouches = [];
-        for (let touch of combinaison) {
-            let realTouch = "";
-            if (typeof touch == "number" && Lib.SpecialTouch[touch] !== undefined) {
-                realTouch = Lib.SpecialTouch[touch];
-            }
-            else if (this.isTxt(touch)) {
-                realTouch = touch;
-            }
-            else {
-                throw "I can't use " + touch + " to add a shortcut";
-            }
-            allTouches.push(realTouch);
-        }
-        allTouches.sort();
-        return allTouches.join("+");
-    }
-    static subscribe(combinaison, cb, options) {
-        if (!Array.isArray(combinaison)) {
-            combinaison = [combinaison];
-        }
-        let key = this.getText(combinaison);
-        if (options?.replaceTemp) {
-            if (Lib.ShortcutManager.memory[key]) {
-                if (!this.replacingMemory[key]) {
-                    this.replacingMemory[key] = [];
-                }
-                this.replacingMemory[key].push(Lib.ShortcutManager.memory[key]);
-                delete Lib.ShortcutManager.memory[key];
-            }
-        }
-        if (!Lib.ShortcutManager.memory[key]) {
-            Lib.ShortcutManager.memory[key] = [];
-        }
-        if (!Lib.ShortcutManager.memory[key].includes(cb)) {
-            Lib.ShortcutManager.memory[key].push(cb);
-            if (options) {
-                this.options.set(cb, options);
-            }
-        }
-        if (!Lib.ShortcutManager.isInit) {
-            Lib.ShortcutManager.init();
-        }
-    }
-    static unsubscribe(combinaison, cb) {
-        if (!Array.isArray(combinaison)) {
-            combinaison = [combinaison];
-        }
-        let key = this.getText(combinaison);
-        if (Lib.ShortcutManager.memory[key]) {
-            let index = Lib.ShortcutManager.memory[key].indexOf(cb);
-            if (index != -1) {
-                Lib.ShortcutManager.memory[key].splice(index, 1);
-                let options = this.options.get(cb);
-                if (options) {
-                    this.options.delete(cb);
-                }
-                if (Lib.ShortcutManager.memory[key].length == 0) {
-                    delete Lib.ShortcutManager.memory[key];
-                    if (options?.replaceTemp) {
-                        if (this.replacingMemory[key]) {
-                            if (this.replacingMemory[key].length > 0) {
-                                Lib.ShortcutManager.memory[key] = this.replacingMemory[key].pop();
-                                if (this.replacingMemory[key].length == 0) {
-                                    delete this.replacingMemory[key];
-                                }
-                            }
-                            else {
-                                delete this.replacingMemory[key];
-                            }
-                        }
-                    }
-                }
-                if (Object.keys(Lib.ShortcutManager.memory).length == 0 && Lib.ShortcutManager.isInit) {
-                    //ShortcutManager.uninit();
-                }
-            }
-        }
-    }
-    static onKeyDown(e) {
-        if (e.ctrlKey) {
-            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Control];
-            if (!this.arrayKeys.includes(txt)) {
-                this.arrayKeys.push(txt);
-            }
-        }
-        if (e.altKey) {
-            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Alt];
-            if (!this.arrayKeys.includes(txt)) {
-                this.arrayKeys.push(txt);
-            }
-        }
-        if (e.shiftKey) {
-            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Shift];
-            if (!this.arrayKeys.includes(txt)) {
-                this.arrayKeys.push(txt);
-            }
-        }
-        if (this.isTxt(e.key) && !this.arrayKeys.includes(e.key)) {
-            this.arrayKeys.push(e.key);
-        }
-        else if (Lib.SpecialTouch[e.key] !== undefined && !this.arrayKeys.includes(e.key)) {
-            this.arrayKeys.push(e.key);
-        }
-        this.arrayKeys.sort();
-        let key = this.arrayKeys.join("+");
-        if (Lib.ShortcutManager.memory[key]) {
-            let preventDefault = true;
-            for (let cb of Lib.ShortcutManager.memory[key]) {
-                let options = this.options.get(cb);
-                if (options && options.preventDefault === false) {
-                    preventDefault = false;
-                }
-            }
-            this.arrayKeys = [];
-            for (let cb of Lib.ShortcutManager.memory[key]) {
-                const result = cb();
-                if (result === false) {
-                    preventDefault = result;
-                }
-            }
-            if (preventDefault) {
-                e.preventDefault();
-            }
-        }
-        else if (Lib.ShortcutManager.autoPrevents.includes(key)) {
-            e.preventDefault();
-        }
-    }
-    static onKeyUp(e) {
-        let index = this.arrayKeys.indexOf(e.key);
-        if (index != -1) {
-            this.arrayKeys.splice(index, 1);
-        }
-    }
-    static init() {
-        if (Lib.ShortcutManager.isInit)
-            return;
-        Lib.ShortcutManager.isInit = true;
-        this.onKeyDown = this.onKeyDown.bind(this);
-        this.onKeyUp = this.onKeyUp.bind(this);
-        Lib.ShortcutManager.autoPrevents = [
-            this.getText([Lib.SpecialTouch.Control, "s"]),
-            this.getText([Lib.SpecialTouch.Control, "p"]),
-            this.getText([Lib.SpecialTouch.Control, "l"]),
-            this.getText([Lib.SpecialTouch.Control, "k"]),
-            this.getText([Lib.SpecialTouch.Control, "j"]),
-            this.getText([Lib.SpecialTouch.Control, "h"]),
-            this.getText([Lib.SpecialTouch.Control, "g"]),
-            this.getText([Lib.SpecialTouch.Control, "f"]),
-            this.getText([Lib.SpecialTouch.Control, "d"]),
-            this.getText([Lib.SpecialTouch.Control, "o"]),
-            this.getText([Lib.SpecialTouch.Control, "u"]),
-            this.getText([Lib.SpecialTouch.Control, "e"]),
-        ];
-        window.addEventListener("blur", () => {
-            this.arrayKeys = [];
-        });
-        document.body.addEventListener("keydown", this.onKeyDown);
-        document.body.addEventListener("keyup", this.onKeyUp);
-    }
-    static uninit() {
-        document.body.removeEventListener("keydown", this.onKeyDown);
-        document.body.removeEventListener("keyup", this.onKeyUp);
-        this.arrayKeys = [];
-        Lib.ShortcutManager.isInit = false;
-    }
-}
-Lib.ShortcutManager.Namespace=`Aventus.Lib`;
-__as1(_.Lib, 'ShortcutManager', Lib.ShortcutManager);
 
 Layout.GridHelper = class GridHelper extends Aventus.WebComponent {
     static get observedAttributes() {return ["unit", "nb_col", "nb_row", "col_width", "row_height", "ruler_size", "step", "step_big", "magnetic"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
@@ -9980,10 +10382,6 @@ __as1(_.Layout.Tabs, 'TabHeader', Layout.Tabs.TabHeader);
 Layout.Tabs.Tab = class Tab extends Aventus.WebComponent {
     get 'selected'() { return this.getBoolAttr('selected') }
     set 'selected'(val) { this.setBoolAttr('selected', val) }    tabHeader;
-    get headerContent() {
-        let elements = this.getElementsInSlot("header");
-        return elements;
-    }
     static __style = ``;
     constructor() {
         super();
@@ -10001,15 +10399,15 @@ Layout.Tabs.Tab = class Tab extends Aventus.WebComponent {
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>`,'header':`<slot name="header"></slot>` }, 
-        blocks: { 'default':`<slot></slot><div class="slot-header">    <slot name="header"></slot></div>` }
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
     });
 }
     getClassName() {
         return "Tab";
     }
     __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('selected')) { this.attributeChangedCallback('selected', false, false); } }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('headerContent');this.__upgradeProperty('selected'); }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('selected'); }
     __listBoolProps() { return ["selected"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
 }
 Layout.Tabs.Tab.Namespace=`Aventus.Layout.Tabs`;
@@ -10247,6 +10645,61 @@ Toast.ToastManager.Tag=`av-toast-manager`;
 __as1(_.Toast, 'ToastManager', Toast.ToastManager);
 if(!window.customElements.get('av-toast-manager')){window.customElements.define('av-toast-manager', Toast.ToastManager);Aventus.WebComponentInstance.registerDefinition(Toast.ToastManager);}
 
+Navigation.PageFormRoute = class PageFormRoute extends Navigation.PageForm {
+    static __style = ``;
+    constructor() {
+        super();
+        if (this.constructor == PageFormRoute) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return PageFormRoute;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(PageFormRoute.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "PageFormRoute";
+    }
+    async defineSubmit(submit) {
+        await this.beforeSubmit();
+        const info = this.route();
+        let router;
+        let key = "";
+        if (Array.isArray(info)) {
+            router = new info[0];
+            key = info[1];
+        }
+        else {
+            router = new info;
+            const fcts = Object.getOwnPropertyNames(info.prototype).filter(m => m !== "constructor");
+            if (fcts.length == 1) {
+                key = fcts[0];
+            }
+            else {
+                const result = new Aventus.VoidWithError();
+                result.errors.push(new Aventus.GenericError(500, "More than one fonction is defined"));
+                return result;
+            }
+        }
+        const result = await submit(router[key]);
+        this.onResult(result);
+        return result;
+    }
+    beforeSubmit() { }
+}
+Navigation.PageFormRoute.Namespace=`Aventus.Navigation`;
+__as1(_.Navigation, 'PageFormRoute', Navigation.PageFormRoute);
+
 
 for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
@@ -10260,30 +10713,42 @@ const _ = {};
 
 
 let _n;
-const Test = class Test extends Aventus.WebComponent {
+const DocUIPageFormRouteEditor2 = class DocUIPageFormRouteEditor2 extends Aventus.WebComponent {
     static __style = ``;
     __getStatic() {
-        return Test;
+        return DocUIPageFormRouteEditor2;
     }
     __getStyle() {
         let arrStyle = super.__getStyle();
-        arrStyle.push(Test.__style);
+        arrStyle.push(DocUIPageFormRouteEditor2.__style);
         return arrStyle;
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
         slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
+        blocks: { 'default':`<av-code-editor name="Page With Form And HTTP">    <av-code language="typescript" filename="LoginAction.lib.avt">        <pre>            &nbsp;            export class LoginRequest {                public username!: string;                public password!: string;            }            &nbsp;            &nbsp;            export class LoginController extends Aventus.HttpRoute {                @BindThis()                public async login(body: LoginRequest): Promise&lt;Aventus.ResultWithError&lt;string&gt;&gt; {                    const request = new Aventus.HttpRequest(&#96;\${this.getPrefix()}/api/login&#96;, Aventus.HttpMethod.POST);                    request.setBody(body);                    return await request.queryJSON&lt;string&gt;(this.router);                }            &nbsp;                @BindThis()                public async logout(): Promise&lt;Aventus.ResultWithError&lt;boolean&gt;&gt; {                    const request = new Aventus.HttpRequest(&#96;\${this.getPrefix()}/api/logout&#96;, Aventus.HttpMethod.POST);                    return await request.queryJSON&lt;boolean&gt;(this.router);                }            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="LoginPage/LoginPage.wcl.avt">        <pre>            import { PageFormRoute } from "Aventus@UI:Aventus.Navigation.package.avt";            import { LoginController, type LoginRequest } from "../LoginAction.lib.avt";            import type { ResultWithError } from "Aventus@Main:Aventus.package.avt";            import { Required } from "Aventus@UI:Aventus.Form.Validators.package.avt";            &nbsp;            export class LoginPage extends PageFormRoute&lt;typeof LoginController, 'login'&gt; implements Aventus.DefaultComponent {            &nbsp;            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                public override route(): [typeof LoginController, 'login'] {                    return [LoginController, 'login'];                }                /**                 * @inheritdoc                 */                public override onResult(result: ResultWithError&lt;string&gt; | null): Aventus.Asyncable&lt;void&gt; {                    &#105;f(result?.success) {                        //...                    }                }                /**                 * @inheritdoc                 */                protected override &#102;ormSchema(): Aventus.Form.FormSchema&lt;LoginRequest&gt; {                    return {                        username: Required,                        password: Required                    };                }                /**                 * @inheritdoc                 */                public override configure(): Aventus.Asyncable&lt;Aventus.Navigation.Page.PageConfig&gt; {                    return {                        title: "Login"                    };                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="LoginPage/LoginPage.wcs.avt">        <pre>            :host {                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="LoginPage/LoginPage.wcv.avt">        <pre>            &lt;my-input name="username" :form="this.form.parts.username"&gt;&lt;/my-input&gt; &lt;!-- Link input to the &#102;orm --&gt;            &lt;my-input type="password" name="password" :form="this.form.parts.password"&gt;&lt;/my-input&gt;            &lt;button-element type="submit"&gt;Login&lt;/button-element&gt; &lt;!-- will submit the &#102;orm --&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
     });
 }
     getClassName() {
-        return "Test";
+        return "DocUIPageFormRouteEditor2";
     }
 }
-Test.Namespace=`AventusWebsite`;
-Test.Tag=`av-test`;
-__as1(_, 'Test', Test);
-if(!window.customElements.get('av-test')){window.customElements.define('av-test', Test);Aventus.WebComponentInstance.registerDefinition(Test);}
+DocUIPageFormRouteEditor2.Namespace=`AventusWebsite`;
+DocUIPageFormRouteEditor2.Tag=`av-doc-u-i-page-form-route-editor-2`;
+__as1(_, 'DocUIPageFormRouteEditor2', DocUIPageFormRouteEditor2);
+if(!window.customElements.get('av-doc-u-i-page-form-route-editor-2')){window.customElements.define('av-doc-u-i-page-form-route-editor-2', DocUIPageFormRouteEditor2);Aventus.WebComponentInstance.registerDefinition(DocUIPageFormRouteEditor2);}
+
+let DocUIPageFormRouteEditor1LoginRequest=class DocUIPageFormRouteEditor1LoginRequest {
+    username;
+    password;
+}
+DocUIPageFormRouteEditor1LoginRequest.Namespace=`AventusWebsite`;
+__as1(_, 'DocUIPageFormRouteEditor1LoginRequest', DocUIPageFormRouteEditor1LoginRequest);
+
+let DocUIPageFormEditor1LoginAction=function DocUIPageFormEditor1LoginAction(form) {
+    throw 'not implemented';
+}
+__as1(_, 'DocUIPageFormEditor1LoginAction', DocUIPageFormEditor1LoginAction);
 
 let DocWcWatchEditor1Person=class DocWcWatchEditor1Person extends Aventus.Data {
     id = 0;
@@ -13022,7 +13487,7 @@ const Navbar = class Navbar extends Aventus.WebComponent {
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<div class="container">    <div class="left">        <av-link to="/"><av-img src="/img/icon.png"></av-img></av-link>    </div>    <div class="right">        <av-icon class="menu-close-icon" icon="close" _id="navbar_0"></av-icon>        <div class="menu-title">Aventus</div>        <av-link to="/" class="menu">Home</av-link>        <av-link to="/docs/installation" active_state="^/docs/installation*$" class="menu">Install</av-link>        <av-link to="/docs/introduction" active_state="^/docs/(?!installation)*$" class="menu">Docs</av-link>        <av-link to="/tutorial/introduction" active_state="^/tutorial/.*$" class="menu">Tutorial</av-link>        <av-link to="/about" class="menu">About</av-link>        <div class="menu drop">            <div class="drop-title">Others</div>            <div class="drop-content">                <div class="drop-item">                    <a href="https://sharp.aventusjs.com" target="_blank">                        <div class="drop-icon">                            <av-img src="/img/aventus_sharp.svg"></av-img>                        </div>                        <div class="drop-name" style="color:#368832">AventusSharp</div>                    </a>                </div>                <div class="drop-item">                    <a href="https://laraventus.aventusjs.com" target="_blank">                        <div class="drop-icon">                            <av-img src="/img/laraventus.svg"></av-img>                        </div>                        <div class="drop-name" style="color:#C72620">Laraventus</div>                    </a>                </div>                <div class="drop-item">                    <a href="https://store.aventusjs.com" target="_blank">                        <div class="drop-icon">                            <mi-icon icon="store"></mi-icon>                        </div>                        <div class="drop-name">Store</div>                    </a>                </div>            </div>        </div>        <div class="icon-links">            <a href="https://www.reddit.com/r/aventusjs/" target="_blank" class="link">                <svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" class="reddit-logo">                    <path d="M666.8 400c.08 5.48-.6 10.95-2.04 16.24s-3.62 10.36-6.48 15.04c-2.85 4.68-6.35 8.94-10.39 12.65s-8.58 6.83-13.49 9.27c.11 1.46.2 2.93.25 4.4a107.268 107.268 0 0 1 0 8.8c-.05 1.47-.14 2.94-.25 4.4 0 89.6-104.4 162.4-233.2 162.4S168 560.4 168 470.8c-.11-1.46-.2-2.93-.25-4.4a107.268 107.268 0 0 1 0-8.8c.05-1.47.14-2.94.25-4.4a58.438 58.438 0 0 1-31.85-37.28 58.41 58.41 0 0 1 7.8-48.42 58.354 58.354 0 0 1 41.93-25.4 58.4 58.4 0 0 1 46.52 15.5 286.795 286.795 0 0 1 35.89-20.71c12.45-6.02 25.32-11.14 38.51-15.3s26.67-7.35 40.32-9.56 27.45-3.42 41.28-3.63L418 169.6c.33-1.61.98-3.13 1.91-4.49.92-1.35 2.11-2.51 3.48-3.4 1.38-.89 2.92-1.5 4.54-1.8 1.61-.29 3.27-.26 4.87.09l98 19.6c9.89-16.99 30.65-24.27 48.98-17.19s28.81 26.43 24.71 45.65c-4.09 19.22-21.55 32.62-41.17 31.61-19.63-1.01-35.62-16.13-37.72-35.67L440 186l-26 124.8c13.66.29 27.29 1.57 40.77 3.82a284.358 284.358 0 0 1 77.8 24.86A284.412 284.412 0 0 1 568 360a58.345 58.345 0 0 1 29.4-15.21 58.361 58.361 0 0 1 32.95 3.21 58.384 58.384 0 0 1 25.91 20.61A58.384 58.384 0 0 1 666.8 400zm-396.96 55.31c2.02 4.85 4.96 9.26 8.68 12.97 3.71 3.72 8.12 6.66 12.97 8.68A40.049 40.049 0 0 0 306.8 480c16.18 0 30.76-9.75 36.96-24.69 6.19-14.95 2.76-32.15-8.68-43.59s-28.64-14.87-43.59-8.68c-14.94 6.2-24.69 20.78-24.69 36.96 0 5.25 1.03 10.45 3.04 15.31zm229.1 96.02c2.05-2 3.22-4.73 3.26-7.59.04-2.87-1.07-5.63-3.07-7.68s-4.73-3.22-7.59-3.26c-2.87-.04-5.63 1.07-7.94 2.8a131.06 131.06 0 0 1-19.04 11.35 131.53 131.53 0 0 1-20.68 7.99c-7.1 2.07-14.37 3.54-21.72 4.39-7.36.85-14.77 1.07-22.16.67-7.38.33-14.78.03-22.11-.89a129.01 129.01 0 0 1-21.64-4.6c-7.08-2.14-13.95-4.88-20.56-8.18s-12.93-7.16-18.89-11.53c-2.07-1.7-4.7-2.57-7.38-2.44s-5.21 1.26-7.11 3.15c-1.89 1.9-3.02 4.43-3.15 7.11s.74 5.31 2.44 7.38c7.03 5.3 14.5 9.98 22.33 14s16 7.35 24.4 9.97 17.01 4.51 25.74 5.66c8.73 1.14 17.54 1.53 26.33 1.17 8.79.36 17.6-.03 26.33-1.17A153.961 153.961 0 0 0 476.87 564c7.83-4.02 15.3-8.7 22.33-14zm-7.34-68.13c5.42.06 10.8-.99 15.81-3.07 5.01-2.09 9.54-5.17 13.32-9.06s6.72-8.51 8.66-13.58A39.882 39.882 0 0 0 532 441.6c0-16.18-9.75-30.76-24.69-36.96-14.95-6.19-32.15-2.76-43.59 8.68s-14.87 28.64-8.68 43.59c6.2 14.94 20.78 24.69 36.96 24.69z"></path>                </svg>            </a>            <a href="https://bsky.app/profile/aventus.bsky.social" target="_blank" class="link">                <svg viewBox="0 0 600 530" version="1.1" xmlns="http://www.w3.org/2000/svg">                    <path d="m135.72 44.03c66.496 49.921 138.02 151.14 164.28 205.46 26.262-54.316 97.782-155.54 164.28-205.46 47.98-36.021 125.72-63.892 125.72 24.795 0 17.712-10.155 148.79-16.111 170.07-20.703 73.984-96.144 92.854-163.25 81.433 117.3 19.964 147.14 86.092 82.697 152.22-122.39 125.59-175.91-31.511-189.63-71.766-2.514-7.3797-3.6904-10.832-3.7077-7.8964-0.0174-2.9357-1.1937 0.51669-3.7077 7.8964-13.714 40.255-67.233 197.36-189.63 71.766-64.444-66.128-34.605-132.26 82.697-152.22-67.108 11.421-142.55-7.4491-163.25-81.433-5.9562-21.282-16.111-152.36-16.111-170.07 0-88.687 77.742-60.816 125.72-24.795z"></path>                </svg>            </a>            <a href="https://discord.gg/DZ5rTKP6Xt" target="_blank" class="link">                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 -28.5 256 256" version="1.1" preserveAspectRatio="xMidYMid">                    <path d="M216.856339,16.5966031 C200.285002,8.84328665 182.566144,3.2084988 164.041564,0 C161.766523,4.11318106 159.108624,9.64549908 157.276099,14.0464379 C137.583995,11.0849896 118.072967,11.0849896 98.7430163,14.0464379 C96.9108417,9.64549908 94.1925838,4.11318106 91.8971895,0 C73.3526068,3.2084988 55.6133949,8.86399117 39.0420583,16.6376612 C5.61752293,67.146514 -3.4433191,116.400813 1.08711069,164.955721 C23.2560196,181.510915 44.7403634,191.567697 65.8621325,198.148576 C71.0772151,190.971126 75.7283628,183.341335 79.7352139,175.300261 C72.104019,172.400575 64.7949724,168.822202 57.8887866,164.667963 C59.7209612,163.310589 61.5131304,161.891452 63.2445898,160.431257 C105.36741,180.133187 151.134928,180.133187 192.754523,160.431257 C194.506336,161.891452 196.298154,163.310589 198.110326,164.667963 C191.183787,168.842556 183.854737,172.420929 176.223542,175.320965 C180.230393,183.341335 184.861538,190.991831 190.096624,198.16893 C211.238746,191.588051 232.743023,181.531619 254.911949,164.955721 C260.227747,108.668201 245.831087,59.8662432 216.856339,16.5966031 Z M85.4738752,135.09489 C72.8290281,135.09489 62.4592217,123.290155 62.4592217,108.914901 C62.4592217,94.5396472 72.607595,82.7145587 85.4738752,82.7145587 C98.3405064,82.7145587 108.709962,94.5189427 108.488529,108.914901 C108.508531,123.290155 98.3405064,135.09489 85.4738752,135.09489 Z M170.525237,135.09489 C157.88039,135.09489 147.510584,123.290155 147.510584,108.914901 C147.510584,94.5396472 157.658606,82.7145587 170.525237,82.7145587 C183.391518,82.7145587 193.761324,94.5189427 193.539891,108.914901 C193.539891,123.290155 183.391518,135.09489 170.525237,135.09489 Z" fill-rule="nonzero">                    </path>                </svg>            </a>            <a href="https://github.com/Cobwebsite/Aventus" target="_blank" class="link">                <svg data-v-a71028e4="" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" viewBox="0 0 24 24" class="social-icon">                    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12">                    </path>                </svg>            </a>        </div>        <div class="mode" _id="navbar_1">            <mi-icon icon="light_mode"></mi-icon>            <div class="slider">                <div class="button"></div>            </div>            <mi-icon icon="dark_mode"></mi-icon>        </div>    </div>    <av-icon icon="navicon" class="icon" _id="navbar_2"></av-icon>    <div class="hider" _id="navbar_3"></div></div>` }
+        blocks: { 'default':`<div class="container">    <div class="left">        <av-link to="/"><av-img src="/img/icon.png"></av-img></av-link>    </div>    <div class="right">        <av-icon class="menu-close-icon" icon="close" _id="navbar_0"></av-icon>        <div class="menu-title">Aventus</div>        <av-link to="/" class="menu">Home</av-link>        <av-link to="/docs/installation" active_state="^/docs/installation*$" class="menu">Install</av-link>        <av-link to="/docs/introduction" active_state="^/docs/(?!installation)*$" class="menu">Docs</av-link>        <av-link to="/tutorial/introduction" active_state="^/tutorial/.*$" class="menu">Tutorial</av-link>        <av-link to="/about" class="menu">About</av-link>        <div class="menu drop">            <div class="drop-title">Others</div>            <div class="drop-content">                <div class="drop-item">                    <a href="https://aventussharp.com" target="_blank">                        <div class="drop-icon">                            <av-img src="/img/aventussharp.svg"></av-img>                        </div>                        <div class="drop-name" style="color:#368832">AventusSharp</div>                    </a>                </div>                <div class="drop-item">                    <a href="https://laraventus.com" target="_blank">                        <div class="drop-icon">                            <av-img src="/img/laraventus.svg"></av-img>                        </div>                        <div class="drop-name" style="color:#C72620">Laraventus</div>                    </a>                </div>                <div class="drop-item">                    <a href="https://store.aventusjs.com" target="_blank">                        <div class="drop-icon">                            <mi-icon icon="store"></mi-icon>                        </div>                        <div class="drop-name">Store</div>                    </a>                </div>            </div>        </div>        <div class="icon-links">            <a href="https://www.reddit.com/r/aventusjs/" target="_blank" class="link">                <svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" class="reddit-logo">                    <path d="M666.8 400c.08 5.48-.6 10.95-2.04 16.24s-3.62 10.36-6.48 15.04c-2.85 4.68-6.35 8.94-10.39 12.65s-8.58 6.83-13.49 9.27c.11 1.46.2 2.93.25 4.4a107.268 107.268 0 0 1 0 8.8c-.05 1.47-.14 2.94-.25 4.4 0 89.6-104.4 162.4-233.2 162.4S168 560.4 168 470.8c-.11-1.46-.2-2.93-.25-4.4a107.268 107.268 0 0 1 0-8.8c.05-1.47.14-2.94.25-4.4a58.438 58.438 0 0 1-31.85-37.28 58.41 58.41 0 0 1 7.8-48.42 58.354 58.354 0 0 1 41.93-25.4 58.4 58.4 0 0 1 46.52 15.5 286.795 286.795 0 0 1 35.89-20.71c12.45-6.02 25.32-11.14 38.51-15.3s26.67-7.35 40.32-9.56 27.45-3.42 41.28-3.63L418 169.6c.33-1.61.98-3.13 1.91-4.49.92-1.35 2.11-2.51 3.48-3.4 1.38-.89 2.92-1.5 4.54-1.8 1.61-.29 3.27-.26 4.87.09l98 19.6c9.89-16.99 30.65-24.27 48.98-17.19s28.81 26.43 24.71 45.65c-4.09 19.22-21.55 32.62-41.17 31.61-19.63-1.01-35.62-16.13-37.72-35.67L440 186l-26 124.8c13.66.29 27.29 1.57 40.77 3.82a284.358 284.358 0 0 1 77.8 24.86A284.412 284.412 0 0 1 568 360a58.345 58.345 0 0 1 29.4-15.21 58.361 58.361 0 0 1 32.95 3.21 58.384 58.384 0 0 1 25.91 20.61A58.384 58.384 0 0 1 666.8 400zm-396.96 55.31c2.02 4.85 4.96 9.26 8.68 12.97 3.71 3.72 8.12 6.66 12.97 8.68A40.049 40.049 0 0 0 306.8 480c16.18 0 30.76-9.75 36.96-24.69 6.19-14.95 2.76-32.15-8.68-43.59s-28.64-14.87-43.59-8.68c-14.94 6.2-24.69 20.78-24.69 36.96 0 5.25 1.03 10.45 3.04 15.31zm229.1 96.02c2.05-2 3.22-4.73 3.26-7.59.04-2.87-1.07-5.63-3.07-7.68s-4.73-3.22-7.59-3.26c-2.87-.04-5.63 1.07-7.94 2.8a131.06 131.06 0 0 1-19.04 11.35 131.53 131.53 0 0 1-20.68 7.99c-7.1 2.07-14.37 3.54-21.72 4.39-7.36.85-14.77 1.07-22.16.67-7.38.33-14.78.03-22.11-.89a129.01 129.01 0 0 1-21.64-4.6c-7.08-2.14-13.95-4.88-20.56-8.18s-12.93-7.16-18.89-11.53c-2.07-1.7-4.7-2.57-7.38-2.44s-5.21 1.26-7.11 3.15c-1.89 1.9-3.02 4.43-3.15 7.11s.74 5.31 2.44 7.38c7.03 5.3 14.5 9.98 22.33 14s16 7.35 24.4 9.97 17.01 4.51 25.74 5.66c8.73 1.14 17.54 1.53 26.33 1.17 8.79.36 17.6-.03 26.33-1.17A153.961 153.961 0 0 0 476.87 564c7.83-4.02 15.3-8.7 22.33-14zm-7.34-68.13c5.42.06 10.8-.99 15.81-3.07 5.01-2.09 9.54-5.17 13.32-9.06s6.72-8.51 8.66-13.58A39.882 39.882 0 0 0 532 441.6c0-16.18-9.75-30.76-24.69-36.96-14.95-6.19-32.15-2.76-43.59 8.68s-14.87 28.64-8.68 43.59c6.2 14.94 20.78 24.69 36.96 24.69z"></path>                </svg>            </a>            <a href="https://bsky.app/profile/aventus.bsky.social" target="_blank" class="link">                <svg viewBox="0 0 600 530" version="1.1" xmlns="http://www.w3.org/2000/svg">                    <path d="m135.72 44.03c66.496 49.921 138.02 151.14 164.28 205.46 26.262-54.316 97.782-155.54 164.28-205.46 47.98-36.021 125.72-63.892 125.72 24.795 0 17.712-10.155 148.79-16.111 170.07-20.703 73.984-96.144 92.854-163.25 81.433 117.3 19.964 147.14 86.092 82.697 152.22-122.39 125.59-175.91-31.511-189.63-71.766-2.514-7.3797-3.6904-10.832-3.7077-7.8964-0.0174-2.9357-1.1937 0.51669-3.7077 7.8964-13.714 40.255-67.233 197.36-189.63 71.766-64.444-66.128-34.605-132.26 82.697-152.22-67.108 11.421-142.55-7.4491-163.25-81.433-5.9562-21.282-16.111-152.36-16.111-170.07 0-88.687 77.742-60.816 125.72-24.795z"></path>                </svg>            </a>            <a href="https://discord.gg/DZ5rTKP6Xt" target="_blank" class="link">                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 -28.5 256 256" version="1.1" preserveAspectRatio="xMidYMid">                    <path d="M216.856339,16.5966031 C200.285002,8.84328665 182.566144,3.2084988 164.041564,0 C161.766523,4.11318106 159.108624,9.64549908 157.276099,14.0464379 C137.583995,11.0849896 118.072967,11.0849896 98.7430163,14.0464379 C96.9108417,9.64549908 94.1925838,4.11318106 91.8971895,0 C73.3526068,3.2084988 55.6133949,8.86399117 39.0420583,16.6376612 C5.61752293,67.146514 -3.4433191,116.400813 1.08711069,164.955721 C23.2560196,181.510915 44.7403634,191.567697 65.8621325,198.148576 C71.0772151,190.971126 75.7283628,183.341335 79.7352139,175.300261 C72.104019,172.400575 64.7949724,168.822202 57.8887866,164.667963 C59.7209612,163.310589 61.5131304,161.891452 63.2445898,160.431257 C105.36741,180.133187 151.134928,180.133187 192.754523,160.431257 C194.506336,161.891452 196.298154,163.310589 198.110326,164.667963 C191.183787,168.842556 183.854737,172.420929 176.223542,175.320965 C180.230393,183.341335 184.861538,190.991831 190.096624,198.16893 C211.238746,191.588051 232.743023,181.531619 254.911949,164.955721 C260.227747,108.668201 245.831087,59.8662432 216.856339,16.5966031 Z M85.4738752,135.09489 C72.8290281,135.09489 62.4592217,123.290155 62.4592217,108.914901 C62.4592217,94.5396472 72.607595,82.7145587 85.4738752,82.7145587 C98.3405064,82.7145587 108.709962,94.5189427 108.488529,108.914901 C108.508531,123.290155 98.3405064,135.09489 85.4738752,135.09489 Z M170.525237,135.09489 C157.88039,135.09489 147.510584,123.290155 147.510584,108.914901 C147.510584,94.5396472 157.658606,82.7145587 170.525237,82.7145587 C183.391518,82.7145587 193.761324,94.5189427 193.539891,108.914901 C193.539891,123.290155 183.391518,135.09489 170.525237,135.09489 Z" fill-rule="nonzero">                    </path>                </svg>            </a>            <a href="https://github.com/Cobwebsite/Aventus" target="_blank" class="link">                <svg data-v-a71028e4="" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" viewBox="0 0 24 24" class="social-icon">                    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12">                    </path>                </svg>            </a>        </div>        <div class="mode" _id="navbar_1">            <mi-icon icon="light_mode"></mi-icon>            <div class="slider">                <div class="button"></div>            </div>            <mi-icon icon="dark_mode"></mi-icon>        </div>    </div>    <av-icon icon="navicon" class="icon" _id="navbar_2"></av-icon>    <div class="hider" _id="navbar_3"></div></div>` }
     });
 }
     __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
@@ -13521,6 +13986,10 @@ const CodeEditorFile = class CodeEditorFile extends Aventus.WebComponent {
         else if (this.name.endsWith(".d.ts")) {
             this.icon = "/img/dts.svg";
         }
+        else if (this.name.endsWith("template.avt.ts")) {
+            this.icon = "/img/logo.svg";
+            this.type = "logic";
+        }
         else if (this.name.endsWith(".ts")) {
             this.icon = "/img/ts.svg";
         }
@@ -13884,7 +14353,7 @@ const DocSidenav = class DocSidenav extends Aventus.WebComponent {
     }
     __getHtml() {
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<av-icon icon="close" class="close-icon" _id="docsidenav_0"></av-icon><av-scrollable class="menu">    <av-collapse>        <div class="title" slot="header">install</div>        <ul>            <li><av-link to="/docs/introduction">Introduction</av-link></li>            <li><av-link to="/docs/installation">Install Aventus</av-link></li>            <li><av-link to="/docs/experience">Dev experience</av-link></li>            <li><av-link to="/docs/first_app">Your first app</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">configuration</div>        <ul>            <li><av-link to="/docs/config/basic_prop">Generic properties</av-link></li>            <li><av-link to="/docs/config/build">Builds</av-link></li>            <li><av-link to="/docs/config/static">Statics</av-link></li>            <li><av-link to="/docs/config/lib">Import libs</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">data</div>        <ul>            <li><av-link to="/docs/data/create">Create</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">ram</div>        <ul>            <li><av-link to="/docs/ram/create">Create</av-link></li>            <li><av-link to="/docs/ram/crud">CRUD operation</av-link></li>            <li><av-link to="/docs/ram/listen_changes">Listen changes</av-link></li>            <li><av-link to="/docs/ram/mixin">Extend data</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">state</div>        <ul>            <li><av-link to="/docs/state/create">Create</av-link></li>            <li><av-link to="/docs/state/change">Change to</av-link></li>            <li><av-link to="/docs/state/listen_changes">Listen to change</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">webcomponent</div>        <ul>            <li><av-link to="/docs/wc/create">Create</av-link></li>            <li><av-link to="/docs/wc/style">Style</av-link></li>            <li><av-link to="/docs/wc/inheritance">Inhertiance</av-link></li>            <li><av-link to="/docs/wc/attribute">Attribute</av-link></li>            <li><av-link to="/docs/wc/property">Property</av-link></li>            <li><av-link to="/docs/wc/watch">Watch</av-link></li>            <li><av-link to="/docs/wc/signal">Signal</av-link></li>            <li><av-link to="/docs/wc/interpolation">Interpolation</av-link></li>            <li><av-link to="/docs/wc/element">Select element</av-link></li>            <li><av-link to="/docs/wc/injection">Injection</av-link></li>            <li><av-link to="/docs/wc/event">Event</av-link></li>            <li><av-link to="/docs/wc/binding">Binding</av-link></li>            <li><av-link to="/docs/wc/state">State</av-link></li>            <li><av-link to="/docs/wc/loop">Loop</av-link></li>            <li><av-link to="/docs/wc/condition">Condition</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">lib</div>        <ul>            <li><av-link to="/docs/lib/create">Create</av-link></li>            <li><av-link to="/docs/lib/animation">Animation</av-link></li>            <li><av-link to="/docs/lib/callback">Callback</av-link></li>            <li><av-link to="/docs/lib/press_manager">PressManager</av-link></li>            <li><av-link to="/docs/lib/drag_and_drop">Drag&Drop</av-link></li>            <li><av-link to="/docs/lib/instance">Instance</av-link></li>            <li><av-link to="/docs/lib/resize_observer">ResizeObserver</av-link></li>            <li><av-link to="/docs/lib/resource_loader">ResourceLoader</av-link></li>            <li><av-link to="/docs/lib/watcher">Watcher</av-link></li>            <li><av-link to="/docs/lib/tools">Tools</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">i18n</div>        <ul>            <li><av-link to="/docs/i18n/config">Config</av-link></li>            <li><av-link to="/docs/i18n/usage">Usage</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">UI</div>        <ul>            <li><av-link to="/docs/ui/introduction">Introduction</av-link></li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Form</div>                    <ul>                        <li><av-link to="/docs/ui/button">Button</av-link></li>                        <li><av-link to="/docs/ui/form">Form</av-link></li>                        <li><av-link to="/docs/ui/form_element">FormElement</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Layout</div>                    <ul>                        <li><av-link to="/docs/ui/col_row">Col / Row</av-link></li>                        <li><av-link to="/docs/ui/collapse">Collapse</av-link></li>                        <li><av-link to="/docs/ui/grid_helper">Grid Helper</av-link></li>                        <li><av-link to="/docs/ui/image">Image</av-link></li>                        <li><av-link to="/docs/ui/scrollable">Scrollable</av-link></li>                        <li><av-link to="/docs/ui/tabs">Tabs</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Interaction</div>                    <ul>                        <li><av-link to="/docs/ui/modal">Modal</av-link></li>                        <li><av-link to="/docs/ui/toast">Toast</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Navigation</div>                    <ul>                        <li><av-link to="/docs/ui/link">Link</av-link></li>                        <li><av-link to="/docs/ui/page">Page</av-link></li>                        <li><av-link to="/docs/ui/page_form">Page Form</av-link></li>                        <li><av-link to="/docs/ui/page_form_http">Page Form Http</av-link></li>                        <li><av-link to="/docs/ui/router">Router</av-link></li>                    </ul>                </av-collapse>            </li>             <li>                <av-collapse>                    <div class="sub-title" slot="header">Lib</div>                    <ul>                        <li><av-link to="/docs/ui/process">Process</av-link></li>                        <li><av-link to="/docs/ui/shortcut">Shortcut</av-link></li>                    </ul>                </av-collapse>            </li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">advanced</div>        <ul>            <li><av-link to="/docs/advanced/template">Template</av-link></li>            <li><av-link to="/docs/advanced/store">Store</av-link></li>            <li><av-link to="/docs/advanced/npm_export">Npm Export</av-link></li>            <li><av-link to="/docs/advanced/storybook">Storybook</av-link></li>        </ul>    </av-collapse></av-scrollable>` }
+        blocks: { 'default':`<av-icon icon="close" class="close-icon" _id="docsidenav_0"></av-icon><av-scrollable class="menu">    <av-collapse>        <div class="title" slot="header">install</div>        <ul>            <li><av-link to="/docs/introduction">Introduction</av-link></li>            <li><av-link to="/docs/installation">Install Aventus</av-link></li>            <li><av-link to="/docs/experience">Dev experience</av-link></li>            <li><av-link to="/docs/first_app">Your first app</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">configuration</div>        <ul>            <li><av-link to="/docs/config/basic_prop">Generic properties</av-link></li>            <li><av-link to="/docs/config/build">Builds</av-link></li>            <li><av-link to="/docs/config/static">Statics</av-link></li>            <li><av-link to="/docs/config/lib">Import libs</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">data</div>        <ul>            <li><av-link to="/docs/data/create">Create</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">error</div>        <ul>            <li><av-link to="/docs/error/generic">Generic</av-link></li>            <li><av-link to="/docs/error/void">VoidWithError</av-link></li>            <li><av-link to="/docs/error/result">ResultWithError</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">http</div>        <ul>            <li><av-link to="/docs/http/introduction">Introduction</av-link></li>            <li><av-link to="/docs/http/request">Request</av-link></li>            <li><av-link to="/docs/http/router">Router</av-link></li>            <li><av-link to="/docs/http/route">Route</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">ram</div>        <ul>            <li><av-link to="/docs/ram/create">Create</av-link></li>            <li><av-link to="/docs/ram/crud">CRUD operation</av-link></li>            <li><av-link to="/docs/ram/listen_changes">Listen changes</av-link></li>            <li><av-link to="/docs/ram/mixin">Extend data</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">state</div>        <ul>            <li><av-link to="/docs/state/create">Create</av-link></li>            <li><av-link to="/docs/state/change">Change to</av-link></li>            <li><av-link to="/docs/state/listen_changes">Listen to change</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">webcomponent</div>        <ul>            <li><av-link to="/docs/wc/create">Create</av-link></li>            <li><av-link to="/docs/wc/style">Style</av-link></li>            <li><av-link to="/docs/wc/inheritance">Inhertiance</av-link></li>            <li><av-link to="/docs/wc/attribute">Attribute</av-link></li>            <li><av-link to="/docs/wc/property">Property</av-link></li>            <li><av-link to="/docs/wc/watch">Watch</av-link></li>            <li><av-link to="/docs/wc/signal">Signal</av-link></li>            <li><av-link to="/docs/wc/interpolation">Interpolation</av-link></li>            <li><av-link to="/docs/wc/element">Select element</av-link></li>            <li><av-link to="/docs/wc/injection">Injection</av-link></li>            <li><av-link to="/docs/wc/event">Event</av-link></li>            <li><av-link to="/docs/wc/binding">Binding</av-link></li>            <li><av-link to="/docs/wc/state">State</av-link></li>            <li><av-link to="/docs/wc/loop">Loop</av-link></li>            <li><av-link to="/docs/wc/condition">Condition</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">lib</div>        <ul>            <li><av-link to="/docs/lib/create">Create</av-link></li>            <li><av-link to="/docs/lib/animation">Animation</av-link></li>            <li><av-link to="/docs/lib/callback">Callback</av-link></li>            <li><av-link to="/docs/lib/compare_object">CompareObject</av-link></li>            <li><av-link to="/docs/lib/converter">Converter</av-link></li>            <li><av-link to="/docs/lib/press_manager">PressManager</av-link></li>            <li><av-link to="/docs/lib/drag_and_drop">Drag&Drop</av-link></li>            <li><av-link to="/docs/lib/instance">Instance</av-link></li>            <li><av-link to="/docs/lib/json">Json</av-link></li>            <li><av-link to="/docs/lib/mutex">Mutex</av-link></li>            <li><av-link to="/docs/lib/resize_observer">ResizeObserver</av-link></li>            <li><av-link to="/docs/lib/resource_loader">ResourceLoader</av-link></li>            <li><av-link to="/docs/lib/sleep">Sleep</av-link></li>            <li><av-link to="/docs/lib/uuid">Uuid</av-link></li>            <li><av-link to="/docs/lib/value_from_object">ValueFromObject</av-link></li>            <li><av-link to="/docs/lib/watcher">Watcher</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">i18n</div>        <ul>            <li><av-link to="/docs/i18n/config">Config</av-link></li>            <li><av-link to="/docs/i18n/usage">Usage</av-link></li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">UI</div>        <ul>            <li><av-link to="/docs/ui/introduction">Introduction</av-link></li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Form</div>                    <ul>                        <li><av-link to="/docs/ui/button">Button</av-link></li>                        <li><av-link to="/docs/ui/form">Form</av-link></li>                        <li><av-link to="/docs/ui/form_element">FormElement</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Layout</div>                    <ul>                        <li><av-link to="/docs/ui/col_row">Col / Row</av-link></li>                        <li><av-link to="/docs/ui/collapse">Collapse</av-link></li>                        <li><av-link to="/docs/ui/grid_helper">Grid Helper</av-link></li>                        <li><av-link to="/docs/ui/image">Image</av-link></li>                        <li><av-link to="/docs/ui/scrollable">Scrollable</av-link></li>                        <li><av-link to="/docs/ui/tabs">Tabs</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Interaction</div>                    <ul>                        <li><av-link to="/docs/ui/modal">Modal</av-link></li>                        <li><av-link to="/docs/ui/toast">Toast</av-link></li>                    </ul>                </av-collapse>            </li>            <li>                <av-collapse>                    <div class="sub-title" slot="header">Navigation</div>                    <ul>                        <li><av-link to="/docs/ui/link">Link</av-link></li>                        <li><av-link to="/docs/ui/page">Page</av-link></li>                        <li><av-link to="/docs/ui/page_form">Page Form</av-link></li>                        <li><av-link to="/docs/ui/page_form_http">Page Form Http</av-link></li>                        <li><av-link to="/docs/ui/router">Router</av-link></li>                    </ul>                </av-collapse>            </li>             <li>                <av-collapse>                    <div class="sub-title" slot="header">Lib</div>                    <ul>                        <li><av-link to="/docs/ui/process">Process</av-link></li>                        <li><av-link to="/docs/ui/shortcut">Shortcut</av-link></li>                    </ul>                </av-collapse>            </li>        </ul>    </av-collapse>    <av-collapse>        <div class="title" slot="header">advanced</div>        <ul>            <li><av-link to="/docs/advanced/template">Template</av-link></li>            <li><av-link to="/docs/advanced/store">Store</av-link></li>            <li><av-link to="/docs/advanced/npm_export">Npm Export</av-link></li>            <li><av-link to="/docs/advanced/storybook">Storybook</av-link></li>        </ul>    </av-collapse></av-scrollable>` }
     });
 }
     __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
@@ -14151,6 +14620,76 @@ const DocGenericPage = class DocGenericPage extends Page {
 DocGenericPage.Namespace=`AventusWebsite`;
 __as1(_, 'DocGenericPage', DocGenericPage);
 
+const DocErrorIntroduction = class DocErrorIntroduction extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocErrorIntroduction;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocErrorIntroduction.__style);
+        return arrStyle;
+    }
+    getClassName() {
+        return "DocErrorIntroduction";
+    }
+    Title() {
+        return "Error Handling in Aventus";
+    }
+    Description() {
+        return "Learn how to handle errors effectively in Aventus using GenericError, VoidWithError, and ResultWithError. Discover how these wrappers help you manage failure scenarios, return structured results, and write cleaner, more reliable code.";
+    }
+    Keywords() {
+        return [
+            "Aventus error handling",
+            "GenericError Aventus",
+            "VoidWithError Aventus",
+            "ResultWithError Aventus",
+            "Aventus error strategy",
+            "Error management Aventus",
+            "Function error Aventus",
+            "Aventus result wrapper",
+        ];
+    }
+}
+DocErrorIntroduction.Namespace=`AventusWebsite`;
+DocErrorIntroduction.Tag=`av-doc-error-introduction`;
+__as1(_, 'DocErrorIntroduction', DocErrorIntroduction);
+if(!window.customElements.get('av-doc-error-introduction')){window.customElements.define('av-doc-error-introduction', DocErrorIntroduction);Aventus.WebComponentInstance.registerDefinition(DocErrorIntroduction);}
+
+const DocLibTools = class DocLibTools extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocLibTools;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibTools.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Library - Tools</h1><p>Finally you can use the tools provided to help you.</p>` }
+    });
+}
+    getClassName() {
+        return "DocLibTools";
+    }
+    Title() {
+        return "AventusJs - Tools";
+    }
+    Description() {
+        return "Use predefined function to simplify code";
+    }
+    Keywords() {
+        return ['compareObject', 'getValueFromObject', 'setValueToObject', 'Json', 'Converter', 'Mutex', 'sleep', 'UUID', 'Error'];
+    }
+}
+DocLibTools.Namespace=`AventusWebsite`;
+DocLibTools.Tag=`av-doc-lib-tools`;
+__as1(_, 'DocLibTools', DocLibTools);
+if(!window.customElements.get('av-doc-lib-tools')){window.customElements.define('av-doc-lib-tools', DocLibTools);Aventus.WebComponentInstance.registerDefinition(DocLibTools);}
+
 const DocAdvancedStorybook = class DocAdvancedStorybook extends DocGenericPage {
     static __style = ``;
     __getStatic() {
@@ -14250,7 +14789,7 @@ const DocAdvancedTemplate = class DocAdvancedTemplate extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Advanced - Template</h1><p>Because you will create some amazing components or patterns with Aventus, the framework includes a way to generate    files based on templates. For example, when you create a project with Tailwind, all your webcomponents must inherit    from a base component that contains the Tailwind style. This will be the example for this section.</p><h2>Setup for the example</h2><p>First of all you need to create a new empty project with a component named Tailwind. This component will be the root    for all others components.</p><av-doc-advanced-template-editor-1></av-doc-advanced-template-editor-1><h2>Creating a template</h2><p>You can create the following folder inside your workspace <span class="cn">/.aventus/templates/</span>. This is where    all your    templates will be stored. This folder must be at your workspace root, otherwise it will not work.</p><p>You can create a new folder named <span class="cn">TailwindComponent</span> inside ./aventus/templates/. and inside    this new folder,    you    can add a file named <span class="cn">template.avt.ts</span>. This file define the logic for your template. You need    to create a <span class="cn">Template</span> class inside the file</p><av-doc-advanced-template-editor-2></av-doc-advanced-template-editor-2><p>The variable componentName will be now available inside the template creation flow. Every files at the same depth or    deeper than the template.avt will be copied when template is called. We can now create template files    : </p><av-doc-advanced-template-editor-3></av-doc-advanced-template-editor-3><p>Every &#36;&#123;&#123;componentName&#125;&#125; will be replaced by the user answer.</p><h2>Using the template</h2><p>Now if you right click on the <span class="cn">/src</span> folder and click on <span class="cn">Aventus :        Create...</span>. You can choose the    option    <span class="cn">Custom</span>. Inside the next dropdown, the option <span class="cn">Tailwind Template</span> must    be available.</p><av-img src="/img/doc/advanced/template/tailwind-template.png"></av-img><p>If you click on it, a prompt will ask you the new component name. If you fill it with <span class="cn">NewComp</span>    and press enter,    3 new files will be created.</p><av-doc-advanced-template-editor-4></av-doc-advanced-template-editor-4><h2>Meta</h2><p>You can configure meta data to configure your template.</p><div class="table">    <av-row class="header">        <av-col size="4" center>Name</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>name</av-col>        <av-col size="8" center>            <div>The name of your template. Each <span class="cn">.</span> will be considered as                a group.</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>description</av-col>        <av-col size="8" center>The description of your template. This is a short description to explain your            template action.</av-col>    </av-row>    <av-row>        <av-col size="4" center>version</av-col>        <av-col size="8" center>The version of your template. This must match x.x.x</av-col>    </av-row>    <av-row>        <av-col size="4" center>organization</av-col>        <av-col size="8" center>The organization from which your template will be deployed into the            store.</av-col>    </av-row>    <av-row>        <av-col size="4" center>tags</av-col>        <av-col size="8" center>The tags to tag your template inside the store.</av-col>    </av-row>    <av-row>        <av-col size="4" center>isProject</av-col>        <av-col size="8" center>            <div>A boolean to define if the template need that a <span class="cn">aventus.conf.avt</span> exists in the                workspace.</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>installationFolder</av-col>        <av-col size="8" center>A string to define where to install your template. It's recommended to use your            shop username or shop organization's name.</av-col>    </av-row>    <av-row>        <av-col size="4" center>documentation</av-col>        <av-col size="8" center>The link to the documentation of your template inside the            store.</av-col>    </av-row>    <av-row>        <av-col size="4" center>repository</av-col>        <av-col size="8" center>The link to the repository of your template inside the store.</av-col>    </av-row>    <av-row>        <av-col size="4" center>allowQuick</av-col>        <av-col size="8" center>A boolean to determine if the template can be use without right            click.</av-col>    </av-row></div><h2>Available Methods</h2><p>The template contains action to help you during creation process.</p><div class="table">    <av-row class="header">        <av-col size="4" center>Name</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>input</av-col>        <av-col size="8" center>Ask user with a input.</av-col>    </av-row>    <av-row>        <av-col size="4" center>select</av-col>        <av-col size="8" center>Ask user with a select.</av-col>    </av-row>    <av-row>        <av-col size="4" center>selectMultiple</av-col>        <av-col size="8" center>Ask user with a select with multiple choice.</av-col>    </av-row>    <av-row>        <av-col size="4" center>registerVar</av-col>        <av-col size="8" center>            <div>Register a variable that you can use. A default variable named <span class="cn">namespace</span> is                already registered.</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>registerBlock</av-col>        <av-col size="8" center>            <div>Register a block that you can use. A default block named <span class="cn">namespace</span> is already                registered.</div>            <av-code>                <pre>                #\{\{namespace}}                    export class $\{\{className}} extends Aventus.WebComponent implements Aventus.DefaultComponent {                    }                #\{\{namespace/}}                </pre>            </av-code></av-code>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>writeFile</av-col>        <av-col size="8" center>            <div>Write all files / folder at the same level or deeper than the template.avt.ts. By default the <span class="cn">.git</span> folder and the <span class="cn">.empty</span> file be ignored. You can pass a                function as parameter to apply custom logic. If the function return false, the file won't be written.            </div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>defaultWriteDeny</av-col>        <av-col size="8" center>            <div>You can call this function inside your function parameter inside <span class="cn">writeFile</span> to                avoid <span class="cn">.empty</span> and <span class="cn">.git</span>.</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>replaceVariables</av-col>        <av-col size="8" center>            <div>Call this function if you need to replace variables inside a text</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>replaceBlocks</av-col>        <av-col size="8" center>            <div>Call this function if you need to replace blocks inside a text</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>addIndent</av-col>        <av-col size="8" center>            <div>Add \\t before each lines</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>removeIndent</av-col>        <av-col size="8" center>            <div>Remove \\t before each lines</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>exec</av-col>        <av-col size="8" center>            <div>Exec a command. For example : <span class="cn">npm i</span></div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>showProgress</av-col>        <av-col size="8" center>            <div>Show a progress bar inside the IDE</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>hideProgress</av-col>        <av-col size="8" center>            <div>Hide a progress bar inside the IDE</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>runWithProgress</av-col>        <av-col size="8" center>            <div>Helper to show then hide a progress bar</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>openFile</av-col>        <av-col size="8" center>            <div>Open file. You must define the <span class="cn">relative path</span> from the template.avt.ts</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>sleep</av-col>        <av-col size="8" center>            <div>Helper to wait x ms</div>        </av-col>    </av-row></div><h2>Expose the template globaly</h2><p>    To use a template across multiple project, you can expose your template globaly. To complete that, you must run the    command <span class="cn">Aventus : Open storage</span> and go inside the folder <span class="cn">templates</span>.    Then you can copy paste the previous template here. Notice: Aventus watch the global templates folder only during    starting process, so when you create a new global template, you must reload your Vscode instance.</p><h2>Publish to the store</h2><p>    You can publish your template to the store by <span class="cn">right clicking</span> on the <span class="cn">template.avt.ts</span> and press <span class="cn">Aventus: Publish template to the store</span></p><h2>Download from the store</h2><p>    You can download amazing templates directly from the store just by clicking on the download button on a package    details page.</p><p>    <a href="https://store.aventusjs.com/templates" target="_blank"><av-button>Open the store</av-button></a></p><h2>Project</h2><p>    In the previous section, you open the Aventus storage folder, you may have noticed that a <span class="cn">projects</span> exists. Inside this folder, you can find templates that will be used when you <span class="cn">init a new project</span>. So can you create your own template to init new project or download some    from the web. You must know that if a <span class="cn">aventus.conf.avt</span> file is at the same level of a <span class="cn">template.avt</span> file, the project will not be created. It means no autocompletion, no output    files, etc. You can also name the file <span class="cn">!aventus.conf.avt</span> to avoid error.</p><h2>Quick template</h2><p>    If a template supports quick creation via a meta tag, you can register it to run without right-clicking on a folder.</p><p>This is especially useful for creating files in a specific location. For example, in <a href="https://laraventus.aventusjs.com" target="_blank">Laraventus</a>, there is a template    for creating a Controller, which should always be placed in the <span class="cn">app/Http/Controller</span> folder.</p><h3>Setting up Quick Creation</h3><p>To configure quick creation:</p><ul>    <li>Open the Command Palette and search for <span class="cn">Aventus: Edit Quick Creation</span></li>    <li>or use the shortcut <span class="cn">Ctrl + K</span>, <span class="cn">Ctrl + Shift + V</span>.</li></ul><p>If Aventus finds compatible templates, you can enable or disable them for quick creation.</p><h3>Running Quick Creation</h3><p>To run a quick creation:</p><ul>    <li>Open the Command Palette and search for <span class="cn">Aventus: Run Quick Creation</span></li>    <li>or use the shortcut <span class="cn">Ctrl + K</span>, <span class="cn">Ctrl + V</span>.</li></ul><p>If only one template is registered, it will run immediately. Otherwise, you can select which quick template to execute.</p>` }
+        blocks: { 'default':`<h1>Advanced - Template</h1><p>Because you will create some amazing components or patterns with Aventus, the framework includes a way to generate    files based on templates. For example, when you create a project with Tailwind, all your webcomponents must inherit    from a base component that contains the Tailwind style. This will be the example for this section.</p><h2>Setup for the example</h2><p>First of all you need to create a new empty project with a component named Tailwind. This component will be the root    for all others components.</p><av-doc-advanced-template-editor-1></av-doc-advanced-template-editor-1><h2>Creating a template</h2><p>You can create the following folder inside your workspace <span class="cn">/.aventus/templates/</span>. This is where    all your    templates will be stored. This folder must be at your workspace root, otherwise it will not work.</p><p>You can create a new folder named <span class="cn">TailwindComponent</span> inside ./aventus/templates/. and inside    this new folder,    you    can add a file named <span class="cn">template.avt.ts</span>. This file define the logic for your template. You need    to create a <span class="cn">Template</span> class inside the file</p><av-doc-advanced-template-editor-2></av-doc-advanced-template-editor-2><p>The variable componentName will be now available inside the template creation flow. Every files at the same depth or    deeper than the template.avt will be copied when template is called. We can now create template files    : </p><av-doc-advanced-template-editor-3></av-doc-advanced-template-editor-3><p>Every &#36;&#123;&#123;componentName&#125;&#125; will be replaced by the user answer.</p><h2>Using the template</h2><p>Now if you right click on the <span class="cn">/src</span> folder and click on <span class="cn">Aventus :        Create...</span>. Inside the next dropdown, the option <span class="cn">Tailwind Template</span> must    be available.</p><av-img src="/img/doc/advanced/template/tailwind-template.png"></av-img><p>If you click on it, a prompt will ask you the new component name. If you fill it with <span class="cn">NewComp</span>    and press enter,    3 new files will be created.</p><av-doc-advanced-template-editor-4></av-doc-advanced-template-editor-4><h2>Meta</h2><p>You can configure meta data to configure your template.</p><div class="table">    <av-row class="header">        <av-col size="4" center>Name</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>name</av-col>        <av-col size="8" center>            <div>The name of your template. Each <span class="cn">.</span> will be considered as                a group.</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>description</av-col>        <av-col size="8" center>The description of your template. This is a short description to explain your            template action.</av-col>    </av-row>    <av-row>        <av-col size="4" center>version</av-col>        <av-col size="8" center>The version of your template. This must match x.x.x</av-col>    </av-row>    <av-row>        <av-col size="4" center>organization</av-col>        <av-col size="8" center>The organization from which your template will be deployed into the            store.</av-col>    </av-row>    <av-row>        <av-col size="4" center>tags</av-col>        <av-col size="8" center>The tags to tag your template inside the store.</av-col>    </av-row>    <av-row>        <av-col size="4" center>isProject</av-col>        <av-col size="8" center>            <div>A boolean to define if the template need that a <span class="cn">aventus.conf.avt</span> exists in the                workspace.</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>installationFolder</av-col>        <av-col size="8" center>A string to define where to install your template. It's recommended to use your            shop username or shop organization's name.</av-col>    </av-row>    <av-row>        <av-col size="4" center>documentation</av-col>        <av-col size="8" center>The link to the documentation of your template inside the            store.</av-col>    </av-row>    <av-row>        <av-col size="4" center>repository</av-col>        <av-col size="8" center>The link to the repository of your template inside the store.</av-col>    </av-row>    <av-row>        <av-col size="4" center>allowQuick</av-col>        <av-col size="8" center>A boolean to determine if the template can be use without right            click.</av-col>    </av-row></div><h2>Available Methods</h2><p>The template contains action to help you during creation process.</p><div class="table">    <av-row class="header">        <av-col size="4" center>Name</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>input</av-col>        <av-col size="8" center>Ask user with a input.</av-col>    </av-row>    <av-row>        <av-col size="4" center>select</av-col>        <av-col size="8" center>Ask user with a select.</av-col>    </av-row>    <av-row>        <av-col size="4" center>selectMultiple</av-col>        <av-col size="8" center>Ask user with a select with multiple choice.</av-col>    </av-row>    <av-row>        <av-col size="4" center>registerVar</av-col>        <av-col size="8" center>            <div>Register a variable that you can use. A default variable named <span class="cn">namespace</span> is                already registered.</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>registerBlock</av-col>        <av-col size="8" center>            <div>Register a block that you can use. A default block named <span class="cn">namespace</span> is already                registered.</div>            <av-code>                <pre>                #\{\{namespace}}                    export class $\{\{className}} extends Aventus.WebComponent implements Aventus.DefaultComponent {                    }                #\{\{namespace/}}                </pre>            </av-code></av-code>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>writeFile</av-col>        <av-col size="8" center>            <div>Write all files / folder at the same level or deeper than the template.avt.ts. By default the <span class="cn">.git</span> folder and the <span class="cn">.empty</span> file be ignored. You can pass a                function as parameter to apply custom logic. If the function return false, the file won't be written.            </div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>defaultWriteDeny</av-col>        <av-col size="8" center>            <div>You can call this function inside your function parameter inside <span class="cn">writeFile</span> to                avoid <span class="cn">.empty</span> and <span class="cn">.git</span>.</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>replaceVariables</av-col>        <av-col size="8" center>            <div>Call this function if you need to replace variables inside a text</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>replaceBlocks</av-col>        <av-col size="8" center>            <div>Call this function if you need to replace blocks inside a text</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>addIndent</av-col>        <av-col size="8" center>            <div>Add \\t before each lines</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>removeIndent</av-col>        <av-col size="8" center>            <div>Remove \\t before each lines</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>exec</av-col>        <av-col size="8" center>            <div>Exec a command. For example : <span class="cn">npm i</span></div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>showErrorMessage</av-col>        <av-col size="8" center>            <div>Show an error message inside the IDE</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>showWarningMessage</av-col>        <av-col size="8" center>            <div>Show a warning message inside the IDE</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>showInformationMessage</av-col>        <av-col size="8" center>            <div>Show an information message inside the IDE</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>showProgress</av-col>        <av-col size="8" center>            <div>Show a progress bar inside the IDE</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>hideProgress</av-col>        <av-col size="8" center>            <div>Hide a progress bar inside the IDE</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>runWithProgress</av-col>        <av-col size="8" center>            <div>Helper to show then hide a progress bar</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>openFile</av-col>        <av-col size="8" center>            <div>Open file. You must define the <span class="cn">relative path</span> from the template.avt.ts</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>sleep</av-col>        <av-col size="8" center>            <div>Helper to wait x ms</div>        </av-col>    </av-row></div><h2>Expose the template globaly</h2><p>    To use a template across multiple project, you can expose your template globaly. To complete that, you must run the    command <span class="cn">Aventus : Open storage</span> and go inside the folder <span class="cn">templates</span>.    Then you can copy paste the previous template here. Notice: Aventus watch the global templates folder only during    starting process, so when you create a new global template, you must reload your Vscode instance.</p><h2>Publish to the store</h2><p>    You can publish your template to the store by <span class="cn">right clicking</span> on the <span class="cn">template.avt.ts</span> and press <span class="cn">Aventus: Publish template to the store</span></p><h2>Download from the store</h2><p>    You can download amazing templates directly from the store just by clicking on the download button on a package    details page.</p><p>    <a href="https://store.aventusjs.com/templates" target="_blank"><av-button>Open the store</av-button></a></p><h2>Project</h2><p>    In the previous section, you open the Aventus storage folder, you may have noticed that a <span class="cn">projects</span> exists. Inside this folder, you can find templates that will be used when you <span class="cn">init a new project</span>. So can you create your own template to init new project or download some    from the web. You must know that if a <span class="cn">aventus.conf.avt</span> file is at the same level of a <span class="cn">template.avt</span> file, the project will not be created. It means no autocompletion, no output    files, etc. You can also name the file <span class="cn">!aventus.conf.avt</span> to avoid error.</p><h2>Quick template</h2><p>    If a template supports quick creation via a meta tag, you can register it to run without right-clicking on a folder.</p><p>This is especially useful for creating files in a specific location. For example, in <a href="https://laraventus.aventusjs.com" target="_blank">Laraventus</a>, there is a template    for creating a Controller, which should always be placed in the <span class="cn">app/Http/Controller</span> folder.</p><h3>Setting up Quick Creation</h3><p>To configure quick creation:</p><ul>    <li>Open the Command Palette and search for <span class="cn">Aventus: Edit Quick Creation</span></li>    <li>or use the shortcut <span class="cn">Ctrl + K</span>, <span class="cn">Ctrl + Shift + V</span>.</li></ul><p>If Aventus finds compatible templates, you can enable or disable them for quick creation.</p><h3>Running Quick Creation</h3><p>To run a quick creation:</p><ul>    <li>Open the Command Palette and search for <span class="cn">Aventus: Run Quick Creation</span></li>    <li>or use the shortcut <span class="cn">Ctrl + K</span>, <span class="cn">Ctrl + V</span>.</li></ul><p>If only one template is registered, it will run immediately. Otherwise, you can select which quick template to execute.</p>` }
     });
 }
     getClassName() {
@@ -14333,8 +14872,7 @@ const DocUIShortcut = class DocUIShortcut extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
+        blocks: { 'default':`<h1>UI - Shortcut</h1><p>The <span class="cn">ShortcutManager</span> class provides a global keyboard shortcut management system.It allows developers to register and handle keyboard combinations (shortcuts) with customizable behavior such as:</p><ul>    <li>Replacing temporary shortcuts,</li>    <li>Automatically preventing default browser actions,</li>    <li>Handling async callbacks,</li>    <li>And restoring previous shortcut states when temporary ones are removed.</li></ul><h2>Overview</h2><p>Keyboard shortcuts are essential for improving productivity and providing advanced user interactions in web applications.</p><p>This utility lets you easily bind custom key combinations (like <span class="cn">Ctrl+S</span> or <span class="cn">Alt+Enter</span>) to specific actions while handling complex states such as modifier keys and overlapping combinations.</p><h2>Example</h2><av-code language="ts">    <pre>        // Register a simple shortcut: Ctrl+S        ShortcutManager.subscribe([SpecialTouch.Control, "s"], () => console.log("saving"));        // Register a temporary shortcut that replaces the existing Ctrl+S        const overriding = () => {            console.log("Temporary override for Ctrl+S");        }        ShortcutManager.subscribe([SpecialTouch.Control, "s"], overriding, { replaceTemp: true });        // Later, remove the temporary shortcut and restore the previous one        ShortcutManager.unsubscribe([SpecialTouch.Control, "s"], overriding);    </pre></av-code></av-code><h2>Internal Behavior</h2><p>The combination order doesn't matter. <span class="cn">Ctrl+S</span>, <span class="cn">S+Ctrl</span>, or <span class="cn">s+Control</span> are treated identically.</p><p>Certain browser shortcuts (like <span class="cn">Ctrl+P</span> or <span class="cn">Ctrl+S</span>) are automatically prevented to avoid conflicts. This can be useful in single-page applications (SPAs) to prevent the browser from executing system actions like Print, Open File, or Save Page. You can customize this behavior with :</p><av-code language="ts">    <pre>        ShortcutManager.setAutoPrevents([[SpecialTouch.Control, "s"], [SpecialTouch.Control, "p"]]);    </pre></av-code></av-code><h2>Conditional Shortcuts</h2><p>In some cases, you may want a shortcut to be conditionally active. For example, only when a certain modal is open, a form is focused, or the user is in edit mode.</p><p>The <span class="cn">ShortcutManager</span> makes this easy: You can return <span class="cn">false</span> from a shortcut callback to indicate that <span class="cn">no action</span> was performed, and that the shortcut should be considered "ignored" in this context.</p><av-code language="ts">    <pre>let isModalOpen = false;&nbsp;ShortcutManager.subscribe(  [SpecialTouch.Control, "Enter"],  () => {    &#105;f (!isModalOpen) {      // Do nothing — signal that shortcut did not apply      return false;    }&nbsp;    console.log("Submitting modal form...");    submitModalForm();  });    </pre></av-code></av-code><h2>Temporary Shortcut Replacement</h2><p>The <span class="cn">replaceTemp</span> option lets you temporarily override a shortcut without losing the original.</p><av-code language="ts">    <pre>const saveShortcut = () => console.log("Save file");const tempSave = () => console.log("Temporary override");&nbsp;// Register base shortcutShortcutManager.subscribe([SpecialTouch.Control, "s"], saveShortcut);&nbsp;// Temporarily replaceShortcutManager.subscribe(  [SpecialTouch.Control, "s"],  tempSave,  { replaceTemp: true });&nbsp;// Later restoreShortcutManager.unsubscribe([SpecialTouch.Control, "s"], tempSave);// The original saveShortcut is automatically restored    </pre></av-code></av-code>` }
     });
 }
     getClassName() {
@@ -14360,6 +14898,17 @@ const DocUIShortcut = class DocUIShortcut extends DocGenericPage {
             "Aventus keyboard events",
         ];
     }
+    postCreation() {
+        // Register a simple shortcut: Ctrl+S
+        Aventus.Lib.ShortcutManager.subscribe([Aventus.Lib.SpecialTouch.Control, "s"], () => console.log("saving"));
+        const overriding = () => {
+            console.log("Temporary override for Ctrl+S");
+        };
+        // Register a temporary shortcut that replaces the existing Ctrl+S
+        Aventus.Lib.ShortcutManager.subscribe([Aventus.Lib.SpecialTouch.Control, "s"], overriding, { replaceTemp: true });
+        // Later, remove the temporary shortcut and restore the previous one
+        Aventus.Lib.ShortcutManager.unsubscribe([Aventus.Lib.SpecialTouch.Control, "s"], overriding);
+    }
 }
 DocUIShortcut.Namespace=`AventusWebsite`;
 DocUIShortcut.Tag=`av-doc-u-i-shortcut`;
@@ -14378,8 +14927,7 @@ const DocUIProcess = class DocUIProcess extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
+        blocks: { 'default':`<h1>UI - Process</h1><p>The <span class="cn">Process</span> class is a lightweight helper designed to standardize API or asynchronous    operation handling — especially when using Aventus <span class="cn">ResultWithError</span> or <span class="cn">VoidWithError</span> patterns.</p><p>It provides a unified way to:</p><ul>    <li>Execute async operations that return an Aventus.ResultWithError or Aventus.VoidWithError.</li>    <li>Automatically handle and display errors via a configurable global handler.</li>    <li>Extract the success result when no errors occur.</li></ul><h2>Overview</h2><p>When working with backend routes, forms, or other async processes in Aventus, many functions return structured    results containing both <span class="cn">value</span> and <span class="cn">errors</span>.    The <span class="cn">Process</span> utility simplifies how you handle these cases by centralizing error parsing and    handling.</p><h2>Example</h2><av-code language="ts">    <pre>// Sets up a global error handler that is automatically invoked whenever an operation fails.Process.configure({    handleErrors: (msg) => {        Alert.open({            title: "Execution error",            content: msg,        });    }});// Use the utility to handle an async route callasync function login() {	const result = await Process.execute(new AuthRoute().login({		email: "user@test.com",		password: "secret"	}));	&#105;f (result) {		console.log("Login success:", result);	} &#101;lse {		console.log("Login failed — errors were handled globally");	}}    </pre></av-code></av-code>` }
     });
 }
     getClassName() {
@@ -14467,8 +15015,7 @@ const DocUIPageFormRoute = class DocUIPageFormRoute extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
+        blocks: { 'default':`<h1>UI - Page With Form And Http</h1><p>The <span class="cn">PageFormRoute</span> class extends <span class="cn"><av-link to="/docs/ui/page_form">PageForm</av-link></span> to provide an automatic bridge between form pages and HTTP    route classes (<span class="cn">Aventus.HttpRoute</span>).</p><p>It simplifies submitting forms directly to backend routes by automatically resolving the corresponding HTTP method    and handling the response.</p><h2>Overview</h2><p><span class="cn">PageFormRoute</span> is a specialized version of <span class="cn">PageForm</span> designed for    API-backed pages.    It automatically connects a form's submission to a backend route (defined by an <span class="cn">Aventus.HttpRoute</span> class).    This eliminates repetitive code for sending form data to API endpoints and processing responses.</p><h2>Example</h2><av-doc-u-i-page-form-route-editor-1></av-doc-u-i-page-form-route-editor-1><p>Or if controller contains multiple function</p><av-doc-u-i-page-form-route-editor-2></av-doc-u-i-page-form-route-editor-2><h2>How It Works</h2><p>When a PageFormRoute is submitted:</p><ul>    <li>It calls this.beforeSubmit() (optional override hook).</li>    <li>It retrieves the route via the abstract route() method.</li>    <li>It automatically calls the corresponding HTTP method (router[key]) of your defined route.</li>    <li>The response is passed to this.onResult(result) for custom handling.</li></ul><p>If the route class has multiple public methods but you don't specify one explicitly, an error is thrown to prevent    ambiguity.</p>` }
     });
 }
     getClassName() {
@@ -14514,8 +15061,7 @@ const DocUIPageForm = class DocUIPageForm extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
+        blocks: { 'default':`<h1>UI - Page With Form</h1><p>The <span class="cn">PageForm</span> class extends the base Page component to provide a ready-to-use structure for    form-based pages (e.g., login, signup, profile edit, etc.).</p><p>It integrates seamlessly with the <span class="cn"><av-link to="/docs/ui/form">FormHandler</av-link></span> and    manages form elements, validation, submission, and optional loading states automatically.</p><h2>Overview</h2><p><span class="cn">PageForm</span> simplifies creating interactive pages that include forms.</p><p>It:</p><ul>    <li>Automatically manages form creation through a FormHandler.</li>    <li>Links FormElement and ButtonElement components.</li>    <li>Provides configurable automatic submission on Enter key press.</li>    <li>Handles loading states on submit buttons.</li>    <li>Keeps the form logic self-contained inside the page.</li></ul><h2>Example</h2><av-doc-u-i-page-form-editor-1></av-doc-u-i-page-form-editor-1><h2>Configuration</h2><p>You can override <span class="cn">pageConfig()</span> to change these behaviors:</p><av-code language="ts" filename="LoginPage.wcl.avt">    <pre>    protected override pageConfig(): Aventus.Navigation.PageFormConfig {        return {            autoLoading: true, // if true, any registered submit buttons will automatically show a loading state during form submission. Default is true.            submitWithEnter: true, // if true, pressing Enter on the last registered form field automatically submits the form. Default is true.        }    }    </pre></av-code></av-code><h2>Integration with FormHandler</h2><p><span class="cn">PageForm</span> automatically creates a <span class="cn">FormHandler</span> instance:</p><av-code language="ts">    <pre>        this._form = new FormHandler(this.formSchema(), this.formConfig());        // you can access the form via : this.form    </pre></av-code></av-code><h2>Behavior Summary</h2><div class="table">    <av-row class="header">        <av-col size="6" center>Feature</av-col>        <av-col size="6" center>Description</av-col>    </av-row>    <av-row>        <av-col size="6" center>Automatic FormHandler setup</av-col>        <av-col size="6">Creates and manages a form based on a schema.</av-col>    </av-row>    <av-row>        <av-col size="6" center>Keyboard Submission</av-col>        <av-col size="6">Optional automatic submission on Enter.</av-col>    </av-row>    <av-row>        <av-col size="6" center>Automatic Button Loading</av-col>        <av-col size="6">Applies loading animation to registered buttons.</av-col>    </av-row>    <av-row>        <av-col size="6" center>Type-safe schema</av-col>        <av-col size="6">Ensures validation and submission logic matches form types.</av-col>    </av-row>     <av-row>        <av-col size="6" center>Built-in lifecycle</av-col>        <av-col size="6">Works seamlessly with the Page system (visibility, navigation, etc.).</av-col>    </av-row></div>` }
     });
 }
     getClassName() {
@@ -15237,39 +15783,6 @@ DocI18nConfig.Tag=`av-doc-i-18n-config`;
 __as1(_, 'DocI18nConfig', DocI18nConfig);
 if(!window.customElements.get('av-doc-i-18n-config')){window.customElements.define('av-doc-i-18n-config', DocI18nConfig);Aventus.WebComponentInstance.registerDefinition(DocI18nConfig);}
 
-const DocLibTools = class DocLibTools extends DocGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return DocLibTools;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocLibTools.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Library - Tools</h1><p>Finally you can use the tools provided to help you.</p><h2>compareObject</h2><p>If you want compare if two objects contains the same informations you can use the function <span class="cn">Aventus.compareObject</span></p><av-code language="typescript" filename="Example.lib.avt">    <pre>        export function test() {        &nbsp;            const obj1 = {                name:"John",                todos: ["todo1", "todo2"]            }        &nbsp;            const obj2 = {                name:"John",                todos: ["todo2", "todo1"]            }        &nbsp;            const obj3 = {                name:"John",                todos: ["todo1", "todo3"]            }        &nbsp;            console.log(Aventus.compareObject(obj1, obj2)); // true            console.log(Aventus.compareObject(obj1, obj3)); // false        &nbsp;        }    </pre></av-code></av-code><h2>getValueFromObject</h2><p>The <span class="cn">Aventus.getValueFromObject</span> function is particularly useful when you need to retrieve a    value from a nested object    structure in JavaScript. This function helps you access specific values within complex objects without needing to    write extensive code for traversal and error handling.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        export function test() {            &nbsp;            const userProfile = {                user: {                    profile: {                        address: {                            city: 'New York'                        }                    }                }            };            &nbsp;            // Using getValueFromObject to retrieve the city value            const city = Aventus.getValueFromObject('user.profile.address.city', userProfile);            &nbsp;            console.log(city); // Output: New York            &nbsp;        }    </pre></av-code></av-code><h2>setValueToObject</h2><p>The <span class="cn">Aventus.setValueToObject</span> function is invaluable when you need to set a value within a    nested object structure in    JavaScript. This function streamlines the process of updating specific properties within complex objects without the    need for extensive manual traversal and error handling.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        export function test() {            &nbsp;            let userProfile = {                user: {                    profile: {                        address: {                            city: 'New York'                        }                    }                }            };            &nbsp;            // Using setValueToObject to update the city value            setValueToObject('user.profile.address.city', userProfile, 'Los Angeles');            &nbsp;        }    </pre></av-code></av-code><h2>Json</h2><p>The Json utility class is useful when you need to serialize JavaScript class instances into JSON objects and    deserialize JSON data into JavaScript class instances. This is particularly helpful when working with data transfer    between client and server, storing data in databases, or communicating with external APIs.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        // Define the User class        class User {            private name?: string;            private age?: number;            &nbsp;            public constructor(name?: string, age?: number) {                this.name = name;                this.age = age;            }        }        &nbsp;        // Create an instance of the User class        const user = new User("John", 30);        &nbsp;        // Serialize the class instance to JSON        const jsonUser = Aventus.Json.classToJson(user);        &nbsp;        // Deserialize JSON data into a new instance of the User class        const newUser = new User();        Aventus.Json.classFromJson(newUser, jsonUser);        &nbsp;        // Output the deserialized user        console.log(newUser); // User { name: 'John', age: 30 }    </pre></av-code></av-code><h2>Converter</h2><p>The <span class="cn">Aventus.Converter.transform</span> method is essential for converting data from one format to    another, particularly useful when    dealing with complex object structures. It's a versatile tool that simplifies the process of transforming data by    providing a consistent interface for conversion operations.</p><p>Suppose you have an application that receives JSON data from an API and needs to convert it into JavaScript objects    for further processing. In this case, you can utilize the Converter.transform method to perform the conversion    seamlessly.</p><p>By default, the Converter will populate the class instances through the method <span class="cn">fromJSON</span> on    your object or through the method <span class="cn">Json.classFromJson</span>.</p><av-doc-lib-tools-editor-1></av-doc-lib-tools-editor-1><p>By default, <span class="cn">Aventus.Data</span> is convertible. You can also create custom convertible class by adding the decorator <span class="cn">@Convertible</span>. You must define an unique key so that the converter can transform your json into the object.</p><av-code language="typescript">    <pre>        @Convertible()        export class Test {            public static get Fullname(): string { return "MyNamespace.Test"; }            public get $type(): string { return Test.Fullname; }        }    </pre></av-code></av-code><h2>Mutex</h2><p>A Mutex (short for Mutual Exclusion) is a synchronization mechanism used in concurrent programming to control access    to a shared resource, ensuring that only one thread or process can access the resource at a time. This prevents race    conditions and ensures data consistency in multi-threaded or multi-process environments.</p><ol>    <li>        <u>Waiting for the Mutex (waitOne):</u>        <ul>            <li>The waitOne function allows a thread or process to wait for the mutex to become available.</li>            <li>When a thread calls waitOne, it enters a blocked state until the mutex is released by another thread or                process.</li>            <li>If the mutex is currently locked, the waiting thread is queued, and subsequent threads will wait in line                until it's their turn.</li>        </ul>    </li>    <li>        <u>Acquiring the Mutex (release):</u>        <ul>            <li>The release function allows a thread or process to acquire (lock) the mutex, granting exclusive access                to the shared resource.</li>            <li>Once the mutex is acquired, the thread can safely perform operations on the shared resource.</li>            <li>After completing its task, the thread releases the mutex using the release function, allowing other                waiting threads or processes to acquire it.</li>        </ul>    </li>    <li>        <u>Releasing the Mutex (releaseOnlyLast):</u>        <ul>            <li>The releaseOnlyLast function is a variation of release that releases the mutex but allows only the last                function in the waiting list to acquire it.</li>            <li>This function is useful in scenarios where you want to prioritize the most recent request for the mutex                over older ones.</li>        </ul>    </li>    <li>        <u>Safe Execution within Mutex (safeRun, safeRunAsync, safeRunLast, safeRunLastAsync):</u>        <ul>            <li>These functions provide a convenient way to execute code safely within the mutex lock and release the                lock afterward.</li>            <li>safeRun and safeRunLast are used for synchronous code execution, while safeRunAsync and safeRunLastAsync                are used for asynchronous code execution.</li>            <li>They ensure that only one thread executes the provided callback function at a time, preventing                concurrent access to the shared resource.</li>            <li>After executing the callback function, the mutex is released to allow other waiting threads or processes                to acquire it.</li>        </ul>    </li></ol><av-doc-lib-tools-editor-3></av-doc-lib-tools-editor-3><p>In this example:</p><ul>    <li>Each thread waits for the mutex before updating the counter.</li>    <li>Only one thread can acquire the mutex at a time, ensuring that counter updates are performed sequentially.</li>    <li>Once a thread completes its task, it releases the mutex, allowing other threads to acquire it.</li></ul><h2>sleep</h2><p>If you need to wait a specific time of ms you can use the <span class="cn">Aventus.sleep</span> function.</p><av-code language="typescript" filename="Example.lib.avt">    export class Example {    &nbsp;    \tpublic async test() {    \t\tconsole.log(Date.now());    \t\tawait Aventus.sleep(5000);    \t\tconsole.log(Date.now());    \t}    &nbsp;    }</av-code></av-code><h2>UUID</h2><p>If you need a unique id you can use the <span class="cn">Aventus.uuidv4</span> function. More information about uuid    <a href="https://en.wikipedia.org/wiki/Universally_unique_identifier" target="_blank">here</a>.</p><av-code language="typescript" filename="Example.lib.avt">    export class Example {    &nbsp;    \tpublic test() {    \t\tlet id = Aventus.uuidv4();    \t}    &nbsp;    }</av-code></av-code><h2>Error</h2><p>When you create function that can fail you can use the error strategy developed by Aventus. Instead of returning the    function result, the result is wrapped inside an container named <span class="cn">GenericError</span>, <span class="cn">VoidWithError</span>, and <span class="cn">ResultWithError</span>. They are all    useful tools for managing errors and results in your application. They provide a structured way to represent error    conditions and action outcomes, helping you write more robust and maintainable code.</p><h3>GenericError</h3><p><span class="cn">Aventus.GenericError</span> is a generic error class that provides a structured way to represent    errors in your application. It    allows you to define an error code along with a message to describe the error. The error code can be of any type    that extends either number or an enumeration (Enum). By extending GenericError, you can create specific error types    tailored to different error scenarios in your application.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        // Define an enumeration for error codes        export enum MyErrorCode {            NotFound = 404,            InvalidInput = 400,            InternalServerError = 500        }        // Create a specific error class extending GenericError        export class MyError extends GenericError&lt;MyErrorCode&gt; { }    </pre></av-code></av-code><h3>VoidWithError</h3><p><span class="cn">Aventus.VoidWithError</span> represents the result of an action that may produce errors but does not    return    a specific result value. It encapsulates the outcome of the action along with any errors that occur during its    execution. This class is useful when you want to handle the success or failure of an action without necessarily    needing a result value.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        const validation = SomeValidation.validate(data);        &#105;f (validation.success) {            // Proceed with further operations        } &#101;lse {            // Handle validation errors            console.error("Validation errors:", validation.errors);        }    </pre></av-code></av-code><h3>ResultWithError</h3><p><span class="cn">Aventus.ResultWithError</span> is similar to Aventus.VoidWithError, but it also includes a result    value along with    potential errors. It represents the outcome of an action that produces a specific result, such as the result of a    function call or an operation. This class allows you to handle both the result of the action and any errors that may    occur during its execution.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>       const result = SomeOperation.execute();        &#105;f (result.success) {            // Handle successful result            console.log("Result:", result.result);        } &#101;lse {            // Handle errors            console.error("Error:", result.errors[0].message);        }    </pre></av-code></av-code><p>Below you can find an implementation example for a function that must transform a string in lowercase.</p><av-doc-lib-tools-editor-2></av-doc-lib-tools-editor-2>` }
-    });
-}
-    getClassName() {
-        return "DocLibTools";
-    }
-    Title() {
-        return "AventusJs - Tools";
-    }
-    Description() {
-        return "Use predefined function to simplify code";
-    }
-    Keywords() {
-        return ['compareObject', 'getValueFromObject', 'setValueToObject', 'Json', 'Converter', 'Mutex', 'sleep', 'UUID', 'Error'];
-    }
-}
-DocLibTools.Namespace=`AventusWebsite`;
-DocLibTools.Tag=`av-doc-lib-tools`;
-__as1(_, 'DocLibTools', DocLibTools);
-if(!window.customElements.get('av-doc-lib-tools')){window.customElements.define('av-doc-lib-tools', DocLibTools);Aventus.WebComponentInstance.registerDefinition(DocLibTools);}
-
 const DocLibWatcher = class DocLibWatcher extends DocGenericPage {
     static __style = ``;
     __getStatic() {
@@ -15302,6 +15815,132 @@ DocLibWatcher.Namespace=`AventusWebsite`;
 DocLibWatcher.Tag=`av-doc-lib-watcher`;
 __as1(_, 'DocLibWatcher', DocLibWatcher);
 if(!window.customElements.get('av-doc-lib-watcher')){window.customElements.define('av-doc-lib-watcher', DocLibWatcher);Aventus.WebComponentInstance.registerDefinition(DocLibWatcher);}
+
+const DocLibValueFromObject = class DocLibValueFromObject extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocLibValueFromObject;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibValueFromObject.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>getValueFromObject</h1><p>The <span class="cn">Aventus.getValueFromObject</span> function is particularly useful when you need to retrieve a    value from a nested object    structure in JavaScript. This function helps you access specific values within complex objects without needing to    write extensive code for traversal and error handling.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        export function test() {            &nbsp;            const userProfile = {                user: {                    profile: {                        address: {                            city: 'New York'                        }                    }                }            };            &nbsp;            // Using getValueFromObject to retrieve the city value            const city = Aventus.getValueFromObject('user.profile.address.city', userProfile);            &nbsp;            console.log(city); // Output: New York            &nbsp;        }    </pre></av-code></av-code><h1>setValueToObject</h1><p>The <span class="cn">Aventus.setValueToObject</span> function is invaluable when you need to set a value within a    nested object structure in    JavaScript. This function streamlines the process of updating specific properties within complex objects without the    need for extensive manual traversal and error handling.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        export function test() {            &nbsp;            let userProfile = {                user: {                    profile: {                        address: {                            city: 'New York'                        }                    }                }            };            &nbsp;            // Using setValueToObject to update the city value            setValueToObject('user.profile.address.city', userProfile, 'Los Angeles');            &nbsp;        }    </pre></av-code></av-code>` }
+    });
+}
+    getClassName() {
+        return "DocLibValueFromObject";
+    }
+    Title() {
+        return "ValueFromObject in Aventus";
+    }
+    Description() {
+        return "Learn how to use Aventus.getValueFromObject and Aventus.setValueToObject to safely access and update values within nested object structures in JavaScript. These functions simplify working with deeply nested properties, avoiding manual traversal and complex error handling.";
+    }
+    Keywords() {
+        return [
+            "Aventus getValueFromObject",
+            "Aventus setValueToObject",
+            "Nested object access Aventus",
+            "Nested object update Aventus",
+            "Deep property access Aventus",
+            "Deep property assignment Aventus",
+            "Safe object traversal Aventus",
+            "Access and update nested data Aventus",
+        ];
+    }
+}
+DocLibValueFromObject.Namespace=`AventusWebsite`;
+DocLibValueFromObject.Tag=`av-doc-lib-value-from-object`;
+__as1(_, 'DocLibValueFromObject', DocLibValueFromObject);
+if(!window.customElements.get('av-doc-lib-value-from-object')){window.customElements.define('av-doc-lib-value-from-object', DocLibValueFromObject);Aventus.WebComponentInstance.registerDefinition(DocLibValueFromObject);}
+
+const DocLibUuid = class DocLibUuid extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocLibUuid;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibUuid.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>UUID</h1><p>If you need a unique id you can use the <span class="cn">Aventus.uuidv4</span> function. More information about uuid    <a href="https://en.wikipedia.org/wiki/Universally_unique_identifier" target="_blank">here</a>.</p><av-code language="typescript" filename="Example.lib.avt">    export class Example {    &nbsp;    \tpublic test() {    \t\tlet id = Aventus.uuidv4();    \t}    &nbsp;    }</av-code></av-code>` }
+    });
+}
+    getClassName() {
+        return "DocLibUuid";
+    }
+    Title() {
+        return "UUID (uuidv4) in Aventus";
+    }
+    Description() {
+        return "Learn how to use Aventus.uuidv4 to generate unique identifiers (UUIDs) in your Aventus applications. This function produces universally unique IDs, useful for identifying resources, objects, or records without collisions.";
+    }
+    Keywords() {
+        return [
+            "Aventus uuidv4",
+            "UUID Aventus",
+            "Unique ID Aventus",
+            "Generate UUID Aventus",
+            "Unique identifier Aventus",
+            "Resource ID Aventus",
+            "Object ID Aventus",
+            "Random UUID Aventus",
+        ];
+    }
+}
+DocLibUuid.Namespace=`AventusWebsite`;
+DocLibUuid.Tag=`av-doc-lib-uuid`;
+__as1(_, 'DocLibUuid', DocLibUuid);
+if(!window.customElements.get('av-doc-lib-uuid')){window.customElements.define('av-doc-lib-uuid', DocLibUuid);Aventus.WebComponentInstance.registerDefinition(DocLibUuid);}
+
+const DocLibSleep = class DocLibSleep extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocLibSleep;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibSleep.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>sleep</h1><p>If you need to wait a specific time of ms you can use the <span class="cn">Aventus.sleep</span> function.</p><av-code language="typescript" filename="Example.lib.avt">    export class Example {    &nbsp;    \tpublic async test() {    \t\tconsole.log(Date.now());    \t\tawait Aventus.sleep(5000);    \t\tconsole.log(Date.now());    \t}    &nbsp;    }</av-code></av-code>` }
+    });
+}
+    getClassName() {
+        return "DocLibSleep";
+    }
+    Title() {
+        return "sleep in Aventus";
+    }
+    Description() {
+        return "Learn how to use Aventus.sleep to pause execution for a specified number of milliseconds. This utility function is useful for delaying operations, simulating asynchronous behavior, or waiting for a condition in Aventus applications.";
+    }
+    Keywords() {
+        return [
+            "Aventus sleep",
+            "Delay execution Aventus",
+            "Pause function Aventus",
+            "Async wait Aventus",
+            "Timeout Aventus",
+            "Wait ms Aventus",
+            "Sleep function Aventus",
+            "Asynchronous delay Aventus",
+        ];
+    }
+}
+DocLibSleep.Namespace=`AventusWebsite`;
+DocLibSleep.Tag=`av-doc-lib-sleep`;
+__as1(_, 'DocLibSleep', DocLibSleep);
+if(!window.customElements.get('av-doc-lib-sleep')){window.customElements.define('av-doc-lib-sleep', DocLibSleep);Aventus.WebComponentInstance.registerDefinition(DocLibSleep);}
 
 const DocLibResourceLoader = class DocLibResourceLoader extends DocGenericPage {
     static __style = ``;
@@ -15402,6 +16041,96 @@ DocLibPressManager.Tag=`av-doc-lib-press-manager`;
 __as1(_, 'DocLibPressManager', DocLibPressManager);
 if(!window.customElements.get('av-doc-lib-press-manager')){window.customElements.define('av-doc-lib-press-manager', DocLibPressManager);Aventus.WebComponentInstance.registerDefinition(DocLibPressManager);}
 
+const DocLibMutex = class DocLibMutex extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocLibMutex;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibMutex.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Mutex</h1><p>A Mutex (short for Mutual Exclusion) is a synchronization mechanism used in concurrent programming to control access    to a shared resource, ensuring that only one thread or process can access the resource at a time. This prevents race    conditions and ensures data consistency in multi-threaded or multi-process environments.</p><ol>    <li>        <u>Waiting for the Mutex (waitOne):</u>        <ul>            <li>The waitOne function allows a thread or process to wait for the mutex to become available.</li>            <li>When a thread calls waitOne, it enters a blocked state until the mutex is released by another thread or                process.</li>            <li>If the mutex is currently locked, the waiting thread is queued, and subsequent threads will wait in line                until it's their turn.</li>        </ul>    </li>    <li>        <u>Acquiring the Mutex (release):</u>        <ul>            <li>The release function allows a thread or process to acquire (lock) the mutex, granting exclusive access                to the shared resource.</li>            <li>Once the mutex is acquired, the thread can safely perform operations on the shared resource.</li>            <li>After completing its task, the thread releases the mutex using the release function, allowing other                waiting threads or processes to acquire it.</li>        </ul>    </li>    <li>        <u>Releasing the Mutex (releaseOnlyLast):</u>        <ul>            <li>The releaseOnlyLast function is a variation of release that releases the mutex but allows only the last                function in the waiting list to acquire it.</li>            <li>This function is useful in scenarios where you want to prioritize the most recent request for the mutex                over older ones.</li>        </ul>    </li>    <li>        <u>Safe Execution within Mutex (safeRun, safeRunAsync, safeRunLast, safeRunLastAsync):</u>        <ul>            <li>These functions provide a convenient way to execute code safely within the mutex lock and release the                lock afterward.</li>            <li>safeRun and safeRunLast are used for synchronous code execution, while safeRunAsync and safeRunLastAsync                are used for asynchronous code execution.</li>            <li>They ensure that only one thread executes the provided callback function at a time, preventing                concurrent access to the shared resource.</li>            <li>After executing the callback function, the mutex is released to allow other waiting threads or processes                to acquire it.</li>        </ul>    </li></ol><av-doc-lib-mutex-editor-1></av-doc-lib-mutex-editor-1><p>In this example:</p><ul>    <li>Each thread waits for the mutex before updating the counter.</li>    <li>Only one thread can acquire the mutex at a time, ensuring that counter updates are performed sequentially.</li>    <li>Once a thread completes its task, it releases the mutex, allowing other threads to acquire it.</li></ul>` }
+    });
+}
+    getClassName() {
+        return "DocLibMutex";
+    }
+    Title() {
+        return "Mutex in Aventus";
+    }
+    Description() {
+        return "Learn how to use the Aventus Mutex for synchronizing access to shared resources in concurrent environments. Discover how to wait for, acquire, and release mutexes safely, and use safeRun, safeRunAsync, safeRunLast, and safeRunLastAsync to execute code sequentially, preventing race conditions and ensuring data consistency.";
+    }
+    Keywords() {
+        return [
+            "Aventus Mutex",
+            "Mutex class Aventus",
+            "Mutual exclusion Aventus",
+            "Concurrent programming Aventus",
+            "waitOne Aventus",
+            "release Aventus",
+            "safeRun Aventus",
+            "safeRunAsync Aventus",
+            "safeRunLast Aventus",
+            "safeRunLastAsync Aventus",
+            "Thread synchronization Aventus",
+            "Prevent race conditions Aventus",
+        ];
+    }
+}
+DocLibMutex.Namespace=`AventusWebsite`;
+DocLibMutex.Tag=`av-doc-lib-mutex`;
+__as1(_, 'DocLibMutex', DocLibMutex);
+if(!window.customElements.get('av-doc-lib-mutex')){window.customElements.define('av-doc-lib-mutex', DocLibMutex);Aventus.WebComponentInstance.registerDefinition(DocLibMutex);}
+
+const DocLibJson = class DocLibJson extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocLibJson;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibJson.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Json</h1><p>The Json utility class is useful when you need to serialize JavaScript class instances into JSON objects and    deserialize JSON data into JavaScript class instances. This is particularly helpful when working with data transfer    between client and server, storing data in databases, or communicating with external APIs.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        // Define the User class        class User {            private name?: string;            private age?: number;            &nbsp;            public constructor(name?: string, age?: number) {                this.name = name;                this.age = age;            }        }        &nbsp;        // Create an instance of the User class        const user = new User("John", 30);        &nbsp;        // Serialize the class instance to JSON        const jsonUser = Aventus.Json.classToJson(user);        &nbsp;        // Deserialize JSON data into a new instance of the User class        const newUser = new User();        Aventus.Json.classFromJson(newUser, jsonUser);        &nbsp;        // Output the deserialized user        console.log(newUser); // User { name: 'John', age: 30 }    </pre></av-code></av-code>` }
+    });
+}
+    getClassName() {
+        return "DocLibJson";
+    }
+    Title() {
+        return "Json Utility in Aventus";
+    }
+    Description() {
+        return "Learn how to use the Aventus.Json utility to serialize JavaScript class instances into JSON and deserialize JSON data back into class instances. This is useful for data transfer between client and server, storing data, or interacting with external APIs while maintaining class structure and type safety.";
+    }
+    Keywords() {
+        return [
+            "Aventus Json",
+            "Serialize class Aventus",
+            "Deserialize JSON Aventus",
+            "classToJson Aventus",
+            "classFromJson Aventus",
+            "Data transfer Aventus",
+            "JSON utility Aventus",
+            "Client-server data Aventus",
+            "Object serialization Aventus",
+            "Type-safe JSON Aventus",
+        ];
+    }
+}
+DocLibJson.Namespace=`AventusWebsite`;
+DocLibJson.Tag=`av-doc-lib-json`;
+__as1(_, 'DocLibJson', DocLibJson);
+if(!window.customElements.get('av-doc-lib-json')){window.customElements.define('av-doc-lib-json', DocLibJson);Aventus.WebComponentInstance.registerDefinition(DocLibJson);}
+
 const DocLibInstance = class DocLibInstance extends DocGenericPage {
     static __style = ``;
     __getStatic() {
@@ -15468,6 +16197,124 @@ DocLibDragAndDrop.Tag=`av-doc-lib-drag-and-drop`;
 __as1(_, 'DocLibDragAndDrop', DocLibDragAndDrop);
 if(!window.customElements.get('av-doc-lib-drag-and-drop')){window.customElements.define('av-doc-lib-drag-and-drop', DocLibDragAndDrop);Aventus.WebComponentInstance.registerDefinition(DocLibDragAndDrop);}
 
+const DocLibCreate = class DocLibCreate extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocLibCreate;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibCreate.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Library</h1><p>In this section you are going to learn what is a library and how you can create it inside Aventus.</p><h2>Definition</h2><p>A library is a piece of code that isn't matching any previous file type. This is the only file type that can contain    exported functions. The only thing that isn't allowed inside this file is to write root constants or root variables.</p><av-code language="typescript" filename="Test.lib.avt">    export function myFunction(){    ...    }    &nbsp;    export class MyClass {    ...    }    &nbsp;    export type MyType = ...    &nbsp;    export interface MyInterface {    ...    }    &nbsp;    export enum MyEnum {    ...    }</av-code></av-code><p>To keep a clean project, we advise you to not write all your code inside <span class="cn">*.lib.avt</span> even if    you can do it. The goal of Aventus is to keep everything tidy.</p><p>The following sections are libraries that are included inside Aventus.</p>` }
+    });
+}
+    getClassName() {
+        return "DocLibCreate";
+    }
+    Title() {
+        return "AventusJs - Lib file";
+    }
+    Description() {
+        return "Understand how to create lib file and use it";
+    }
+    Keywords() {
+        return ["Lib file", "Library", "Custom code", "Function", "Const"];
+    }
+}
+DocLibCreate.Namespace=`AventusWebsite`;
+DocLibCreate.Tag=`av-doc-lib-create`;
+__as1(_, 'DocLibCreate', DocLibCreate);
+if(!window.customElements.get('av-doc-lib-create')){window.customElements.define('av-doc-lib-create', DocLibCreate);Aventus.WebComponentInstance.registerDefinition(DocLibCreate);}
+
+const DocLibConverter = class DocLibConverter extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocLibConverter;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibConverter.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Converter</h1><p>The <span class="cn">Aventus.Converter.transform</span> method is essential for converting data from one format to    another, particularly useful when    dealing with complex object structures. It's a versatile tool that simplifies the process of transforming data by    providing a consistent interface for conversion operations.</p><p>Suppose you have an application that receives JSON data from an API and needs to convert it into JavaScript objects    for further processing. In this case, you can utilize the Converter.transform method to perform the conversion    seamlessly.</p><p>By default, the Converter will populate the class instances through the method <span class="cn">fromJSON</span> on    your object or through the method <span class="cn">Json.classFromJson</span>.</p><av-doc-lib-converter-editor-1></av-doc-lib-converter-editor-1><p>By default, <span class="cn">Aventus.Data</span> is convertible. You can also create custom convertible class by adding the decorator <span class="cn">@Convertible</span>. You must define an unique key so that the converter can transform your json into the object.</p><av-code language="typescript">    <pre>        @Convertible()        export class Test {            public static get Fullname(): string { return "MyNamespace.Test"; }            public get $type(): string { return Test.Fullname; }        }    </pre></av-code></av-code>` }
+    });
+}
+    getClassName() {
+        return "DocLibConverter";
+    }
+    Title() {
+        return "Converter in Aventus";
+    }
+    Description() {
+        return "Learn how to use Aventus.Converter.transform to convert data between formats, particularly for complex object structures. Discover how to transform JSON into class instances using fromJSON or Json.classFromJson, and how to create custom convertible classes with the @Convertible decorator for seamless data handling in Aventus.";
+    }
+    Keywords() {
+        return [
+            "Aventus Converter",
+            "Converter.transform Aventus",
+            "Data transformation Aventus",
+            "JSON to object Aventus",
+            "fromJSON Aventus",
+            "Json.classFromJson Aventus",
+            "Convertible decorator Aventus",
+            "Custom data conversion Aventus",
+            "Object serialization Aventus",
+        ];
+    }
+}
+DocLibConverter.Namespace=`AventusWebsite`;
+DocLibConverter.Tag=`av-doc-lib-converter`;
+__as1(_, 'DocLibConverter', DocLibConverter);
+if(!window.customElements.get('av-doc-lib-converter')){window.customElements.define('av-doc-lib-converter', DocLibConverter);Aventus.WebComponentInstance.registerDefinition(DocLibConverter);}
+
+const DocLibCompareObject = class DocLibCompareObject extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocLibCompareObject;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibCompareObject.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>compareObject</h1><p>If you want compare if two objects contains the same information you can use the function <span class="cn">Aventus.compareObject</span></p><av-code language="typescript" filename="Example.lib.avt">    <pre>        export function test() {        &nbsp;            const obj1 = {                name:"John",                todos: ["todo1", "todo2"]            }        &nbsp;            const obj2 = {                name:"John",                todos: ["todo2", "todo1"]            }        &nbsp;            const obj3 = {                name:"John",                todos: ["todo1", "todo3"]            }        &nbsp;            console.log(Aventus.compareObject(obj1, obj2)); // true            console.log(Aventus.compareObject(obj1, obj3)); // false        &nbsp;        }    </pre></av-code></av-code>` }
+    });
+}
+    getClassName() {
+        return "DocLibCompareObject";
+    }
+    Title() {
+        return "compareObject in Aventus";
+    }
+    Description() {
+        return "Learn how to use Aventus.compareObject to check if two objects contain the same information. This function performs a deep comparison of object properties and arrays, allowing you to determine equality between complex data structures in Aventus applications.";
+    }
+    Keywords() {
+        return [
+            "Aventus compareObject",
+            "Compare objects Aventus",
+            "Object equality Aventus",
+            "Deep comparison Aventus",
+            "Check object content Aventus",
+            "Compare arrays Aventus",
+            "Data comparison Aventus",
+            "Object utilities Aventus",
+        ];
+    }
+}
+DocLibCompareObject.Namespace=`AventusWebsite`;
+DocLibCompareObject.Tag=`av-doc-lib-compare-object`;
+__as1(_, 'DocLibCompareObject', DocLibCompareObject);
+if(!window.customElements.get('av-doc-lib-compare-object')){window.customElements.define('av-doc-lib-compare-object', DocLibCompareObject);Aventus.WebComponentInstance.registerDefinition(DocLibCompareObject);}
+
 const DocLibCallback = class DocLibCallback extends DocGenericPage {
     static __style = ``;
     __getStatic() {
@@ -15533,39 +16380,6 @@ DocLibAnimation.Namespace=`AventusWebsite`;
 DocLibAnimation.Tag=`av-doc-lib-animation`;
 __as1(_, 'DocLibAnimation', DocLibAnimation);
 if(!window.customElements.get('av-doc-lib-animation')){window.customElements.define('av-doc-lib-animation', DocLibAnimation);Aventus.WebComponentInstance.registerDefinition(DocLibAnimation);}
-
-const DocLibCreate = class DocLibCreate extends DocGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return DocLibCreate;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocLibCreate.__style);
-        return arrStyle;
-    }
-    __getHtml() {super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Library</h1><p>In this section you are going to learn what is a library and how you can create it inside Aventus.</p><h2>Definition</h2><p>A library is a piece of code that isn't matching any previous file type. This is the only file type that can contain    exported functions. The only thing that isn't allowed inside this file is to write root constants or root variables.</p><av-code language="typescript" filename="Test.lib.avt">    export function myFunction(){    ...    }    &nbsp;    export class MyClass {    ...    }    &nbsp;    export type MyType = ...    &nbsp;    export interface MyInterface {    ...    }    &nbsp;    export enum MyEnum {    ...    }</av-code></av-code><p>To keep a clean project, we advise you to not write all your code inside <span class="cn">*.lib.avt</span> even if    you can do it. The goal of Aventus is to keep everything tidy.</p><p>The following sections are libraries that are included inside Aventus.</p>` }
-    });
-}
-    getClassName() {
-        return "DocLibCreate";
-    }
-    Title() {
-        return "AventusJs - Lib file";
-    }
-    Description() {
-        return "Understand how to create lib file and use it";
-    }
-    Keywords() {
-        return ["Lib file", "Library", "Custom code", "Function", "Const"];
-    }
-}
-DocLibCreate.Namespace=`AventusWebsite`;
-DocLibCreate.Tag=`av-doc-lib-create`;
-__as1(_, 'DocLibCreate', DocLibCreate);
-if(!window.customElements.get('av-doc-lib-create')){window.customElements.define('av-doc-lib-create', DocLibCreate);Aventus.WebComponentInstance.registerDefinition(DocLibCreate);}
 
 const DocWcState = class DocWcState extends DocGenericPage {
     static __style = ``;
@@ -15843,7 +16657,7 @@ const DocWcStyle = class DocWcStyle extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Webcomponent - Style</h1><p>In this section you are going to learn how to apply a style to your component.</p><h2>Definition</h2><p>Because Aventus is build on the top of webcomponent, the style is scoped. It means that the style from Component 1    won't affect the style from Component 2. If you want more information about scoped style inside webcomponent you    can read <a href="https://web.dev/shadowdom-v1/#component-defined-styles" target="_blank">this</a>. It's great but    it involves that each components must include it own style locally. What if I want to create a general style for all    my components? This is why in addition to webcomponent scoped style, Aventus using the <a href="https://web.dev/constructable-stylesheets/" target="_blank">Constructable Stylesheets</a> to    improve reusability.</p><h2>Local style</h2><p>To edit the style of your component, you must open the file <span class="cn">*.wcs.avt</span> and add the style you    want written in SCSS. The only special selector inside webcomponent style is the <span class="cn">:host</span> that    will target the current custom element.</p><av-doc-wc-style-editor-1></av-doc-wc-style-editor-1><h2>Inherit style</h2><p>If a webcomponent is inheriting another webcomponent, their styles will be merged. Parent style will be written    before Child style so that you can override parent style without problem.</p><av-doc-wc-style-editor-2></av-doc-wc-style-editor-2><p>The child title will be blue instead of orange.</p><h2>External style</h2><p>If you want to create some utility classes for components, you can create file named <span class="cn">@*.wcs.avt</span> for Global WebComponent Style, then you can include this file inside component.    This file is also a SCSS file.</p><h3>Create the file</h3><p>You can create the global style file where you want.</p><av-doc-wc-style-editor-3></av-doc-wc-style-editor-3><p>This will register the file <span class="cn">@Utility.wcs.avt</span> inside the <span class="cn">Aventus.Style</span>    lib with the name <span class="cn">@Utility</span>.</p><av-img src="/img/doc/wc/style/stylemanager.png"></av-img><p>If you want to use an external lib as a style for your component, you can use the <span class="cn">load</span>    function. For example to load the bootstrap class : </p><av-doc-wc-style-editor-4></av-doc-wc-style-editor-4><p>By default, a base style existing inside <span class="cn">Style</span>. This style is named <span class="cn">@default</span> and is composed by</p><av-code language="css" filename="@default">    <pre>    :host {        display: inline-block;        box-sizing: border-box;    }    :host * {        box-sizing: border-box;    }    </pre></av-code></av-code><p>If you want that all your components contains some styles, you can write your own <span class="cn">@default.wcs.avt</span>. That will override the default style.</p><h3>Use global style</h3><p>Now that you have style registered, you can tell your component to use this style. You can override 2 methods inside    the logical file <span class="cn">*.wcl.avt</span> named : <span class="cn">styleBefore</span> and <span class="cn">styleAfter</span>.</p><av-code language="typescript" filename="Example.wcl.avt">    <pre>    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {        ...        // Inside Aventus.WebCompoent the value of styleBefore is addStyle("@default")        protected override styleBefore(addStyle: (name: string) => void): void {            super.styleBefore(addStyle);            addStyle("@Bootstrap");        }        protected override styleAfter(addStyle: (name: string) => void): void {            addStyle("@utility");        }        ...    }    </pre></av-code></av-code><p>The style loaded will be the following :</p><ol>    <li>@default</li>    <li>@Bootstrap</li>    <li>parent style inside <span class="cn">*.wcs.avt</span></li>    <li>local style inside <span class="cn">*.wcs.avt</span></li>    <li>@utility</li></ol><h2>Edit style from outside</h2><p>When you create component for a library, you should provide some style parameter that the user can edit. What if the    library user want to change the backgroud-color. The style is scoped so he won't be able to edit it from outside.    This is why you can define <span class="cn">custom property</span> inside your component. Declaring a custom    property can be done by following the next pattern:</p><av-code language="css" filename="Example.wcs.avt">    <pre>    :host {        --_example-background-color: var(--example-background-color, red);    }    &nbsp;    :host {        .content {            backgroud-color: var(--_example-background-color);        }    }    </pre></av-code></av-code><p>The property declaration must be done inside the <span class="cn">:host</span> at the first level and following the    schema --_<b>componentName</b>-<b>propName</b>: var(--<b>componentName</b>-<b>propName</b>). In the future version    of Aventus you will be able to use the <span class="cn">@property</span> tag in css and the completion will be    improved. The current schema is used to be    detected by the parser so that an auto-completion can be provided when you editing the style of the element.</p><av-code language="css" filename="Example2.wcs.avt">    <pre>    :host {        av-example {            // come from auto-completion because the rules is the tag av-example            --background-color: red;        }    }    </pre></av-code></av-code><p>You can also quick create a variable by pressing <span class="cn">Ctrl + k Ctrl + numpad1</span> and provide the name    for what the variable is for.</p><h2>Creating theme</h2><p>A good pratice when you developing application is to create theme file where you can declare globals properties for    the project. Inside Aventus you can achieve it by creating a new file named <span class="cn">*.gs.avt</span> for    Global Style. This file must be set inside a <span class="cn"><av-link to="/docs/config/static">static</av-link></span> part of your project. This allows you to have    auto-completion for all your global variables that must be declared inside the <span class="cn">:root</span>    selector.</p><av-doc-wc-style-editor-5></av-doc-wc-style-editor-5>` }
+        blocks: { 'default':`<h1>Webcomponent - Style</h1><p>In this section you are going to learn how to apply a style to your component.</p><h2>Definition</h2><p>Because Aventus is build on the top of webcomponent, the style is scoped. It means that the style from Component 1    won't affect the style from Component 2. If you want more information about scoped style inside webcomponent you    can read <a href="https://web.dev/shadowdom-v1/#component-defined-styles" target="_blank">this</a>. It's great but    it involves that each components must include it own style locally. What if I want to create a general style for all    my components? This is why in addition to webcomponent scoped style, Aventus using the <a href="https://web.dev/constructable-stylesheets/" target="_blank">Constructable Stylesheets</a> to    improve reusability.</p><h2>Local style</h2><p>To edit the style of your component, you must open the file <span class="cn">*.wcs.avt</span> and add the style you    want written in SCSS. The only special selector inside webcomponent style is the <span class="cn">:host</span> that    will target the current custom element.</p><av-doc-wc-style-editor-1></av-doc-wc-style-editor-1><h2>Inherit style</h2><p>If a webcomponent is inheriting another webcomponent, their styles will be merged. Parent style will be written    before Child style so that you can override parent style without problem.</p><av-doc-wc-style-editor-2></av-doc-wc-style-editor-2><p>The child title will be blue instead of orange.</p><h2>External style</h2><p>If you want to create some utility classes for components, you can create file named <span class="cn">@*.wcs.avt</span> for Global WebComponent Style, then you can include this file inside component.    This file is also a SCSS file.</p><h3>Create the file</h3><p>You can create the global style file where you want.</p><av-doc-wc-style-editor-3></av-doc-wc-style-editor-3><p>This will register the file <span class="cn">@Utility.wcs.avt</span> inside the <span class="cn">Aventus.Style</span>    lib with the name <span class="cn">@Utility</span>.</p><div class="img-cont">    <av-img src="/img/doc/wc/style/stylemanager.png"></av-img></div><p>If you want to use an external lib as a style for your component, you can use the <span class="cn">load</span>    function. For example to load the bootstrap class : </p><av-doc-wc-style-editor-4></av-doc-wc-style-editor-4><p>By default, a base style existing inside <span class="cn">Style</span>. This style is named <span class="cn">@default</span> and is composed by</p><av-code language="css" filename="@default">    <pre>    :host {        display: inline-block;        box-sizing: border-box;    }    :host * {        box-sizing: border-box;    }    </pre></av-code></av-code><p>If you want that all your components contains some styles, you can write your own <span class="cn">@default.wcs.avt</span>. That will override the default style.</p><h3>Use global style</h3><p>Now that you have style registered, you can tell your component to use this style. You can override 2 methods inside    the logical file <span class="cn">*.wcl.avt</span> named : <span class="cn">styleBefore</span> and <span class="cn">styleAfter</span>.</p><av-code language="typescript" filename="Example.wcl.avt">    <pre>    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {        ...        // Inside Aventus.WebCompoent the value of styleBefore is addStyle("@default")        protected override styleBefore(addStyle: (name: string) => void): void {            super.styleBefore(addStyle);            addStyle("@Bootstrap");        }        protected override styleAfter(addStyle: (name: string) => void): void {            addStyle("@utility");        }        ...    }    </pre></av-code></av-code><p>The style loaded will be the following :</p><ol>    <li>@default</li>    <li>@Bootstrap</li>    <li>parent style inside <span class="cn">*.wcs.avt</span></li>    <li>local style inside <span class="cn">*.wcs.avt</span></li>    <li>@utility</li></ol><h2>Edit style from outside</h2><p>When you create component for a library, you should provide some style parameter that the user can edit. What if the    library user want to change the backgroud-color. The style is scoped so he won't be able to edit it from outside.    This is why you can define <span class="cn">custom property</span> inside your component. Declaring a custom    property can be done by following the next pattern:</p><av-code language="css" filename="Example.wcs.avt">    <pre>    :host {        --_example-background-color: var(--example-background-color, red);    }    &nbsp;    :host {        .content {            backgroud-color: var(--_example-background-color);        }    }    </pre></av-code></av-code><p>The property declaration must be done inside the <span class="cn">:host</span> at the first level and following the    schema --_<b>componentName</b>-<b>propName</b>: var(--<b>componentName</b>-<b>propName</b>). In the future version    of Aventus you will be able to use the <span class="cn">@property</span> tag in css and the completion will be    improved. The current schema is used to be    detected by the parser so that an auto-completion can be provided when you editing the style of the element.</p><av-code language="css" filename="Example2.wcs.avt">    <pre>    :host {        av-example {            // come from auto-completion because the rules is the tag av-example            --background-color: red;        }    }    </pre></av-code></av-code><p>You can also quick create a variable by pressing <span class="cn">Ctrl + k Ctrl + numpad1</span> and provide the name    for what the variable is for.</p><h2>Creating theme</h2><p>A good pratice when you developing application is to create theme file where you can declare globals properties for    the project. Inside Aventus you can achieve it by creating a new file named <span class="cn">*.gs.avt</span> for    Global Style. This file must be set inside a <span class="cn"><av-link to="/docs/config/static">static</av-link></span> part of your project. This allows you to have    auto-completion for all your global variables that must be declared inside the <span class="cn">:root</span>    selector.</p><av-doc-wc-style-editor-5></av-doc-wc-style-editor-5>` }
     });
 }
     getClassName() {
@@ -15942,7 +16756,7 @@ const DocWcProperty = class DocWcProperty extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Webcomponent - Property</h1><p>In this section you are going to learn how you can define property for your component and add a callback when the    attribute change.</p><h2>Simple property</h2><p>A property is defined by two things:</p><ul>    <li>An attribute on your tag</li>    <li>A callback to be notified when the value of the attribute changed</li></ul><p>The property is based on the observe attribute behaviour on webcomponent. You can find more inforamtions about this    <a href="https://web.dev/custom-elements-v1/#observing-changes-to-attributes" target="_blank">here</a></p><p>In Aventus, you can declare a property by adding a <span class="cn">decorator</span> on a field.</p><av-code language="typescript" filename="Example.wcl.avt">    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region props    \t@Property()    \tpublic label?: string;    \t//#endregion    &nbsp;    }</av-code></av-code><av-code language="html">    &lt;av-example label="Hello"&gt;&lt;/av-example&gt;</av-code></av-code><p>A property can be used like an <span class="cn">attribute</span> but the main advantage of property is <span class="cn"><av-link to="/docs/wc/interpolation">interpolation</av-link></span> and <span class="cn">callback</span>.</p><av-code language="typescript" filename="Example.wcl.avt">    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region props    \t@Property((target: Example) =&gt; {    \t\tconsole.log("my label changed")    \t})    \tprivate label?: string;    \t//#endregion    &nbsp;    }</av-code></av-code><av-code language="html" filename="Example.wcv.avt">    &lt;div&gt;{{ this.label }}&lt;/div&gt;</av-code></av-code><p>With this code, the label inside the view will always be the same as the label property. Furthermore, when the label value changed, the callback will be called and the msg my label changed will be printed.</p><av-doc-wc-property-editor-1></av-doc-wc-property-editor-1><h2>Quick use</h2><p>When you are editing a <span class="cn">*.wcl.avt</span>, you can right click where you want to create an attribute    and select the option <i>Aventus: create attribute</i>. You must follow the instruction to get an attribute working.</p><p>You can also use the shortcut <span class="cn">Ctrl + k Ctrl + numpad2</span>.</p>` }
+        blocks: { 'default':`<h1>Webcomponent - Property</h1><p>In this section you are going to learn how you can define property for your component and add a callback when the    attribute change.</p><h2>Simple property</h2><p>A property is defined by two things:</p><ul>    <li>An attribute on your tag</li>    <li>A callback to be notified when the value of the attribute changed</li></ul><p>The property is based on the observe attribute behaviour on webcomponent. You can find more information about this    <a href="https://web.dev/custom-elements-v1/#observing-changes-to-attributes" target="_blank">here</a></p><p>A property has limited type:</p><ul>    <li><span class="cn">number</span></li>    <li><span class="cn">string</span></li>    <li><span class="cn">boolean</span></li>    <li><span class="cn">date</span></li>    <li><span class="cn">datetime</span></li>    <li><span class="cn">literal</span> (ex: 'value1'|'value2')</li></ul><p>In Aventus, you can declare a property by adding a <span class="cn">decorator</span> on a field.</p><av-code language="typescript" filename="Example.wcl.avt">    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region props    \t@Property()    \tpublic label?: string;    \t//#endregion    &nbsp;    }</av-code></av-code><av-code language="html">    &lt;av-example label="Hello"&gt;&lt;/av-example&gt;</av-code></av-code><p>A property can be used like an <span class="cn">attribute</span> but the main advantage of property is <span class="cn"><av-link to="/docs/wc/interpolation">interpolation</av-link></span> and <span class="cn">callback</span>.</p><av-code language="typescript" filename="Example.wcl.avt">    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region props    \t@Property((target: Example) =&gt; {    \t\tconsole.log("my label changed")    \t})    \tprivate label?: string;    \t//#endregion    &nbsp;    }</av-code></av-code><av-code language="html" filename="Example.wcv.avt">    &lt;div&gt;{{ this.label }}&lt;/div&gt;</av-code></av-code><p>With this code, the label inside the view will always be the same as the label property. Furthermore, when the label value changed, the callback will be called and the msg my label changed will be printed.</p><av-doc-wc-property-editor-1></av-doc-wc-property-editor-1><h2>Quick use</h2><p>When you are editing a <span class="cn">*.wcl.avt</span>, you can right click where you want to create an attribute    and select the option <i>Aventus: create attribute</i>. You must follow the instruction to get an attribute working.</p><p>You can also use the shortcut <span class="cn">Ctrl + k Ctrl + numpad2</span>.</p>` }
     });
 }
     getClassName() {
@@ -15975,7 +16789,7 @@ const DocWcAttribute = class DocWcAttribute extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Webcomponent - Attribute</h1><p>In this section you are going to learn what is an attribute on a webcomponent and how you can create it inside    Aventus.</p><h2>Implementation</h2><p>An attribute is a variable inside your webcomponent. An attribute has limited type:</p><ul>    <li><span class="cn">number</span></li>    <li><span class="cn">string</span></li>    <li><span class="cn">boolean</span></li>    <li><span class="cn">date</span></li>    <li><span class="cn">datetime</span></li>    <li><span class="cn">literal</span> (ex: 'value1'|'value2')</li></ul><p>The source code to create an attribute is the following.</p><av-code language="typescript" filename="Example.wcl.avt">    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region static    &nbsp;    \t//#endregion    &nbsp;    \t//#region props    \t/** Define if the element is active or not */    \t@Attribute()    \tpublic active!: boolean;    \t//#endregion    &nbsp;    \t//#region variables    &nbsp;    \t//#endregion    &nbsp;    \t//#region constructor    &nbsp;    \t//#endregion    &nbsp;    \t//#region methods    &nbsp;    \t//#endregion    &nbsp;    }</av-code></av-code><av-code language="html" filename="index.html">    &lt;av-example&gt;&lt;av-example&gt;    &lt;av-example active&gt;&lt;av-example&gt;</av-code></av-code><p>When you will use the tag <span class="cn">&lt;av-example&gt;</span> inside any other <span class="cn">*.wcv.avt</span> file, the auto-completion will show you the attribute <span class="cn">active</span>. Futhermore, you can access this property through the <span class="cn">*.wcl.avt</span>    file when you store a variable typed as <span class="cn">Example</span>.</p><av-code language="typescript" filename="Test.lib.avt">    export function test(){    \tconst myExample = document.querySelector&lt;Example&gt;("av-example");    \tmyExample.active = false;    }</av-code></av-code><p>The main goal of attribute is to create state for your component so that you can apply different style on it. You can    find more informations about style <av-link to="/doc/wc/style">here</av-link> but the code below    show you a quick example to display the background in red when component is active:</p><av-code language="css" filename="Example.wcs.avt">    :host {    \tbackground: blue;    \ttransition: background-color 1s ease;    }    :host([active]) {    \tbackground: red;    }</av-code></av-code><av-doc-wc-attribute-editor-1></av-doc-wc-attribute-editor-1><h2>Quick use</h2><p>When you are editing a <span class="cn">*.wcl.avt</span>, you can right click where you want to create an attribute    and select the option <i>Aventus: create attribute</i>. You must follow the instruction to get an attribute working.</p><p>You can also use the shortcut <span class="cn">Ctrl + k Ctrl + numpad1</span>.</p>` }
+        blocks: { 'default':`<h1>Webcomponent - Attribute</h1><p>In this section you are going to learn what is an attribute on a webcomponent and how you can create it inside    Aventus.</p><h2>Implementation</h2><p>An attribute is a variable inside your webcomponent. An attribute has limited type:</p><ul>    <li><span class="cn">number</span></li>    <li><span class="cn">string</span></li>    <li><span class="cn">boolean</span></li>    <li><span class="cn">date</span></li>    <li><span class="cn">datetime</span></li>    <li><span class="cn">literal</span> (ex: 'value1'|'value2')</li></ul><p>The source code to create an attribute is the following.</p><av-code language="typescript" filename="Example.wcl.avt">    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region static    &nbsp;    \t//#endregion    &nbsp;    \t//#region props    \t/** Define if the element is active or not */    \t@Attribute()    \tpublic active!: boolean;    \t//#endregion    &nbsp;    \t//#region variables    &nbsp;    \t//#endregion    &nbsp;    \t//#region constructor    &nbsp;    \t//#endregion    &nbsp;    \t//#region methods    &nbsp;    \t//#endregion    &nbsp;    }</av-code></av-code><av-code language="html" filename="index.html">    &lt;av-example&gt;&lt;av-example&gt;    &lt;av-example active&gt;&lt;av-example&gt;</av-code></av-code><p>When you will use the tag <span class="cn">&lt;av-example&gt;</span> inside any other <span class="cn">*.wcv.avt</span> file, the auto-completion will show you the attribute <span class="cn">active</span>. Futhermore, you can access this property through the <span class="cn">*.wcl.avt</span>    file when you store a variable typed as <span class="cn">Example</span>.</p><av-code language="typescript" filename="Test.lib.avt">    export function test(){    \tconst myExample = document.querySelector&lt;Example&gt;("av-example");    \tmyExample.active = false;    }</av-code></av-code><p>The main goal of attribute is to create state for your component so that you can apply different style on it. You can    find more information about style <av-link to="/doc/wc/style">here</av-link> but the code below    show you a quick example to display the background in red when component is active:</p><av-code language="css" filename="Example.wcs.avt">    :host {    \tbackground: blue;    \ttransition: background-color 1s ease;    }    :host([active]) {    \tbackground: red;    }</av-code></av-code><av-doc-wc-attribute-editor-1></av-doc-wc-attribute-editor-1><h2>Quick use</h2><p>When you are editing a <span class="cn">*.wcl.avt</span>, you can right click where you want to create an attribute    and select the option <i>Aventus: create attribute</i>. You must follow the instruction to get an attribute working.</p><p>You can also use the shortcut <span class="cn">Ctrl + k Ctrl + numpad1</span>.</p>` }
     });
 }
     getClassName() {
@@ -16041,7 +16855,7 @@ const DocWcCreate = class DocWcCreate extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Webcomponent - Create</h1><p>In this section you are going to learn what is a webcomponent and how you can create it inside Aventus.</p><h2>Definition</h2><p>Web Components is a suite of different technologies allowing you to create reusable custom elements — with their    functionality encapsulated away from the rest of your code — and utilize them in your web apps. (<i><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components" target="_blank">https://developer.mozilla.org/</a></i>).</p><p>With the native technologie, you are able to wrap your style, your logic and your html template inside a single html    tag. You can build your full webapp by building one component after another without worring about side effects (the    developer's worst nightmare).</p><h2>Inside Aventus</h2><p>Inside Aventus you can create web component by right clicking one the explorer part inside vscode, choose <i>Aventus        : Create...</i> and choose <i>Component</i>. Inside the input you can enter the name for the typescript class.    By convention, this name should be in Snake case. You can write your webcomponent inside a single file    <span class="cn">*.wc.avt</span> that    will contains following section :</p><ul>    <li><span class="cn">&lt;template&gt;</span> : for Html part</li>    <li><span class="cn">&lt;style&gt;</span> : for Scss part</li>    <li><span class="cn">&lt;script&gt;</span> : for Js part</li></ul><av-doc-wc-create-editor-0></av-doc-wc-create-editor-0><p>or inside 3 different file. (This option is the adviced one because it allows developer to keep a well knowed    architecture.)</p><ul>    <li><span class="cn">*.wcv.avt</span> : Web Componenent View for Html part</li>    <li><span class="cn">*.wcs.avt</span> : Web Componenent View for Scss part</li>    <li><span class="cn">*.wcl.avt</span> : Web Componenent View for Ts part</li></ul><av-doc-wc-create-editor-1></av-doc-wc-create-editor-1><h2>The Html</h2><p>You can use any basic tag or any tag you imported or created. The auto-completion will help you to find knowed tags.    There are 2 special tags that you must know :</p><h3>&lt;slot&gt;</h3><p>The slot tag allows developer to define the place where the code inside the tag will be added. This slot can have an    attribute <span class="cn">name</span> to have multiple slots.</p><av-doc-wc-create-editor-2></av-doc-wc-create-editor-2><h3>&lt;block&gt;</h3><p>The block tag must be used in case of inheritance. This will replace the slot by the block with the same name.</p><av-doc-wc-create-editor-3></av-doc-wc-create-editor-3><p>There are sepcial attributes you can use to add feature to basic html: </p><ul>    <li>@element : To select element(s). <av-link to="/docs/wc/element" class="font-sm">More            info</av-link></li>    <li>@for : To create a loop. <av-link to="/docs/wc/loop" class="font-sm">More info</av-link></li>    <li>@bind(_<i><span class="cn">$event</span></i>)?(:<i><span class="cn">$field</span></i>)? : To bind data.        <av-link class="font-sm" to="/docs/wc/binding">More            info</av-link>    </li>    <li>:<i><span class="cn">$field</span></i> : To inject data. <av-link to="/docs/wc/injection" class="font-sm">More            info</av-link>    </li>    <li>@press : To add press event from PressManager. <av-link to="/docs/wc/event" class="font-sm">More            info</av-link>    </li>    <li>@<i><span class="cn">$eventName</span></i> : To add event listener. <av-link to="/docs/wc/event" class="font-sm">More            info</av-link>    </li></ul><p>You can use interpolation inside tag content and normal attribute to have dynamic content. If you use <av-link to="/docs/wc/event">a property value</av-link>&nbsp;or&nbsp;<av-link to="/docs/wc/event">a        watch value</av-link> the content will be refreshed.</p><av-doc-wc-create-editor-4></av-doc-wc-create-editor-4><h2>The style</h2><p>This is just a simple SCSS file. The only think to know is that the style must be wrapped inside a :host{}.</p><av-code language="css" filename="TextRed.wcs.avt">    :host {    \tcolor: red; // This ll change the behavior of the current webcomponent    }</av-code></av-code><p>You can find more informations about the style <av-link to="/docs/wc/style">here.</av-link></p><h2>The logic</h2><p>When you create a new file *.wcl.avt you can notice that the file has region. This is set to allow developer to order    the code. Each region has a goal. You can remove it but we advice you to keep it.</p><ul>    <li>static : Where you can write the static properties or methods for your webcomponent.</li>    <li>props : Where you can define the <av-link to="/docs/wc/attribute">attributes</av-link>, the        <av-link to="/docs/wc/property">properties</av-link>&nbsp;and the <av-link to="/docs/wc/watch">watch variables.</av-link>    </li>    <li>variables : Where you can define the variables and the pointers on <av-link to="/docs/wc/element">view            element</av-link></li>    <li>constructor : Where you can override the constructor for your webcomponent.</li>    <li>methods : Where you can write the methods for your webcomponent.</li></ul><av-code language="typescript">    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region static    &nbsp;    \t//#endregion    &nbsp;    \t//#region props    &nbsp;    \t//#endregion    &nbsp;    \t//#region variables    &nbsp;    \t//#endregion    &nbsp;    \t//#region constructor    &nbsp;    \t//#endregion    &nbsp;    \t//#region methods    &nbsp;    \t//#endregion    &nbsp;    }</av-code></av-code><p>Over the classname you can add predefine Decorators :</p><ul>    <li><span class="cn">@TagName(name:string)</span> : to define the tag for the component</li>    <li><span class="cn">@Debugger({ writeCompiled?: boolean, enableWatchHistory?: boolean})</span> : to debug component        compilation and        to.    </li>    <li><span class="cn">@Dependances({ type: Type, strong?:boolean}[])</span> : to add dependance not written inside        component. The        strong boolean define if the dependance must be loaded before the class.</li>    <li><span class="cn">@OverrideView({ removeViewVariables?: string[] })</span> : to fully override parent view. You        can remove parent        ViewElement needed, but you have to be aware of what you are doing.</li>    <li><span class="cn">@Internal()</span> : to allow exporting class only in the current package but the class won't be usable for someone else that is using the package.</li>    <li><span class="cn">@Required()</span> : to force the class to be exported inside the *.js file.</li>    <li><span class="cn">@Convertible(name: string = "Fullname")</span> : to notify the compiler that the class can be converted from JSON. The parameter <span class="cn">name</span> define the key to detect the class to build.</li></ul><av-code language="typescript">    @TagName("my-tag-name")    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    }</av-code></av-code><h2>Lifecycle</h2><p>The webcomponent has the following lifecycle</p><av-img src="/img/doc/wc/create/lifecylce.png"></av-img><p>By default <span class="cn">postCreation</span> and <span class="cn">postDestruction</span> are empty.</p>` }
+        blocks: { 'default':`<h1>Webcomponent - Create</h1><p>In this section you are going to learn what is a webcomponent and how you can create it inside Aventus.</p><h2>Definition</h2><p>Web Components is a suite of different technologies allowing you to create reusable custom elements — with their    functionality encapsulated away from the rest of your code — and utilize them in your web apps. (<i><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components" target="_blank">https://developer.mozilla.org/</a></i>).</p><p>With the native technologie, you are able to wrap your style, your logic and your html template inside a single html    tag. You can build your full webapp by building one component after another without worring about side effects (the    developer's worst nightmare).</p><h2>Inside Aventus</h2><p>Inside Aventus you can create web component by right clicking one the explorer part inside vscode, choose <i>Aventus        : Create...</i> and choose <i>Component</i>. Inside the input you can enter the name for the typescript class.    By convention, this name should be in Snake case. You can write your webcomponent inside a single file    <span class="cn">*.wc.avt</span> that    will contains following section :</p><ul>    <li><span class="cn">&lt;template&gt;</span> : for Html part</li>    <li><span class="cn">&lt;style&gt;</span> : for Scss part</li>    <li><span class="cn">&lt;script&gt;</span> : for Js part</li></ul><av-doc-wc-create-editor-0></av-doc-wc-create-editor-0><p>or inside 3 different file. (This option is the adviced one because it allows developer to keep a well knowed    architecture.)</p><ul>    <li><span class="cn">*.wcv.avt</span> : Web Componenent View for Html part</li>    <li><span class="cn">*.wcs.avt</span> : Web Componenent View for Scss part</li>    <li><span class="cn">*.wcl.avt</span> : Web Componenent View for Ts part</li></ul><av-doc-wc-create-editor-1></av-doc-wc-create-editor-1><h2>The Html</h2><p>You can use any basic tag or any tag you imported or created. The auto-completion will help you to find knowed tags.    There are 2 special tags that you must know :</p><h3>&lt;slot&gt;</h3><p>The slot tag allows developer to define the place where the code inside the tag will be added. This slot can have an    attribute <span class="cn">name</span> to have multiple slots.</p><av-doc-wc-create-editor-2></av-doc-wc-create-editor-2><h3>&lt;block&gt;</h3><p>The block tag must be used in case of inheritance. This will replace the slot by the block with the same name.</p><av-doc-wc-create-editor-3></av-doc-wc-create-editor-3><p>There are sepcial attributes you can use to add feature to basic html: </p><ul>    <li>@element : To select element(s). <av-link to="/docs/wc/element" class="font-sm">More            info</av-link></li>    <li>@for : To create a loop. <av-link to="/docs/wc/loop" class="font-sm">More info</av-link></li>    <li>@bind(_<i><span class="cn">$event</span></i>)?(:<i><span class="cn">$field</span></i>)? : To bind data.        <av-link class="font-sm" to="/docs/wc/binding">More            info</av-link>    </li>    <li>:<i><span class="cn">$field</span></i> : To inject data. <av-link to="/docs/wc/injection" class="font-sm">More            info</av-link>    </li>    <li>@press : To add press event from PressManager. <av-link to="/docs/wc/event" class="font-sm">More            info</av-link>    </li>    <li>@<i><span class="cn">$eventName</span></i> : To add event listener. <av-link to="/docs/wc/event" class="font-sm">More            info</av-link>    </li></ul><p>You can use interpolation inside tag content and normal attribute to have dynamic content. If you use <av-link to="/docs/wc/event">a property value</av-link>&nbsp;or&nbsp;<av-link to="/docs/wc/event">a        watch value</av-link> the content will be refreshed.</p><av-doc-wc-create-editor-4></av-doc-wc-create-editor-4><h2>The style</h2><p>This is just a simple SCSS file. The only think to know is that the style must be wrapped inside a :host{}.</p><av-code language="css" filename="TextRed.wcs.avt">    :host {    \tcolor: red; // This ll change the behavior of the current webcomponent    }</av-code></av-code><p>You can find more information about the style <av-link to="/docs/wc/style">here.</av-link></p><h2>The logic</h2><p>When you create a new file *.wcl.avt you can notice that the file has region. This is set to allow developer to order    the code. Each region has a goal. You can remove it but we advice you to keep it.</p><ul>    <li>static : Where you can write the static properties or methods for your webcomponent.</li>    <li>props : Where you can define the <av-link to="/docs/wc/attribute">attributes</av-link>, the        <av-link to="/docs/wc/property">properties</av-link>&nbsp;and the <av-link to="/docs/wc/watch">watch variables.</av-link>    </li>    <li>variables : Where you can define the variables and the pointers on <av-link to="/docs/wc/element">view            element</av-link></li>    <li>constructor : Where you can override the constructor for your webcomponent.</li>    <li>methods : Where you can write the methods for your webcomponent.</li></ul><av-code language="typescript">    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    &nbsp;    \t//#region static    &nbsp;    \t//#endregion    &nbsp;    \t//#region props    &nbsp;    \t//#endregion    &nbsp;    \t//#region variables    &nbsp;    \t//#endregion    &nbsp;    \t//#region constructor    &nbsp;    \t//#endregion    &nbsp;    \t//#region methods    &nbsp;    \t//#endregion    &nbsp;    }</av-code></av-code><p>Over the classname you can add predefine Decorators :</p><ul>    <li><span class="cn">@TagName(name:string)</span> : to define the tag for the component</li>    <li><span class="cn">@Debugger({ writeCompiled?: boolean, enableWatchHistory?: boolean})</span> : to debug component        compilation and        to.    </li>    <li><span class="cn">@Dependances({ type: Type, strong?:boolean}[])</span> : to add dependance not written inside        component. The        strong boolean define if the dependance must be loaded before the class.</li>    <li><span class="cn">@OverrideView({ removeViewVariables?: string[] })</span> : to fully override parent view. You        can remove parent        ViewElement needed, but you have to be aware of what you are doing.</li>    <li><span class="cn">@Internal()</span> : to allow exporting class only in the current package but the class won't be usable for someone else that is using the package.</li>    <li><span class="cn">@Required()</span> : to force the class to be exported inside the *.js file.</li>    <li><span class="cn">@Convertible(name: string = "Fullname")</span> : to notify the compiler that the class can be converted from JSON. The parameter <span class="cn">name</span> define the key to detect the class to build.</li></ul><av-code language="typescript">    @TagName("my-tag-name")    export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {    }</av-code></av-code><h2>Lifecycle</h2><p>The webcomponent has the following lifecycle</p><av-img src="/img/doc/wc/create/lifecylce.png"></av-img><p>By default <span class="cn">postCreation</span> and <span class="cn">postDestruction</span> are empty.</p>` }
     });
 }
     getClassName() {
@@ -16074,7 +16888,7 @@ const DocStateListen = class DocStateListen extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>State - Listen changes</h1><p>Changing state is great, but for sure you will need to listen when a state change. Three methods compose the <span class="cn">State</span> lifecylce. This tuple is named <span class="cn">StateAction</span> inside Aventus.</p><ul>    <li><span class="cn">active</span>: when a state become active.</li>    <li><span class="cn">inactive</span>: when a state become inactive.</li>    <li><span class="cn">askChange</span>: a way to define if the state change can be done or not.</li></ul><h2>Callback on the StateManager</h2><p>For the example, we are going to listen a state to display a user.</p><av-doc-state-listen-editor-1></av-doc-state-listen-editor-1><p>We subscribe to the state <span class="cn">/user/{id:number}</span> what means that the manager will trigger active    when the current state is matching <span class="cn">/^\\/user\\/([0-9]+)$/g</span>. The type available are <span class="cn">number</span> and <span class="cn">string</span>. If you don't set type, string will be use by    default. You can also use the star (<span class="cn">*</span>) to match anything.</p><p>When the <span class="cn">setUser</span> function is called, the log <span class="cn">user active is...</span> will    be displayed. If you set the current state to <span class="cn">/other</span>, the inactive state will be called.    It's important to know that if your state stay active between two state changes, the function <span class="cn">inactive</span> won't be fired.</p><av-doc-state-listen-editor-2></av-doc-state-listen-editor-2><p>If we come back to the previous example, if we set the user to <span class="cn">id = 3</span> the function <span class="cn">askChange</span> will return a false what involves that no more state changes are allowed. A use case    for this feature is when the user is editing data and he decides to change state without saving item. You can    display a popup to confirm if edition must be dropped or not.</p><p>If you need to know the current state of the manager, you can at any time call the function <span class="cn">getState</span> to obtain the current state object instance. Furthermore, you can use operator <span class="cn">instanceof</span> to obtain more informations and share some data between subscribers.</p><av-doc-state-listen-editor-3></av-doc-state-listen-editor-3><h2>Callback on the State</h2><p>You can also override the three methods directly inside a <span class="cn">State</span> class.</p><av-doc-state-listen-editor-4></av-doc-state-listen-editor-4>` }
+        blocks: { 'default':`<h1>State - Listen changes</h1><p>Changing state is great, but for sure you will need to listen when a state change. Three methods compose the <span class="cn">State</span> lifecylce. This tuple is named <span class="cn">StateAction</span> inside Aventus.</p><ul>    <li><span class="cn">active</span>: when a state become active.</li>    <li><span class="cn">inactive</span>: when a state become inactive.</li>    <li><span class="cn">askChange</span>: a way to define if the state change can be done or not.</li></ul><h2>Callback on the StateManager</h2><p>For the example, we are going to listen a state to display a user.</p><av-doc-state-listen-editor-1></av-doc-state-listen-editor-1><p>We subscribe to the state <span class="cn">/user/{id:number}</span> what means that the manager will trigger active    when the current state is matching <span class="cn">/^\\/user\\/([0-9]+)$/g</span>. The type available are <span class="cn">number</span> and <span class="cn">string</span>. If you don't set type, string will be use by    default. You can also use the star (<span class="cn">*</span>) to match anything.</p><p>When the <span class="cn">setUser</span> function is called, the log <span class="cn">user active is...</span> will    be displayed. If you set the current state to <span class="cn">/other</span>, the inactive state will be called.    It's important to know that if your state stay active between two state changes, the function <span class="cn">inactive</span> won't be fired.</p><av-doc-state-listen-editor-2></av-doc-state-listen-editor-2><p>If we come back to the previous example, if we set the user to <span class="cn">id = 3</span> the function <span class="cn">askChange</span> will return a false what involves that no more state changes are allowed. A use case    for this feature is when the user is editing data and he decides to change state without saving item. You can    display a popup to confirm if edition must be dropped or not.</p><p>If you need to know the current state of the manager, you can at any time call the function <span class="cn">getState</span> to obtain the current state object instance. Furthermore, you can use operator <span class="cn">instanceof</span> to obtain more information and share some data between subscribers.</p><av-doc-state-listen-editor-3></av-doc-state-listen-editor-3><h2>Callback on the State</h2><p>You can also override the three methods directly inside a <span class="cn">State</span> class.</p><av-doc-state-listen-editor-4></av-doc-state-listen-editor-4>` }
     });
 }
     getClassName() {
@@ -16281,7 +17095,7 @@ const DocRamCrud = class DocRamCrud extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>RAM - Operations</h1><p>To manage data inside your RAM, can perfom 4 kind of operations :</p><ul>    <li>Create - To add data inside your RAM</li>    <li>Read - To read data inside your RAM</li>    <li>Update - To update data inside your RAM</li>    <li>Delete - To delete data from your RAM</li></ul><h2>Basic operations</h2><p>Inside Aventus RAM, each function to perfom operation can be written in two format. The first format is the normal.    You call the function and get the result.</p><p>The second format is the detailed. You call the function with <span class="cn">WithError</span> at the end to obtain more    informations.</p><av-doc-ram-crud-editor-1></av-doc-ram-crud-editor-1><p>For the future explanations, only the functions in normal format will be explained</p><h3>Read</h3><div class="table">    <av-row class="header">        <av-col size="4" center>Function</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>getAll</av-col>        <av-col size="8">Return all items stored inside the RAM like {[index: Index] : T}        </av-col>    </av-row>    <av-row>        <av-col size="4" center>getList</av-col>        <av-col size="8">Return all items stored inside the RAM like T[]        </av-col>    </av-row>    <av-row>        <av-col size="4" center>getById</av-col>        <av-col size="8">Return the item where the index is egal to the parameter            provide</av-col>    </av-row>    <av-row>        <av-col size="4" center>get</av-col>        <av-col size="8"><span>Alias for <span class="cn">getById</span></span></av-col>    </av-row>    <av-row>        <av-col size="4" center>getByIds</av-col>        <av-col size="8">Return all items where the index is inside the first parameter            provide</av-col>    </av-row></div><av-doc-ram-crud-editor-2></av-doc-ram-crud-editor-2><h3>Create</h3><div class="table">    <av-row class="header">        <av-col size="4" center>Function</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>create</av-col>        <av-col size="8">Store an item inside the RAM and return the element stored.</av-col>    </av-row>    <av-row>        <av-col size="4" center>createList</av-col>        <av-col size="8">Store a set of items inside the RAM and return the elements            stored.</av-col>    </av-row></div><av-doc-ram-crud-editor-3></av-doc-ram-crud-editor-3><h3>Update</h3><div class="table">    <av-row class="header">        <av-col size="4" center>Function</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>update</av-col>        <av-col size="8">Update an item inside the RAM and return the element updated.</av-col>    </av-row>    <av-row>        <av-col size="4" center>updateList</av-col>        <av-col size="8">Update a set of items inside the RAM and return the elements            stored.</av-col>    </av-row></div><av-doc-ram-crud-editor-4></av-doc-ram-crud-editor-4><h3>Delete</h3><div class="table">    <av-row class="header">        <av-col size="4" center>Function</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>delete</av-col>        <av-col size="8">Delete an item inside the RAM and return the element updated.</av-col>    </av-row>    <av-row>        <av-col size="4" center>deleteById</av-col>        <av-col size="8">Delete an item inside the RAM and return the element updated.</av-col>    </av-row>    <av-row>        <av-col size="4" center>deleteList</av-col>        <av-col size="8">Delete a set of items inside the RAM and return the elements            stored.</av-col>    </av-row></div><av-doc-ram-crud-editor-5></av-doc-ram-crud-editor-5><p>The last thing to know is that once an item a stored inside the ram, the item reference is always the same.</p><av-code language="typescript" filename="Test.lib.avt">    export async function test() {    \tlet person1: Person = await PersonRAM.getInstance().get(1);     \tperson1.name = "John Doe 2";    \tconst person: Person = await PersonRAM.getInstance().update(person1);    \t// person == person1 =&gt; true    }</av-code></av-code>` }
+        blocks: { 'default':`<h1>RAM - Operations</h1><p>To manage data inside your RAM, can perfom 4 kind of operations :</p><ul>    <li>Create - To add data inside your RAM</li>    <li>Read - To read data inside your RAM</li>    <li>Update - To update data inside your RAM</li>    <li>Delete - To delete data from your RAM</li></ul><h2>Basic operations</h2><p>Inside Aventus RAM, each function to perfom operation can be written in two format. The first format is the normal.    You call the function and get the result.</p><p>The second format is the detailed. You call the function with <span class="cn">WithError</span> at the end to obtain more    information.</p><av-doc-ram-crud-editor-1></av-doc-ram-crud-editor-1><p>For the future explanations, only the functions in normal format will be explained</p><h3>Read</h3><div class="table">    <av-row class="header">        <av-col size="4" center>Function</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>getAll</av-col>        <av-col size="8">Return all items stored inside the RAM like {[index: Index] : T}        </av-col>    </av-row>    <av-row>        <av-col size="4" center>getList</av-col>        <av-col size="8">Return all items stored inside the RAM like T[]        </av-col>    </av-row>    <av-row>        <av-col size="4" center>getById</av-col>        <av-col size="8">Return the item where the index is egal to the parameter            provide</av-col>    </av-row>    <av-row>        <av-col size="4" center>get</av-col>        <av-col size="8"><span>Alias for <span class="cn">getById</span></span></av-col>    </av-row>    <av-row>        <av-col size="4" center>getByIds</av-col>        <av-col size="8">Return all items where the index is inside the first parameter            provide</av-col>    </av-row></div><av-doc-ram-crud-editor-2></av-doc-ram-crud-editor-2><h3>Create</h3><div class="table">    <av-row class="header">        <av-col size="4" center>Function</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>create</av-col>        <av-col size="8">Store an item inside the RAM and return the element stored.</av-col>    </av-row>    <av-row>        <av-col size="4" center>createList</av-col>        <av-col size="8">Store a set of items inside the RAM and return the elements            stored.</av-col>    </av-row></div><av-doc-ram-crud-editor-3></av-doc-ram-crud-editor-3><h3>Update</h3><div class="table">    <av-row class="header">        <av-col size="4" center>Function</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>update</av-col>        <av-col size="8">Update an item inside the RAM and return the element updated.</av-col>    </av-row>    <av-row>        <av-col size="4" center>updateList</av-col>        <av-col size="8">Update a set of items inside the RAM and return the elements            stored.</av-col>    </av-row></div><av-doc-ram-crud-editor-4></av-doc-ram-crud-editor-4><h3>Delete</h3><div class="table">    <av-row class="header">        <av-col size="4" center>Function</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>delete</av-col>        <av-col size="8">Delete an item inside the RAM and return the element updated.</av-col>    </av-row>    <av-row>        <av-col size="4" center>deleteById</av-col>        <av-col size="8">Delete an item inside the RAM and return the element updated.</av-col>    </av-row>    <av-row>        <av-col size="4" center>deleteList</av-col>        <av-col size="8">Delete a set of items inside the RAM and return the elements            stored.</av-col>    </av-row></div><av-doc-ram-crud-editor-5></av-doc-ram-crud-editor-5><p>The last thing to know is that once an item a stored inside the ram, the item reference is always the same.</p><av-code language="typescript" filename="Test.lib.avt">    export async function test() {    \tlet person1: Person = await PersonRAM.getInstance().get(1);     \tperson1.name = "John Doe 2";    \tconst person: Person = await PersonRAM.getInstance().update(person1);    \t// person == person1 =&gt; true    }</av-code></av-code>` }
     });
 }
     getClassName() {
@@ -16352,6 +17166,307 @@ DocRamCreate.Tag=`av-doc-ram-create`;
 __as1(_, 'DocRamCreate', DocRamCreate);
 if(!window.customElements.get('av-doc-ram-create')){window.customElements.define('av-doc-ram-create', DocRamCreate);Aventus.WebComponentInstance.registerDefinition(DocRamCreate);}
 
+const DocHttpRoute = class DocHttpRoute extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocHttpRoute;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocHttpRoute.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Route</h1><p>The <span class="cn">HttpRoute</span> class represents a controller layer that uses a <span class="cn">HttpRouter</span> to perform requests.It's designed to group related endpoints under a single class, just like a controller in traditional MVC frameworks.</p><h2>Overview</h2><p>A HttpRoute:</p><ul>    <li>Holds a reference to a <span class="cn">HttpRouter</span> (either provided or automatically created).</li>    <li>Defines a base prefix for its routes via <span class="cn">getPrefix()</span>.</li>    <li>Can expose multiple request methods that use this router to perform actions.</li></ul><h2>Constructor</h2><av-code language="ts">    <pre>        public constructor(router?: HttpRouter)    </pre></av-code></av-code><ul>    <li>If a router is provided, it will be used for all requests.</li>    <li>If not, a default new HttpRouter instance is created.</li></ul><h2>Example: Basic Controller</h2><av-code language="ts">    <pre>export class AuthLoginController extends Aventus.HttpRoute {    @BindThis()    public async request(body: Request): Promise&lt;Aventus.ResultWithError&lt;string&gt;&gt; {        const request = new Aventus.HttpRequest(            \`\${this.getPrefix()}/api/login\`,            Aventus.HttpMethod.POST        );        request.setBody(body);        return await request.queryJSON&lt;string&gt;(this.router);    }}    </pre></av-code></av-code><p>This controller:</p><ul>    <li>Uses the router from the base HttpRoute.</li>    <li>Sends a POST request to /api/login.</li>    <li>Returns a typed response (ResultWithError&lt;string&gt;).</li></ul><h2>Example: Advanced Usage with Custom Router</h2><p>You can also extend both <span class="cn">HttpRouter</span> and <span class="cn">HttpRoute</span> together:</p><av-code language="ts">    <pre>export class SettingsRouter extends Aventus.HttpRouter {    protected override defineOptions(options: Aventus.HttpRouterOptions): Aventus.HttpRouterOptions {        options.url = location.protocol + "//" + location.host + "/settings";        return options;    }}    &nbsp;export class SettingsRoute extends Aventus.HttpRoute {    public constructor(router?: Aventus.HttpRouter) {        super(router ?? new SettingsRouter());    }    &nbsp;    @BindThis()    public async save(body: Settings | FormData): Promise&lt;Aventus.VoidWithError&gt; {        const request = new Aventus.HttpRequest(\`\${this.getPrefix()}/save\`, Aventus.HttpMethod.POST);        request.setBody(body);        return await request.queryVoid(this.router);    }    &nbsp;    @BindThis()    public async get(): Promise&lt;Aventus.ResultWithError&lt;Settings&gt;&gt; {        const request = new Aventus.HttpRequest(\`\${this.getPrefix()}/get\`, Aventus.HttpMethod.GET);        return await request.queryJSON&lt;Settings&gt;(this.router);    }}    </pre></av-code></av-code><p>Together, they form a modular, extensible HTTP layer where:</p><ul>    <li>Routers define where requests go.</li>    <li>Routes define what requests do.</li></ul>` }
+    });
+}
+    getClassName() {
+        return "DocHttpRoute";
+    }
+    Title() {
+        return "HttpRoute in Aventus";
+    }
+    Description() {
+        return "Learn how to use Aventus.HttpRoute to create controller-like classes for grouping related HTTP endpoints. Discover how to define base prefixes, use routers for request handling, return typed results with ResultWithError and VoidWithError, and build modular, extensible HTTP layers in Aventus.";
+    }
+    Keywords() {
+        return [
+            "Aventus HttpRoute",
+            "HttpRoute class",
+            "HttpRouter Aventus",
+            "Controller Aventus",
+            "Typed HTTP requests Aventus",
+            "ResultWithError Aventus",
+            "VoidWithError Aventus",
+            "Modular HTTP Aventus",
+            "Extensible router Aventus",
+            "Endpoint grouping Aventus",
+        ];
+    }
+}
+DocHttpRoute.Namespace=`AventusWebsite`;
+DocHttpRoute.Tag=`av-doc-http-route`;
+__as1(_, 'DocHttpRoute', DocHttpRoute);
+if(!window.customElements.get('av-doc-http-route')){window.customElements.define('av-doc-http-route', DocHttpRoute);Aventus.WebComponentInstance.registerDefinition(DocHttpRoute);}
+
+const DocHttpRouter = class DocHttpRouter extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocHttpRouter;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocHttpRouter.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Router</h1><p>The <span class="cn">HttpRouter</span> class defines the base endpoint configuration for HTTP requests in the Aventus    framework.    It acts as the root router used by all requests to determine the base URL and to perform RESTful operations.</p><h2>Overview</h2><p>A HttpRouter instance is responsible for:</p><ul>    <li>Defining the base URL (via its options).</li>    <li>Providing helper methods for common HTTP verbs (get, post, put, delete, option).</li>    <li>Automatically integrating with the <span class="cn">HttpRequest</span> system, which handles body parsing,        headers, and response transformation.</li></ul><p>You can subclass <span class="cn">HttpRouter</span> to customize its endpoint behavior or base URL.</p><p>By default, the router's base URL is set to the current domain:</p><av-code language="ts">    <pre>        location.protocol + "//" + location.host    </pre></av-code></av-code><h2>Example</h2><av-code language="ts">    <pre>export class PersonRouter extends Aventus.HttpRouter {    protected override defineOptions(options: Aventus.HttpRouterOptions): Aventus.HttpRouterOptions {        options.url = location.protocol + "//" + location.host + "/person";        return options;    }}&nbsp;// Usage:const router = new PersonRouter();const result = await router.get&lt;Person[]&gt;("/units");    </pre></av-code></av-code>` }
+    });
+}
+    getClassName() {
+        return "DocHttpRouter";
+    }
+    Title() {
+        return "HttpRouter in Aventus";
+    }
+    Description() {
+        return "Learn how to use Aventus.HttpRouter to define base endpoints and manage HTTP requests in Aventus. Discover how to configure base URLs, use helper methods for common HTTP verbs, integrate with HttpRequest for automatic body parsing and response transformation, and subclass routers for custom endpoint behavior.";
+    }
+    Keywords() {
+        return [
+            "Aventus HttpRouter",
+            "HttpRouter class",
+            "Base endpoint Aventus",
+            "HTTP verbs Aventus",
+            "HttpRequest integration Aventus",
+            "Custom router Aventus",
+            "Base URL Aventus",
+            "RESTful operations Aventus",
+            "Subclass HttpRouter Aventus",
+            "Endpoint configuration Aventus",
+        ];
+    }
+}
+DocHttpRouter.Namespace=`AventusWebsite`;
+DocHttpRouter.Tag=`av-doc-http-router`;
+__as1(_, 'DocHttpRouter', DocHttpRouter);
+if(!window.customElements.get('av-doc-http-router')){window.customElements.define('av-doc-http-router', DocHttpRouter);Aventus.WebComponentInstance.registerDefinition(DocHttpRouter);}
+
+const DocHttpRequest = class DocHttpRequest extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocHttpRequest;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocHttpRequest.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Request</h1><p>The <span class="cn">HttpRequest</span> class provides a robust abstraction over the native fetch API.    It integrates tightly with Aventus error management system (<span class="cn">ResultWithError</span>, <span class="cn">VoidWithError</span>) and supports advanced features like automatic JSON/FormData handling,    middleware, and method spoofing.</p><h2>Overview</h2><p>The class is designed to simplify request management while remaining flexible and framework-agnostic.</p><p>Key features:</p><ul>    <li>Automatic serialization (JSON or FormData)</li>    <li>Optional method spoofing (_method fields for PUT/DELETE)</li>    <li>Unified error/result handling</li>    <li>Lifecycle hooks for pre- and post-processing requests</li>    <li>Built-in support for file uploads and nested object serialization</li></ul><h2>Static Configuration</h2><p>Registers global configuration options that affect all HTTP requests.</p><av-code language="ts">    <pre>HttpRequest.configure({  beforeSend: async (request) => {    // Add auth headers or cancel request    request.setHeader("Authorization", "Bearer token");    return new VoidWithError();  },  responseMiddleware: async (response, request) => {    // Global response interceptor    &#105;f(response.containsCode(401)) {        location.path = "/login";    }    return response;  },});    </pre></av-code></av-code><h2>Create a request</h2><p>Creates a new HTTP request via constructor:</p><av-code language="ts">    <pre>        const request = new HttpRequest("/api/users", HttpMethod.POST, {            name: "Alice",            age: 28,        });    </pre></av-code></av-code><p>Or with setters:</p><av-code language="ts">    <pre>        const request = new HttpRequest("/api/users");        request.setMethod(HttpMethod.POST);        request.setBody({            name: "Alice",            age: 28,        });        // request.enableMethodSpoofing();    </pre></av-code></av-code><h2>Body Serialization</h2><p>The <span class="cn">HttpRequest</span> class automatically detects how to encode the body:</p><ul>    <li>If it contains File objects or arrays of files → it uses <span class="cn">FormData</span>.</li>    <li>Otherwise → it serializes the body as JSON</li></ul><h2>Query Methods</h2><p>All query methods return either a <span class="cn">ResultWithError&lt;T&gt;</span> or a <span class="cn">VoidWithError</span>, ensuring safe and typed responses.</p><h3>query</h3><p>Executes the request and returns the raw Response object, wrapped in a ResultWithError.</p><av-code language="ts">    <pre>const result = await request.query();if (!result.success) return console.error(result.errors);    </pre></av-code></av-code><h3>queryJSON</h3><p>Parses the response as JSON and automatically transforms it into the expected type.</p><av-code language="ts">    <pre>const result = await request.queryJSON&lt;User&gt;();if (result.success) console.log(result.result);    </pre></av-code></av-code><h3>queryTxt</h3><p>Reads the response as plain text.</p><av-code language="ts">    <pre>const result = await request.queryTxt();console.log(result.result);    </pre></av-code></av-code><h3>queryBlob</h3><p>Reads the response as a binary blob, useful for files or images.</p><av-code language="ts">    <pre>const result = await request.queryBlob();saveAs(result.result, "file.pdf");    </pre></av-code></av-code><h3>queryVoid</h3><p>For endpoints that return no data (e.g., DELETE requests or 204 No Content responses).</p><av-code language="ts">    <pre>const result = await request.queryVoid();if (!result.success) console.error(result.errors);    </pre></av-code></av-code><h2>Integration with HttpRouter</h2><p>You can optionally provide a <span class="cn">HttpRouter</span> instance to prefix relative URLs or manage base routes dynamically.</p><av-code language="ts">    <pre>const userRouter = new HttpRouter({ url: "/api/users" });const req = new HttpRequest("/1", HttpMethod.GET);const result = await req.queryJSON&lt;User&gt;(userRouter);    </pre></av-code></av-code><p>This produces a request to /api/users/1.</p>` }
+    });
+}
+    getClassName() {
+        return "DocHttpRequest";
+    }
+    Title() {
+        return "HttpRequest in Aventus";
+    }
+    Description() {
+        return "Learn how to use the Aventus HttpRequest class, a robust abstraction over the fetch API. Explore features like automatic JSON/FormData handling, method spoofing, lifecycle hooks, unified error/result handling with ResultWithError and VoidWithError, file uploads, query methods, and integration with HttpRouter for clean, type-safe HTTP requests.";
+    }
+    Keywords() {
+        return [
+            "Aventus HttpRequest",
+            "HttpRequest class",
+            "Type-safe HTTP Aventus",
+            "HTTP requests Aventus",
+            "Query methods Aventus",
+            "ResultWithError Aventus",
+            "VoidWithError Aventus",
+            "HttpRouter integration Aventus",
+            "Body serialization Aventus",
+            "Method spoofing Aventus",
+            "Lifecycle hooks HTTP Aventus",
+        ];
+    }
+}
+DocHttpRequest.Namespace=`AventusWebsite`;
+DocHttpRequest.Tag=`av-doc-http-request`;
+__as1(_, 'DocHttpRequest', DocHttpRequest);
+if(!window.customElements.get('av-doc-http-request')){window.customElements.define('av-doc-http-request', DocHttpRequest);Aventus.WebComponentInstance.registerDefinition(DocHttpRequest);}
+
+const DocHttpIntroduction = class DocHttpIntroduction extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocHttpIntroduction;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocHttpIntroduction.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Aventus HTTP Layer</h1><p>The Aventus HTTP layer provides a high-level, type-safe abstraction on top of the native fetch API.    It simplifies common networking patterns such as:</p><ul>    <li>Sending and handling HTTP requests</li>    <li>Managing JSON, text, and binary (blob) responses</li>    <li>Intercepting and transforming requests and responses</li>    <li>Managing errors in a consistent way</li>    <li>Automatically handling form data and method spoofing (PUT/DELETE)</li>    <li>Integrating with HttpRouter for clean endpoint definitions</li></ul><p>At its core, the system revolves around the HttpRequest class, a powerful yet flexible utilitythat makes HTTP communication declarative, predictable, and framework-agnostic.</p>` }
+    });
+}
+    getClassName() {
+        return "DocHttpIntroduction";
+    }
+    Title() {
+        return "Aventus HTTP Layer";
+    }
+    Description() {
+        return "Explore the Aventus HTTP layer, a high-level, type-safe abstraction over the fetch API. Learn how to send and handle HTTP requests, manage JSON, text, and binary responses, intercept and transform requests and responses, handle errors consistently, work with form data, and integrate seamlessly with HttpRouter for clean endpoint definitions.";
+    }
+    Keywords() {
+        return [
+            "Aventus HTTP layer",
+            "HttpRequest Aventus",
+            "Type-safe HTTP Aventus",
+            "HTTP requests Aventus",
+            "Handle HTTP responses Aventus",
+            "Intercept HTTP Aventus",
+            "HttpRouter Aventus",
+            "Networking Aventus",
+        ];
+    }
+}
+DocHttpIntroduction.Namespace=`AventusWebsite`;
+DocHttpIntroduction.Tag=`av-doc-http-introduction`;
+__as1(_, 'DocHttpIntroduction', DocHttpIntroduction);
+if(!window.customElements.get('av-doc-http-introduction')){window.customElements.define('av-doc-http-introduction', DocHttpIntroduction);Aventus.WebComponentInstance.registerDefinition(DocHttpIntroduction);}
+
+const DocErrorResult = class DocErrorResult extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocErrorResult;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocErrorResult.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>ResultWithError</h1><p><span class="cn">Aventus.ResultWithError</span> is similar to Aventus.VoidWithError, but it also includes a result    value along with    potential errors. It represents the outcome of an action that produces a specific result, such as the result of a    function call or an operation. This class allows you to handle both the result of the action and any errors that may    occur during its execution.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>       const result = SomeOperation.execute();        &#105;f (result.success) {            // Handle successful result            console.log("Result:", result.result);        } &#101;lse {            // Handle errors            console.error("Error:", result.errors[0].message);        }    </pre></av-code></av-code><p>Below you can find an implementation example for a function that must transform a string in lowercase.</p><av-doc-error-result-editor-1></av-doc-error-result-editor-1>` }
+    });
+}
+    getClassName() {
+        return "DocErrorResult";
+    }
+    Title() {
+        return "ResultWithError in Aventus";
+    }
+    Description() {
+        return "Learn how to use Aventus.ResultWithError to handle actions that produce a result along with potential errors. This class allows you to access both the result of an operation and any errors that may occur, providing a structured and type-safe approach to error handling in Aventus applications.";
+    }
+    Keywords() {
+        return [
+            "Aventus ResultWithError",
+            "ResultWithError class",
+            "VoidWithError Aventus",
+            "Error handling with result Aventus",
+            "Structured error Aventus",
+            "Function result with errors",
+            "Aventus operation outcome",
+            "Type-safe result Aventus",
+        ];
+    }
+}
+DocErrorResult.Namespace=`AventusWebsite`;
+DocErrorResult.Tag=`av-doc-error-result`;
+__as1(_, 'DocErrorResult', DocErrorResult);
+if(!window.customElements.get('av-doc-error-result')){window.customElements.define('av-doc-error-result', DocErrorResult);Aventus.WebComponentInstance.registerDefinition(DocErrorResult);}
+
+const DocErrorVoid = class DocErrorVoid extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocErrorVoid;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocErrorVoid.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>VoidWithError</h1><p><span class="cn">Aventus.VoidWithError</span> represents the result of an action that may produce errors but does not    return    a specific result value. It encapsulates the outcome of the action along with any errors that occur during its    execution. This class is useful when you want to handle the success or failure of an action without necessarily    needing a result value.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        const validation = SomeValidation.validate(data);        &#105;f (validation.success) {            // Proceed with further operations        } &#101;lse {            // Handle validation errors            console.error("Validation errors:", validation.errors);        }    </pre></av-code></av-code>` }
+    });
+}
+    getClassName() {
+        return "DocErrorVoid";
+    }
+    Title() {
+        return "VoidWithError in Aventus";
+    }
+    Description() {
+        return "Understand Aventus.VoidWithError, a class used to handle actions that may produce errors but do not return a specific result. Learn how to check for success, access errors, and structure your code for safer and more maintainable error handling in Aventus applications.";
+    }
+    Keywords() {
+        return [
+            "Aventus VoidWithError",
+            "VoidWithError class",
+            "Error handling Aventus",
+            "Action outcome Aventus",
+            "Structured error handling",
+            "Check action success Aventus",
+            "Handle validation errors Aventus",
+            "Aventus operation result",
+        ];
+    }
+}
+DocErrorVoid.Namespace=`AventusWebsite`;
+DocErrorVoid.Tag=`av-doc-error-void`;
+__as1(_, 'DocErrorVoid', DocErrorVoid);
+if(!window.customElements.get('av-doc-error-void')){window.customElements.define('av-doc-error-void', DocErrorVoid);Aventus.WebComponentInstance.registerDefinition(DocErrorVoid);}
+
+const DocErrorGeneric = class DocErrorGeneric extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocErrorGeneric;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocErrorGeneric.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>GenericError</h1><p>When you create function that can fail you can use the error strategy developed by Aventus. Instead of returning the    function result, the result is wrapped inside an container named <span class="cn">GenericError</span>, <span class="cn">VoidWithError</span>, and <span class="cn">ResultWithError</span>. They are all    useful tools for managing errors and results in your application. They provide a structured way to represent error    conditions and action outcomes, helping you write more robust and maintainable code.</p><p><span class="cn">Aventus.GenericError</span> is a generic error class that provides a structured way to represent    errors in your application. It    allows you to define an error code along with a message to describe the error. The error code can be of any type    that extends either number or an enumeration (Enum). By extending GenericError, you can create specific error types    tailored to different error scenarios in your application.</p><av-code language="typescript" filename="Example.lib.avt">    <pre>        // Define an enumeration for error codes        export enum MyErrorCode {            NotFound = 404,            InvalidInput = 400,            InternalServerError = 500        }        // Create a specific error class extending GenericError        export class MyError extends GenericError&lt;MyErrorCode&gt; { }    </pre></av-code></av-code>` }
+    });
+}
+    getClassName() {
+        return "DocErrorGeneric";
+    }
+    Title() {
+        return "GenericError in Aventus";
+    }
+    Description() {
+        return "Understand how to use Aventus.GenericError to create structured and type-safe error handling in your Aventus applications. Learn how to define custom error codes, extend GenericError, and provide meaningful error messages for better debugging and maintainability.";
+    }
+    Keywords() {
+        return [
+            "Aventus GenericError",
+            "GenericError class",
+            "Error handling Aventus",
+            "Custom error Aventus",
+            "Type-safe error Aventus",
+            "Error code enum Aventus",
+            "Aventus error management",
+            "Define error class Aventus",
+        ];
+    }
+}
+DocErrorGeneric.Namespace=`AventusWebsite`;
+DocErrorGeneric.Tag=`av-doc-error-generic`;
+__as1(_, 'DocErrorGeneric', DocErrorGeneric);
+if(!window.customElements.get('av-doc-error-generic')){window.customElements.define('av-doc-error-generic', DocErrorGeneric);Aventus.WebComponentInstance.registerDefinition(DocErrorGeneric);}
+
 const DocDataCreate = class DocDataCreate extends DocGenericPage {
     static __style = ``;
     __getStatic() {
@@ -16407,7 +17522,7 @@ const DocConfigLib = class DocConfigLib extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Configuration - Libraries</h1><p>When you create a build, you might like to import a library to reuse some code parts. Here you are going to learn how    to define all libs that must be imported inside a build. You can find package to download by searching inside the    aventusjs store : <span class="cn"><a href="https://store.aventusjs.com">https://store.aventusjs.com</a></span></p><p>The easiest format is the following : </p><av-code language="json">    <pre>    {        "dependances": {            "MaterialIcon": "1.0.0",        }    }    </pre></av-code></av-code><p>By default, this will search inside the store. If you need to import other package you can define an object to have    more options.</p><h2>Properties</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Name</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>uri</av-col>        <av-col size="8" center>This is a string to define where to find the file to import. To have more            informations about this path, you can read the next chapter.        </av-col>    </av-row>    <av-row>        <av-col size="4" center>version</av-col>        <av-col size="8" center>            <div>This is a string to define which version of the code is needed.                <span class="constraint">Must satisfy: <span class="cn">^[0-9]+\\.[0-9]+\\.[0-9]+$</span></span>            </div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>isLocal</av-col>        <av-col size="8" center>            <div>This will search a package matching the name inside your locals projects. You can find all these                librairies by typing the command <span class="cn">Aventus : Open aventus storage</span> and then                navigate inside your file explorer under the <span class="cn">packages>@locals</span>. If you use a local package, you don't need to define a version.</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>include</av-col>        <av-col size="8" center>            <span>This is a string to define how the lib must be included inside output js file.</span>            <ul>                <li>none: No need to include the lib inside the output file.</li>                <li>need: Include only the needed code inside the output file. (This is the default value)</li>                <li>full: Include all the code of the lib inside the ouput file.</li>            </ul>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>subDependancesInclude</av-col>        <av-col size="8" center>            <span>This is a object where the key is the sub library name and the value is the inclusion pattern. The                will define how the library of the library must be included inside output js file.</span>            <ul>                <li>none: No need to include the sub lib inside the output file.</li>                <li>need: Include only the needed code inside the output file. (This is the default value)</li>                <li>full: Include all the code of the sub lib inside the ouput file.</li>            </ul>        </av-col>    </av-row></div><h2>Libraries name</h2><p>You can use a few name kinds to load a library. If you use a predefined name you don't need version. There are 5 libs    with predefined uri:</p><ul>    <li>Aventus@Main : This is the core of Aventus, if you omit this lib inside your build, it will be automaticaly        added.</li>    <li>Aventus@UI : This lib contains some useful webcomponent to create interface.</li>    <li>Aventus@I18n : This lib contains i18n tools. If you define <span class="cn">i18n</span> inside your configuration file, this lib will be automaticaly loaded.</li>    <li>Aventus@Php : This lib contains Aventus code base for project <span class="cn">Laraventus</span>.</li>    <li>Aventus@Sharp : This lib contains Aventus code base for project <span class="cn">AventusSharp</span>.</li></ul><av-code language="json">    <pre>    {        "dependances": {            "Aventus@UI": {},        }    }    </pre></av-code></av-code><h2>Store</h2><p>You can search packages inside the aventus store. This is the recommanded way to load package.</p><p><a href="https://store.aventusjs.com/packages" target="_blank"><av-button>Open the store</av-button></a></p><h2>File uri</h2><p>You can add directly an uri that resolve a <span class="cn">.package.avt</span> file to import it.</p><av-code language="json" filename="aventus.conf.avt">    <pre>        {            dependances: {                "Lib1@Main": {                    "uri": "./myLibs/Lib1@Main.package.avt"                },                "Lib2@Main": {                    "uri": "C:\\\\myLibs\\\\Lib2@Main.package.avt"                }            }        }    </pre></av-code></av-code><h2>File via http</h2><p>You can resolve dependance via http. Package will be stored inside the Aventus <span class="cn">storage&gt;packages&gt;http</span>. In this    folder, you must find    a list    of subfolder where the name is the md5 value of the uri that you set as uri. The entry point is a json named    <span class="cn">info.json</span></p><p>When a specific version is required, Aventus will use the uri to download the file and save it inside the folder as    <span class="cn">$name</span>#<span class="cn">$version</span> (ex: Aventus@Main#1.0.0.package.avt) and add a <span class="cn">localUri</span> property that will be    used inside the build.</p>` }
+        blocks: { 'default':`<h1>Configuration - Libraries</h1><p>When you create a build, you might like to import a library to reuse some code parts. Here you are going to learn how    to define all libs that must be imported inside a build. You can find package to download by searching inside the    aventusjs store : <span class="cn"><a href="https://store.aventusjs.com">https://store.aventusjs.com</a></span></p><p>The easiest format is the following : </p><av-code language="json">    <pre>    {        "dependances": {            "MaterialIcon": "1.0.0",        }    }    </pre></av-code></av-code><p>By default, this will search inside the store. If you need to import other package you can define an object to have    more options.</p><h2>Properties</h2><div class="table">    <av-row class="header">        <av-col size="4" center>Name</av-col>        <av-col size="8" center>Description</av-col>    </av-row>    <av-row>        <av-col size="4" center>uri</av-col>        <av-col size="8" center>This is a string to define where to find the file to import. To have more            information about this path, you can read the next chapter.        </av-col>    </av-row>    <av-row>        <av-col size="4" center>version</av-col>        <av-col size="8" center>            <div>This is a string to define which version of the code is needed.                <span class="constraint">Must satisfy: <span class="cn">^[0-9]+\\.[0-9]+\\.[0-9]+$</span></span>            </div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>isLocal</av-col>        <av-col size="8" center>            <div>This will search a package matching the name inside your locals projects. You can find all these                librairies by typing the command <span class="cn">Aventus : Open aventus storage</span> and then                navigate inside your file explorer under the <span class="cn">packages>@locals</span>. If you use a local package, you don't need to define a version.</div>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>include</av-col>        <av-col size="8" center>            <span>This is a string to define how the lib must be included inside output js file.</span>            <ul>                <li>none: No need to include the lib inside the output file.</li>                <li>need: Include only the needed code inside the output file. (This is the default value)</li>                <li>full: Include all the code of the lib inside the ouput file.</li>            </ul>        </av-col>    </av-row>    <av-row>        <av-col size="4" center>subDependancesInclude</av-col>        <av-col size="8" center>            <span>This is a object where the key is the sub library name and the value is the inclusion pattern. The                will define how the library of the library must be included inside output js file.</span>            <ul>                <li>none: No need to include the sub lib inside the output file.</li>                <li>need: Include only the needed code inside the output file. (This is the default value)</li>                <li>full: Include all the code of the sub lib inside the ouput file.</li>            </ul>        </av-col>    </av-row></div><h2>Libraries name</h2><p>You can use a few name kinds to load a library. If you use a predefined name you don't need version. There are 5 libs    with predefined uri:</p><ul>    <li>Aventus@Main : This is the core of Aventus, if you omit this lib inside your build, it will be automaticaly        added.</li>    <li>Aventus@UI : This lib contains some useful webcomponent to create interface.</li>    <li>Aventus@I18n : This lib contains i18n tools. If you define <span class="cn">i18n</span> inside your configuration file, this lib will be automaticaly loaded.</li>    <li>Aventus@Php : This lib contains Aventus code base for project <span class="cn">Laraventus</span>.</li>    <li>Aventus@Sharp : This lib contains Aventus code base for project <span class="cn">AventusSharp</span>.</li></ul><av-code language="json">    <pre>    {        "dependances": {            "Aventus@UI": {},        }    }    </pre></av-code></av-code><h2>Store</h2><p>You can search packages inside the aventus store. This is the recommanded way to load package.</p><p><a href="https://store.aventusjs.com/packages" target="_blank"><av-button>Open the store</av-button></a></p><h2>File uri</h2><p>You can add directly an uri that resolve a <span class="cn">.package.avt</span> file to import it.</p><av-code language="json" filename="aventus.conf.avt">    <pre>        {            dependances: {                "Lib1@Main": {                    "uri": "./myLibs/Lib1@Main.package.avt"                },                "Lib2@Main": {                    "uri": "C:\\\\myLibs\\\\Lib2@Main.package.avt"                }            }        }    </pre></av-code></av-code><h2>File via http</h2><p>You can resolve dependance via http. Package will be stored inside the Aventus <span class="cn">storage&gt;packages&gt;http</span>. In this    folder, you must find    a list    of subfolder where the name is the md5 value of the uri that you set as uri. The entry point is a json named    <span class="cn">info.json</span></p><p>When a specific version is required, Aventus will use the uri to download the file and save it inside the folder as    <span class="cn">$name</span>#<span class="cn">$version</span> (ex: Aventus@Main#1.0.0.package.avt) and add a <span class="cn">localUri</span> property that will be    used inside the build.</p>` }
     });
 }
     getClassName() {
@@ -16583,7 +17698,7 @@ const DocFirstApp = class DocFirstApp extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Create your first project</h1><h2>Init the project</h2><p>In your file explorer create a new folder <span class="cn">HelloAventus</span> and open it with vscode.</p><p>You can create a new file named <span class="cn">aventus.conf.avt</span>. The minimal content for your config file is    the following</p><av-doc-first-app-editor-1></av-doc-first-app-editor-1><p>The section <span class="cn">module</span> define the container name for the compiled code. Following the best    practice, we minimize    the use of global variables by wrapping the final code inside module. In this example, you can reach your compiled    code    by typing <i>HelloWorld.*</i> inside the dev console.</p><p>The section <span class="cn">componentPrefix</span> define the prefix for the webcomponents. For example the tag name    for a    webcomponent class <i>Test</i> will be <i>ha-test</i>.</p><p>The section <span class="cn">build</span> define all builds informations. A build is a set of Aventus input file    compiled as a single    js file. You must provide at least 3 fields. <span class="cn">name</span> that define the unique name for your    build,    <span class="cn">src</span> that define where the compiler must look for Aventus file and <span class="cn">compile[0].output</span> that define where    the compiler must write the compiled file. For the example the field <i>includeBase</i> is added to auto import    Aventus source code.</p><p>When you save the config file a new file is created inside your workspace : <i>/dist/helloaventus.js</i>. The js file    is your code compiled. Actually the file is empty because we didn't write any code.</p><p>There are more options for the config file that you can read <av-link to="/docs/config/basic_prop">here</av-link></p><p>Now you can create a new folder named <span class="cn">src</span> and edit the field build.src like that</p><av-doc-first-app-editor-2></av-doc-first-app-editor-2><p>This means that any <span class="cn">*.avt</span> file found will be compiled inside this build.</p><p>Now it's time to create your first webcomponent. You can right click inside the explorer part and click on <span class="cn">Aventus        : Create...</span></p><div class="img-cont">    <av-img src="/img/doc/install/firstapp/create_option.png"></av-img></div><p>A dropdown appears. Select the option : <span class="cn">Component</span></p><div class="img-cont">    <av-img src="/img/doc/install/firstapp/create_menu.png"></av-img></div><p>Then you must enter the name for your WebComponent, call it MyComponent    (<span class="cn">&lt;ha-my-component&gt;&lt;/ha-my-component&gt;</span>), press enter and select multiple files.    Three new files are    created</p><ul>    <li><span class="cn">MyComponent.wcl.avt</span> - the file for the logic written in Typescript</li>    <li><span class="cn">MyComponent.wcs.avt</span> - the file for the style written in SCSS</li>    <li><span class="cn">MyComponent.wcv.avt</span> - the file for the view written in HTML</li></ul><p>We will add some code inside the component to write an hello Aventus text in orange</p><av-doc-first-app-editor-3></av-doc-first-app-editor-3><av-separator></av-separator><p>To show your first component you need an index file. Create a <span class="cn">/static</span> folder and a <span class="cn">/static/index.html</span> and add    the content below:</p><av-doc-first-app-editor-4></av-doc-first-app-editor-4><p>This code will load the compiled file <i>helloaventus.js</i> in your dist folder. To export static file, you need to    add a new section inside your config.</p><av-doc-first-app-editor-5></av-doc-first-app-editor-5><p>This code will export every file from <span class="cn">/static</span> to <span class="cn">/dist</span>. You can    save your config file.</p><p>Now you can launch the Aventus live server by clicking on the start server button.</p><div class="img-cont">    <av-img src="/img/doc/install/firstapp/start_server.png"></av-img></div><p>Well done, you created your first Aventus App.</p>` }
+        blocks: { 'default':`<h1>Create your first project</h1><h2>Init the project</h2><p>In your file explorer create a new folder <span class="cn">HelloAventus</span> and open it with vscode.</p><p>You can create a new file named <span class="cn">aventus.conf.avt</span>. The minimal content for your config file is    the following</p><av-doc-first-app-editor-1></av-doc-first-app-editor-1><p>The section <span class="cn">module</span> define the container name for the compiled code. Following the best    practice, we minimize    the use of global variables by wrapping the final code inside module. In this example, you can reach your compiled    code    by typing <i>HelloWorld.*</i> inside the dev console.</p><p>The section <span class="cn">componentPrefix</span> define the prefix for the webcomponents. For example the tag name    for a    webcomponent class <i>Test</i> will be <i>ha-test</i>.</p><p>The section <span class="cn">build</span> define all builds information. A build is a set of Aventus input file    compiled as a single    js file. You must provide at least 3 fields. <span class="cn">name</span> that define the unique name for your    build,    <span class="cn">src</span> that define where the compiler must look for Aventus file and <span class="cn">compile[0].output</span> that define where    the compiler must write the compiled file. For the example the field <i>includeBase</i> is added to auto import    Aventus source code.</p><p>When you save the config file a new file is created inside your workspace : <i>/dist/helloaventus.js</i>. The js file    is your code compiled. Actually the file is empty because we didn't write any code.</p><p>There are more options for the config file that you can read <av-link to="/docs/config/basic_prop">here</av-link></p><p>Now you can create a new folder named <span class="cn">src</span> and edit the field build.src like that</p><av-doc-first-app-editor-2></av-doc-first-app-editor-2><p>This means that any <span class="cn">*.avt</span> file found will be compiled inside this build.</p><p>Now it's time to create your first webcomponent. You can right click inside the explorer part and click on <span class="cn">Aventus        : Create...</span></p><div class="img-cont">    <av-img src="/img/doc/install/firstapp/create_option.png"></av-img></div><p>A dropdown appears. Select the option : <span class="cn">Component</span></p><div class="img-cont">    <av-img src="/img/doc/install/firstapp/create_menu.png"></av-img></div><p>Then you must enter the name for your WebComponent, call it MyComponent    (<span class="cn">&lt;ha-my-component&gt;&lt;/ha-my-component&gt;</span>), press enter and select multiple files.    Three new files are    created</p><ul>    <li><span class="cn">MyComponent.wcl.avt</span> - the file for the logic written in Typescript</li>    <li><span class="cn">MyComponent.wcs.avt</span> - the file for the style written in SCSS</li>    <li><span class="cn">MyComponent.wcv.avt</span> - the file for the view written in HTML</li></ul><p>We will add some code inside the component to write an hello Aventus text in orange</p><av-doc-first-app-editor-3></av-doc-first-app-editor-3><av-separator></av-separator><p>To show your first component you need an index file. Create a <span class="cn">/static</span> folder and a <span class="cn">/static/index.html</span> and add    the content below:</p><av-doc-first-app-editor-4></av-doc-first-app-editor-4><p>This code will load the compiled file <i>helloaventus.js</i> in your dist folder. To export static file, you need to    add a new section inside your config.</p><av-doc-first-app-editor-5></av-doc-first-app-editor-5><p>This code will export every file from <span class="cn">/static</span> to <span class="cn">/dist</span>. You can    save your config file.</p><p>Now you can launch the Aventus live server by clicking on the start server button.</p><div class="img-cont">    <av-img src="/img/doc/install/firstapp/start_server.png"></av-img></div><p>Well done, you created your first Aventus App.</p>` }
     });
 }
     getClassName() {
@@ -16627,7 +17742,7 @@ const DocExperience = class DocExperience extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI and experience</h1><h2>Vscode UI</h2><p>The Aventus extension will edit vscode user interface to add some features.</p><h3>The create option</h3><p>When you right click on the vscode file explorer, you can notice that you have a new option named: <b>Aventus :        Create...</b>.</p><av-docu-img src="/img/doc/install/experience/aventus_create.png"></av-docu-img><p>If you click on it, a dropdown appears and you can select what you want to create.</p><ul class="list-commands">    <li><b>Init</b><av-icon icon="arrow-right"></av-icon> Create a new project</li>    <li><b>Component</b><av-icon icon="arrow-right"></av-icon> Create a webcomponent</li>    <li><b>Data</b><av-icon icon="arrow-right"></av-icon> Create a data structure</li>    <li><b>RAM</b><av-icon icon="arrow-right"></av-icon> Create a storage</li>    <li><b>Library</b><av-icon icon="arrow-right"></av-icon> Create a file to write any code</li>    <li><b>State</b><av-icon icon="arrow-right"></av-icon> Create a state or a state manager</li></ul><h3>The compilation informations</h3><p>If you have at least one build, on the bottom of the vscode you can see a tick and a time. If you hover this text,    you will see the last time your build was compiled.</p><div class="img-cont">    <av-img src="/img/doc/install/experience/last_compiled.png"></av-img></div><h3>The live server</h3><p>If you have at least one build, on the bottom of the vscode you can see a play button. If you click on it, the live    sever will start and a stop button will replace the play button.</p><div class="img-cont">    <av-img src="/img/doc/install/experience/start_server.png"></av-img></div><p>You can customize the live server inside the vscode    settings under <b>Aventus &gt; Liveserver</b>.</p>` }
+        blocks: { 'default':`<h1>UI and experience</h1><h2>Vscode UI</h2><p>The Aventus extension will edit vscode user interface to add some features.</p><h3>The create option</h3><p>When you right click on the vscode file explorer, you can notice that you have a new option named: <b>Aventus :        Create...</b>.</p><av-docu-img src="/img/doc/install/experience/aventus_create.png"></av-docu-img><p>If you click on it, a dropdown appears and you can select what you want to create.</p><ul class="list-commands">    <li><b>Init</b><av-icon icon="arrow-right"></av-icon> Create a new project</li>    <li><b>Component</b><av-icon icon="arrow-right"></av-icon> Create a webcomponent</li>    <li><b>Data</b><av-icon icon="arrow-right"></av-icon> Create a data structure</li>    <li><b>RAM</b><av-icon icon="arrow-right"></av-icon> Create a storage</li>    <li><b>Library</b><av-icon icon="arrow-right"></av-icon> Create a file to write any code</li>    <li><b>State</b><av-icon icon="arrow-right"></av-icon> Create a state or a state manager</li></ul><h3>The compilation information</h3><p>If you have at least one build, on the bottom of the vscode you can see a tick and a time. If you hover this text,    you will see the last time your build was compiled.</p><div class="img-cont">    <av-img src="/img/doc/install/experience/last_compiled.png"></av-img></div><h3>The live server</h3><p>If you have at least one build, on the bottom of the vscode you can see a play button. If you click on it, the live    sever will start and a stop button will replace the play button.</p><div class="img-cont">    <av-img src="/img/doc/install/experience/start_server.png"></av-img></div><p>You can customize the live server inside the vscode    settings under <b>Aventus &gt; Liveserver</b>.</p>` }
     });
 }
     getClassName() {
@@ -16671,7 +17786,7 @@ const DocInstallation = class DocInstallation extends DocGenericPage {
     }
     __getHtml() {super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Installation</h1><h2>Basic install</h2><p>Aventus is actually only available as a <a target="_blank" href="https://marketplace.visualstudio.com/items?itemName=Cobwebsite.aventus" rel="noopener noreferrer">vscode extension</a>. You can download it directly inside the vscode extensions    tab by searching "Aventus" in the marketplace. Nothing else is required because everything is wrapped inside the    extension.</p><h2>Useful command inside vscode</h2><p>Because Aventus is fully integrated inside vscode, you must know how to run some commands. By default the shortcut to    list all the commands is : <b>ctrl</b>+<b>shift</b>+<b>p</b>. This action open a dropdown with all commands available inside your vscode instance.</p><ul class="list-commands">    <li><b>Developer: Reload Window</b> <av-icon icon="arrow-right"></av-icon> To reload the vscode instance</li>    <li><b>Aventus : Compile</b> <av-icon icon="arrow-right"></av-icon> To compile a build</li>    <li><b>Aventus : Copy static</b> <av-icon icon="arrow-right"></av-icon> To export a static a folder</li>    <li><b>Aventus : Import templates</b> <av-icon icon="arrow-right"></av-icon> To import Aventus templates</li>    <li><b>Aventus : Import projects</b> <av-icon icon="arrow-right"></av-icon> To import Aventus projects</li>    <li><b>Aventus : Open storage</b> <av-icon icon="arrow-right"></av-icon> To open the folder where Aventus store data</li></ul><h2>Source code</h2><p>The Aventus source code can be downloaded on <a href="https://github.com/Cobwebsite/Aventus" target="_blank" rel="noopener noreferrer">github.</a></p>` }
+        blocks: { 'default':`<h1>Installation</h1><h2>Basic install</h2><p>Aventus is actually available as a <a target="_blank" href="https://marketplace.visualstudio.com/items?itemName=Cobwebsite.aventus" rel="noopener noreferrer">vscode extension</a>. You can download it directly inside the vscode extensions    tab by searching "Aventus" in the marketplace. Nothing else is required because everything is wrapped inside the    extension.</p><h2>Useful command inside vscode</h2><p>Because Aventus is fully integrated inside vscode, you must know how to run some commands. By default the shortcut to    list all the commands is : <b>ctrl</b>+<b>shift</b>+<b>p</b>. This action open a dropdown with all commands available inside your vscode instance.</p><ul class="list-commands">    <li><b>Developer: Reload Window</b> <av-icon icon="arrow-right"></av-icon> To reload the vscode instance</li>    <li><b>Aventus : Compile</b> <av-icon icon="arrow-right"></av-icon> To compile a build</li>    <li><b>Aventus : Copy static</b> <av-icon icon="arrow-right"></av-icon> To export a static a folder</li>    <li><b>Aventus : Import templates</b> <av-icon icon="arrow-right"></av-icon> To import Aventus templates</li>    <li><b>Aventus : Import projects</b> <av-icon icon="arrow-right"></av-icon> To import Aventus projects</li>    <li><b>Aventus : Open storage</b> <av-icon icon="arrow-right"></av-icon> To open the folder where Aventus store data</li></ul><h2>CLI</h2><p>Aventus also provides a <b>CLI</b> for DevOps tasks and automation. It can be installed via npm using:</p><av-code language="bash">    <pre>npm i @aventusjs/cli</pre></av-code></av-code><p>While the CLI is powerful for scripting and automation, it is still recommended to use the VSCode extension for development, as it includes all necessary tools in a user-friendly interface.</p><h2>Source code</h2><p>The Aventus source code can be downloaded on <a href="https://github.com/Cobwebsite/Aventus" target="_blank" rel="noopener noreferrer">github.</a></p>` }
     });
 }
     getClassName() {
@@ -17497,6 +18612,143 @@ BaseEditor.Namespace=`AventusWebsite`;
 BaseEditor.Tag=`av-base-editor`;
 __as1(_, 'BaseEditor', BaseEditor);
 if(!window.customElements.get('av-base-editor')){window.customElements.define('av-base-editor', BaseEditor);Aventus.WebComponentInstance.registerDefinition(BaseEditor);}
+
+const DocLibMutexEditor1 = class DocLibMutexEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocLibMutexEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibMutexEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Tools">    <av-code language="json" filename="Tools/aventus.conf.avt">        <pre>            {            	"module": "Tools",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Test.lib.avt">        <pre>            export class Test {                // Create a mutex instance                private static mutex: Aventus.Mutex = new Aventus.Mutex();            &nbsp;                private static counter: number = 0;                private static numThreads: number = 100;            &nbsp;                // Function to update the shared counter variable                private static async updateCounter() {                    // Wait &#102;or the mutex to become available                    await this.mutex.waitOne();                    try {                        // Increment the counter                        this.counter++;                        console.log(this.counter);                        await Aventus.sleep(100);                    } finally {                        // Release the mutex                        this.mutex.release();                    }                }            &nbsp;                private static async updateCounter2() {                    // Wait &#102;or the mutex to become available                    await this.mutex.safeRunAsync(async () =&gt; {                        this.counter++;                        console.log(this.counter);                        await Aventus.sleep(100);                    })                }            &nbsp;            &nbsp;                public static run() {                    // Multiple threads call the updateCounter function concurrently                    &#102;or(let i = 0; i &lt; this.numThreads; i++) {                        this.updateCounter();                    }                    console.log("loop done");                }            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocLibMutexEditor1";
+    }
+}
+DocLibMutexEditor1.Namespace=`AventusWebsite`;
+DocLibMutexEditor1.Tag=`av-doc-lib-mutex-editor-1`;
+__as1(_, 'DocLibMutexEditor1', DocLibMutexEditor1);
+if(!window.customElements.get('av-doc-lib-mutex-editor-1')){window.customElements.define('av-doc-lib-mutex-editor-1', DocLibMutexEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibMutexEditor1);}
+
+const DocLibConverterEditor1 = class DocLibConverterEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocLibConverterEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibConverterEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Tools">    <av-code language="json" filename="Tools/aventus.conf.avt">        <pre>            {            	"module": "Tools",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Parser.lib.avt">        <pre>            import { Person } from "./Person.data.avt";            &nbsp;            export class Parser {                public static parse() {                    // JSON data received from an API with $type indicating the class name                    const jsonDataWithType = JSON.parse('{"$type": "Tools.Person", "id": 1, "name": "John", "age": 30}');            &nbsp;                    // Convert JSON data to JavaScript object using Converter.transform                    const personWithType = Aventus.Converter.transform&lt;Person&gt;(jsonDataWithType);            &nbsp;                    console.log(personWithType); // Output: Person { id: 1, name: 'John', age: 30 }                    console.log(personWithType instanceof Person); // Output: true                }            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Person.data.avt">        <pre>            export class Person extends Aventus.Data implements Aventus.IData {                // The static field Fullname = 'Tools.Person'            	public id: number = 0;            	public name: string = "";            	public age: number = 0;            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocLibConverterEditor1";
+    }
+    startupFile() {
+        return 'Tools/src/Parser.lib.avt';
+    }
+}
+DocLibConverterEditor1.Namespace=`AventusWebsite`;
+DocLibConverterEditor1.Tag=`av-doc-lib-converter-editor-1`;
+__as1(_, 'DocLibConverterEditor1', DocLibConverterEditor1);
+if(!window.customElements.get('av-doc-lib-converter-editor-1')){window.customElements.define('av-doc-lib-converter-editor-1', DocLibConverterEditor1);Aventus.WebComponentInstance.registerDefinition(DocLibConverterEditor1);}
+
+const DocErrorResultEditor1 = class DocErrorResultEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocErrorResultEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocErrorResultEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Tools">    <av-code language="json" filename="Tools/aventus.conf.avt">        <pre>            {            	"module": "Tools",            	"componentPrefix": "av",            	"build": [            		{            			"name": "Main",            			"src": [            				"./src/*"            			],            			"compile": [            				{            					"output": "./dist/demo.js"            				}            			]            		}            	],            	"static": [{            		"name": "Static",            		"input": "./static/*",            		"output": "./dist/"            	}]            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/StringExtension.lib.avt">        <pre>            // List of available codes            export enum StringErrorCode {                EmptyString = 400            }            &nbsp;            // Error            export class StringError extends Aventus.GenericError&lt;StringErrorCode&gt; { }            &nbsp;            // Result of the function ( = container)            export class StringResult extends Aventus.ResultWithError&lt;{ lower: string; }, StringError&gt; { }            &nbsp;            export class StringExtension {            &nbsp;                public static toLower(txt: string): StringResult {                    let result = new StringResult();                    &#105;f(!txt) {                        let error = new StringError(StringErrorCode.EmptyString, "Please provide a string");                        result.errors.push(error);                    }                    else {                        result.result = { lower: txt.toLowerCase() };                    }            &nbsp;                    return result;                }            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="Tools/src/Test.lib.avt">        <pre>            import { StringExtension } from "./StringExtension.lib.avt";            &nbsp;            export class Test {                public static run() {            		const result = StringExtension.toLower("");            		/*            			result.success = false            			result.errors = [ { code: 400, message: "Please provide a string" } ]            			result.result = undefined            		*/            &nbsp;            		const result2 = StringExtension.toLower("HELLO");            		/*            			result.success = true            			result.errors = []            			result.result = { lower: 'hello' }            		*/            	}            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocErrorResultEditor1";
+    }
+    hightlightFiles() {
+        return [
+            'Tools/src/StringExtension.lib.avt',
+            'Tools/src/Test.lib.avt'
+        ];
+    }
+    startupFile() {
+        return 'Tools/src/StringExtension.lib.avt';
+    }
+}
+DocErrorResultEditor1.Namespace=`AventusWebsite`;
+DocErrorResultEditor1.Tag=`av-doc-error-result-editor-1`;
+__as1(_, 'DocErrorResultEditor1', DocErrorResultEditor1);
+if(!window.customElements.get('av-doc-error-result-editor-1')){window.customElements.define('av-doc-error-result-editor-1', DocErrorResultEditor1);Aventus.WebComponentInstance.registerDefinition(DocErrorResultEditor1);}
+
+const DocUIPageFormRouteEditor1 = class DocUIPageFormRouteEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUIPageFormRouteEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIPageFormRouteEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Page With Form And HTTP">    <av-code language="typescript" filename="LoginAction.lib.avt">        <pre>            &nbsp;            export class LoginRequest {                public username!: string;                public password!: string;            }            &nbsp;            &nbsp;            export class LoginController extends Aventus.HttpRoute {                @BindThis()                public async request(body: LoginRequest): Promise&lt;Aventus.ResultWithError&lt;string&gt;&gt; {                    const request = new Aventus.HttpRequest(&#96;\${this.getPrefix()}/api/login&#96;, Aventus.HttpMethod.POST);                    request.setBody(body);                    return await request.queryJSON&lt;string&gt;(this.router);                }            }        </pre>    </av-code></av-code>    <av-code language="typescript" filename="LoginPage/LoginPage.wcl.avt">        <pre>            import { PageFormRoute } from "Aventus@UI:Aventus.Navigation.package.avt";            import { LoginController, type LoginRequest } from "../LoginAction.lib.avt";            import type { ResultWithError } from "Aventus@Main:Aventus.package.avt";            import { Required } from "Aventus@UI:Aventus.Form.Validators.package.avt";            &nbsp;            export class LoginPage extends PageFormRoute&lt;typeof LoginController&gt; implements Aventus.DefaultComponent {            &nbsp;            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                public override route(): typeof LoginController {                    return LoginController;                }                /**                 * @inheritdoc                 */                public override onResult(result: ResultWithError&lt;string&gt; | null): Aventus.Asyncable&lt;void&gt; {                    &#105;f(result?.success) {                        //...                    }                }                /**                 * @inheritdoc                 */                protected override &#102;ormSchema(): Aventus.Form.FormSchema&lt;LoginRequest&gt; {                    return {                        username: Required,                        password: Required                    };                }                /**                 * @inheritdoc                 */                public override configure(): Aventus.Asyncable&lt;Aventus.Navigation.Page.PageConfig&gt; {                    return {                        title: "Login"                    };                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="LoginPage/LoginPage.wcs.avt">        <pre>            :host {                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="LoginPage/LoginPage.wcv.avt">        <pre>            &lt;my-input name="username" :form="this.form.parts.username"&gt;&lt;/my-input&gt; &lt;!-- Link input to the &#102;orm --&gt;            &lt;my-input type="password" name="password" :form="this.form.parts.password"&gt;&lt;/my-input&gt;            &lt;button-element type="submit"&gt;Login&lt;/button-element&gt; &lt;!-- will submit the &#102;orm --&gt;        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUIPageFormRouteEditor1";
+    }
+}
+DocUIPageFormRouteEditor1.Namespace=`AventusWebsite`;
+DocUIPageFormRouteEditor1.Tag=`av-doc-u-i-page-form-route-editor-1`;
+__as1(_, 'DocUIPageFormRouteEditor1', DocUIPageFormRouteEditor1);
+if(!window.customElements.get('av-doc-u-i-page-form-route-editor-1')){window.customElements.define('av-doc-u-i-page-form-route-editor-1', DocUIPageFormRouteEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIPageFormRouteEditor1);}
+
+const DocUIPageFormEditor1 = class DocUIPageFormEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUIPageFormEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIPageFormEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Page With Form">    <av-code language="typescript" filename="LoginPage/LoginPage.wcl.avt">        <pre>            import { PageForm } from "Aventus@UI:Aventus.Navigation.package.avt";            import { LoginAction, type LoginForm, type LoginResponse } from "../LoginAction.lib.avt";            import { Email, Required } from "Aventus@UI:Aventus.Form.Validators.package.avt";            import type { FormSchema, SubmitFunction } from "Aventus@UI:Aventus.Form.package.avt";            import type { ResultWithError } from "Aventus@Main:Aventus.package.avt";            import type { PageConfig } from "Aventus@UI:Aventus.Navigation.Page.package.avt";            &nbsp;            export class LoginPage extends PageForm&lt;LoginForm, LoginResponse&gt; implements Aventus.DefaultComponent {            &nbsp;                //#region methods                /**                 * @inheritdoc                 */                protected override &#102;ormSchema(): FormSchema&lt;LoginForm&gt; {                    return {                        email: [Required, Email],                        password: Required                    };                }                /**                 * @inheritdoc                 */                protected override async defineSubmit(submit: (fct: SubmitFunction&lt;LoginForm, LoginResponse&gt;) =&gt; Promise&lt;ResultWithError&lt;LoginResponse&gt; | null&gt;): Promise&lt;ResultWithError&lt;LoginResponse&gt; | null&gt; {                    return await submit(LoginAction);                }                /**                 * @inheritdoc                 */                public override configure(): PageConfig {                    return {                        title: "Login",                        description: "Login page",                        destroy: true                    };                }            &nbsp;                //#endregion            &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="css" filename="LoginPage/LoginPage.wcs.avt">        <pre>            :host {                &nbsp;            }        </pre>    </av-code></av-code>    <av-code language="html" filename="LoginPage/LoginPage.wcv.avt">        <pre>            &lt;my-input name="email" :form="this.form.parts.email"&gt;&lt;/my-input&gt; &lt;!-- Link input to the &#102;orm --&gt;            &lt;my-input type="password" name="password" :form="this.form.parts.password"&gt;&lt;/my-input&gt;            &lt;button-element type="submit"&gt;Login&lt;/button-element&gt; &lt;!-- will submit the &#102;orm --&gt;        </pre>    </av-code></av-code>    <av-code language="typescript" filename="LoginAction.lib.avt">        <pre>            import type { ResultWithError } from "Aventus@Main:Aventus.package.avt";            &nbsp;            export type LoginForm = { email: string; password: string; };            export type LoginResponse = { token: string; };            &nbsp;            export function LoginAction(form: LoginForm): Promise&lt;ResultWithError&lt;LoginResponse&gt;&gt; {                // login action            }        </pre>    </av-code></av-code>    <slot></slot></av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUIPageFormEditor1";
+    }
+}
+DocUIPageFormEditor1.Namespace=`AventusWebsite`;
+DocUIPageFormEditor1.Tag=`av-doc-u-i-page-form-editor-1`;
+__as1(_, 'DocUIPageFormEditor1', DocUIPageFormEditor1);
+if(!window.customElements.get('av-doc-u-i-page-form-editor-1')){window.customElements.define('av-doc-u-i-page-form-editor-1', DocUIPageFormEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIPageFormEditor1);}
 
 const TutorialInitEditor3 = class TutorialInitEditor3 extends BaseEditor {
     static __style = ``;
@@ -23212,6 +24464,17 @@ const DocApp = class DocApp extends Aventus.Navigation.Router {
         //#region doc data
         this.addRoute("/docs/data/create", DocDataCreate);
         //#endregion
+        //#region doc data
+        this.addRoute("/docs/error/generic", DocErrorGeneric);
+        this.addRoute("/docs/error/void", DocErrorVoid);
+        this.addRoute("/docs/error/result", DocErrorResult);
+        //#endregion
+        //#region doc http
+        this.addRoute("/docs/http/introduction", DocHttpIntroduction);
+        this.addRoute("/docs/http/request", DocHttpRequest);
+        this.addRoute("/docs/http/router", DocHttpRouter);
+        this.addRoute("/docs/http/route", DocHttpRoute);
+        //#endregion
         //#region doc ram
         this.addRoute("/docs/ram/create", DocRamCreate);
         this.addRoute("/docs/ram/crud", DocRamCrud);
@@ -23241,16 +24504,22 @@ const DocApp = class DocApp extends Aventus.Navigation.Router {
         this.addRoute("/docs/wc/state", DocWcState);
         //#endregion
         //#region doc lib
-        this.addRoute("/docs/lib/create", DocLibCreate);
         this.addRoute("/docs/lib/animation", DocLibAnimation);
         this.addRoute("/docs/lib/callback", DocLibCallback);
+        this.addRoute("/docs/lib/compare_object", DocLibCompareObject);
+        this.addRoute("/docs/lib/converter", DocLibConverter);
+        this.addRoute("/docs/lib/create", DocLibCreate);
         this.addRoute("/docs/lib/drag_and_drop", DocLibDragAndDrop);
         this.addRoute("/docs/lib/instance", DocLibInstance);
+        this.addRoute("/docs/lib/json", DocLibJson);
+        this.addRoute("/docs/lib/mutex", DocLibMutex);
         this.addRoute("/docs/lib/press_manager", DocLibPressManager);
         this.addRoute("/docs/lib/resize_observer", DocLibResizeObserver);
         this.addRoute("/docs/lib/resource_loader", DocLibResourceLoader);
+        this.addRoute("/docs/lib/sleep", DocLibSleep);
+        this.addRoute("/docs/lib/uuid", DocLibUuid);
+        this.addRoute("/docs/lib/value_from_object", DocLibValueFromObject);
         this.addRoute("/docs/lib/watcher", DocLibWatcher);
-        this.addRoute("/docs/lib/tools", DocLibTools);
         //#endregion
         //#region doc i18n
         this.addRoute("/docs/i18n/config", DocI18nConfig);
@@ -24231,6 +25500,158 @@ TutorialIntroductionEditor1.Namespace=`AventusWebsite`;
 TutorialIntroductionEditor1.Tag=`av-tutorial-introduction-editor-1`;
 __as1(_, 'TutorialIntroductionEditor1', TutorialIntroductionEditor1);
 if(!window.customElements.get('av-tutorial-introduction-editor-1')){window.customElements.define('av-tutorial-introduction-editor-1', TutorialIntroductionEditor1);Aventus.WebComponentInstance.registerDefinition(TutorialIntroductionEditor1);}
+
+const DocUIPageFormEditor1Compiled = class DocUIPageFormEditor1Compiled extends Aventus.Navigation.PageForm {
+    static __style = ``;
+    __getStatic() {
+        return DocUIPageFormEditor1Compiled;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIPageFormEditor1Compiled.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<my-input name="email" _id="docuipageformeditor1compiled_0"></my-input><my-input type="password" name="password" _id="docuipageformeditor1compiled_1"></my-input><button-element type="submit">Login</button-element>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "injection": [
+    {
+      "id": "docuipageformeditor1compiled_0",
+      "injectionName": "form",
+      "inject": (c) => c.comp.__f91daac574433e72bf91bb79e3c5a5e3method0(),
+      "once": true
+    },
+    {
+      "id": "docuipageformeditor1compiled_1",
+      "injectionName": "form",
+      "inject": (c) => c.comp.__f91daac574433e72bf91bb79e3c5a5e3method1(),
+      "once": true
+    }
+  ]
+}); }
+    getClassName() {
+        return "DocUIPageFormEditor1Compiled";
+    }
+    formSchema() {
+        return {
+            email: [Aventus.Form.Validators.Required, Aventus.Form.Validators.Email],
+            password: Aventus.Form.Validators.Required
+        };
+    }
+    async defineSubmit(submit) {
+        return await submit(DocUIPageFormEditor1LoginAction);
+    }
+    configure() {
+        return {
+            title: "Login",
+            description: "Login page",
+            destroy: true
+        };
+    }
+    pageConfig() {
+        return {
+            autoLoading: true, // if true, any registered submit buttons will automatically show a loading state during form submission. Default is true.
+            submitWithEnter: true, // if true, pressing Enter on the last registered form field automatically submits the form. Default is true.
+        };
+    }
+    __f91daac574433e72bf91bb79e3c5a5e3method0() {
+        return this.form.parts.email;
+    }
+    __f91daac574433e72bf91bb79e3c5a5e3method1() {
+        return this.form.parts.password;
+    }
+}
+DocUIPageFormEditor1Compiled.Namespace=`AventusWebsite`;
+DocUIPageFormEditor1Compiled.Tag=`av-doc-u-i-page-form-editor-1-compiled`;
+__as1(_, 'DocUIPageFormEditor1Compiled', DocUIPageFormEditor1Compiled);
+if(!window.customElements.get('av-doc-u-i-page-form-editor-1-compiled')){window.customElements.define('av-doc-u-i-page-form-editor-1-compiled', DocUIPageFormEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIPageFormEditor1Compiled);}
+
+let DocUIPageFormRouteEditor1LoginController=class DocUIPageFormRouteEditor1LoginController extends Aventus.HttpRoute {
+    constructor(router) {
+        super(router);
+        this.login = this.login.bind(this);
+        this.logout = this.logout.bind(this);
+    }
+    async login(body) {
+        const request = new Aventus.HttpRequest(`/api/login`, Aventus.HttpMethod.POST);
+        request.setBody(body);
+        return await request.queryJSON(this.router);
+    }
+    async logout() {
+        const request = new Aventus.HttpRequest(`/api/logout`, Aventus.HttpMethod.POST);
+        return await request.queryJSON(this.router);
+    }
+}
+DocUIPageFormRouteEditor1LoginController.Namespace=`AventusWebsite`;
+__as1(_, 'DocUIPageFormRouteEditor1LoginController', DocUIPageFormRouteEditor1LoginController);
+
+const DocUIPageFormRouteEditor1Compiled = class DocUIPageFormRouteEditor1Compiled extends Aventus.Navigation.PageFormRoute {
+    static __style = ``;
+    __getStatic() {
+        return DocUIPageFormRouteEditor1Compiled;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIPageFormRouteEditor1Compiled.__style);
+        return arrStyle;
+    }
+    __getHtml() {super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<my-input name="username" _id="docuipageformrouteeditor1compiled_0"></my-input><my-input type="password" name="password" _id="docuipageformrouteeditor1compiled_1"></my-input><button-element type="submit">Login</button-element>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();this.__getStatic().__template.setActions({
+  "injection": [
+    {
+      "id": "docuipageformrouteeditor1compiled_0",
+      "injectionName": "form",
+      "inject": (c) => c.comp.__66feedbc217ae63b95f0403a3bcd6174method0(),
+      "once": true
+    },
+    {
+      "id": "docuipageformrouteeditor1compiled_1",
+      "injectionName": "form",
+      "inject": (c) => c.comp.__66feedbc217ae63b95f0403a3bcd6174method1(),
+      "once": true
+    }
+  ]
+}); }
+    getClassName() {
+        return "DocUIPageFormRouteEditor1Compiled";
+    }
+    route() {
+        return [DocUIPageFormRouteEditor1LoginController, 'login'];
+    }
+    onResult(result) {
+        if (result?.success) {
+            //...
+        }
+    }
+    formSchema() {
+        return {
+            username: Aventus.Form.Validators.Required,
+            password: Aventus.Form.Validators.Required
+        };
+    }
+    configure() {
+        return {
+            title: "Login"
+        };
+    }
+    __66feedbc217ae63b95f0403a3bcd6174method0() {
+        return this.form.parts.username;
+    }
+    __66feedbc217ae63b95f0403a3bcd6174method1() {
+        return this.form.parts.password;
+    }
+}
+DocUIPageFormRouteEditor1Compiled.Namespace=`AventusWebsite`;
+DocUIPageFormRouteEditor1Compiled.Tag=`av-doc-u-i-page-form-route-editor-1-compiled`;
+__as1(_, 'DocUIPageFormRouteEditor1Compiled', DocUIPageFormRouteEditor1Compiled);
+if(!window.customElements.get('av-doc-u-i-page-form-route-editor-1-compiled')){window.customElements.define('av-doc-u-i-page-form-route-editor-1-compiled', DocUIPageFormRouteEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIPageFormRouteEditor1Compiled);}
 
 
 for(let key in _) { AventusWebsite[key] = _[key] }

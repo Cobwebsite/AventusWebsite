@@ -8,9 +8,19 @@
     <li>An attribute on your tag</li>
     <li>A callback to be notified when the value of the attribute changed</li>
 </ul>
-<p>The property is based on the observe attribute behaviour on webcomponent. You can find more inforamtions about this
+<p>The property is based on the observe attribute behaviour on webcomponent. You can find more information about this
     <a href="https://web.dev/custom-elements-v1/#observing-changes-to-attributes" target="_blank">here</a>
 </p>.
+
+<p>A property has limited type:</p>
+<ul>
+    <li><span class="cn">number</span></li>
+    <li><span class="cn">string</span></li>
+    <li><span class="cn">boolean</span></li>
+    <li><span class="cn">date</span></li>
+    <li><span class="cn">datetime</span></li>
+    <li><span class="cn">literal</span> (ex: 'value1'|'value2')</li>
+</ul>
 
 <p>In Aventus, you can declare a property by adding a <span class="cn">decorator</span> on a field.</p>
 <av-code language="typescript" filename="Example.wcl.avt">

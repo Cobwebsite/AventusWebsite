@@ -1,0 +1,86 @@
+<h1>Route</h1>
+<p>The <span class="cn">HttpRoute</span> class represents a controller layer that uses a <span class="cn">HttpRouter</span> to perform requests.
+It's designed to group related endpoints under a single class, just like a controller in traditional MVC frameworks.</p>
+
+<h2>Overview</h2>
+<p>A HttpRoute:</p>
+<ul>
+    <li>Holds a reference to a <span class="cn">HttpRouter</span> (either provided or automatically created).</li>
+    <li>Defines a base prefix for its routes via <span class="cn">getPrefix()</span>.</li>
+    <li>Can expose multiple request methods that use this router to perform actions.</li>
+</ul>
+
+<h2>Constructor</h2>
+<av-code language="ts">
+    <pre>
+        public constructor(router?: HttpRouter)
+    </pre>
+</av-code>
+<ul>
+    <li>If a router is provided, it will be used for all requests.</li>
+    <li>If not, a default new HttpRouter instance is created.</li>
+</ul>
+
+<h2>Example: Basic Controller</h2>
+<av-code language="ts">
+    <pre>
+export class AuthLoginController extends Aventus.HttpRoute {
+    @BindThis()
+    public async request(body: Request): Promise&lt;Aventus.ResultWithError&lt;string&gt;&gt; {
+        const request = new Aventus.HttpRequest(
+            \`\${this.getPrefix()}/api/login\`,
+            Aventus.HttpMethod.POST
+        );
+        request.setBody(body);
+        return await request.queryJSON&lt;string&gt;(this.router);
+    }
+}
+    </pre>
+</av-code>
+<p>This controller:</p>
+<ul>
+    <li>Uses the router from the base HttpRoute.</li>
+    <li>Sends a POST request to /api/login.</li>
+    <li>Returns a typed response (ResultWithError&lt;string&gt;).</li>
+</ul>
+
+
+
+<h2>Example: Advanced Usage with Custom Router</h2>
+<p>You can also extend both <span class="cn">HttpRouter</span> and <span class="cn">HttpRoute</span> together:</p>
+
+<av-code language="ts">
+    <pre>
+export class SettingsRouter extends Aventus.HttpRouter {
+    protected override defineOptions(options: Aventus.HttpRouterOptions): Aventus.HttpRouterOptions {
+        options.url = location.protocol + "//" + location.host + "/settings";
+        return options;
+    }
+}
+    &nbsp;
+export class SettingsRoute extends Aventus.HttpRoute {
+    public constructor(router?: Aventus.HttpRouter) {
+        super(router ?? new SettingsRouter());
+    }
+    &nbsp;
+    @BindThis()
+    public async save(body: Settings | FormData): Promise&lt;Aventus.VoidWithError&gt; {
+        const request = new Aventus.HttpRequest(\`\${this.getPrefix()}/save\`, Aventus.HttpMethod.POST);
+        request.setBody(body);
+        return await request.queryVoid(this.router);
+    }
+    &nbsp;
+    @BindThis()
+    public async get(): Promise&lt;Aventus.ResultWithError&lt;Settings&gt;&gt; {
+        const request = new Aventus.HttpRequest(\`\${this.getPrefix()}/get\`, Aventus.HttpMethod.GET);
+        return await request.queryJSON&lt;Settings&gt;(this.router);
+    }
+}
+    </pre>
+</av-code>
+
+<p>Together, they form a modular, extensible HTTP layer where:</p>
+<ul>
+    <li>Routers define where requests go.</li>
+    <li>Routes define what requests do.</li>
+</ul>

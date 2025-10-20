@@ -6,10 +6,10 @@ import { sep, dirname } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const outDir = [__dirname, "output"].join(sep);
-const inDir = join(__dirname, "src\\pages\\docs\\pages\\ui\\DocUIModal\\compiled")
+const outDir = __dirname;
+const inDir = join(__dirname, "src\\pages\\docs\\pages\\ui\\DocUIPageFormRoute\\compiled")
 
-const projectName = "FormElement";
+const projectName = "Page With Form";
 let extensions = {
     'aventus.conf.json': 'json',
     '.json': 'json',
@@ -88,4 +88,4 @@ txtHtml += `    <slot></slot>
 
 
 
-writeFileSync(outDir + "/output.wcv.avt", txtHtml);
+writeFileSync(outDir + "/compile.html", txtHtml);

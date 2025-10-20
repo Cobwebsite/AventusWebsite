@@ -13,7 +13,7 @@
 <p>The section <span class="cn">componentPrefix</span> define the prefix for the webcomponents. For example the tag name
     for a
     webcomponent class <i>Test</i> will be <i>ha-test</i>.</p>
-<p>The section <span class="cn">build</span> define all builds informations. A build is a set of Aventus input file
+<p>The section <span class="cn">build</span> define all builds information. A build is a set of Aventus input file
     compiled as a single
     js file. You must provide at least 3 fields. <span class="cn">name</span> that define the unique name for your
     build,

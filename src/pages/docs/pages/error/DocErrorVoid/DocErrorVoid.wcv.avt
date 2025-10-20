@@ -1,0 +1,19 @@
+<h1>VoidWithError</h1>
+<p><span class="cn">Aventus.VoidWithError</span> represents the result of an action that may produce errors but does not
+    return
+    a specific result value. It encapsulates the outcome of the action along with any errors that occur during its
+    execution. This class is useful when you want to handle the success or failure of an action without necessarily
+    needing a result value.</p>
+
+<av-code language="typescript" filename="Example.lib.avt">
+    <pre>
+        const validation = SomeValidation.validate(data);
+
+        &#105;f (validation.success) {
+            // Proceed with further operations
+        } &#101;lse {
+            // Handle validation errors
+            console.error("Validation errors:", validation.errors);
+        }
+    </pre>
+</av-code>

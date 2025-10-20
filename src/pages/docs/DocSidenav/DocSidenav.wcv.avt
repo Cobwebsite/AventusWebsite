@@ -28,6 +28,25 @@
     </av-collapse>
 
     <av-collapse>
+        <div class="title" slot="header">error</div>
+        <ul>
+            <li><av-link to="/docs/error/generic">Generic</av-link></li>
+            <li><av-link to="/docs/error/void">VoidWithError</av-link></li>
+            <li><av-link to="/docs/error/result">ResultWithError</av-link></li>
+        </ul>
+    </av-collapse>
+
+    <av-collapse>
+        <div class="title" slot="header">http</div>
+        <ul>
+            <li><av-link to="/docs/http/introduction">Introduction</av-link></li>
+            <li><av-link to="/docs/http/request">Request</av-link></li>
+            <li><av-link to="/docs/http/router">Router</av-link></li>
+            <li><av-link to="/docs/http/route">Route</av-link></li>
+        </ul>
+    </av-collapse>
+
+    <av-collapse>
         <div class="title" slot="header">ram</div>
         <ul>
             <li><av-link to="/docs/ram/create">Create</av-link></li>
@@ -73,13 +92,19 @@
             <li><av-link to="/docs/lib/create">Create</av-link></li>
             <li><av-link to="/docs/lib/animation">Animation</av-link></li>
             <li><av-link to="/docs/lib/callback">Callback</av-link></li>
+            <li><av-link to="/docs/lib/compare_object">CompareObject</av-link></li>
+            <li><av-link to="/docs/lib/converter">Converter</av-link></li>
             <li><av-link to="/docs/lib/press_manager">PressManager</av-link></li>
             <li><av-link to="/docs/lib/drag_and_drop">Drag&Drop</av-link></li>
             <li><av-link to="/docs/lib/instance">Instance</av-link></li>
+            <li><av-link to="/docs/lib/json">Json</av-link></li>
+            <li><av-link to="/docs/lib/mutex">Mutex</av-link></li>
             <li><av-link to="/docs/lib/resize_observer">ResizeObserver</av-link></li>
             <li><av-link to="/docs/lib/resource_loader">ResourceLoader</av-link></li>
+            <li><av-link to="/docs/lib/sleep">Sleep</av-link></li>
+            <li><av-link to="/docs/lib/uuid">Uuid</av-link></li>
+            <li><av-link to="/docs/lib/value_from_object">ValueFromObject</av-link></li>
             <li><av-link to="/docs/lib/watcher">Watcher</av-link></li>
-            <li><av-link to="/docs/lib/tools">Tools</av-link></li>
         </ul>
     </av-collapse>
     <av-collapse>

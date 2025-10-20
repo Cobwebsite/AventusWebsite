@@ -17,15 +17,15 @@
             <div class="drop-title">Others</div>
             <div class="drop-content">
                 <div class="drop-item">
-                    <a href="https://sharp.aventusjs.com" target="_blank">
+                    <a href="https://aventussharp.com" target="_blank">
                         <div class="drop-icon">
-                            <av-img src="/img/aventus_sharp.svg"></av-img>
+                            <av-img src="/img/aventussharp.svg"></av-img>
                         </div>
                         <div class="drop-name" style="color:#368832">AventusSharp</div>
                     </a>
                 </div>
                 <div class="drop-item">
-                    <a href="https://laraventus.aventusjs.com" target="_blank">
+                    <a href="https://laraventus.com" target="_blank">
                         <div class="drop-icon">
                             <av-img src="/img/laraventus.svg"></av-img>
                         </div>

@@ -1,1 +1,30 @@
-<slot></slot>
+<h1>UI - Page With Form And Http</h1>
+<p>The <span class="cn">PageFormRoute</span> class extends <span class="cn"><av-link
+            to="/docs/ui/page_form">PageForm</av-link></span> to provide an automatic bridge between form pages and HTTP
+    route classes (<span class="cn">Aventus.HttpRoute</span>).</p>
+
+<p>It simplifies submitting forms directly to backend routes by automatically resolving the corresponding HTTP method
+    and handling the response.</p>
+
+<h2>Overview</h2>
+<p><span class="cn">PageFormRoute</span> is a specialized version of <span class="cn">PageForm</span> designed for
+    API-backed pages.
+    It automatically connects a form's submission to a backend route (defined by an <span
+        class="cn">Aventus.HttpRoute</span> class).
+    This eliminates repetitive code for sending form data to API endpoints and processing responses.</p>
+
+<h2>Example</h2>
+<av-doc-u-i-page-form-route-editor-1></av-doc-u-i-page-form-route-editor-1>
+<p>Or if controller contains multiple function</p>
+<av-doc-u-i-page-form-route-editor-2></av-doc-u-i-page-form-route-editor-2>
+
+<h2>How It Works</h2>
+<p>When a PageFormRoute is submitted:</p>
+<ul>
+    <li>It calls this.beforeSubmit() (optional override hook).</li>
+    <li>It retrieves the route via the abstract route() method.</li>
+    <li>It automatically calls the corresponding HTTP method (router[key]) of your defined route.</li>
+    <li>The response is passed to this.onResult(result) for custom handling.</li>
+</ul>
+<p>If the route class has multiple public methods but you don't specify one explicitly, an error is thrown to prevent
+    ambiguity.</p>

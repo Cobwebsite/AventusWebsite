@@ -63,6 +63,10 @@ export class CodeEditorFile extends Aventus.WebComponent implements Aventus.Defa
         else if(this.name.endsWith(".d.ts")) {
             this.icon = "/img/dts.svg";
         }
+        else if(this.name.endsWith("template.avt.ts")) {
+            this.icon = "/img/logo.svg";
+            this.type = "logic";
+        }
         else if(this.name.endsWith(".ts")) {
             this.icon = "/img/ts.svg";
         }

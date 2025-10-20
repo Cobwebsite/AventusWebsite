@@ -1,1 +1,47 @@
-<slot></slot>
+<h1>UI - Process</h1>
+<p>The <span class="cn">Process</span> class is a lightweight helper designed to standardize API or asynchronous
+    operation handling — especially when using Aventus <span class="cn">ResultWithError</span> or <span
+        class="cn">VoidWithError</span> patterns.</p>
+<p>It provides a unified way to:</p>
+
+<ul>
+    <li>Execute async operations that return an Aventus.ResultWithError or Aventus.VoidWithError.</li>
+    <li>Automatically handle and display errors via a configurable global handler.</li>
+    <li>Extract the success result when no errors occur.</li>
+</ul>
+
+
+<h2>Overview</h2>
+<p>When working with backend routes, forms, or other async processes in Aventus, many functions return structured
+    results containing both <span class="cn">value</span> and <span class="cn">errors</span>.
+    The <span class="cn">Process</span> utility simplifies how you handle these cases by centralizing error parsing and
+    handling.</p>
+
+<h2>Example</h2>
+<av-code language="ts">
+    <pre>
+// Sets up a global error handler that is automatically invoked whenever an operation fails.
+Process.configure({
+    handleErrors: (msg) => {
+        Alert.open({
+            title: "Execution error",
+            content: msg,
+        });
+    }
+});
+
+// Use the utility to handle an async route call
+async function login() {
+	const result = await Process.execute(new AuthRoute().login({
+		email: "user@test.com",
+		password: "secret"
+	}));
+
+	\if (result) {
+		console.log("Login success:", result);
+	} \else {
+		console.log("Login failed — errors were handled globally");
+	}
+}
+    </pre>
+</av-code>

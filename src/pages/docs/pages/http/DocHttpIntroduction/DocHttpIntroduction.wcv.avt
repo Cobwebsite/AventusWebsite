@@ -1,0 +1,15 @@
+<h1>Aventus HTTP Layer</h1>
+<p>The Aventus HTTP layer provides a high-level, type-safe abstraction on top of the native fetch API.
+    It simplifies common networking patterns such as:</p>
+
+<ul>
+    <li>Sending and handling HTTP requests</li>
+    <li>Managing JSON, text, and binary (blob) responses</li>
+    <li>Intercepting and transforming requests and responses</li>
+    <li>Managing errors in a consistent way</li>
+    <li>Automatically handling form data and method spoofing (PUT/DELETE)</li>
+    <li>Integrating with HttpRouter for clean endpoint definitions</li>
+</ul>
+
+<p>At its core, the system revolves around the HttpRequest class, a powerful yet flexible utility
+that makes HTTP communication declarative, predictable, and framework-agnostic.</p>

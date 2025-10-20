@@ -1,0 +1,57 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocErrorResult extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "ResultWithError in Aventus";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to use Aventus.ResultWithError to handle actions that produce a result along with potential errors. This class allows you to access both the result of an operation and any errors that may occur, providing a structured and type-safe approach to error handling in Aventus applications.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus ResultWithError",
+            "ResultWithError class",
+            "VoidWithError Aventus",
+            "Error handling with result Aventus",
+            "Structured error Aventus",
+            "Function result with errors",
+            "Aventus operation outcome",
+            "Type-safe result Aventus",
+        ];
+    }
+    //#endregion
+
+}

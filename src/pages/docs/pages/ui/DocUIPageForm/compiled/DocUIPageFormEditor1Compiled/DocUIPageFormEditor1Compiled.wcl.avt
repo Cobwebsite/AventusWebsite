@@ -1,0 +1,65 @@
+import { PageForm } from "Aventus@UI:Aventus.Navigation.package.avt";
+import { DocUIPageFormEditor1LoginAction, type DocUIPageFormEditor1LoginForm, type DocUIPageFormEditor1LoginResponse } from "../DocUIPageFormEditor1LoginAction.lib.avt";
+import { Email, Required } from "Aventus@UI:Aventus.Form.Validators.package.avt";
+import type { FormSchema, SubmitFunction } from "Aventus@UI:Aventus.Form.package.avt";
+import type { ResultWithError } from "Aventus@Main:Aventus.package.avt";
+import type { PageConfig } from "Aventus@UI:Aventus.Navigation.Page.package.avt";
+
+export class DocUIPageFormEditor1Compiled extends PageForm<DocUIPageFormEditor1LoginForm, DocUIPageFormEditor1LoginResponse> implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override formSchema(): FormSchema<DocUIPageFormEditor1LoginForm> {
+        return {
+            email: [Required, Email],
+            password: Required
+        };
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override async defineSubmit(submit: (fct: SubmitFunction<DocUIPageFormEditor1LoginForm, DocUIPageFormEditor1LoginResponse>) => Promise<ResultWithError<DocUIPageFormEditor1LoginResponse> | null>): Promise<ResultWithError<DocUIPageFormEditor1LoginResponse> | null> {
+        return await submit(DocUIPageFormEditor1LoginAction);
+    }
+    /**
+     * @inheritdoc
+     */
+    public override configure(): PageConfig {
+        return {
+            title: "Login",
+            description: "Login page",
+            destroy: true
+        };
+    }
+
+    protected override pageConfig(): Aventus.Navigation.PageFormConfig {
+        return {
+            autoLoading: true, // if true, any registered submit buttons will automatically show a loading state during form submission. Default is true.
+            submitWithEnter: true, // if true, pressing Enter on the last registered form field automatically submits the form. Default is true.
+        }
+    }
+    //#endregion
+
+}

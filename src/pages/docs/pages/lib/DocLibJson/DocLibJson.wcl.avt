@@ -1,0 +1,60 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocLibJson extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Json Utility in Aventus";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to use the Aventus.Json utility to serialize JavaScript class instances into JSON and deserialize JSON data back into class instances. This is useful for data transfer between client and server, storing data, or interacting with external APIs while maintaining class structure and type safety.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus Json",
+            "Serialize class Aventus",
+            "Deserialize JSON Aventus",
+            "classToJson Aventus",
+            "classFromJson Aventus",
+            "Data transfer Aventus",
+            "JSON utility Aventus",
+            "Client-server data Aventus",
+            "Object serialization Aventus",
+            "Type-safe JSON Aventus",
+        ];
+    }
+
+    //#endregion
+
+}

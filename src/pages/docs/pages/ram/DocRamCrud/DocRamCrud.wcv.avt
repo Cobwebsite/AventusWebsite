@@ -11,7 +11,7 @@
 <p>Inside Aventus RAM, each function to perfom operation can be written in two format. The first format is the normal.
     You call the function and get the result.</p>
 <p>The second format is the detailed. You call the function with <span class="cn">WithError</span> at the end to obtain more
-    informations.</p>
+    information.</p>
 <av-doc-ram-crud-editor-1></av-doc-ram-crud-editor-1>
 <p>For the future explanations, only the functions in normal format will be explained</p>
 <h3>Read</h3>

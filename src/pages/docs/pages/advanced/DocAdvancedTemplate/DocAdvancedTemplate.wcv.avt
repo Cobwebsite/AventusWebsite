@@ -31,9 +31,7 @@
 
 <h2>Using the template</h2>
 <p>Now if you right click on the <span class="cn">/src</span> folder and click on <span class="cn">Aventus :
-        Create...</span>. You can choose the
-    option
-    <span class="cn">Custom</span>. Inside the next dropdown, the option <span class="cn">Tailwind Template</span> must
+        Create...</span>. Inside the next dropdown, the option <span class="cn">Tailwind Template</span> must
     be available.
 </p>
 <av-img src="/img/doc/advanced/template/tailwind-template.png"></av-img>
@@ -189,6 +187,24 @@
         <av-col size="4" center>exec</av-col>
         <av-col size="8" center>
             <div>Exec a command. For example : <span class="cn">npm i</span></div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>showErrorMessage</av-col>
+        <av-col size="8" center>
+            <div>Show an error message inside the IDE</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>showWarningMessage</av-col>
+        <av-col size="8" center>
+            <div>Show a warning message inside the IDE</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>showInformationMessage</av-col>
+        <av-col size="8" center>
+            <div>Show an information message inside the IDE</div>
         </av-col>
     </av-row>
     <av-row>

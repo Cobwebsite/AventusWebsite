@@ -1,0 +1,127 @@
+<h1>Request</h1>
+<p>The <span class="cn">HttpRequest</span> class provides a robust abstraction over the native fetch API.
+    It integrates tightly with Aventus error management system (<span class="cn">ResultWithError</span>, <span
+        class="cn">VoidWithError</span>) and supports advanced features like automatic JSON/FormData handling,
+    middleware, and method spoofing.</p>
+
+<h2>Overview</h2>
+<p>The class is designed to simplify request management while remaining flexible and framework-agnostic.</p>
+<p>Key features:</p>
+<ul>
+    <li>Automatic serialization (JSON or FormData)</li>
+    <li>Optional method spoofing (_method fields for PUT/DELETE)</li>
+    <li>Unified error/result handling</li>
+    <li>Lifecycle hooks for pre- and post-processing requests</li>
+    <li>Built-in support for file uploads and nested object serialization</li>
+</ul>
+
+<h2>Static Configuration</h2>
+<p>Registers global configuration options that affect all HTTP requests.</p>
+<av-code language="ts">
+    <pre>
+HttpRequest.configure({
+  beforeSend: async (request) => {
+    // Add auth headers or cancel request
+    request.setHeader("Authorization", "Bearer token");
+    return new VoidWithError();
+  },
+  responseMiddleware: async (response, request) => {
+    // Global response interceptor
+    &#105;f(response.containsCode(401)) {
+        location.path = "/login";
+    }
+    return response;
+  },
+});
+    </pre>
+</av-code>
+
+<h2>Create a request</h2>
+<p>Creates a new HTTP request via constructor:</p>
+<av-code language="ts">
+    <pre>
+        const request = new HttpRequest("/api/users", HttpMethod.POST, {
+            name: "Alice",
+            age: 28,
+        });
+    </pre>
+</av-code>
+
+<p>Or with setters:</p>
+<av-code language="ts">
+    <pre>
+        const request = new HttpRequest("/api/users");
+        request.setMethod(HttpMethod.POST);
+        request.setBody({
+            name: "Alice",
+            age: 28,
+        });
+        // request.enableMethodSpoofing();
+    </pre>
+</av-code>
+
+<h2>Body Serialization</h2>
+<p>The <span class="cn">HttpRequest</span> class automatically detects how to encode the body:</p>
+<ul>
+    <li>If it contains File objects or arrays of files → it uses <span class="cn">FormData</span>.</li>
+    <li>Otherwise → it serializes the body as JSON</li>
+</ul>
+
+<h2>Query Methods</h2>
+<p>All query methods return either a <span class="cn">ResultWithError&lt;T&gt;</span> or a <span class="cn">VoidWithError</span>, ensuring safe and typed responses.</p>
+
+<h3>query</h3>
+<p>Executes the request and returns the raw Response object, wrapped in a ResultWithError.</p>
+<av-code language="ts">
+    <pre>
+const result = await request.query();
+if (!result.success) return console.error(result.errors);
+    </pre>
+</av-code>
+
+<h3>queryJSON</h3>
+<p>Parses the response as JSON and automatically transforms it into the expected type.</p>
+<av-code language="ts">
+    <pre>
+const result = await request.queryJSON&lt;User&gt;();
+if (result.success) console.log(result.result);
+    </pre>
+</av-code>
+
+<h3>queryTxt</h3>
+<p>Reads the response as plain text.</p>
+<av-code language="ts">
+    <pre>
+const result = await request.queryTxt();
+console.log(result.result);
+    </pre>
+</av-code>
+
+<h3>queryBlob</h3>
+<p>Reads the response as a binary blob, useful for files or images.</p>
+<av-code language="ts">
+    <pre>
+const result = await request.queryBlob();
+saveAs(result.result, "file.pdf");
+    </pre>
+</av-code>
+
+<h3>queryVoid</h3>
+<p>For endpoints that return no data (e.g., DELETE requests or 204 No Content responses).</p>
+<av-code language="ts">
+    <pre>
+const result = await request.queryVoid();
+if (!result.success) console.error(result.errors);
+    </pre>
+</av-code>
+
+<h2>Integration with HttpRouter</h2>
+<p>You can optionally provide a <span class="cn">HttpRouter</span> instance to prefix relative URLs or manage base routes dynamically.</p>
+<av-code language="ts">
+    <pre>
+const userRouter = new HttpRouter({ url: "/api/users" });
+const req = new HttpRequest("/1", HttpMethod.GET);
+const result = await req.queryJSON&lt;User&gt;(userRouter);
+    </pre>
+</av-code>
+<p>This produces a request to /api/users/1.</p>

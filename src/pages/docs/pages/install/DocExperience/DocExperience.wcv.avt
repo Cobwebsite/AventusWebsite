@@ -16,7 +16,7 @@
     <li><b>State</b><av-icon icon="arrow-right"></av-icon> Create a state or a state manager</li>
 </ul>
 
-<h3>The compilation informations</h3>
+<h3>The compilation information</h3>
 <p>If you have at least one build, on the bottom of the vscode you can see a tick and a time. If you hover this text,
     you will see the last time your build was compiled.</p>
 <div class="img-cont">

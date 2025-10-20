@@ -73,7 +73,7 @@
     \tcolor: red; // This ll change the behavior of the current webcomponent
     }
 </av-code>
-<p>You can find more informations about the style <av-link to="/docs/wc/style">here.</av-link></p>
+<p>You can find more information about the style <av-link to="/docs/wc/style">here.</av-link></p>
 <h2>The logic</h2>
 <p>When you create a new file *.wcl.avt you can notice that the file has region. This is set to allow developer to order
     the code. Each region has a goal. You can remove it but we advice you to keep it.</p>

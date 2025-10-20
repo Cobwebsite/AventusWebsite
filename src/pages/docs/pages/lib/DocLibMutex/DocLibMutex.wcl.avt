@@ -1,0 +1,61 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocLibMutex extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Mutex in Aventus";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to use the Aventus Mutex for synchronizing access to shared resources in concurrent environments. Discover how to wait for, acquire, and release mutexes safely, and use safeRun, safeRunAsync, safeRunLast, and safeRunLastAsync to execute code sequentially, preventing race conditions and ensuring data consistency.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus Mutex",
+            "Mutex class Aventus",
+            "Mutual exclusion Aventus",
+            "Concurrent programming Aventus",
+            "waitOne Aventus",
+            "release Aventus",
+            "safeRun Aventus",
+            "safeRunAsync Aventus",
+            "safeRunLast Aventus",
+            "safeRunLastAsync Aventus",
+            "Thread synchronization Aventus",
+            "Prevent race conditions Aventus",
+        ];
+    }
+    //#endregion
+
+}

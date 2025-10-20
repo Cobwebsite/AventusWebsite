@@ -1,0 +1,29 @@
+<h1>compareObject</h1>
+<p>If you want compare if two objects contains the same information you can use the function <span
+        class="cn">Aventus.compareObject</span></p>
+
+<av-code language="typescript" filename="Example.lib.avt">
+    <pre>
+        export function test() {
+        &nbsp;
+            const obj1 = {
+                name:"John",
+                todos: ["todo1", "todo2"]
+            }
+        &nbsp;
+            const obj2 = {
+                name:"John",
+                todos: ["todo2", "todo1"]
+            }
+        &nbsp;
+            const obj3 = {
+                name:"John",
+                todos: ["todo1", "todo3"]
+            }
+        &nbsp;
+            console.log(Aventus.compareObject(obj1, obj2)); // true
+            console.log(Aventus.compareObject(obj1, obj3)); // false
+        &nbsp;
+        }
+    </pre>
+</av-code>

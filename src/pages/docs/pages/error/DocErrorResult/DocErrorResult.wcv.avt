@@ -1,0 +1,24 @@
+
+<h1>ResultWithError</h1>
+<p><span class="cn">Aventus.ResultWithError</span> is similar to Aventus.VoidWithError, but it also includes a result
+    value along with
+    potential errors. It represents the outcome of an action that produces a specific result, such as the result of a
+    function call or an operation. This class allows you to handle both the result of the action and any errors that may
+    occur during its execution.</p>
+
+<av-code language="typescript" filename="Example.lib.avt">
+    <pre>
+       const result = SomeOperation.execute();
+
+        &#105;f (result.success) {
+            // Handle successful result
+            console.log("Result:", result.result);
+        } &#101;lse {
+            // Handle errors
+            console.error("Error:", result.errors[0].message);
+        }
+    </pre>
+</av-code>
+
+<p>Below you can find an implementation example for a function that must transform a string in lowercase.</p>
+<av-doc-error-result-editor-1></av-doc-error-result-editor-1>

@@ -1,3 +1,4 @@
+import { ShortcutManager, SpecialTouch } from "Aventus@UI:Aventus.Lib.package.avt";
 import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
 
 export class DocUIShortcut extends DocGenericPage implements Aventus.DefaultComponent {
@@ -24,8 +25,8 @@ export class DocUIShortcut extends DocGenericPage implements Aventus.DefaultComp
 
     //#region methods
     /**
-	 * @inheritdoc
-	 */
+     * @inheritdoc
+     */
     protected override Title(): string {
         return "How to Use the ShortcutManager Library in AventusJs";
     }
@@ -55,6 +56,18 @@ export class DocUIShortcut extends DocGenericPage implements Aventus.DefaultComp
         ];
     }
 
+    protected override postCreation(): void {
+        // Register a simple shortcut: Ctrl+S
+        ShortcutManager.subscribe([SpecialTouch.Control, "s"], () => console.log("saving"));
+
+        const overriding = () => {
+                console.log("Temporary override for Ctrl+S");
+        }
+        // Register a temporary shortcut that replaces the existing Ctrl+S
+        ShortcutManager.subscribe([SpecialTouch.Control, "s"], overriding, { replaceTemp: true });
+        // Later, remove the temporary shortcut and restore the previous one
+        ShortcutManager.unsubscribe([SpecialTouch.Control, "s"], overriding);
+    }
     //#endregion
 
 }
