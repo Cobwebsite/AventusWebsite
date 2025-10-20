@@ -1,0 +1,129 @@
+<h1>UI - Image</h1>
+<p>The <span class="cn">av-img</span> component is an advanced image element that supports raster and SVG images,
+    dynamic resizing, display modes (stretch, contains, cover), and optional caching.</p>
+<p>It replaces the standard <span class="cn">&lt;img&gt;</span> tag when you need consistent, reactive sizing or when
+    you want to embed and colorize SVGs directly.</p>
+
+<h2>Concept</h2>
+<p><span class="cn">av-img</span> manages the rendering and scaling of images inside flexible containers. It
+    automatically adjusts its internal image or SVG to match the container's size and the selected display mode.</p>
+<p>It supports:</p>
+<ul>
+    <li>Automatic aspect ratio calculation</li>
+    <li>SVG inline loading with color control</li>
+    <li>Optional caching via base64 encoding</li>
+    <li>Dynamic resizing with ResizeObserver</li>
+</ul>
+
+<av-code language="html">
+    <pre>
+        &lt;av-img src="/assets/example.jpg" mode="cover"&gt;&lt;/av-img&gt;
+    </pre>
+</av-code>
+
+<h2>Attributes</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Attribute</av-col>
+        <av-col size="4" center>Type</av-col>
+        <av-col size="4" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>src</av-col>
+        <av-col size="4" center>string</av-col>
+        <av-col size="4" center>Path or URL of the image (supports .svg).</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>mode</av-col>
+        <av-col size="4" center>'stretch' | 'contains' | 'cover'</av-col>
+        <av-col size="4" center>Defines how the image fits inside the container. Default: "contains".</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>cache</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>If true, loads the image as a Base64 string for faster access and offline
+            availability.</av-col>
+    </av-row>
+</div>
+
+<h2>Modes</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Mode</av-col>
+        <av-col size="4" center>Description</av-col>
+        <av-col size="4" center>Behavior</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>stretch</av-col>
+        <av-col size="4" center>Fills the entire container regardless of aspect ratio.</av-col>
+        <av-col size="4" center>May distort the image.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>contains</av-col>
+        <av-col size="4" center>Scales the image to fit within the container while maintaining aspect ratio.</av-col>
+        <av-col size="4" center>No cropping; may leave empty space.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>cover</av-col>
+        <av-col size="4" center>Scales the image to completely fill the container while maintaining aspect ratio.</av-col>
+        <av-col size="4" center>May crop part of the image.</av-col>
+    </av-row>
+</div>
+<av-code language="html">
+    <pre>
+        &lt;av-img src="/photos/banner.svg" mode="cover"&gt;&lt;/av-img&gt;
+        &lt;av-img src="/photos/logo.svg" mode="contains"&gt;&lt;/av-img&gt;
+    </pre>
+</av-code>
+
+<h2>SVG Support</h2>
+<p>If the src ends with .svg, the file is loaded inline, allowing you to style or animate it using CSS variables.</p>
+<av-code language="html">
+    <pre>
+        &lt;av-img src="/icons/mail.svg"&gt;&lt;/av-img&gt;
+    </pre>
+</av-code>
+<p>You can override colors directly via CSS variables:</p>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Variable</av-col>
+        <av-col size="4" center>Description</av-col>
+        <av-col size="4" center>Default</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--img-color</av-col>
+        <av-col size="4" center>General SVG color base</av-col>
+        <av-col size="4" center>none</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--img-stroke-color</av-col>
+        <av-col size="4" center>Stroke color for SVG lines</av-col>
+        <av-col size="4" center>var(--img-color)</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--img-fill-color</av-col>
+        <av-col size="4" center>Fill color for SVG lines</av-col>
+        <av-col size="4" center>var(--img-color)</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--img-color-transition</av-col>
+        <av-col size="4" center>Transition for color changes</av-col>
+        <av-col size="4" center>none</av-col>
+    </av-row>
+</div>
+
+<p>This allows theme-based or hover-driven color changes for inline SVGs.</p>
+
+<h2>Caching</h2>
+<p>If the cache attribute is set, <span class="cn">av-img</span> uses the <span class="cn">Aventus ResourceLoader</span>
+    to load and convert the image into a Base64 string.</p>
+<p>This is useful for:</p>
+<ul>
+    <li>Avoiding multiple network requests for frequently used images</li>
+    <li>Faster rendering of static assets</li>
+</ul>
+<av-code language="html">
+    <pre>
+        &lt;av-img src="/logos/company.png" cache&gt;&lt;/av-img&gt;
+    </pre>
+</av-code>

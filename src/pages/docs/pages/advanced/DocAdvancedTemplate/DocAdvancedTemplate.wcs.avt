@@ -1,3 +1,22 @@
 :host {
-	
+	av-col {
+        flex-direction: column;
+    }
+	av-row:not(.header) {
+
+        av-col:nth-child(1) {
+			text-align: left;
+		}
+		av-col:nth-child(2) {
+			text-align: justify;
+		}
+
+		av-link {
+			display: contents;
+		}
+	}
+
+	av-row:not(.header):nth-child(odd) {
+		background-color: rgba(0, 0, 0, 0.2);
+	}
 }

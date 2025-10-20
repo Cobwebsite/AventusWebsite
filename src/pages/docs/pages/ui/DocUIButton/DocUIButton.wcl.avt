@@ -1,0 +1,59 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocUIButton extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+	 * @inheritdoc
+	 */
+    protected override Title(): string {
+        return "How to Use the Button Component in AventusJs";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to use the abstract Button component in AventusJs to handle user interactions and logic without predefined styles. This guide covers event handling, custom implementations, and integration with your own UI design system.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs Button",
+            "Aventus abstract components",
+            "button logic AventusJs",
+            "custom button implementation",
+            "Aventus event handling",
+            "UI logic framework",
+            "Aventus component architecture",
+            "frontend logic abstraction",
+            "Aventus web development guide",
+        ];
+    }
+
+    //#endregion
+
+}

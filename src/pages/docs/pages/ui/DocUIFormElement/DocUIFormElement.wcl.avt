@@ -1,0 +1,58 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocUIFormElement extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+	 * @inheritdoc
+	 */
+    protected override Title(): string {
+        return "How to Use the FormElement Component in AventusJs";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to use the abstract FormElement component in AventusJs to manage individual form field logic. This guide covers data binding, validation handling, error propagation, and integration within the Form component, without predefined styles.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs FormElement",
+            "form field logic",
+            "Aventus abstract components",
+            "form validation AventusJs",
+            "Aventus data binding",
+            "form element synchronization",
+            "Aventus form architecture",
+            "Form and FormElement integration",
+            "frontend logic framework",
+        ];
+    }
+    //#endregion
+
+}

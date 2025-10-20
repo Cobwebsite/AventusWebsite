@@ -1,0 +1,60 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocUIModal extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+	 * @inheritdoc
+	 */
+    protected override Title(): string {
+        return "How to Use the Modal Component in AventusJs";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to use the abstract Modal component in AventusJs to manage modal display logic without predefined styles. This guide explains how to handle opening, closing, and state control for modals, enabling integration with your custom UI design.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs Modal",
+            "modal logic AventusJs",
+            "Aventus abstract components",
+            "modal state management",
+            "Aventus UI logic",
+            "open close modal AventusJs",
+            "modal visibility control",
+            "un-styled modal component",
+            "Aventus component architecture",
+            "frontend modal handling",
+        ];
+    }
+
+    //#endregion
+
+}

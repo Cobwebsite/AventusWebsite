@@ -45,7 +45,7 @@
     change the name of the first child).</p>
 <p>The <span class="cn">value</span> is the value set / remove on the path.</p>
 <p>Like the property, the main advantage of Watch variables is that they can be used inside <span
-        class="cn"><av-router-link state="/docs/wc/interpolation">interpolation</av-router-link></span> and others view
+        class="cn"><av-link to="/docs/wc/interpolation">interpolation</av-link></span> and others view
     transformations.</p>
 <av-code language="html" filename="Example.wcv.avt">
     <pre>
@@ -85,9 +85,9 @@
 
 <h2>Using watch outisde component</h2>
 <p>You can watch what occur on an object everywhere on your code. To achieve that, you must use the <span
-        class="cn">Aventus.Watcher.get</span> and work only with the result of the function. <av-router-link
-        class="font-sm" state="/docs/lib/watcher">More
-        info</av-router-link></p>
+        class="cn">Aventus.Watcher.get</span> and work only with the result of the function. <av-link
+        class="font-sm" to="/docs/lib/watcher">More
+        info</av-link></p>
 <av-code language="typescript" filename="Test.lib.avt">
     export function createWatcher() {
     \tlet watchableObj = Aventus.Watcher.get({}, (action: WatchAction, path: string, element: any) =&gt; {

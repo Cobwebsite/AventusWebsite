@@ -1,0 +1,46 @@
+import { ToastManager } from "Aventus@UI:Aventus.Toast.package.avt";
+import { DocUIToastEditor1Toast } from "../DocUIToastEditor1Toast/DocUIToastEditor1Toast.wcl.avt";
+
+export class DocUIToastEditor1Compiled extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+
+    protected showToast() {
+        DocUIToastEditor1Toast.add({
+            icon: "done_all",
+            message: "Aventus is so fun to use",
+            title: "It's working",
+        });
+    }
+
+    protected override postCreation(): void {
+        ToastManager.configure({
+            defaultDelay: 5000,
+            defaultPosition: "top right",
+            defaultToast: DocUIToastEditor1Toast,
+            heightLimitPercent: 50
+        });
+    }
+    //#endregion
+
+}

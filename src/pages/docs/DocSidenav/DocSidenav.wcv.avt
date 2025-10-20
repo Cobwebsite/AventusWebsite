@@ -3,90 +3,183 @@
     <av-collapse>
         <div class="title" slot="header">install</div>
         <ul>
-            <li><av-router-link state="/docs/introduction">Introduction</av-router-link></li>
-            <li><av-router-link state="/docs/installation">Install Aventus</av-router-link></li>
-            <li><av-router-link state="/docs/experience">Dev experience</av-router-link></li>
-            <li><av-router-link state="/docs/first_app">Your first app</av-router-link></li>
+            <li><av-link to="/docs/introduction">Introduction</av-link></li>
+            <li><av-link to="/docs/installation">Install Aventus</av-link></li>
+            <li><av-link to="/docs/experience">Dev experience</av-link></li>
+            <li><av-link to="/docs/first_app">Your first app</av-link></li>
         </ul>
     </av-collapse>
 
     <av-collapse>
         <div class="title" slot="header">configuration</div>
         <ul>
-            <li><av-router-link state="/docs/config/basic_prop">Generic properties</av-router-link></li>
-            <li><av-router-link state="/docs/config/build">Builds</av-router-link></li>
-            <li><av-router-link state="/docs/config/static">Statics</av-router-link></li>
-            <li><av-router-link state="/docs/config/lib">Import libs</av-router-link></li>
+            <li><av-link to="/docs/config/basic_prop">Generic properties</av-link></li>
+            <li><av-link to="/docs/config/build">Builds</av-link></li>
+            <li><av-link to="/docs/config/static">Statics</av-link></li>
+            <li><av-link to="/docs/config/lib">Import libs</av-link></li>
         </ul>
     </av-collapse>
 
     <av-collapse>
         <div class="title" slot="header">data</div>
         <ul>
-            <li><av-router-link state="/docs/data/create">Create</av-router-link></li>
+            <li><av-link to="/docs/data/create">Create</av-link></li>
         </ul>
     </av-collapse>
-    
+
+    <av-collapse>
+        <div class="title" slot="header">error</div>
+        <ul>
+            <li><av-link to="/docs/error/generic">Generic</av-link></li>
+            <li><av-link to="/docs/error/void">VoidWithError</av-link></li>
+            <li><av-link to="/docs/error/result">ResultWithError</av-link></li>
+        </ul>
+    </av-collapse>
+
+    <av-collapse>
+        <div class="title" slot="header">http</div>
+        <ul>
+            <li><av-link to="/docs/http/introduction">Introduction</av-link></li>
+            <li><av-link to="/docs/http/request">Request</av-link></li>
+            <li><av-link to="/docs/http/router">Router</av-link></li>
+            <li><av-link to="/docs/http/route">Route</av-link></li>
+        </ul>
+    </av-collapse>
+
     <av-collapse>
         <div class="title" slot="header">ram</div>
         <ul>
-            <li><av-router-link state="/docs/ram/create">Create</av-router-link></li>
-            <li><av-router-link state="/docs/ram/crud">CRUD operation</av-router-link></li>
-            <li><av-router-link state="/docs/ram/listen_changes">Listen changes</av-router-link></li>
-            <li><av-router-link state="/docs/ram/mixin">Extend data</av-router-link></li>
+            <li><av-link to="/docs/ram/create">Create</av-link></li>
+            <li><av-link to="/docs/ram/crud">CRUD operation</av-link></li>
+            <li><av-link to="/docs/ram/listen_changes">Listen changes</av-link></li>
+            <li><av-link to="/docs/ram/mixin">Extend data</av-link></li>
         </ul>
     </av-collapse>
 
     <av-collapse>
         <div class="title" slot="header">state</div>
         <ul>
-            <li><av-router-link state="/docs/state/create">Create</av-router-link></li>
-            <li><av-router-link state="/docs/state/change">Change state</av-router-link></li>
-            <li><av-router-link state="/docs/state/listen_changes">Listen state change</av-router-link></li>
+            <li><av-link to="/docs/state/create">Create</av-link></li>
+            <li><av-link to="/docs/state/change">Change to</av-link></li>
+            <li><av-link to="/docs/state/listen_changes">Listen to change</av-link></li>
         </ul>
     </av-collapse>
 
     <av-collapse>
         <div class="title" slot="header">webcomponent</div>
         <ul>
-            <li><av-router-link state="/docs/wc/create">Create</av-router-link></li>
-            <li><av-router-link state="/docs/wc/style">Style</av-router-link></li>
-            <li><av-router-link state="/docs/wc/inheritance">Inhertiance</av-router-link></li>
-            <li><av-router-link state="/docs/wc/attribute">Attribute</av-router-link></li>
-            <li><av-router-link state="/docs/wc/property">Property</av-router-link></li>
-            <li><av-router-link state="/docs/wc/watch">Watch</av-router-link></li>
-            <li><av-router-link state="/docs/wc/interpolation">Interpolation</av-router-link></li>
-            <li><av-router-link state="/docs/wc/element">Select element</av-router-link></li>
-            <li><av-router-link state="/docs/wc/injection">Injection</av-router-link></li>
-            <li><av-router-link state="/docs/wc/event">Event</av-router-link></li>
-            <li><av-router-link state="/docs/wc/binding">Binding</av-router-link></li>
-            <li><av-router-link state="/docs/wc/state">State</av-router-link></li>
-            <li><av-router-link state="/docs/wc/loop">Loop</av-router-link></li>
-            <li><av-router-link state="/docs/wc/condition">Condition</av-router-link></li>
+            <li><av-link to="/docs/wc/create">Create</av-link></li>
+            <li><av-link to="/docs/wc/style">Style</av-link></li>
+            <li><av-link to="/docs/wc/inheritance">Inhertiance</av-link></li>
+            <li><av-link to="/docs/wc/attribute">Attribute</av-link></li>
+            <li><av-link to="/docs/wc/property">Property</av-link></li>
+            <li><av-link to="/docs/wc/watch">Watch</av-link></li>
+            <li><av-link to="/docs/wc/signal">Signal</av-link></li>
+            <li><av-link to="/docs/wc/interpolation">Interpolation</av-link></li>
+            <li><av-link to="/docs/wc/element">Select element</av-link></li>
+            <li><av-link to="/docs/wc/injection">Injection</av-link></li>
+            <li><av-link to="/docs/wc/event">Event</av-link></li>
+            <li><av-link to="/docs/wc/binding">Binding</av-link></li>
+            <li><av-link to="/docs/wc/state">State</av-link></li>
+            <li><av-link to="/docs/wc/loop">Loop</av-link></li>
+            <li><av-link to="/docs/wc/condition">Condition</av-link></li>
         </ul>
     </av-collapse>
 
     <av-collapse>
         <div class="title" slot="header">lib</div>
         <ul>
-            <li><av-router-link state="/docs/lib/create">Create</av-router-link></li>
-            <li><av-router-link state="/docs/lib/animation">Animation</av-router-link></li>
-            <li><av-router-link state="/docs/lib/callback">Callback</av-router-link></li>
-            <li><av-router-link state="/docs/lib/press_manager">PressManager</av-router-link></li>
-            <li><av-router-link state="/docs/lib/drag_and_drop">Drag&Drop</av-router-link></li>
-            <li><av-router-link state="/docs/lib/instance">Instance</av-router-link></li>
-            <li><av-router-link state="/docs/lib/resize_observer">ResizeObserver</av-router-link></li>
-            <li><av-router-link state="/docs/lib/resource_loader">ResourceLoader</av-router-link></li>
-            <li><av-router-link state="/docs/lib/watcher">Watcher</av-router-link></li>
-            <li><av-router-link state="/docs/lib/tools">Tools</av-router-link></li>
+            <li><av-link to="/docs/lib/create">Create</av-link></li>
+            <li><av-link to="/docs/lib/animation">Animation</av-link></li>
+            <li><av-link to="/docs/lib/callback">Callback</av-link></li>
+            <li><av-link to="/docs/lib/compare_object">CompareObject</av-link></li>
+            <li><av-link to="/docs/lib/converter">Converter</av-link></li>
+            <li><av-link to="/docs/lib/press_manager">PressManager</av-link></li>
+            <li><av-link to="/docs/lib/drag_and_drop">Drag&Drop</av-link></li>
+            <li><av-link to="/docs/lib/instance">Instance</av-link></li>
+            <li><av-link to="/docs/lib/json">Json</av-link></li>
+            <li><av-link to="/docs/lib/mutex">Mutex</av-link></li>
+            <li><av-link to="/docs/lib/resize_observer">ResizeObserver</av-link></li>
+            <li><av-link to="/docs/lib/resource_loader">ResourceLoader</av-link></li>
+            <li><av-link to="/docs/lib/sleep">Sleep</av-link></li>
+            <li><av-link to="/docs/lib/uuid">Uuid</av-link></li>
+            <li><av-link to="/docs/lib/value_from_object">ValueFromObject</av-link></li>
+            <li><av-link to="/docs/lib/watcher">Watcher</av-link></li>
+        </ul>
+    </av-collapse>
+    <av-collapse>
+        <div class="title" slot="header">i18n</div>
+        <ul>
+            <li><av-link to="/docs/i18n/config">Config</av-link></li>
+            <li><av-link to="/docs/i18n/usage">Usage</av-link></li>
+        </ul>
+    </av-collapse>
+    <av-collapse>
+        <div class="title" slot="header">UI</div>
+        <ul>
+            <li><av-link to="/docs/ui/introduction">Introduction</av-link></li>
+            <li>
+                <av-collapse>
+                    <div class="sub-title" slot="header">Form</div>
+                    <ul>
+                        <li><av-link to="/docs/ui/button">Button</av-link></li>
+                        <li><av-link to="/docs/ui/form">Form</av-link></li>
+                        <li><av-link to="/docs/ui/form_element">FormElement</av-link></li>
+                    </ul>
+                </av-collapse>
+            </li>
+            <li>
+                <av-collapse>
+                    <div class="sub-title" slot="header">Layout</div>
+                    <ul>
+                        <li><av-link to="/docs/ui/col_row">Col / Row</av-link></li>
+                        <li><av-link to="/docs/ui/collapse">Collapse</av-link></li>
+                        <li><av-link to="/docs/ui/grid_helper">Grid Helper</av-link></li>
+                        <li><av-link to="/docs/ui/image">Image</av-link></li>
+                        <li><av-link to="/docs/ui/scrollable">Scrollable</av-link></li>
+                        <li><av-link to="/docs/ui/tabs">Tabs</av-link></li>
+                    </ul>
+                </av-collapse>
+            </li>
+            <li>
+                <av-collapse>
+                    <div class="sub-title" slot="header">Interaction</div>
+                    <ul>
+                        <li><av-link to="/docs/ui/modal">Modal</av-link></li>
+                        <li><av-link to="/docs/ui/toast">Toast</av-link></li>
+                    </ul>
+                </av-collapse>
+            </li>
+            <li>
+                <av-collapse>
+                    <div class="sub-title" slot="header">Navigation</div>
+                    <ul>
+                        <li><av-link to="/docs/ui/link">Link</av-link></li>
+                        <li><av-link to="/docs/ui/page">Page</av-link></li>
+                        <li><av-link to="/docs/ui/page_form">Page Form</av-link></li>
+                        <li><av-link to="/docs/ui/page_form_http">Page Form Http</av-link></li>
+                        <li><av-link to="/docs/ui/router">Router</av-link></li>
+                    </ul>
+                </av-collapse>
+            </li>
+             <li>
+                <av-collapse>
+                    <div class="sub-title" slot="header">Lib</div>
+                    <ul>
+                        <li><av-link to="/docs/ui/process">Process</av-link></li>
+                        <li><av-link to="/docs/ui/shortcut">Shortcut</av-link></li>
+                    </ul>
+                </av-collapse>
+            </li>
         </ul>
     </av-collapse>
     <av-collapse>
         <div class="title" slot="header">advanced</div>
         <ul>
-            <li><av-router-link state="/docs/advanced/template">Template</av-router-link></li>
-            <li><av-router-link state="/docs/advanced/npm_export">Npm Export</av-router-link></li>
-            <li><av-router-link state="/docs/advanced/storybook">Storybook</av-router-link></li>
+            <li><av-link to="/docs/advanced/template">Template</av-link></li>
+            <li><av-link to="/docs/advanced/store">Store</av-link></li>
+            <li><av-link to="/docs/advanced/npm_export">Npm Export</av-link></li>
+            <li><av-link to="/docs/advanced/storybook">Storybook</av-link></li>
         </ul>
     </av-collapse>
 </av-scrollable>

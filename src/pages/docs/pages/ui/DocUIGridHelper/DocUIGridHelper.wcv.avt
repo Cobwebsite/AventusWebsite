@@ -1,0 +1,252 @@
+<h1>UI - Grid Helper</h1>
+
+<p>The <span class="cn">av-grid-helper</span> component provides an interactive visual layout grid with rulers, guides,
+    and snapping.
+    It's designed to help developers and designers align elements precisely within a web layout, similar to tools found
+    in Figma, Photoshop, or web editors.</p>
+
+
+<h2>Concept</h2>
+<p><span class="cn">av-grid-helper</span> overlays your interface with rulers, a customizable grid, and draggable
+    guides.
+    It can be toggled on or off, locked to prevent editing, and remembers guide positions between sessions (using <span
+        class="cn">localStorage</span>).</p>
+
+<p>The component can show:</p>
+
+<ul>
+    <li>Horizontal and vertical rulers (with custom units)</li>
+    <li>A configurable grid (columns and rows)</li>
+    <li>Draggable guide lines (with magnetic snapping)</li>
+    <li>Keyboard shortcuts for quick control</li>
+</ul>
+
+<h2>Example</h2>
+
+<av-doc-u-i-grid-helper-editor-1></av-doc-u-i-grid-helper-editor-1>
+
+<h2>Features</h2>
+
+<ul>
+    <li>
+        <strong>Customizable Units : </strong>
+        <span>Supports multiple measurement units: px, rem, cm, mm, in, and pt.</span>
+    </li>
+    <li>
+        <strong>Smart Grid Rendering : </strong>
+        <span>Automatically calculates the number of rows and columns based on container size and settings.</span>
+    </li>
+    <li>
+        <strong>Rulers : </strong>
+        <span>Displays rulers on the top and left with configurable step sizes and major ticks.</span>
+    </li>
+    <li>
+        <strong>Draggable Guides : </strong>
+        <span>Drag from a ruler to create a guide. Double-click on a ruler to add a guide at a specific position.</span>
+    </li>
+    <li>
+        <strong>Magnetic Snapping : </strong>
+        <span>Guides snap to grid steps if the pointer is close enough (controlled by the magnetic property).</span>
+    </li>
+    <li>
+        <strong>Keyboard Shortcuts : </strong>
+        <span>Control visibility and locking with keyboard combinations.</span>
+    </li>
+    <li>
+        <strong>Persistent Guides : </strong>
+        <span>Saves and restores guide positions using localStorage.</span>
+    </li>
+</ul>
+
+<h2>Attributes</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Attribute</av-col>
+        <av-col size="4" center>Type</av-col>
+        <av-col size="4" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>unit</av-col>
+        <av-col size="4" center>'px' | 'rem' | 'cm' | 'mm' | 'in' | 'pt'</av-col>
+        <av-col size="4" center>Unit of measurement used for grid and rulers.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>nb_col</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Number of grid columns (auto-calculated if 0).</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>nb_row</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Number of grid rows (auto-calculated if 0).</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>col_width</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Column width (used if nb_col = 0).</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>row_height</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Row height (used if nb_row = 0).</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>show_grid</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Toggles visibility of the grid.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>show_ruler</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Toggles visibility of rulers.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>show_guide</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Toggles visibility of guide lines.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>visible</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Shows or hides the entire helper overlay.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>lock</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Locks/unlocks interactions with guides and rulers.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>ruler_size</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Thickness (height/width) of rulers.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>step</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Base step for ruler tick marks and snapping.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>step_big</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Distance between major ticks on rulers. If 0, uses step.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>magnetic</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Magnetic snapping distance in units. Guides snap to grid when within this threshold</av-col>
+    </av-row>
+</div>
+
+
+<h2>Shortcuts</h2>
+<p>Press <span class="cn">Ctrl + K</span> and then press one of the following keys:</p>
+<div class="table shortcuts">
+    <av-row class="header">
+        <av-col size="6" center>Shortcut</av-col>
+        <av-col size="6" center>Action</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center><span class="cn">Ctrl + K</span> <span class="cn">V</span></av-col>
+        <av-col size="6" center>Toggle visibility</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center><span class="cn">Ctrl + K</span> <span class="cn">G</span></av-col>
+        <av-col size="6" center>Toggle grid</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center><span class="cn">Ctrl + K</span> <span class="cn">R</span></av-col>
+        <av-col size="6" center>Toggle rulers</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center><span class="cn">Ctrl + K</span> <span class="cn">J</span></av-col>
+        <av-col size="6" center>Toggle guides</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center><span class="cn">Ctrl + K</span> <span class="cn">L</span></av-col>
+        <av-col size="6" center>Toggle lock state</av-col>
+    </av-row>
+</div>
+
+<h2>Interactions</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="6" center>Action</av-col>
+        <av-col size="6" center>Behavior</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>Double-click a ruler</av-col>
+        <av-col size="6" center>Prompts for a coordinate and adds a guide.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>Click and drag from ruler</av-col>
+        <av-col size="6" center>Creates and drags a new guide interactively.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>Double-click a guide</av-col>
+        <av-col size="6" center>Deletes the guide.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>Lock mode enabled</av-col>
+        <av-col size="6" center>Prevents guide creation or movement.</av-col>
+    </av-row>
+</div>
+
+<h2>Methods</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="6" center>Method</av-col>
+        <av-col size="6" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>inPx(value: number): number</av-col>
+        <av-col size="6" center>Converts a unit-based value to pixels.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>fromPx(valuePx: number): number</av-col>
+        <av-col size="6" center>Converts pixels to the current unit.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>createGuideFromLeft(left: number)</av-col>
+        <av-col size="6" center>Creates a vertical guide at a given position.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>createGuideFromTop(top: number)</av-col>
+        <av-col size="6" center>Creates a horizontal guide at a given position.</av-col>
+    </av-row>
+</div>
+
+<h2>CSS Variables</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Variable</av-col>
+        <av-col size="4" center>Default</av-col>
+        <av-col size="4" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--ruler-color</av-col>
+        <av-col size="4" center>white</av-col>
+        <av-col size="4" center>Color of ruler background.</av-col>
+    </av-row>
+</div>
+
+<h2>Lock Button</h2>
+<p>Located in the top-left corner, this toggle lets you enable or disable editing of guides and rulers.</p>
+<ul>
+    <li>Open Lock Icon : Guides can be moved or created.</li>
+    <li>Closed Lock Icon : Grid and guides are locked.</li>
+</ul>
+
+<h2>Persistence</h2>
+<p>GridHelper saves its guide positions automatically in <span class="cn">localStorage</span>.
+Each instance uses its <span class="cn">id</span> as a storage key (<span class="cn">grid-helper</span> by default).
+Reloading the page restores the same guide layout.</p>
+
+<h2>Developer Notes</h2>
+<ul>
+    <li>Use it in development environments to help with layout alignment.</li>
+    <li>Not recommended for production UI display.</li>
+    <li>Guides are draggable and magnetic for precision alignment.</li>
+</ul>
+
+
+

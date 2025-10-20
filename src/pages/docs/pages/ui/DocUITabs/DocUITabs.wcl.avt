@@ -1,0 +1,60 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocUITabs extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+	 * @inheritdoc
+	 */
+    protected override Title(): string {
+        return "How to Use the Tabs Component in AventusJs";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to use the abstract Tabs component in AventusJs to manage tab logic and active states without predefined styles. This guide explains how to switch between tabs, handle events, and integrate tabbed content within your own UI.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs Tabs",
+            "abstract Tabs component",
+            "tab logic AventusJs",
+            "active tab management",
+            "Aventus abstract components",
+            "tab switching logic",
+            "un-styled tabs",
+            "frontend tab architecture",
+            "Aventus content organization",
+            "UI tab logic AventusJs",
+        ];
+    }
+
+    //#endregion
+
+}

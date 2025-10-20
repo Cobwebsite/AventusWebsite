@@ -1,0 +1,32 @@
+import { BaseEditor } from "../../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
+import { DocUIToastEditor1Compiled } from "../../compiled/DocUIToastEditor1Compiled/DocUIToastEditor1Compiled.wcl.avt";
+
+export class DocUIToastEditor1 extends BaseEditor implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override defineResult(): HTMLElement | null {
+		return new DocUIToastEditor1Compiled();
+	}
+	//#endregion
+	
+}

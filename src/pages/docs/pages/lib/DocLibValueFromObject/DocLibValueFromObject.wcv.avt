@@ -1,0 +1,55 @@
+<h1>getValueFromObject</h1>
+<p>The <span class="cn">Aventus.getValueFromObject</span> function is particularly useful when you need to retrieve a
+    value from a nested object
+    structure in JavaScript. This function helps you access specific values within complex objects without needing to
+    write extensive code for traversal and error handling.</p>
+
+<av-code language="typescript" filename="Example.lib.avt">
+    <pre>
+        export function test() {
+            &nbsp;
+            const userProfile = {
+                user: {
+                    profile: {
+                        address: {
+                            city: 'New York'
+                        }
+                    }
+                }
+            };
+            &nbsp;
+            // Using getValueFromObject to retrieve the city value
+            const city = Aventus.getValueFromObject('user.profile.address.city', userProfile);
+            &nbsp;
+            console.log(city); // Output: New York
+            &nbsp;
+        }
+    </pre>
+</av-code>
+
+<h1>setValueToObject</h1>
+<p>The <span class="cn">Aventus.setValueToObject</span> function is invaluable when you need to set a value within a
+    nested object structure in
+    JavaScript. This function streamlines the process of updating specific properties within complex objects without the
+    need for extensive manual traversal and error handling.</p>
+
+<av-code language="typescript" filename="Example.lib.avt">
+    <pre>
+        export function test() {
+            &nbsp;
+            let userProfile = {
+                user: {
+                    profile: {
+                        address: {
+                            city: 'New York'
+                        }
+                    }
+                }
+            };
+            &nbsp;
+            // Using setValueToObject to update the city value
+            setValueToObject('user.profile.address.city', userProfile, 'Los Angeles');
+            &nbsp;
+        }
+    </pre>
+</av-code>

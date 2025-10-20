@@ -13,7 +13,7 @@
     declare the variable
     inside the <span class="cn">*.wcl.avt.</span> You can open this file and if you have sections, the variables section
     will be underline. You
-    can <span class="cn">alt + .</span> and click on "Import missing view element". This will create the two variables with a <span
+    can <span class="cn">ctrl + .</span> and click on <span class="cn">"Import missing view element"</span>. This will create the two variables with a <span
         class="cn">protected</span>
     modifier and a decorator <span class="cn">@ViewElement</span>. This decorator is set to have a quick vision on which
     variables are

@@ -6,7 +6,7 @@
         class="cn">@eventname=""</span></p>
 <p>With the code below, an alert saying "Hello" will be opened when the button is clicked.</p>
 <av-doc-wc-event-editor-1></av-doc-wc-event-editor-1>
-<p>If you have an <av-router-link state="/docs/lib/callback">Aventus.Callback</av-router-link> instead of an event, you
+<p>If you have an <av-link to="/docs/lib/callback">Aventus.Callback</av-link> instead of an event, you
     can use
     this syntax to subscribe to the trigger.</p>
 <av-doc-wc-event-editor-2></av-doc-wc-event-editor-2>

@@ -1,0 +1,2 @@
+<button @press="openModal">Open modal</button>
+<div>Result is : {{ this.txt }}</div>

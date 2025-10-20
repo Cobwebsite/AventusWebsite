@@ -3,25 +3,25 @@
     <av-collapse>
         <div class="title" slot="header">init</div>
         <ul>
-            <li><av-router-link state="/tutorial/introduction">Introduction</av-router-link></li>
-            <li><av-router-link state="/tutorial/init">Init</av-router-link></li>
-            <li><av-router-link state="/tutorial/app">Create app</av-router-link></li>
+            <li><av-link to="/tutorial/introduction">Introduction</av-link></li>
+            <li><av-link to="/tutorial/init">Init</av-link></li>
+            <li><av-link to="/tutorial/app">Create app</av-link></li>
         </ul>
     </av-collapse>
     <av-collapse>
         <div class="title" slot="header">data</div>
         <ul>
-            <li><av-router-link state="/tutorial/data">Data</av-router-link></li>
-            <li><av-router-link state="/tutorial/ram">RAM</av-router-link></li>
+            <li><av-link to="/tutorial/data">Data</av-link></li>
+            <li><av-link to="/tutorial/ram">RAM</av-link></li>
         </ul>
     </av-collapse>
     <av-collapse>
         <div class="title" slot="header">component</div>
         <ul>
-            <li><av-router-link state="/tutorial/display_todo">Display Todo</av-router-link></li>
-            <li><av-router-link state="/tutorial/using_icon">Using Icon</av-router-link></li>
-            <li><av-router-link state="/tutorial/create_todo">Create Todo</av-router-link></li>
-            <li><av-router-link state="/tutorial/list_todo">List Todos</av-router-link></li>
+            <li><av-link to="/tutorial/display_todo">Display Todo</av-link></li>
+            <li><av-link to="/tutorial/using_icon">Using Icon</av-link></li>
+            <li><av-link to="/tutorial/create_todo">Create Todo</av-link></li>
+            <li><av-link to="/tutorial/list_todo">List Todos</av-link></li>
         </ul>
     </av-collapse>
 </av-scrollable>

@@ -1,0 +1,58 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocErrorVoid extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "VoidWithError in Aventus";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Understand Aventus.VoidWithError, a class used to handle actions that may produce errors but do not return a specific result. Learn how to check for success, access errors, and structure your code for safer and more maintainable error handling in Aventus applications.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus VoidWithError",
+            "VoidWithError class",
+            "Error handling Aventus",
+            "Action outcome Aventus",
+            "Structured error handling",
+            "Check action success Aventus",
+            "Handle validation errors Aventus",
+            "Aventus operation result",
+        ];
+    }
+
+    //#endregion
+
+}

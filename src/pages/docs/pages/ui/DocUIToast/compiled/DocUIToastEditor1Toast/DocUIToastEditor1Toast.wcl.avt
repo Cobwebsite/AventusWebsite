@@ -1,0 +1,67 @@
+import { ToastElement } from "Aventus@UI:Aventus.Toast.package.avt";
+import { sleep } from "Aventus@Main:Aventus.package.avt";
+import type { IconType } from "MaterialIcon:MaterialIcon.package.avt";
+
+export type ToastOptions = Aventus.Toast.ToastOptions & {
+    icon?: IconType;
+    title?: string,
+    message?: string,
+};
+
+export class DocUIToastEditor1Toast extends ToastElement<ToastOptions> implements Aventus.DefaultComponent {
+
+    //#region static
+    public static override add(options: ToastOptions): Promise<boolean> {
+        return super.add(options);
+    }
+    //#endregion
+
+
+    //#region props
+    @Attribute()
+    private closing!: boolean;
+    //#endregion
+
+
+    //#region variables
+    private icon?: IconType;
+
+    @Watch()
+    public toastTitle: string = "";
+    @Watch()
+    public toastMessage: string = "";
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    protected override close() {
+        if(this.onHideCallback) {
+            this.closing = true;
+            this.is_active = false;
+            this.onHideCallback(false);
+            sleep(300).then(() => {
+                this.remove();
+            });
+        }
+    }
+    /**
+     * @inheritdoc
+     */
+    public override setOptions(options: ToastOptions): Aventus.Asyncable<void> {
+        if(options.icon != undefined) this.icon = options.icon;
+        if(options.title != undefined) this.toastTitle = options.title;
+        if(options.message != undefined) this.toastMessage = options.message;
+    }
+    protected getIcon(): IconType {
+        if(this.icon !== undefined) return this.icon;
+        return 'error';
+    }
+
+    //#endregion
+
+}

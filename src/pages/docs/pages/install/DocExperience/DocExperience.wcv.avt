@@ -9,24 +9,24 @@
 <p>If you click on it, a dropdown appears and you can select what you want to create.</p>
 <ul class="list-commands">
     <li><b>Init</b><av-icon icon="arrow-right"></av-icon> Create a new project</li>
-    <li><b>Component</b><av-icon icon="arrow-right"></av-icon> Create a display</li>
-    <li><b>Data</b><av-icon icon="arrow-right"></av-icon> Create a data struct</li>
+    <li><b>Component</b><av-icon icon="arrow-right"></av-icon> Create a webcomponent</li>
+    <li><b>Data</b><av-icon icon="arrow-right"></av-icon> Create a data structure</li>
     <li><b>RAM</b><av-icon icon="arrow-right"></av-icon> Create a storage</li>
     <li><b>Library</b><av-icon icon="arrow-right"></av-icon> Create a file to write any code</li>
-    <li><b>Socket</b><av-icon icon="arrow-right"></av-icon> Create a socket</li>
     <li><b>State</b><av-icon icon="arrow-right"></av-icon> Create a state or a state manager</li>
-    <li><b>Custom</b><av-icon icon="arrow-right"></av-icon> Use one of your <av-router-link
-            state="/advanced/templates">templates</av-router-link></li>
 </ul>
 
-<h3>The compilation informations</h3>
+<h3>The compilation information</h3>
 <p>If you have at least one build, on the bottom of the vscode you can see a tick and a time. If you hover this text,
     you will see the last time your build was compiled.</p>
-<av-img src="/img/doc/install/experience/last_compiled.png"></av-img>
-
+<div class="img-cont">
+    <av-img src="/img/doc/install/experience/last_compiled.png"></av-img>
+</div>
 <h3>The live server</h3>
 <p>If you have at least one build, on the bottom of the vscode you can see a play button. If you click on it, the live
     sever will start and a stop button will replace the play button.</p>
-<av-img src="/img/doc/install/experience/last_compiled.png"></av-img>
+<div class="img-cont">
+    <av-img src="/img/doc/install/experience/start_server.png"></av-img>
+</div>
 <p>You can customize the live server inside the vscode
     settings under <b>Aventus &gt; Liveserver</b>.</p>

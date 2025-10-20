@@ -1,0 +1,281 @@
+<av-code-editor name="Tabs">
+    <av-code language="typescript" filename="Example/Example.wcl.avt">
+         <pre>
+            export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+            &nbsp;
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="Example/Example.wcs.avt">
+        <pre>
+            :host {
+                &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Example/Example.wcv.avt">
+        <pre>
+            &lt;av-tabs&gt;
+                &lt;av-tab label="Page1" icon="home"&gt;
+                    &lt;p&gt;Page 1&lt;/p&gt;
+                &lt;/av-tab&gt;
+                &lt;av-tab label="Page2"&gt;
+                    &lt;p&gt;Page 2&lt;/p&gt;
+                &lt;/av-tab&gt;
+                &lt;av-tab label="Page3" count="3"&gt;
+                    &lt;p&gt;Page 3&lt;/p&gt;
+                &lt;/av-tab&gt;
+            &lt;/av-tabs&gt;
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Tab/Tab.wcl.avt">
+        <pre>
+            import type { IconType } from "MaterialIcon:MaterialIcon.package.avt";
+            &nbsp;
+            export class Tab extends Aventus.Layout.Tabs.Tab implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+                @Property()
+                public label: string = "";
+                @Property()
+                public count!: number;
+                @Property()
+                public icon?: IconType;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+                /**
+                 * @inheritdoc
+                 */
+                public override identifier(): string {
+                    return this.label;
+                }
+            &nbsp;
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="Tab/Tab.wcs.avt">
+        <pre>
+            :host {
+            	width: 100%;
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Tab/Tab.wcv.avt">
+        <pre>
+            &lt;slot&gt;&lt;/slot&gt;
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="TabHeader/TabHeader.wcl.avt">
+        <pre>
+            import type { Tab } from "../Tab/Tab.wcl.avt";
+            &nbsp;
+            export class TabHeader extends Aventus.Layout.Tabs.TabHeader&lt;Tab&gt; implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+                @ViewElement()
+                protected countEl!: HTMLSpanElement;
+                @ViewElement()
+                protected iconEl!: MaterialIcon.Icon;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+                /**
+                 * @inheritdoc
+                 */
+                public override render(): Aventus.Asyncable&lt;void&gt; {
+                    this.innerHTML = this.tab.label;
+                    \if(this.tab.count) {
+                        this.countEl.innerHTML = this.tab.count + '';
+                    }
+                    \if(this.tab.icon) {
+                        this.iconEl.icon = this.tab.icon;
+                    }
+                }
+            &nbsp;
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="TabHeader/TabHeader.wcs.avt">
+        <pre>
+            :host {
+            	align-items: center;
+            	background: none;
+            	border: none;
+            	border-bottom: 2px solid transparent;
+            	color: #94a3b8;
+            	cursor: pointer;
+            	display: flex;
+            	font-size: 0.875rem;
+            	font-weight: 500;
+            	padding: 1rem 0.5rem;
+            &nbsp;
+            	mi-icon {
+            		font-size: 1rem;
+            		margin-right: 0.5rem;
+            	}
+            &nbsp;
+            	mi-icon[icon=""] {
+            		display: none;
+            	}
+            &nbsp;
+            	.count {
+            		background-color: #334155;
+            		border-radius: 9999px;
+            		color: #cbd5e1;
+            		font-size: 0.75rem;
+            		margin-left: 0.5rem;
+            		padding: 0.125rem 0.5rem;
+            	}
+            &nbsp;
+            	.count:empty {
+            		display: none;
+            	}
+            }
+            &nbsp;
+            :host(:hover) {
+            	border-color: #334155;
+            	color: #cbd5e1;
+            }
+            &nbsp;
+            :host([active]) {
+            	border-color: #e5540e;
+            	color: #e5540e;
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="TabHeader/TabHeader.wcv.avt">
+        <pre>
+            &lt;mi-icon icon="" @element="iconEl"&gt;&lt;/mi-icon&gt;
+            &lt;span&gt;&lt;slot&gt;&lt;/slot&gt;&lt;/span&gt;
+            &lt;span class="count" @element="countEl"&gt;&lt;/span&gt;
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="Tabs/Tabs.wcl.avt">
+        <pre>
+            import type { Tab } from "../Tab/Tab.wcl.avt";
+            import { TabHeader } from "../TabHeader/TabHeader.wcl.avt";
+            &nbsp;
+            export class Tabs extends Aventus.Layout.Tabs.Tabs&lt;Tab, TabHeader&gt; implements Aventus.DefaultComponent {
+            &nbsp;
+                //#region static
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region props
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region variables
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region constructor
+            &nbsp;
+                //#endregion
+            &nbsp;
+            &nbsp;
+                //#region methods
+                /**
+                 * @inheritdoc
+                 */
+                protected override defineTabHeader(): new (...args: any[]) =&gt; TabHeader {
+                    return TabHeader;
+                }
+            &nbsp;
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="Tabs/Tabs.wcs.avt">
+        <pre>
+            :host {
+            	width: 100%;
+            &nbsp;
+            	.header {
+            		border-bottom: 1px solid var(--border);
+            		display: flex;
+            		gap: 2rem;
+            		margin-top: 2rem;
+            	}
+            &nbsp;
+            	.body {
+            		width: 100%;
+            	}
+            }
+            &nbsp;
+        </pre>
+    </av-code>
+    <av-code language="html" filename="Tabs/Tabs.wcv.avt">
+        <pre>
+            &lt;slot&gt;&lt;/slot&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

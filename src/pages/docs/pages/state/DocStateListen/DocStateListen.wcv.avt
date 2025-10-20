@@ -27,7 +27,7 @@
 
 <p>If you need to know the current state of the manager, you can at any time call the function <span
         class="cn">getState</span> to obtain the current state object instance. Furthermore, you can use operator <span
-        class="cn">instanceof</span> to obtain more informations and share some data between subscribers.</p>
+        class="cn">instanceof</span> to obtain more information and share some data between subscribers.</p>
 <av-doc-state-listen-editor-3></av-doc-state-listen-editor-3>
 <h2>Callback on the State</h2>
 <p>You can also override the three methods directly inside a <span class="cn">State</span> class.</p>

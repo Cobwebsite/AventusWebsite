@@ -1,0 +1,9 @@
+import type { ResultWithError } from "Aventus@Main:Aventus.package.avt";
+
+export type DocUIPageFormEditor1LoginForm = { email: string; password: string; };
+export type DocUIPageFormEditor1LoginResponse = { token: string; };
+
+export function DocUIPageFormEditor1LoginAction(form: DocUIPageFormEditor1LoginForm): Promise<ResultWithError<DocUIPageFormEditor1LoginResponse>> {
+    // login action
+    throw 'not implemented';
+}

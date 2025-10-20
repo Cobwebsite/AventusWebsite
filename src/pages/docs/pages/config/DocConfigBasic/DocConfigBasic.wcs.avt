@@ -1,14 +1,21 @@
 :host {
+	av-col {
+		flex-direction: column;
+	}
 	.table {
-		av-dynamic-row:not(.header) {
+		av-row:not(.header) {
 
-			av-dynamic-col:nth-child(2) {
+			av-col:nth-child(2) {
 				text-align: justify;
 			}
 
-			av-router-link {
+			av-link {
 				display: contents;
 			}
+		}
+
+		av-row:not(.header):nth-child(odd) {
+			background-color: rgba(0, 0, 0, 0.2);
 		}
 
 		.constraint {
@@ -20,7 +27,7 @@
 
 	.mandatory::after {
 		content: "*";
-		margin-left: 5px;
 		font-weight: bold;
+		margin-left: 5px;
 	}
 }

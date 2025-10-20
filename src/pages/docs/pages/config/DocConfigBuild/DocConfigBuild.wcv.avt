@@ -6,136 +6,257 @@
 </p>
 
 <div class="table">
-    <av-dynamic-row class="header">
-        <av-dynamic-col size="4" center>Name</av-dynamic-col>
-        <av-dynamic-col size="8" center>Description</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>name</av-dynamic-col>
-        <av-dynamic-col size="8" center>
+    <av-row class="header">
+        <av-col size="4" center>Name</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>module</av-col>
+        <av-col size="8" center>This will override the module value of the <av-link
+                to="/docs/config/basic_prop">basic config</av-link>.
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>name</av-col>
+        <av-col size="8" center>
             <div>This is the name for the build. If the build is exported as a library, the
                 library name
                 will be <span class="cn">$module</span>@<span class="cn">$name</span></div>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="darker">
-        <av-dynamic-col size="4" center>src</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is an array of string to define which folders Aventus will watch. For
-            example, if you set "./src/*", all files inside the folder "src" will be compiled.
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>disabled</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is a boolean to define if the build is active or not.
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>description</av-col>
+        <av-col size="8" center>This will override the description value of the <av-link
+                to="/docs/config/basic_prop">basic config</av-link>.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>tags</av-col>
+        <av-col size="8" center>This will override the tags value of the <av-link
+                to="/docs/config/basic_prop">basic config</av-link>.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>documentation</av-col>
+        <av-col size="8" center>This will override the documentation value of the <av-link
+                to="/docs/config/basic_prop">basic config</av-link>.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>repository</av-col>
+        <av-col size="8" center>This will override the repository value of the <av-link
+                to="/docs/config/basic_prop">basic config</av-link>.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>organization</av-col>
+        <av-col size="8" center>This will override the organization value of the <av-link
+                to="/docs/config/basic_prop">basic config</av-link>.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>readme</av-col>
+        <av-col size="8" center>This will override the readme value of the <av-link
+                to="/docs/config/basic_prop">basic config</av-link>.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>version</av-col>
+        <av-col size="8" center>This will override the version value of the <av-link
+                to="/docs/config/basic_prop">basic config</av-link>.
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>disabled</av-col>
+        <av-col size="8" center>This is a boolean to define if the build is active or not.
             <span class="constraint">Must satisfy: <span class="cn">true|false</span></span>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="darker">
-        <av-dynamic-col size="4" center>compile</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is an array to define how to compile your build.
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="darker lvl-1">
-        <av-dynamic-col size="4" center>input</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is string or an array to define the entries points of your program. If not set, all the files matching the build.src will be compiled. Otherwise, only the needed file by your entries points will be compiled
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="darker lvl-1">
-        <av-dynamic-col size="4" center>output</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is string to define where the compiled JavaScript file must be written.
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>hideWarnings</av-col>
+        <av-col size="8" center>This will override the hideWarnings value of the <av-link
+                to="/docs/config/basic_prop">basic config</av-link>.
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>componentPrefix</av-col>
+        <av-col size="8" center>This will override the componentPrefix value of the <av-link
+                to="/docs/config/basic_prop">basic config</av-link>.
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>src</av-col>
+        <av-col size="8" center>This is an array of string to define which folders Aventus will watch. For
+            example, if you set "./src/*", all files inside the folder "src" will be watched.
+        </av-col>
+    </av-row>
+
+    <av-row>
+        <av-col size="4" center>compile</av-col>
+        <av-col size="8" center>This is an array to define how to compile your build.
+        </av-col>
+    </av-row>
+    <av-row class="darker lvl-1">
+        <av-col size="4" center>input</av-col>
+        <av-col size="8" center>This is string or an array to define the entries points of your program. If not
+            set, all the files matching the build.src will be compiled. Otherwise, only the needed file by your entries
+            points will be compiled
+        </av-col>
+    </av-row>
+    <av-row class="darker lvl-1">
+        <av-col size="4" center>output</av-col>
+        <av-col size="8" center>This is string to define where the compiled JavaScript file must be written.
             <span class="constraint">Must satisfy: ^\\S+\\.js</span>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="darker lvl-1">
-        <av-dynamic-col size="4" center>outputNpm</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is a string or an array to define where to export your project to npm project. It can also be a object to customize settings.
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="darker lvl-2">
-        <av-dynamic-col size="4" center>path</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is a string or an array to define where to export your project to npm project
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row  class="darker lvl-2">
-        <av-dynamic-col size="4" center>packageJson</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is a boolean to define if you need a package.json when you are exporting
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row  class="darker lvl-1">
-        <av-dynamic-col size="4" center>package</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is string to define where the .package.avt file must be written.
+        </av-col>
+    </av-row>
+    <av-row class="darker lvl-1">
+        <av-col size="4" center>outputNpm</av-col>
+        <av-col size="8" center>This is a string or an array to define where to export your project to npm
+            project. It can also be a object to customize settings.
+        </av-col>
+    </av-row>
+    <av-row class="darker lvl-2">
+        <av-col size="4" center>path</av-col>
+        <av-col size="8" center>This is a string or an array to define where to export your project to npm
+            project
+        </av-col>
+    </av-row>
+    <av-row class="darker lvl-2">
+        <av-col size="4" center>packageJson</av-col>
+        <av-col size="8" center>This is a boolean to define if you need a package.json when you are exporting
+        </av-col>
+    </av-row>
+    <av-row class="darker lvl-2">
+        <av-col size="4" center>npmName</av-col>
+        <av-col size="8" center>This is a string to define the name inside the package.json when you are
+            exporting
+        </av-col>
+    </av-row>
+    <av-row class="darker lvl-2">
+        <av-col size="4" center>manifest</av-col>
+        <av-col size="8" center>This is a boolean to define if you need to generate manifest for your
+            components. This will help developers to use your components inside the IDE.
+        </av-col>
+    </av-row>
+    <av-row class="darker lvl-2">
+        <av-col size="4" center>live</av-col>
+        <av-col size="8" center>This is a boolean to define if the npm content must be recompiled on change.
+            Default is false
+        </av-col>
+    </av-row>
+    <av-row class="darker lvl-1">
+        <av-col size="4" center>package</av-col>
+        <av-col size="8" center>This is string to define where the .package.avt file must be written.
             <span class="constraint">Must satisfy: ^\\S+\\.package\\.avt</span>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>stories</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is an object to configure how to export storybook for your package.
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="lvl-1">
-        <av-dynamic-col size="4" center>output</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is a string to define where to export storybook
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="lvl-1">
-        <av-dynamic-col size="4" center>workspace</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is a string to define where to add the .storybook folder
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="lvl-1">
-        <av-dynamic-col size="4" center>live</av-dynamic-col>
-        <av-dynamic-col size="8" center>
-            <span>This is a boolean to define if the story content must be recompiled on change or only with the command</span>
+        </av-col>
+    </av-row>
+    <av-row class="darker lvl-1">
+        <av-col size="4" center>compressed</av-col>
+        <av-col size="8" center>This is boolean to define if the final build must be compressed.
+        </av-col>
+    </av-row>
+    <av-row class="darker lvl-1">
+        <av-col size="4" center>i18n</av-col>
+        <av-col size="8" center>This is string to define where to export i18n files. You can also define an
+            array of object to have more options
+        </av-col>
+    </av-row>
+    <av-row class="darker lvl-2">
+        <av-col size="4" center>output</av-col>
+        <av-col size="8" center>This is string to define where to export i18n files.
+        </av-col>
+    </av-row>
+    <av-row class="darker lvl-2">
+        <av-col size="4" center>mount</av-col>
+        <av-col size="8" center>This is string to define the http path to mount your i18n files.
+        </av-col>
+    </av-row>
+    <av-row class="darker lvl-2">
+        <av-col size="4" center>mode</av-col>
+        <av-col size="8" center>
+            <span>This is string to define how aventus must compile your i18n.</span>
+            <ul>
+                <li>singleFile: export all translations inside a single file</li>
+                <li>oneToOne: export translation inside the same file name as input</li>
+                <li>groupComponent: group components transaltions inside a single file</li>
+                <li>basedOnAttribute: WIP</li>
+                <li>include: WIP</li>
+            </ul>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>stories</av-col>
+        <av-col size="8" center>This is an object to configure how to export storybook for your package.
+        </av-col>
+    </av-row>
+    <av-row class="lvl-1">
+        <av-col size="4" center>output</av-col>
+        <av-col size="8" center>This is a string to define where to export storybook
+        </av-col>
+    </av-row>
+    <av-row class="lvl-1">
+        <av-col size="4" center>workspace</av-col>
+        <av-col size="8" center>This is a string to define where to add the .storybook folder
+        </av-col>
+    </av-row>
+    <av-row class="lvl-1">
+        <av-col size="4" center>live</av-col>
+        <av-col size="8" center>
+            <span>This is a boolean to define if the story content must be recompiled on change or only with the
+                command</span>
             <span class="cn" style="width: fit-content">Aventus : Build storybook</span>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="lvl-1">
-        <av-dynamic-col size="4" center>prefix</av-dynamic-col>
-        <av-dynamic-col size="8" center>This is a string to prefix all your stories to group stories
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="lvl-1">
-        <av-dynamic-col size="4" center>format</av-dynamic-col>
-        <av-dynamic-col size="8" center>
+        </av-col>
+    </av-row>
+    <av-row class="lvl-1">
+        <av-col size="4" center>prefix</av-col>
+        <av-col size="8" center>This is a string to prefix all your stories to group stories
+        </av-col>
+    </av-row>
+    <av-row class="lvl-1">
+        <av-col size="4" center>format</av-col>
+        <av-col size="8" center>
             <span>This is a string to define how Aventus must deal with elements to export to storybook.</span>
             <ul>
                 <li>all: export all elements</li>
                 <li>public: only public elements will be exported</li>
+                <li>protected: only public + protected elements will be exported</li>
                 <li>manual: only elements with tag Storybook will be exported</li>
             </ul>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="darker">
-        <av-dynamic-col size="4" center>outsideModule</av-dynamic-col>
-        <av-dynamic-col size="8" center>
+        </av-col>
+    </av-row>
+    <av-row class="lvl-1">
+        <av-col size="4" center>srcBaseUrl</av-col>
+        <av-col size="8" center>
+            <span>This is a string to define a base url to link file to your repo.</span>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>outsideModule</av-col>
+        <av-col size="8" center>
             <div>This is an array of string to define which folders Aventus will watch. The
                 watched file will be compiled outside of the module. For example, if you define a class "Test" inside a
                 module "HelloWorld", you can reach the class by typing <span class="cn">window.Test</span> instead of
                 <span class="cn">window.HelloWorld.Test</span>
             </div>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>namespaceStrategy</av-dynamic-col>
-        <av-dynamic-col size="8" center>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>namespaceStrategy</av-col>
+        <av-col size="8" center>
             <span>This is a string to define how Aventus must deal with namespace.</span>
             <ul>
                 <li>manual: the developer will write the namespace by himself</li>
                 <li>followFolders: the namespace will be set based on the current folder and the namespaceRoot property
                 </li>
+                <li>followFoldersCamelCase: same as followFolders but formatted in camel case
+                </li>
                 <li>rules: the namespace will be set based on the namespaceRules property</li>
             </ul>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="darker">
-        <av-dynamic-col size="4" center>namespaceRoot</av-dynamic-col>
-        <av-dynamic-col size="8" center>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>namespaceRoot</av-col>
+        <av-col size="8" center>
             <span>This is a string to define what is the namespace root folder (only for followFolders strategy)</span>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>namespaceRules</av-dynamic-col>
-        <av-dynamic-col size="8" center>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>namespaceRules</av-col>
+        <av-col size="8" center>
             <span>This is an object to define the namespace based on the uri where the key is the namespace and the
                 value is an array of string to match uri</span>
             <av-code language="json">
@@ -148,48 +269,43 @@
                 }
                 </pre>
             </av-code>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="darker">
-        <av-dynamic-col size="4" center>dependances</av-dynamic-col>
-        <av-dynamic-col size="8" center>
-            <span>This is an array of <av-router-link state="/docs/config/lib">dependance options</av-router-link> to
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>dependances</av-col>
+        <av-col size="8" center>
+            <span>This is an object of <av-link to="/docs/config/lib">dependance options</av-link> to
                 use code and/or autocompletion inside your code.</span>
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>nodeModulesDir</av-dynamic-col>
-        <av-dynamic-col size="8" center>The path where the node_modules are installed. By default the value is ./node_modules
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="darker">
-        <av-dynamic-col size="4" center>module</av-dynamic-col>
-        <av-dynamic-col size="8" center>This will override the module value of the <av-router-link
-                state="/docs/config/basic_prop">basic config</av-router-link>.
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>version</av-dynamic-col>
-        <av-dynamic-col size="8" center>This will override the version value of the <av-router-link
-                state="/docs/config/basic_prop">basic config</av-router-link>.
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="darker">
-        <av-dynamic-col size="4" center>componentPrefix</av-dynamic-col>
-        <av-dynamic-col size="8" center>This will override the componentPrefix value of the <av-router-link
-                state="/docs/config/basic_prop">basic config</av-router-link>.
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>hideWarnings</av-dynamic-col>
-        <av-dynamic-col size="8" center>This will override the hideWarnings value of the <av-router-link
-                state="/docs/config/basic_prop">basic config</av-router-link>.
-        </av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row class="darker">
-        <av-dynamic-col size="4" center>avoidParsingInsideTags</av-dynamic-col>
-        <av-dynamic-col size="8" center>This will override the avoidParsingInsideTags value of the <av-router-link
-                state="/docs/config/basic_prop">basic config</av-router-link>.
-        </av-dynamic-col>
-    </av-dynamic-row>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>nodeModulesDir</av-col>
+        <av-col size="8" center>The path where the node_modules are installed. By default the value is
+            ./node_modules
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>avoidParsingInsideTags</av-col>
+        <av-col size="8" center>This will override the avoidParsingInsideTags value of the <av-link
+                to="/docs/config/basic_prop">basic config</av-link>.
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>i18n</av-col>
+        <av-col size="8" center>Configuration for i18n</av-col>
+    </av-row>
+    <av-row class="lvl-1">
+        <av-col size="4" center>locales</av-col>
+        <av-col size="8" center>This is an array of string to define locales that is required inside your
+            project</av-col>
+    </av-row>
+    <av-row class="lvl-1">
+        <av-col size="4" center>fallback</av-col>
+        <av-col size="8" center>Define the fallback locale</av-col>
+    </av-row>
+    <av-row class="lvl-1">
+        <av-col size="4" center>autoRegister</av-col>
+        <av-col size="8" center>Define if aventus must autoRegister your i18n files. Default is
+            true</av-col>
+    </av-row>
 </div>

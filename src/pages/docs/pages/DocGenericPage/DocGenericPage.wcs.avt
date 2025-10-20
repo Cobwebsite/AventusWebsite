@@ -55,8 +55,8 @@
 
 	}
 
-	av-router-link,
-	av-router-link {
+	av-link,
+	av-link {
 		color: var(--link-color);
 		cursor: pointer;
 		-webkit-tap-highlight-color: transparent;
@@ -77,6 +77,7 @@
 
 	.table {
 		margin: 15px 0;
+
 		.header {
 			// border-bottom: 1px solid var(--text-color);
 			font-size: 20px;
@@ -84,7 +85,7 @@
 			letter-spacing: 1px;
 			padding: 0px;
 
-			av-dynamic-col {
+			av-col {
 				text-align: center;
 			}
 		}
@@ -97,13 +98,16 @@
 			width: 100%;
 		}
 
-		av-dynamic-row {
+		av-row {
 			align-items: center;
 			padding: 10px;
 
-			av-dynamic-col {
+			av-col {
 				padding: 0 15px;
 				text-align: center;
+			}
+			av-col.left {
+				text-align: left;
 			}
 		}
 
@@ -118,6 +122,16 @@
 		color: var(--aventus-color);
 		font-size: 14px;
 		padding: 2px 8px;
+	}
+
+	.img-cont {
+		align-items: center;
+		display: flex;
+		justify-content: center;
+
+		av-img {
+			max-width: 500px;
+		}
 	}
 }
 

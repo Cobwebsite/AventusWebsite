@@ -10,4 +10,11 @@
 		max-width: 1000px;
 		width: 100%;
 	}
+
+	av-col {
+		--col-padding: 8px;
+	}
+	av-link {
+		display: inline-block;
+	}
 }

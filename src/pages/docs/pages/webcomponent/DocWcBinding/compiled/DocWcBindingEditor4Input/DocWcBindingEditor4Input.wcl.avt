@@ -30,7 +30,7 @@ export class DocWcBindingEditor4Input extends Aventus.WebComponent implements Av
      */
     protected triggerChange() {
         this.val = this.inputEl.value;
-        this.onNewVal.trigger([]);
+        this.onNewVal.trigger();
     }
 	//#endregion
 	

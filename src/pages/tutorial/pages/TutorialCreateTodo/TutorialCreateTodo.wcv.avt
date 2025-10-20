@@ -80,7 +80,7 @@
     In the <span class="cn">MainApp.wcv.avt</span> file, we need to replace the navigation button responsible for
     setting the state to <span class="cn">"/create"</span> with a function that will activate our new <span
         class="cn">TodoCreateState</span>. Additionally, we must ensure that the <span class="cn">active_state</span>
-    property is set to maintain the <span class="cn">"active"</span> class on the <span class="cn">av-router-link</span>
+    property is set to maintain the <span class="cn">"active"</span> class on the <span class="cn">av-link</span>
     element when the URL is <span class="cn">"/create"</span>.
 </p>
 
@@ -89,12 +89,12 @@
         &lt;!-- The router has a slot name "before": we use it to define the sidenav --&gt;
         &lt;block name="before"&gt;
             &lt;div class="nav"&gt;
-                &lt;av-router-link class="nav-item" state="/"&gt;
+                &lt;av-link class="nav-item" to="/"&gt;
                     &lt;span class="name"&gt;Todo list&lt;/span&gt;
-                &lt;/av-router-link&gt;
-                &lt;av-router-link class="nav-item" @press="setCreateState" active_state="/create"&gt; 
+                &lt;/av-link&gt;
+                &lt;av-link class="nav-item" @press="setCreateState" active_state="/create"&gt; 
                     &lt;span class="name"&gt;Create todo&lt;/span&gt;
-                &lt;/av-router-link&gt;
+                &lt;/av-link&gt;
             &lt;/div&gt;
         &lt;/block&gt;
         &lt;slot&gt;&lt;/slot&gt;
@@ -188,8 +188,8 @@
 <p>Let's initiate the design of our form. As an example, we'll create a <span class="cn">.card</span> class that will be
     accessible within each web component. To accomplish this, we'll need to create a file named <span
         class="cn">@default.wcs.avt</span> to override the default style for all web components. Within this file, we
-    can define the new class <span class="cn">.card</span>. <av-router-link state="/docs/wc/style">More
-        info</av-router-link></p>
+    can define the new class <span class="cn">.card</span>. <av-link to="/docs/wc/style">More
+        info</av-link></p>
 
 <av-code language="css" filename="Demo/src/apps/@default.wcs.avt">
     <pre>
@@ -268,7 +268,7 @@
              */
             protected updateValue() {
                 this.value = this.inputEl.value;
-                this.onChange.trigger([this.value]);
+                this.onChange.trigger(this.value);
             }
             //#endregion
         }
@@ -319,12 +319,12 @@
 <ul>
     <li><span class="cn">@ViewElement()</span>: This decorator marks a property as a reference to an element found
         within the component's view. It establishes a connection between the view and the component's logic, enabling
-        seamless interaction between the two. <av-router-link state="/docs/wc/element">More info</av-router-link></li>
+        seamless interaction between the two. <av-link to="/docs/wc/element">More info</av-link></li>
     <li><span class="cn">onChange: Aventus.Callback<(value: string)=> void></span>: This property represents a callback
         mechanism that facilitates subscription from external sources. It allows other parts of the application to
         subscribe to value changes within the component. Additionally, it can be triggered, passing along a value of a
         specified generic type, ensuring efficient communication between different components or modules within the
-        application. <av-router-link state="/docs/wc/event">More info</av-router-link></li>
+        application. <av-link to="/docs/wc/event">More info</av-link></li>
 </ul>
 
 <p>We can now using this <span class="cn">Input</span> with a <span class="cn">@bind</span> to create a bidrectional

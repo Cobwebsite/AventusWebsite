@@ -28,13 +28,14 @@
         class="cn">@*.wcs.avt</span> for Global WebComponent Style, then you can include this file inside component.
     This file is also a SCSS file.</p>
 <h3>Create the file</h3>
-<p>You can create the global style file where you want, but you have to add it inside the <span
-        class="cn">aventus.conf.avt</span> under the section <span class="cn">build.src</span>.</p>
+<p>You can create the global style file where you want.</p>
 <av-doc-wc-style-editor-3></av-doc-wc-style-editor-3>
 
-<p>This will register the file <span class="cn">@utility.wcs.avt</span> inside the <span class="cn">Aventus.Style</span>
-    lib with the name <span class="cn">@utility</span>.</p>
-<av-img src="/img/doc/wc/style/stylemanager.png"></av-img>
+<p>This will register the file <span class="cn">@Utility.wcs.avt</span> inside the <span class="cn">Aventus.Style</span>
+    lib with the name <span class="cn">@Utility</span>.</p>
+<div class="img-cont">
+    <av-img src="/img/doc/wc/style/stylemanager.png"></av-img>
+</div>
 <p>If you want to use an external lib as a style for your component, you can use the <span class="cn">load</span>
     function. For example to load the bootstrap class : </p>
 <av-doc-wc-style-editor-4></av-doc-wc-style-editor-4>
@@ -124,8 +125,7 @@
 <h2>Creating theme</h2>
 <p>A good pratice when you developing application is to create theme file where you can declare globals properties for
     the project. Inside Aventus you can achieve it by creating a new file named <span class="cn">*.gs.avt</span> for
-    Global Style. This file must be set inside a <span class="cn"><av-router-link
-            state="/docs/config/static">static</av-router-link></span> part of your project. This allows you to have
+    Global Style. This file must be set inside a <span class="cn"><av-link to="/docs/config/static">static</av-link></span> part of your project. This allows you to have
     auto-completion for all your global variables that must be declared inside the <span class="cn">:root</span>
     selector.</p>
 <av-doc-wc-style-editor-5></av-doc-wc-style-editor-5>

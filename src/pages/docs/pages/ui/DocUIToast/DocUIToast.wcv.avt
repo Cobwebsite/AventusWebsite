@@ -1,0 +1,108 @@
+<h1>UI - Toast</h1>
+<p>The <span class="cn">Toast</span> system provides a way to display small, temporary notifications in your Aventus
+    application.
+    It is composed of two main parts:</p>
+
+<ul>
+    <li><span class="cn">ToastElement</span>: the base class for creating custom toast notifications</li>
+    <li><span class="cn">ToastManager</span>: a global controller that manages positioning, stacking, and lifecycle of
+        toasts</li>
+</ul>
+<p>Toasts can appear in multiple positions on the screen, close automatically after a delay, or stay visible
+    indefinitely.</p>
+
+
+<h2>Example</h2>
+<av-doc-u-i-toast-editor-1></av-doc-u-i-toast-editor-1>
+
+<h2>ToastElement Class</h2>
+<p>ToastElement&lt;T extends ToastOptions = ToastOptions&gt; is the base class used to define how individual toast
+    notifications behave and appear.
+    It handles visibility, automatic hiding after a timeout, and transitions.</p>
+
+<h3>Methods</h3>
+
+<div class="table">
+    <av-row class="header">
+        <av-col size="6" center>Method</av-col>
+        <av-col size="6" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>static add(options: ToastOptions | ToastElement): Promise&lt;boolean&gt;</av-col>
+        <av-col size="6">Displays a new toast.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>setOptions(options: T): Promise&lt;void&gt;</av-col>
+        <av-col size="6">Must be implemented to define how your toast handles the provided options (e.g., set text, color, or
+            icon).</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>close()</av-col>
+        <av-col size="6">Manually closes the toast and removes it from the DOM.</av-col>
+    </av-row>
+</div>
+
+
+<h2>ToastManager Class</h2>
+<p><span class="cn">ToastManager</span> handles displaying, positioning, and stacking toasts on the screen.
+    It ensures that multiple notifications do not overlap and automatically manages their lifecycle.</p>
+
+<h3>Global Configuration</h3>
+<p>You can define global defaults using:</p>
+<av-code language="ts">
+    <pre>
+        Toast.ToastManager.configure({
+            defaultToast: MyToast,
+            defaultPosition: 'top right',
+            defaultDelay: 4000,
+            heightLimitPercent: 90,
+        });
+    </pre>
+</av-code>
+
+<p><strong>ToastManagerOptions</strong></p>
+
+<div class="table">
+    <av-row class="header">
+        <av-col size="3" center>Option</av-col>
+        <av-col size="3" center>Type</av-col>
+        <av-col size="6" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="3" center>defaultToast</av-col>
+        <av-col size="3" center>Constructor&lt;ToastElement&gt;</av-col>
+        <av-col size="6">Defines the default toast class used when none is provided.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="3" center>defaultToastManager</av-col>
+        <av-col size="3" center>Constructor&lt;ToastManager&gt;</av-col>
+        <av-col size="6">Allows using a custom toast manager implementation.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="3" center>defaultPosition</av-col>
+        <av-col size="3" center>ToastPosition</av-col>
+        <av-col size="6">Default screen position for new toasts. Default : 'top right'</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="3" center>defaultDelay</av-col>
+        <av-col size="3" center>number</av-col>
+        <av-col size="6">Default auto-close delay for toasts.. Default : 5000</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="3" center>heightLimitPercent</av-col>
+        <av-col size="3" center>number</av-col>
+        <av-col size="6">Max vertical space2 (in % of viewport height) that toasts can occupy. Default : 100</av-col>
+    </av-row>
+</div>
+
+<h2>Behavior</h2>
+
+<ul>
+    <li>The toast slides in at the specified position.</li>
+    <li>Automatically disappears after delay milliseconds.</li>
+    <li>If delay = -1, it stays visible until manually closed.</li>
+</ul>
+
+
+
+

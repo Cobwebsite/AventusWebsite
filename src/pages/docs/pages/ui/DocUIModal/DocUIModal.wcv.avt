@@ -1,0 +1,106 @@
+<h1>UI - Modal</h1>
+<p>The <span class="cn">Modal</span> component provides a flexible framework for creating modal dialogs in Aventus
+    applications.
+    It supports promise-based resolution and rejection, allowing developers to use modals as asynchronous prompts that
+    return data or cancellation results.</p>
+
+<h2>Overview</h2>
+
+<p>ModalElement is an abstract base class designed to handle modal logic such as:</p>
+
+<ul>
+    <li>showing and hiding modals</li>
+    <li>resolving or rejecting user actions</li>
+    <li>automatic closure via Escape key or click outside</li>
+    <li>customizable options for behavior and rejection values</li>
+</ul>
+
+<p>Developers should extend this class to create specific modal components (confirmation dialogs, forms, alerts, etc.).
+</p>
+
+<h2>Example</h2>
+<av-doc-u-i-modal-editor-1></av-doc-u-i-modal-editor-1>
+
+<h2>ModalElement Class</h2>
+
+<p>ModalElement&lt;T, U extends ModalOptions&lt;T&gt; = ModalOptions&lt;T&gt;&gt; defines the core functionality for
+    modals.
+    It manages showing, closing, resolving, and rejecting, using built-in support for keyboard and click interactions.
+</p>
+
+<div class="table">
+    <av-row class="header">
+        <av-col size="6" center>Method</av-col>
+        <av-col size="6" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>show(element?: Element): Promise&lt;T | null&gt;</av-col>
+        <av-col size="6" center>Displays the modal and returns a Promise that resolves when the modal is either resolved or rejected.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>resolve(response: T, no_close?: boolean)</av-col>
+        <av-col size="6" center>Resolves the modal with a given response value. If no_close=true, the modal remains open after resolving.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>reject(no_close?: boolean)</av-col>
+        <av-col size="6" center>Rejects the modal with the defined rejectValue. If no_close=true, the modal remains open after rejecting.</av-col>
+    </av-row>
+</div>
+
+<p>Developpers can also add custom options to modal by providing an interface that extends from <span
+        class="cn">ModalOptions</span>.</p>
+
+<h2>ModalOptions Interface</h2>
+<p>Defines the modal's configurable behaviors.</p>
+<div class="table">
+    <av-row class="header">
+        <av-col size="2" center>Option</av-col>
+        <av-col size="2" center>Type</av-col>
+        <av-col size="2" center>Default</av-col>
+        <av-col size="6" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="2" center>closeWithEsc</av-col>
+        <av-col size="2" center>boolean</av-col>
+        <av-col size="2" center>true</av-col>
+        <av-col size="6" center>Whether the modal should close when pressing the Escape key.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="2" center>closeWithClick</av-col>
+        <av-col size="2" center>boolean</av-col>
+        <av-col size="2" center>true</av-col>
+        <av-col size="6" center>Whether clicking outside the modal should close it.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="2" center>rejectValue</av-col>
+        <av-col size="2" center>T | null</av-col>
+        <av-col size="2" center>null</av-col>
+        <av-col size="6" center>The value returned when the modal is dismissed or canceled.</av-col>
+    </av-row>
+</div>
+
+<p>Developers can extends this interface to allow more options. For example if the modal has the close icon that is
+    configurable.</p>
+
+<av-code language="ts">
+    <pre>
+    interface ModalOptions&lt;T = any&gt; =  Aventus.Modal.ModalOptions&lt;T&gt; & {
+        closeIcon?: boolean
+    }
+&nbsp;
+    export abstract class Modal extends ModalElement&lt;boolean, ModalOptions&lt;boolean&gt;&gt; implements Aventus.DefaultComponent {
+&nbsp;
+    }
+    </pre>
+</av-code>
+
+<h2>Static Configuration</h2>
+<p>You can globally configure default modal behavior:</p>
+<av-code language="ts">
+    <pre>
+    Aventus.Modal.ModalElement.configure({
+        closeWithClick: false,
+        rejectValue: null
+    });
+    </pre>
+</av-code>

@@ -1,0 +1,3 @@
+<av-code-editor name="Tabs">
+    <slot></slot>
+</av-code-editor>

@@ -1,0 +1,49 @@
+<h1>UI - Link</h1>
+<p>The <span class="cn">Link</span> component provides a declarative way to navigate between application routes.
+    It integrates with the Aventus Router System, automatically handling navigation, activation state, and style updates
+    for active routes.</p>
+
+<h2>Overview</h2>
+<p>The <span class="cn">Link</span> component acts similarly to a standard HTML <span class="cn">&lt;a&gt;</span>
+    element, but instead of performing a full page reload, it uses Aventus internal router to activate the target route.
+</p>
+
+<p>It also automatically applies the <span class="cn">active</span> class when the linked route (or pattern) is
+    currently active, allowing developers to style active links easily.</p>
+
+<av-code language="html">
+    <pre>
+        &lt;av-link to="home"&gt;Home&lt;/av-link&gt;
+        &lt;av-link to="profile"&gt;Profile&lt;/av-link&gt;
+        &lt;av-link to="settings" active_pattern="settings*"&gt;Settings&lt;/av-link&gt;
+    </pre>
+</av-code>
+
+<p>When the current route matches <span class="cn">settings*</span>, the Settings link automatically gets the <span class="cn">active</span> class.</p>
+
+<h2>Navigation</h2>
+
+<p>When the user clicks or presses the link:</p>
+
+<ul>
+    <li>The component prevents the default browser navigation.</li>
+    <li>It resolves the route using <span class="cn">RouterStateManager</span>.</li>
+    <li>If <span class="cn">to</span> starts with <span class="cn">"."</span>, it is treated as a relative route.</li>
+    <li>It then activates the target state using: <span class="cn">Aventus.State.activate(to, Aventus.Instance.get(RouterStateManager));</span></li>
+</ul>
+
+<h2>Active State Handling</h2>
+<p>The link automatically subscribes to route changes through <span class="cn">RouterStateManager</span>.
+When the current state matches its <span class="cn">to</span> value or <span class="cn">active_pattern</span>, the component:</p>
+
+<ul>
+    <li>Adds the CSS class <span class="cn">active</span></li>
+    <li>Triggers the <span class="cn">onActiveChange</span> callback with <span class="cn">true</span></li>
+</ul>
+
+<p>When it becomes inactive:</p>
+
+<ul>
+    <li>Removes the <span class="cn">active</span> class</li>
+    <li>riggers <span class="cn">onActiveChange</span> with <span class="cn">false</span></li>
+</ul>

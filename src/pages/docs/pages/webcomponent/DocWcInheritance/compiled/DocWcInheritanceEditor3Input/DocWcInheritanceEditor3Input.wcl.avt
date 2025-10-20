@@ -29,7 +29,7 @@ export class DocWcInheritanceEditor3Input extends DocWcInheritanceEditor3Fillabl
      */
     protected triggerChange() {
         this.value = this.inputEl.value;
-        this.onChange.trigger([this.value]);
+        this.onChange.trigger(this.value);
     }
 
     /**

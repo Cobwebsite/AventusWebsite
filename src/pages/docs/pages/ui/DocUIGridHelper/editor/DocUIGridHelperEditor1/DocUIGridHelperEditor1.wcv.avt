@@ -1,0 +1,10 @@
+<av-code-editor name="Scrollable">
+    <av-code language="html" filename="index.html">
+        <pre>
+            &lt;div class="page"&gt;
+                &lt;av-grid-helper step="50" step_big="200" col_width="50" row_height="50" magnetic="5" lock="false"&gt;&lt;/av-grid-helper&gt;
+            &lt;/div&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

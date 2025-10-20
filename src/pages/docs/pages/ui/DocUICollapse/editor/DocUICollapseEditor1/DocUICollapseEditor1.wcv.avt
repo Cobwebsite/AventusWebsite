@@ -1,0 +1,13 @@
+<av-code-editor name="Collapse">
+    <av-code language="html" filename="index.html">
+        <pre>
+            &lt;av-collapse&gt;
+                &lt;div slot="header">Show details&lt;/div&gt;
+                &lt;div>
+                    &lt;p>This is the hidden content that appears when open.&lt;/p>$&gt;
+                &lt;/div&gt;
+            &lt;/av-collapse&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

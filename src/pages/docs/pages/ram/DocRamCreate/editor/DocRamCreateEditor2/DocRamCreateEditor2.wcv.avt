@@ -29,4 +29,13 @@
         }
     </pre>
 </av-code>
+<av-code language="typescript" filename="ExampleRAM/src/Person.data.avt">
+    <pre>
+        export class Person extends Aventus.Data implements Aventus.IData {
+            public id: string = "";
+            public firstname!: string;
+            public lastname!: string;
+        }
+    </pre>
+</av-code>
 <slot></slot>

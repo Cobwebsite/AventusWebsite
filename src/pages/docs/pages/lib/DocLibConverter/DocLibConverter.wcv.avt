@@ -1,0 +1,24 @@
+<h1>Converter</h1>
+<p>The <span class="cn">Aventus.Converter.transform</span> method is essential for converting data from one format to
+    another, particularly useful when
+    dealing with complex object structures. It's a versatile tool that simplifies the process of transforming data by
+    providing a consistent interface for conversion operations.</p>
+<p>Suppose you have an application that receives JSON data from an API and needs to convert it into JavaScript objects
+    for further processing. In this case, you can utilize the Converter.transform method to perform the conversion
+    seamlessly.</p>
+<p>By default, the Converter will populate the class instances through the method <span class="cn">fromJSON</span> on
+    your object or through the method <span class="cn">Json.classFromJson</span>.</p>
+
+<av-doc-lib-converter-editor-1></av-doc-lib-converter-editor-1>
+
+<p>By default, <span class="cn">Aventus.Data</span> is convertible. You can also create custom convertible class by adding the decorator <span class="cn">@Convertible</span>. You must define an unique key so that the converter can transform your json into the object.</p>
+
+<av-code language="typescript">
+    <pre>
+        @Convertible()
+        export class Test {
+            public static get Fullname(): string { return "MyNamespace.Test"; }
+            public get $type(): string { return Test.Fullname; }
+        }
+    </pre>
+</av-code>

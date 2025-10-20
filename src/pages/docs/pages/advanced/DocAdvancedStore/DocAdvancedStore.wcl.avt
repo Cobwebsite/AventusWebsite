@@ -1,0 +1,53 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocAdvancedStore extends DocGenericPage implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+		return "Advanced Guide: Using AventusJs Store"
+	}
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Publish templates or packages to the store to share them or download templates or packages from the store to increase your productivity";
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+		return [
+            "AventusJs Store",
+            "Download template",
+            "Upload template",
+            "Download package",
+            "Upload package",
+        ];
+    }
+	
+	//#endregion
+	
+}

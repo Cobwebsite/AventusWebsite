@@ -1,0 +1,61 @@
+import { HttpRequest } from "Aventus@Main:Aventus.package.avt";
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocHttpRequest extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+ * @inheritdoc
+ */
+    protected override Title(): string {
+        return "HttpRequest in Aventus";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to use the Aventus HttpRequest class, a robust abstraction over the fetch API. Explore features like automatic JSON/FormData handling, method spoofing, lifecycle hooks, unified error/result handling with ResultWithError and VoidWithError, file uploads, query methods, and integration with HttpRouter for clean, type-safe HTTP requests.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus HttpRequest",
+            "HttpRequest class",
+            "Type-safe HTTP Aventus",
+            "HTTP requests Aventus",
+            "Query methods Aventus",
+            "ResultWithError Aventus",
+            "VoidWithError Aventus",
+            "HttpRouter integration Aventus",
+            "Body serialization Aventus",
+            "Method spoofing Aventus",
+            "Lifecycle hooks HTTP Aventus",
+        ];
+    }
+    //#endregion
+
+}

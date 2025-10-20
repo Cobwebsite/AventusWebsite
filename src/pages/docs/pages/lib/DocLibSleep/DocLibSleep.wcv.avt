@@ -1,0 +1,13 @@
+<h1>sleep</h1>
+<p>If you need to wait a specific time of ms you can use the <span class="cn">Aventus.sleep</span> function.</p>
+<av-code language="typescript" filename="Example.lib.avt">
+    export class Example {
+    &nbsp;
+    \tpublic async test() {
+    \t\tconsole.log(Date.now());
+    \t\tawait Aventus.sleep(5000);
+    \t\tconsole.log(Date.now());
+    \t}
+    &nbsp;
+    }
+</av-code>

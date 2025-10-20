@@ -52,7 +52,7 @@
                 //#region methods
                 private emitMyEvent() {
                     setInterval(() =&gt; {
-                        this.myEvent.trigger([Date.now()]);
+                        this.myEvent.trigger(Date.now());
                     }, 1000);
                 }
                 protected override postCreation(): void {

@@ -1,0 +1,59 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocUICollapse extends DocGenericPage implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	/**
+ * @inheritdoc
+ */
+protected override Title(): string {
+    return "How to Use the Collapse Component in AventusJs";
+}
+
+/**
+ * @inheritdoc
+ */
+protected override Description(): string {
+    return "Learn how to use the abstract Collapse component in AventusJs to manage toggle and visibility logic without predefined styles. This guide covers state management, event handling, and integration with your own UI framework for expandable sections.";
+}
+
+/**
+ * @inheritdoc
+ */
+protected override Keywords(): string[] {
+    return [
+        "AventusJs Collapse",
+        "Aventus toggle logic",
+        "Aventus abstract components",
+        "collapse state management",
+        "expand collapse behavior",
+        "Aventus event handling",
+        "visibility control AventusJs",
+        "un-styled collapse component",
+        "Aventus UI logic framework",
+        "Aventus frontend components",
+    ];
+}
+	//#endregion
+	
+}

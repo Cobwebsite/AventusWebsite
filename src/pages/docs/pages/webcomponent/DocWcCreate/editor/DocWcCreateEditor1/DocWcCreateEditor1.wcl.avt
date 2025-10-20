@@ -24,7 +24,7 @@ export class DocWcCreateEditor1 extends BaseEditor implements Aventus.DefaultCom
 
     //#region methods
     public override startupFile(): string {
-        return "ComponentExample/static/index.html";
+        return "ComponentExample/src/Button/Button.wcl.avt";
     }
     
     //#endregion

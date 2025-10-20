@@ -1,0 +1,60 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocUIImage extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+	 * @inheritdoc
+	 */
+    protected override Title(): string {
+        return "How to Use the Image Component in AventusJs";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to use the Image component in AventusJs to efficiently display images with built-in caching and SVG support. This guide explains how to load images dynamically, handle fallbacks, and optimize rendering in your web applications.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs Image",
+            "image component AventusJs",
+            "Aventus styled components",
+            "image caching AventusJs",
+            "SVG image loading",
+            "optimized image rendering",
+            "Aventus UI components",
+            "dynamic image loading",
+            "frontend image performance",
+            "Aventus image guide",
+        ];
+    }
+
+    //#endregion
+
+}

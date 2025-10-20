@@ -56,8 +56,8 @@
 
 	}
 
-	av-router-link,
-	av-router-link {
+	av-link,
+	av-link {
 		color: var(--link-color);
 		cursor: pointer;
 		-webkit-tap-highlight-color: transparent;
@@ -84,7 +84,7 @@
 			font-weight: bold;
 			padding: 0px;
 
-			av-dynamic-col {
+			av-col {
 				text-align: center;
 			}
 		}
@@ -97,11 +97,11 @@
 			width: 100%;
 		}
 
-		av-dynamic-row {
+		av-row {
 			align-items: center;
 			padding: 10px;
 
-			av-dynamic-col {
+			av-col {
 				padding: 0 15px;
 				text-align: center;
 			}

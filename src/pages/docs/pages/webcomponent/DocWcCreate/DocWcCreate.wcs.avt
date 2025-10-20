@@ -1,5 +1,5 @@
 :host {
-	av-router-link.font-sm {
+	av-link.font-sm {
 		font-size: 13px;
 	}
 }

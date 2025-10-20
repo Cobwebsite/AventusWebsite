@@ -1,0 +1,57 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocLibCompareObject extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "compareObject in Aventus";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to use Aventus.compareObject to check if two objects contain the same information. This function performs a deep comparison of object properties and arrays, allowing you to determine equality between complex data structures in Aventus applications.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus compareObject",
+            "Compare objects Aventus",
+            "Object equality Aventus",
+            "Deep comparison Aventus",
+            "Check object content Aventus",
+            "Compare arrays Aventus",
+            "Data comparison Aventus",
+            "Object utilities Aventus",
+        ];
+    }
+    //#endregion
+
+}

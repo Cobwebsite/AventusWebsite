@@ -24,7 +24,7 @@ export class DocAdvancedTemplateEditor2 extends DocAdvancedTemplateEditor1 imple
 	
 	//#region methods
 	public override startupFile(): string {
-		return 'Template/.aventus/templates/TailwindComponent/template.avt'
+		return 'Template/.aventus/templates/TailwindComponent/template.avt.ts'
 	}
 	//#endregion
 	

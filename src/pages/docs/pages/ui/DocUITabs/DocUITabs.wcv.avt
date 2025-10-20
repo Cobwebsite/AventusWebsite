@@ -1,0 +1,69 @@
+<h1>UI - Tabs System</h1>
+<p>The <span class="cn">Tabs system</span> provides a flexible structure for managing and displaying tabbed interfaces. It separates the logic of tab content, tab headers, and overall container behavior, allowing developers to easily customize the appearance and interaction model.</p>
+
+<h2>Overview</h2>
+<p>The <span class="cn">Tabs</span> component manages a collection of <span class="cn">Tab</span> elements, each associated with a <span class="cn">TabHeader</span>.
+It handles tab switching, active state management, and layout rendering.</p>
+
+<p>Developers can extend the abstract classes <span class="cn">Tabs</span>, <span class="cn">Tab</span>, and <span class="cn">TabHeader</span> to define their own UI and behavior while keeping consistent tab logic.</p>
+
+<h2>Example</h2>
+<av-doc-u-i-tabs-editor-1></av-doc-u-i-tabs-editor-1>
+
+<h2>Tabs Class</h2>
+<p><span class="cn">Tabs&lt;T extends Tab, U extends TabHeader&lt;T&gt;&gt;</span> is an abstract class that manages:</p>
+
+<ul>
+    <li>the list of tabs and their headers</li>
+    <li>which tab is currently active</li>
+    <li>tab visibility and selection state</li>
+</ul>
+
+<p>Developers must implement the <span class="cn">defineTabHeader()</span> method to specify which header component should be used.</p>
+<p>Developers can also use the method <span class="cn">setActive(tabHeader: TabHeader&lt;T&gt; | number | string)</span> to set the active tab by reference, index, or tab identifier.</p>
+
+<div><strong>Behavior</strong></div>
+<ul>
+    <li>Tabs are hidden until selected.</li>
+    <li>The first tab is automatically activated unless another one is marked as selected.</li>
+    <li>The <span class="cn">Tabs</span> component controls both visual state and logical state (selected attribute).</li>
+</ul>
+
+
+<h2>Tab Class</h2>
+<p><span class="cn">Tab</span> represents the <strong>content</strong> of a tab, and provides the connection point between tab data and its header. To implement a <span class="cn">Tab</span>, the method <span class="cn">identifier() : string</span> have to be implemented.</p>
+
+<p>When the tab is active, the attribute <span class="cn">selected</span> is set to true.</p>
+
+
+<h2>TabHeader Class</h2>
+<p><span class="cn">TabHeader&lt;T extends Tab&gt;</span> represents the clickable tab title associated with a <span class="cn">Tab</span>. It handles user interaction and manages synchronization between UI and logic.</p>
+
+<p>The method <span class="cn">render()</span> must be implemented. The property <span class="cn">tab : T</span> is useful to get data from the <span class="cn">Tab</span> during rendering.</p>
+
+<av-code language="ts">
+    <pre>
+    /**
+     * @inheritdoc
+     */
+    public override render(): Aventus.Asyncable&lt;void&gt; {
+        this.innerHTML = this.tab.label;
+    }
+    </pre>
+</av-code>
+
+<p>When the tab is active, the attribute <span class="cn">active</span> is set to true.</p>
+
+<h2>Lifecycle</h2>
+
+<ul>
+    <li>Tabs and their headers are initialized in <span class="cn">postCreation()</span>.</li>
+    <li>Each Tab registers itself with a dynamically created <span class="cn">TabHeader</span>.</li>
+    <li>The first tab (or the one marked as <span class="cn">selected</span>) becomes active.</li>
+    <li>When a header is pressed, <span class="cn">Tabs.setActive()</span> hides the previous tab and shows the new one.</li>
+</ul>
+
+
+
+
+

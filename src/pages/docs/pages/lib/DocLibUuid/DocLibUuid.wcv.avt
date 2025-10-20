@@ -1,0 +1,14 @@
+
+<h1>UUID</h1>
+<p>If you need a unique id you can use the <span class="cn">Aventus.uuidv4</span> function. More information about uuid
+    <a href="https://en.wikipedia.org/wiki/Universally_unique_identifier" target="_blank">here</a>.
+</p>
+<av-code language="typescript" filename="Example.lib.avt">
+    export class Example {
+    &nbsp;
+    \tpublic test() {
+    \t\tlet id = Aventus.uuidv4();
+    \t}
+    &nbsp;
+    }
+</av-code>

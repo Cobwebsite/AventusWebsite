@@ -1,0 +1,236 @@
+<h1>UI - Form</h1>
+<p>The Form system in Aventus provides a powerful and flexible foundation for managing form logic (validation, state
+    tracking, data submission, and error handling) all without enforcing any visual design.</p>
+<p>Just like the rest of Aventus UI, it focuses on behavior over presentation. You bring the HTML and CSS; Aventus
+    brings the logic, validation, and lifecycle.</p>
+
+<h2>Overview</h2>
+<p>The <span class="cn">Form</span> module allows you to define, validate, and handle complex forms in a structured and
+    reusable way.</p>
+<p>It separates form logic from UI rendering, giving you a system that can handle:</p>
+
+<ul>
+    <li>Input registration and tracking</li>
+    <li>Field-level and global validation</li>
+    <li>Form submission and execution</li>
+    <li>Error mapping and feedback</li>
+    <li>Async submission functions</li>
+    <li>Custom validator classes</li>
+</ul>
+
+<p>Aventus forms can be used both declaratively (via Web Components) and programmatically (via the FormHandler API).</p>
+
+<h2>Core Architecture</h2>
+<h3>Form</h3>
+<p>The <span class="cn">Form</span> class represents a logical container for form elements and submit buttons. It
+    coordinates validation and submission by connecting to a <span class="cn">FormHandler</span>.</p>
+
+<p>Key responsibilities:</p>
+
+<ul>
+    <li>Registers input elements (<span class="cn">FormElement</span>) and submit buttons (<span
+            class="cn">ButtonElement</span>)</li>
+    <li>Tracks keyboard interactions (e.g. pressing Enter)</li>
+    <li>Delegates validation and submission to the associated <span class="cn">FormHandler</span></li>
+    <li>Provides <span class="cn">onSubmit</span> event callbacks</li>
+</ul>
+
+
+<h3>FormHandler</h3>
+
+<p>The <span class="cn">FormHandler</span> class is the engine behind every form. It manages the internal state,
+    validation rules, and submission flow.</p>
+<p>A <span class="cn">FormHandler</span> is typically created from a schema that describes the structure and validation
+    logic of your data:</p>
+
+<av-code language="ts">
+    <pre>
+    const form = Aventus.Form.FormHandler.create({
+        email: Aventus.Form.Validators.Email,
+        password: [Aventus.Form.Validators.Required],
+    });
+    </pre>
+</av-code>
+
+<p>or equivalently:</p>
+
+<av-code language="ts">
+    <pre>
+    const form = new Aventus.Form.FormHandler({
+        email: { validate: new Aventus.Form.Validators.Email() },
+        password: { validate: new Aventus.Form.Validators.Required() },
+    });
+    </pre>
+</av-code>
+
+<p>You can also specify a global configuration or default validation behavior using:</p>
+
+<av-code language="ts">
+    <pre>
+    Aventus.Form.FormHandler.configure({
+        validateOnChange: true,
+    });
+    </pre>
+</av-code>
+
+<h2>How It Works</h2>
+<h3>1. Schema Definition</h3>
+<p>A schema defines each field in the form and its validation rules:</p>
+<av-code language="typescript">
+    <pre>
+type LoginSchema = {
+    name: string;
+    email: string;
+    password: string;
+};
+
+const schema: Aventus.Form.FormSchema&lt;LoginSchema&gt; = {
+    name: {},
+    email: new Aventus.Form.Validators.Email(),
+    password: new Aventus.Form.Validators.Required(),
+};
+    </pre>
+</av-code>
+
+<p>This schema tells the form handler how to validate each field.</p>
+
+<h3>2. FormHandler Creation</h3>
+
+<av-code language="ts">
+    <pre>
+const handler = Aventus.Form.Form.create(schema, {
+    validateOnChange: true,
+});
+    </pre>
+</av-code>
+
+<p>You can attach this handler to a Form component:</p>
+<av-code language="html">
+    <pre>
+        &lt;av-form :form="this.handler"&gt;&lt;/av-form&gt;
+    </pre>
+</av-code>
+
+<h3>3. Validation</h3>
+
+<p>Validation is performed at two levels:</p>
+
+<ul>
+    <li>Field-level validation (defined in the schema)</li>
+    <li>Global validation (defined via FormHandlerConfig.validate)</li>
+</ul>
+<p>Aventus supports both synchronous and asynchronous validators.</p>
+<p>Example :</p>
+<av-code language="ts">
+    <pre>
+const valid = await handler.validate(); // validates all fields
+const emailValid = await handler.validate("email"); // only one field
+    </pre>
+</av-code>
+
+<p>If validation fails and there’s no registered UI element for a field, Aventus calls the handler’s error function:</p>
+<av-code language="ts">
+    <pre>
+handleValidateNoInputError: (errors) => {
+    console.warn("Unmapped validation errors:", errors);
+}
+    </pre>
+</av-code>
+
+<h3>4. Submission</h3>
+<p>Once validation passes, you can submit your form:</p>
+
+<av-code language="ts">
+    <pre>
+await handler.submit(async (body) => {
+    // simulate API call
+    return api.login(body);
+});
+    </pre>
+</av-code>
+
+<p><span class="cn">submit()</span> automatically:</p>
+<ul>
+    <li>Validates the form</li>
+    <li>Calls your submission function</li>
+    <li>Handles and maps any backend errors</li>
+</ul>
+
+<p>If an input is associated with a field that produced an error, the handler pushes the error message into that element’s errors array automatically. Otherwise, the function <span class="cn">handleExecuteNoInputError</span> is called.</p>
+
+<h2>Validators</h2>
+<p>Validators in Aventus are simple classes that implement a single method: validate().</p>
+
+<h3>Example: Required</h3>
+<av-code language="ts">
+    <pre>
+export class Required extends Validator&lt;any&gt; {
+    public static msg = "The field {name} is required";
+
+    public override validate(value: any | undefined, name: string): string | boolean {
+        const msg = Required.msg.replace(/\{ *name *\}/g, name);
+        if (value == null || value === "") return msg;
+        return true;
+    }
+}
+    </pre>
+</av-code>
+
+<p>You can also chain validators in a schema:</p>
+
+<av-code language="ts">
+    <pre>
+const schema = {
+    email: [Aventus.Form.Validators.Required, Aventus.Form.Validators.Email],
+};
+    </pre>
+</av-code>
+
+<h2>Key Features</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Feature</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>Schema-based validation</av-col>
+        <av-col size="8" center>Define form logic declaratively</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>Two-way data binding</av-col>
+        <av-col size="8" center>Auto-syncs between form data and UI</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>Two-way data binding</av-col>
+        <av-col size="8" center>Works with async or server-side validators</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>Global config</av-col>
+        <av-col size="8" center>Default validation and error handlers</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>Automatic error mapping</av-col>
+        <av-col size="8" center>Links backend or validator errors to form fields</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>No styling enforced</av-col>
+        <av-col size="8" center>You handle visuals, Aventus handles logic</av-col>
+    </av-row>
+</div>
+
+<h2>Example: Complete Login Form</h2>
+
+
+<h2>Summary</h2>
+<p>Aventus Forms provide a logic-first, design-free approach to handling forms:</p>
+<ul>
+    <li>Smart: automatic validation, submission, and state tracking</li>
+    <li>Modular: validators, fields, and forms are decoupled and reusable</li>
+    <li>Design-free: you control every pixel of UI</li>
+    <li>Efficient: less repetitive code, consistent behavior everywhere</li>
+</ul>
+
+
+
+
+

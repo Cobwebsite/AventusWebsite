@@ -1,0 +1,60 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocUIPage extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+	 * @inheritdoc
+	 */
+    protected override Title(): string {
+        return "How to Use the Page Component in AventusJs";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Discover how to use the abstract Page component in AventusJs to structure page-level logic. This guide covers managing titles, descriptions, keywords, and other page metadata, without enforcing any visual rendering.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs Page",
+            "abstract page component",
+            "page metadata AventusJs",
+            "page logic structure",
+            "Aventus web development",
+            "title description management",
+            "frontend page architecture",
+            "Aventus abstract components",
+            "un-styled page logic",
+            "Aventus page guide",
+        ];
+    }
+
+    //#endregion
+
+}

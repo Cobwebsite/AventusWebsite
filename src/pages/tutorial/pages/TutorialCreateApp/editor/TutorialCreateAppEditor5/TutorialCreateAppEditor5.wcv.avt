@@ -49,12 +49,12 @@
         &lt;!-- The router has a slot name "before": we use it to define the sidenav --&gt;
         &lt;block name="before"&gt;
             &lt;div class="nav"&gt;
-                &lt;av-router-link class="nav-item" state="/"&gt;
+                &lt;av-link class="nav-item" to="/"&gt;
                     &lt;span class="name"&gt;Todo list&lt;/span&gt;
-                &lt;/av-router-link&gt;
-                &lt;av-router-link class="nav-item" state="/create"&gt;
+                &lt;/av-link&gt;
+                &lt;av-link class="nav-item" to="/create"&gt;
                     &lt;span class="name"&gt;Create todo&lt;/span&gt;
-                &lt;/av-router-link&gt;
+                &lt;/av-link&gt;
             &lt;/div&gt;
         &lt;/block&gt;
         &lt;slot&gt;&lt;/slot&gt;

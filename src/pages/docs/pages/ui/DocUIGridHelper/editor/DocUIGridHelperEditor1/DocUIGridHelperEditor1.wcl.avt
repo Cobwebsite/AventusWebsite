@@ -1,0 +1,39 @@
+import { BaseEditor } from "../../../../../../../core/components/BaseEditor/BaseEditor.wcl.avt";
+import { DocUIGridHelperEditor1Compiled } from "../../compiled/DocUIGridHelperEditor1Compiled/DocUIGridHelperEditor1Compiled.wcl.avt";
+
+export class DocUIGridHelperEditor1 extends BaseEditor implements Aventus.DefaultComponent {
+
+	//#region static
+	
+	//#endregion
+	
+	
+	//#region props
+	
+	//#endregion
+	
+	
+	//#region variables
+	
+	//#endregion
+	
+	
+	//#region constructor
+	
+	//#endregion
+	
+	
+	//#region methods
+	public override defineResult(): HTMLElement | null {
+		const cont = document.createElement("DIV");
+
+		const ex1 = new DocUIGridHelperEditor1Compiled();
+		cont.appendChild(ex1);
+
+		
+
+		return cont;
+	}
+	//#endregion
+	
+}

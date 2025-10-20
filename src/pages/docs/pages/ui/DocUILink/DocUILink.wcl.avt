@@ -1,0 +1,59 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocUILink extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+ * @inheritdoc
+ */
+    protected override Title(): string {
+        return "How to Use the Link Component in AventusJs";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Discover how to use the Link component in AventusJs to navigate between pages efficiently. This guide covers internal routing, dynamic paths, active states, and how to integrate links seamlessly within your Aventus applications.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs Link",
+            "navigation AventusJs",
+            "Aventus routing",
+            "link component AventusJs",
+            "Aventus navigation system",
+            "page transition AventusJs",
+            "Aventus UI components",
+            "client-side routing",
+            "Aventus dynamic routes",
+            "frontend link handling",
+        ];
+    }
+    //#endregion
+
+}

@@ -1,0 +1,60 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocUIRouter extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+	 * @inheritdoc
+	 */
+    protected override Title(): string {
+        return "How to Use the Router Component in AventusJs";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to use the abstract Router component in AventusJs to control page navigation and display logic. This guide explains how to manage routes, switch between pages, and integrate navigation logic without imposing any visual rendering.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs Router",
+            "page navigation AventusJs",
+            "abstract Router component",
+            "routing logic AventusJs",
+            "frontend navigation management",
+            "Aventus page display",
+            "un-styled routing component",
+            "dynamic page rendering",
+            "Aventus abstract components",
+            "Aventus navigation guide",
+        ];
+    }
+
+    //#endregion
+
+}

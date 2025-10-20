@@ -1,0 +1,15 @@
+<av-code-editor name="Scrollable">
+    <av-code language="html" filename="index.html">
+        <pre>
+            &lt;av-scrollable x_scroll y_scroll mouse_drag&gt;
+                &lt;div style="width: 2000px; 
+                height: 1500px; 
+                background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%); 
+                background-size: 10px 10px, 10px 10px;"&gt;
+                    Large content here
+                &lt;/div&gt;
+            &lt;/av-scrollable&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

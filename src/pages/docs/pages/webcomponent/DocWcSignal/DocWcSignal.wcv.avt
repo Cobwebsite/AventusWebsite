@@ -1,0 +1,36 @@
+<h1>Webcomponent - Signal</h1>
+<p>In the Aventus framework, the <span class="cn">@Signal()</span> decorator provides a way to create reactive
+    properties that are monitored at the first level only. Unlike <span class="cn">@Watch()</span> or full watchable
+    objects, @Signal() does <span class="cn">not observe nested or child properties</span>. This makes it lightweight and ideal for scenarios
+    where you only need to track changes to a property's immediate value.</p>
+
+<h2>Using Signal</h2>
+<p>To declare a signal variable, you must add the decorator <span class="cn">@Signal</span>.</p>
+<av-code language="typescript" filename="Example.wcl.avt">
+    <pre>
+        import { Person } from "../Person.data.avt";
+        &nbsp;
+        export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
+        &nbsp;
+            //#region variables
+            @Signal((target: Example) => {
+                console.log("person set");
+            })
+            public person?: Person;
+            //#endregion
+        &nbsp;
+        &nbsp;
+            //#region methods
+            protected override postCreation(): void {
+                // This will trigger the signal
+                this.person = new Person();
+                // This won't trigger the signal
+                this.person.name = "John Doe";
+            }
+            //#endregion
+        &nbsp;
+        }
+    </pre>
+</av-code>
+
+<p>You can notice that the callback function contains only one parameter not like the Watch decorator. This is due to the signal that need less complexity than Watch.</p>

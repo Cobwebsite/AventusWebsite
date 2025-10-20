@@ -1,0 +1,70 @@
+<h1>UI - Page With Form</h1>
+<p>The <span class="cn">PageForm</span> class extends the base Page component to provide a ready-to-use structure for
+    form-based pages (e.g., login, signup, profile edit, etc.).</p>
+<p>It integrates seamlessly with the <span class="cn"><av-link to="/docs/ui/form">FormHandler</av-link></span> and
+    manages form elements, validation, submission, and optional loading states automatically.</p>
+
+<h2>Overview</h2>
+<p><span class="cn">PageForm</span> simplifies creating interactive pages that include forms.</p>
+<p>It:</p>
+
+<ul>
+    <li>Automatically manages form creation through a FormHandler.</li>
+    <li>Links FormElement and ButtonElement components.</li>
+    <li>Provides configurable automatic submission on Enter key press.</li>
+    <li>Handles loading states on submit buttons.</li>
+    <li>Keeps the form logic self-contained inside the page.</li>
+</ul>
+
+<h2>Example</h2>
+<av-doc-u-i-page-form-editor-1></av-doc-u-i-page-form-editor-1>
+
+<h2>Configuration</h2>
+<p>You can override <span class="cn">pageConfig()</span> to change these behaviors:</p>
+<av-code language="ts" filename="LoginPage.wcl.avt">
+    <pre>
+    protected override pageConfig(): Aventus.Navigation.PageFormConfig {
+        return {
+            autoLoading: true, // if true, any registered submit buttons will automatically show a loading state during form submission. Default is true.
+            submitWithEnter: true, // if true, pressing Enter on the last registered form field automatically submits the form. Default is true.
+        }
+    }
+    </pre>
+</av-code>
+
+<h2>Integration with FormHandler</h2>
+<p><span class="cn">PageForm</span> automatically creates a <span class="cn">FormHandler</span> instance:</p>
+<av-code language="ts">
+    <pre>
+        this._form = new FormHandler(this.formSchema(), this.formConfig());
+        // you can access the form via : this.form
+    </pre>
+</av-code>
+
+<h2>Behavior Summary</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="6" center>Feature</av-col>
+        <av-col size="6" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>Automatic FormHandler setup</av-col>
+        <av-col size="6">Creates and manages a form based on a schema.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>Keyboard Submission</av-col>
+        <av-col size="6">Optional automatic submission on Enter.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>Automatic Button Loading</av-col>
+        <av-col size="6">Applies loading animation to registered buttons.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>Type-safe schema</av-col>
+        <av-col size="6">Ensures validation and submission logic matches form types.</av-col>
+    </av-row>
+     <av-row>
+        <av-col size="6" center>Built-in lifecycle</av-col>
+        <av-col size="6">Works seamlessly with the Page system (visibility, navigation, etc.).</av-col>
+    </av-row>
+</div>

@@ -5,16 +5,36 @@
 <p>Here is a minimal example:</p>
 <av-code-editor name="Button example">
     <av-code language="typescript" tab="1" filename="Button/Button.wcl.avt">
-        export class DocIntroductionButton extends Aventus.WebComponent implements Aventus.DefaultComponent {
+        export class Button extends Aventus.WebComponent implements Aventus.DefaultComponent {
+            @Attribute()
+            private visible: boolean = true;
+            &nbsp;
             @Property()
             private count: number = 0;
+            &nbsp;
+            @Signal()
+            private msg: string = "";
+            &nbsp;
             private onClick(): void {
                 this.count++;
+                &nbsp;
+                \if(this.count > 5) {
+                    this.msg = "That's enough!";
+                    this.visible = false;
+                }
+                else \if(this.count > 3) {
+                    this.msg = "Go read the doc instead of clicking this dummy button"
+                }
             }
         }
     </av-code>
     <av-code language="html" tab="1" filename="Button/Button.wcv.avt">
-        <button @click="onClick">Count is {{ this.count }}</button>
+        <pre>
+&lt;button @click="onClick"&gt;Count is \{\{ this.count }}&lt;/button&gt;
+\if(this.msg) {
+    &lt;p&gt;\{\{ this.msg }}&lt;/p&gt;
+}
+        </pre>
     </av-code>
     <av-code language="css" tab="1" filename="Button/Button.wcs.avt">
         :host {
@@ -25,6 +45,11 @@
                 color: white;
                 cursor: pointer;
                 padding: 5px 15px;
+            }
+        }
+        :host(:not([visible])) {
+            button {
+                display: none;
             }
         }
     </av-code>

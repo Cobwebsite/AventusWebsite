@@ -1,0 +1,84 @@
+<av-code-editor name="Page With Form And HTTP">
+    <av-code language="typescript" filename="LoginAction.lib.avt">
+        <pre>
+            &nbsp;
+            export class LoginRequest {
+                public username!: string;
+                public password!: string;
+            }
+            &nbsp;
+            &nbsp;
+            export class LoginController extends Aventus.HttpRoute {
+                @BindThis()
+                public async request(body: LoginRequest): Promise&lt;Aventus.ResultWithError&lt;string&gt;&gt; {
+                    const request = new Aventus.HttpRequest(&#96;\${this.getPrefix()}/api/login&#96;, Aventus.HttpMethod.POST);
+                    request.setBody(body);
+                    return await request.queryJSON&lt;string&gt;(this.router);
+                }
+            }
+        </pre>
+    </av-code>
+    <av-code language="typescript" filename="LoginPage/LoginPage.wcl.avt">
+        <pre>
+            import { PageFormRoute } from "Aventus@UI:Aventus.Navigation.package.avt";
+            import { LoginController, type LoginRequest } from "../LoginAction.lib.avt";
+            import type { ResultWithError } from "Aventus@Main:Aventus.package.avt";
+            import { Required } from "Aventus@UI:Aventus.Form.Validators.package.avt";
+            &nbsp;
+            export class LoginPage extends PageFormRoute&lt;typeof LoginController&gt; implements Aventus.DefaultComponent {
+            &nbsp;
+            &nbsp;
+                //#region methods
+                /**
+                 * @inheritdoc
+                 */
+                public override route(): typeof LoginController {
+                    return LoginController;
+                }
+                /**
+                 * @inheritdoc
+                 */
+                public override onResult(result: ResultWithError&lt;string&gt; | null): Aventus.Asyncable&lt;void&gt; {
+                    \if(result?.success) {
+                        //...
+                    }
+                }
+                /**
+                 * @inheritdoc
+                 */
+                protected override \formSchema(): Aventus.Form.FormSchema&lt;LoginRequest&gt; {
+                    return {
+                        username: Required,
+                        password: Required
+                    };
+                }
+                /**
+                 * @inheritdoc
+                 */
+                public override configure(): Aventus.Asyncable&lt;Aventus.Navigation.Page.PageConfig&gt; {
+                    return {
+                        title: "Login"
+                    };
+                }
+            &nbsp;
+                //#endregion
+            &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="css" filename="LoginPage/LoginPage.wcs.avt">
+        <pre>
+            :host {
+                &nbsp;
+            }
+        </pre>
+    </av-code>
+    <av-code language="html" filename="LoginPage/LoginPage.wcv.avt">
+        <pre>
+            &lt;my-input name="username" :form="this.form.parts.username"&gt;&lt;/my-input&gt; &lt;!-- Link input to the \form --&gt;
+            &lt;my-input type="password" name="password" :form="this.form.parts.password"&gt;&lt;/my-input&gt;
+            &lt;button-element type="submit"&gt;Login&lt;/button-element&gt; &lt;!-- will submit the \form --&gt;
+        </pre>
+    </av-code>
+    <slot></slot>
+</av-code-editor>

@@ -1,0 +1,58 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocUICol extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+ * @inheritdoc
+ */
+    protected override Title(): string {
+        return "How to Use Row and Col Components in AventusJs";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Understand how to use the Row and Col components in AventusJs to manage logical layout structures. This guide explains how to organize components hierarchically, handle responsive logic, and integrate your own visual system.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs Row",
+            "AventusJs Col",
+            "Aventus layout logic",
+            "Aventus components",
+            "layout structure AventusJs",
+            "Row Col framework",
+            "responsive logic AventusJs",
+            "Aventus container components",
+            "Aventus frontend architecture",
+        ];
+    }
+    //#endregion
+
+}

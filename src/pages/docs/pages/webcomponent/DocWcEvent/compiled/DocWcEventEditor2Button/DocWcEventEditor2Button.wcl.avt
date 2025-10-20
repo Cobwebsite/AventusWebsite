@@ -2,6 +2,6 @@ export class DocWcEventEditor2Button extends Aventus.WebComponent implements Ave
     public onCustomClick: Aventus.Callback<() => void> = new Aventus.Callback();
 
 	private triggerCustomClick() {
-        this.onCustomClick.trigger([]);
+        this.onCustomClick.trigger();
     }
 }

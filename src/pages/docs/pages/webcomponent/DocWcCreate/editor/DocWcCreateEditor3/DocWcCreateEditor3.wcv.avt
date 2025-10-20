@@ -134,8 +134,8 @@
                 &lt;av-error&gt;
                     &lt;p&gt;I'm the default content&lt;/p&gt;
                     &lt;p slot=""&gt;I'm the default content too&lt;/p&gt;
-                    &lt;p slot="error"&gt;I'm an error in red&lt;/p&gt;
-                    &lt;p slot="success"&gt;I'm a success in green&lt;/p&gt;
+                    &lt;p slot="error"&gt;I'm an error in yellow&lt;/p&gt;
+                    &lt;p slot="success"&gt;I'm a success in green&lt;/p&gt; 
                 &lt;/av-error&gt;
             &lt;/body&gt;
             &lt;/html&gt;

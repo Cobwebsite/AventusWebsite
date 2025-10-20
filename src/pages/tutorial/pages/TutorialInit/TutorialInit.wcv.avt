@@ -27,7 +27,7 @@
 <p>The file <span class="cn">aventus.conf.avt</span> will open and the following structure is created. Apply the following actions:</p>
 <ul>
     <li>Add <span class="cn">"hideWarnings": true,</span> - This will hide warnings tell you that you need add documentation</li>
-    <li>Add <span class="cn">"dependances": [{"uri": "@AventusUI"}],</span> - This will load AventusUI as <a state="/docs/config/lib">dependances</a></li>
+    <li>Add <span class="cn">"dependances": {"Aventus@UI":{}},</span> - This will load Aventus@UI as <a state="/docs/config/lib">dependances</a></li>
     <li>Replace <span class="cn">"output": "./dist/TodoDemo.js"</span> by <span class="cn">"output": "./dist/todo.js"</span> - This is the file compiled</li>
 </ul>    
 

@@ -16,9 +16,8 @@
 <p>You can create a new folder named <span class="cn">TailwindComponent</span> inside ./aventus/templates/. and inside
     this new folder,
     you
-    can add a file named <span class="cn">template.avt</span>. This file define which questions must be asked to the
-    user. In the example
-    we need to know the component name.</p>
+    can add a file named <span class="cn">template.avt.ts</span>. This file define the logic for your template. You need
+    to create a <span class="cn">Template</span> class inside the file</p>
 
 <av-doc-advanced-template-editor-2></av-doc-advanced-template-editor-2>
 
@@ -32,9 +31,7 @@
 
 <h2>Using the template</h2>
 <p>Now if you right click on the <span class="cn">/src</span> folder and click on <span class="cn">Aventus :
-        Create...</span>. You can choose the
-    option
-    <span class="cn">Custom</span>. Inside the next dropdown, the option <span class="cn">Tailwind Template</span> must
+        Create...</span>. Inside the next dropdown, the option <span class="cn">Tailwind Template</span> must
     be available.
 </p>
 <av-img src="/img/doc/advanced/template/tailwind-template.png"></av-img>
@@ -44,51 +41,203 @@
 <av-doc-advanced-template-editor-4></av-doc-advanced-template-editor-4>
 
 
-<h2>Predefined variables</h2>
-<p>Aventus add predefined variables that you can use inside your template.</p>
+<h2>Meta</h2>
+<p>You can configure meta data to configure your template.</p>
 <div class="table">
-    <av-dynamic-row class="header">
-        <av-dynamic-col size="4" center>Name</av-dynamic-col>
-        <av-dynamic-col size="8" center>Description</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>path</av-dynamic-col>
-        <av-dynamic-col size="8" center>The full path of the folder where the user right click.</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>folderName</av-dynamic-col>
-        <av-dynamic-col size="8" center>The folder name where the user right click.</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>namespace</av-dynamic-col>
-        <av-dynamic-col size="8" center>The namespace that the path will have based on the namespace
-            strategy.</av-dynamic-col>
-    </av-dynamic-row>
-    <av-dynamic-row>
-        <av-dynamic-col size="4" center>module</av-dynamic-col>
-        <av-dynamic-col size="8" center>The module name defined inside your aventus.conf.avt.</av-dynamic-col>
-    </av-dynamic-row>
+    <av-row class="header">
+        <av-col size="4" center>Name</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>name</av-col>
+        <av-col size="8" center>
+            <div>The name of your template. Each <span class="cn">.</span> will be considered as
+                a group.</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>description</av-col>
+        <av-col size="8" center>The description of your template. This is a short description to explain your
+            template action.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>version</av-col>
+        <av-col size="8" center>The version of your template. This must match x.x.x</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>organization</av-col>
+        <av-col size="8" center>The organization from which your template will be deployed into the
+            store.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>tags</av-col>
+        <av-col size="8" center>The tags to tag your template inside the store.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>isProject</av-col>
+        <av-col size="8" center>
+            <div>A boolean to define if the template need that a <span class="cn">aventus.conf.avt</span> exists in the
+                workspace.</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>installationFolder</av-col>
+        <av-col size="8" center>A string to define where to install your template. It's recommended to use your
+            shop username or shop organization's name.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>documentation</av-col>
+        <av-col size="8" center>The link to the documentation of your template inside the
+            store.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>repository</av-col>
+        <av-col size="8" center>The link to the repository of your template inside the store.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>allowQuick</av-col>
+        <av-col size="8" center>A boolean to determine if the template can be use without right
+            click.</av-col>
+    </av-row>
 </div>
 
-<h2>Optimize user experience</h2>
-<p>
-    Until now, when you use the template, nothing is controlled and nothing notice the user that the creation is over.
-    We will add some check on the input and open the *.wcl.avt. To do that, open the <span
-        class="cn">template.avt</span> and remplace
-    the content like that.
-</p>
-<av-doc-advanced-template-editor-5></av-doc-advanced-template-editor-5>
-<p>The <span class="cn">validation</span> field allows you to validate the input with a regex (<span
-        class="cn">pattern</span>) and display a message if the check failed (<span class="cn">errorMsg</span>).
-</p>
-<p>The
-    <span class="cn">filesToOpen</span> field allows you to open a file after the creation of your template. The value
-    of filesToOpen items must be the following.
-</p>
-<ul>
-    <li>Starts and ends with a <span class="cn">/</span> : this is a regex</li>
-    <li>Otherwise: this is a path comparison</li>
-</ul>
+<h2>Available Methods</h2>
+<p>The template contains action to help you during creation process.</p>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Name</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>input</av-col>
+        <av-col size="8" center>Ask user with a input.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>select</av-col>
+        <av-col size="8" center>Ask user with a select.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>selectMultiple</av-col>
+        <av-col size="8" center>Ask user with a select with multiple choice.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>registerVar</av-col>
+        <av-col size="8" center>
+            <div>Register a variable that you can use. A default variable named <span class="cn">namespace</span> is
+                already registered.</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>registerBlock</av-col>
+        <av-col size="8" center>
+            <div>Register a block that you can use. A default block named <span class="cn">namespace</span> is already
+                registered.</div>
+            <av-code>
+                <pre>
+                #\{\{namespace}}
+                    export class $\{\{className}} extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+                    }
+                #\{\{namespace/}}
+                </pre>
+            </av-code>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>writeFile</av-col>
+        <av-col size="8" center>
+            <div>Write all files / folder at the same level or deeper than the template.avt.ts. By default the <span
+                    class="cn">.git</span> folder and the <span class="cn">.empty</span> file be ignored. You can pass a
+                function as parameter to apply custom logic. If the function return false, the file won't be written.
+            </div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>defaultWriteDeny</av-col>
+        <av-col size="8" center>
+            <div>You can call this function inside your function parameter inside <span class="cn">writeFile</span> to
+                avoid <span class="cn">.empty</span> and <span class="cn">.git</span>.</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>replaceVariables</av-col>
+        <av-col size="8" center>
+            <div>Call this function if you need to replace variables inside a text</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>replaceBlocks</av-col>
+        <av-col size="8" center>
+            <div>Call this function if you need to replace blocks inside a text</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>addIndent</av-col>
+        <av-col size="8" center>
+            <div>Add \\t before each lines</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>removeIndent</av-col>
+        <av-col size="8" center>
+            <div>Remove \\t before each lines</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>exec</av-col>
+        <av-col size="8" center>
+            <div>Exec a command. For example : <span class="cn">npm i</span></div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>showErrorMessage</av-col>
+        <av-col size="8" center>
+            <div>Show an error message inside the IDE</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>showWarningMessage</av-col>
+        <av-col size="8" center>
+            <div>Show a warning message inside the IDE</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>showInformationMessage</av-col>
+        <av-col size="8" center>
+            <div>Show an information message inside the IDE</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>showProgress</av-col>
+        <av-col size="8" center>
+            <div>Show a progress bar inside the IDE</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>hideProgress</av-col>
+        <av-col size="8" center>
+            <div>Hide a progress bar inside the IDE</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>runWithProgress</av-col>
+        <av-col size="8" center>
+            <div>Helper to show then hide a progress bar</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>openFile</av-col>
+        <av-col size="8" center>
+            <div>Open file. You must define the <span class="cn">relative path</span> from the template.avt.ts</div>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>sleep</av-col>
+        <av-col size="8" center>
+            <div>Helper to wait x ms</div>
+        </av-col>
+    </av-row>
+</div>
 
 <h2>Expose the template globaly</h2>
 <p>
@@ -98,6 +247,21 @@
     starting process, so when you create a new global template, you must reload your Vscode instance.
 </p>
 
+<h2>Publish to the store</h2>
+<p>
+    You can publish your template to the store by <span class="cn">right clicking</span> on the <span
+        class="cn">template.avt.ts</span> and press <span class="cn">Aventus: Publish template to the store</span>
+</p>
+
+<h2>Download from the store</h2>
+<p>
+    You can download amazing templates directly from the store just by clicking on the download button on a package
+    details page.
+</p>
+<p>
+    <a href="https://store.aventusjs.com/templates" target="_blank"><av-button>Open the store</av-button></a>
+</p>
+
 <h2>Project</h2>
 <p>
     In the previous section, you open the Aventus storage folder, you may have noticed that a <span
@@ -105,15 +269,31 @@
         class="cn">init a new project</span>. So can you create your own template to init new project or download some
     from the web. You must know that if a <span class="cn">aventus.conf.avt</span> file is at the same level of a <span
         class="cn">template.avt</span> file, the project will not be created. It means no autocompletion, no output
-    files, etc.
+    files, etc. You can also name the file <span class="cn">!aventus.conf.avt</span> to avoid error.
 </p>
+
+<h2>Quick template</h2>
 <p>
-    Because in most of the case, the project creation involves to run commands, you can add inside your template file a
-    field named <span class="cn">cmdsAfter</span> and add which commands must be ran after the creation.
+    If a template supports quick creation via a meta tag, you can register it to run without right-clicking on a folder.
 </p>
-<av-code language="json" filename="template.avt">
-    {
-    \t...
-    \t"cmdsAfter": ["npm run install"]
-    }
-</av-code>
+<p>This is especially useful for creating files in a specific location. For example, in <a
+        href="https://laraventus.aventusjs.com" target="_blank">Laraventus</a>, there is a template
+    for creating a Controller, which should always be placed in the <span class="cn">app/Http/Controller</span> folder.
+</p>
+
+<h3>Setting up Quick Creation</h3>
+<p>To configure quick creation:</p>
+<ul>
+    <li>Open the Command Palette and search for <span class="cn">Aventus: Edit Quick Creation</span></li>
+    <li>or use the shortcut <span class="cn">Ctrl + K</span>, <span class="cn">Ctrl + Shift + V</span>.</li>
+</ul>
+<p>If Aventus finds compatible templates, you can enable or disable them for quick creation.</p>
+
+
+<h3>Running Quick Creation</h3>
+<p>To run a quick creation:</p>
+<ul>
+    <li>Open the Command Palette and search for <span class="cn">Aventus: Run Quick Creation</span></li>
+    <li>or use the shortcut <span class="cn">Ctrl + K</span>, <span class="cn">Ctrl + V</span>.</li>
+</ul>
+<p>If only one template is registered, it will run immediately. Otherwise, you can select which quick template to execute.</p>

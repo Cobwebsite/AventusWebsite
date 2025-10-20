@@ -1,33 +1,33 @@
 <av-scrollable floating_scroll class="main-scroll">
     <div class="height-wrapper">
         <div class="main">
-            <av-dynamic-row class="icon-text">
-                <av-dynamic-col size="5" class="title-container">
+            <av-row class="icon-text">
+                <av-col size="5" class="title-container">
                     <div class="title">
                         AventusJs
                     </div>
                     <div class="sub-title">
                         The Webcomponent Javascript Framework
                     </div>
-                </av-dynamic-col>
-                <av-dynamic-col size="5">
+                </av-col>
+                <av-col size="5">
                     <av-img src="/img/logo_fox.svg"></av-img>
-                </av-dynamic-col>
-            </av-dynamic-row>
-            <av-dynamic-row class="btn-container">
-                <av-dynamic-col size="12">
-                    <av-router-link state="/docs/introduction" class="menu"><av-button>Get
-                            started</av-button></av-router-link>
-                    <av-router-link state="/tutorial/introduction"
-                        class="menu"><av-button>Tutorial</av-button></av-router-link>
-                </av-dynamic-col>
-            </av-dynamic-row>
+                </av-col>
+            </av-row>
+            <av-row class="btn-container">
+                <av-col size="12">
+                    <av-link to="/docs/introduction" class="menu"><av-button>Get
+                            started</av-button></av-link>
+                    <av-link to="/tutorial/introduction"
+                        class="menu"><av-button>Tutorial</av-button></av-link>
+                </av-col>
+            </av-row>
             <av-img class="design-logo" src="/img/logo.svg"></av-img>
             <av-img class="design-logo2" src="/img/logo.svg"></av-img>
         </div>
         <div class="blocks">
-            <av-dynamic-row>
-                <av-dynamic-col size_sm="12" size_md="4" size="12">
+            <av-row>
+                <av-col size_sm="12" size_md="4" size="12">
                     <div class="block">
                         <div class="title">Encapsulation</div>
                         <div class="icon">
@@ -36,9 +36,9 @@
                         <p>Avoiding conflicts through encapsulation to build scalable application. Each file has a role
                             to play in keeping your code tidy.</p>
                     </div>
-                </av-dynamic-col>
+                </av-col>
 
-                <av-dynamic-col size_sm="12" size_md="4" size="12">
+                <av-col size_sm="12" size_md="4" size="12">
                     <div class="block">
                         <div class="title">For OOP lovers</div>
                         <div class="icon">
@@ -47,9 +47,9 @@
                         <p>Even your graphic components can be defined by class which allows inheritance and genericity.
                             If you love OOP, you will love making views.</p>
                     </div>
-                </av-dynamic-col>
+                </av-col>
 
-                <av-dynamic-col size_sm="12" size_md="4" size="12">
+                <av-col size_sm="12" size_md="4" size="12">
                     <div class="block">
                         <div class="title">Type safe</div>
                         <div class="icon">
@@ -58,8 +58,8 @@
                         <p>Prevent errors through typing and make your code more secure. Maintaining a growing
                             application over the long term.</p>
                     </div>
-                </av-dynamic-col>
-            </av-dynamic-row>
+                </av-col>
+            </av-row>
         </div>
 
         <div class="separator"></div>

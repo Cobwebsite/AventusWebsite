@@ -1,0 +1,26 @@
+<h1>GenericError</h1>
+<p>When you create function that can fail you can use the error strategy developed by Aventus. Instead of returning the
+    function result, the result is wrapped inside an container named <span class="cn">GenericError</span>, <span
+        class="cn">VoidWithError</span>, and <span class="cn">ResultWithError</span>. They are all
+    useful tools for managing errors and results in your application. They provide a structured way to represent error
+    conditions and action outcomes, helping you write more robust and maintainable code.</p>
+
+<p><span class="cn">Aventus.GenericError</span> is a generic error class that provides a structured way to represent
+    errors in your application. It
+    allows you to define an error code along with a message to describe the error. The error code can be of any type
+    that extends either number or an enumeration (Enum). By extending GenericError, you can create specific error types
+    tailored to different error scenarios in your application.</p>
+
+<av-code language="typescript" filename="Example.lib.avt">
+    <pre>
+        // Define an enumeration for error codes
+        export enum MyErrorCode {
+            NotFound = 404,
+            InvalidInput = 400,
+            InternalServerError = 500
+        }
+        
+        // Create a specific error class extending GenericError
+        export class MyError extends GenericError&lt;MyErrorCode&gt; { }
+    </pre>
+</av-code>

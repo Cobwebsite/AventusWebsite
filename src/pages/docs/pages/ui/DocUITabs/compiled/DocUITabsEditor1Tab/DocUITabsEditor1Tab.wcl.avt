@@ -1,0 +1,40 @@
+import type { IconType } from "MaterialIcon:MaterialIcon.package.avt";
+
+export class DocUITabsEditor1Tab extends Aventus.Layout.Tabs.Tab implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+    @Property()
+    public label: string = "";
+    @Property()
+    public count!: number;
+    @Property()
+    public icon?: IconType;
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    public override identifier(): string {
+        return this.label;
+    }
+
+    //#endregion
+
+}

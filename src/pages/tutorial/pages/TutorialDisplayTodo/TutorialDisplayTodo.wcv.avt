@@ -88,8 +88,8 @@
 
 <p>This will trigger an error because our component don't have a variable <span class="cn">todo</span>. So you can edit
     your logical file to add this variable. Because it's inside the view, we want a variable that will refresh the view
-    when a change occured. This kind of variable is called <span class="cn">Watch</span> <av-router-link
-        state="/docs/wc/watch">(more info)</av-router-link>.</p>
+    when a change occured. This kind of variable is called <span class="cn">Watch</span> <av-link
+        to="/docs/wc/watch">(more info)</av-link>.</p>
 <p>To create this variable, you can set your cursor inside the region <span class="cn">variables</span> and <span
         class="cn">right
         click > Aventus: Create watch</span> or use the shortcut <span class="cn">ctrl + k ctrl + numpad3</span>.

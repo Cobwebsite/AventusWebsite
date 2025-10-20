@@ -1,0 +1,221 @@
+<h1>UI - Col / Row</h1>
+<p>The Layout module provides a lightweight and responsive 12-column grid system based on two Web Components:
+    &lt;av-row&gt; and &lt;av-col&gt;.</p>
+
+<p>It’s inspired by modern grid frameworks like Bootstrap or Tailwind but designed to be framework-agnostic,
+    flexbox-based, and natively responsive thanks to container queries.</p>
+
+<h2>Core Concept</h2>
+<p>The grid layout is composed of:</p>
+<ul>
+    <li>&lt;av-row&gt;: defines a row container (a flex context with container sizing).</li>
+    <li>&lt;av-col&gt;: defines a column inside the row, with a width ranging from 1 to 12.</li>
+</ul>
+
+<av-code language="html">
+    <pre>
+&lt;av-row&gt;
+    &lt;av-col size="6">Column 1&lt;/av-col&gt;
+    &lt;av-col size="6">Column 2&lt;/av-col&gt;
+&lt;/av-row>
+    </pre>
+</av-code>
+<p>Each column will automatically wrap to the next line when there’s not enough horizontal space.</p>
+
+<h2>Col Component</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Attribute</av-col>
+        <av-col size="4" center>Type</av-col>
+        <av-col size="4" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>size</av-col>
+        <av-col size="4" center>0-12</av-col>
+        <av-col size="4" center>Column width over 12 columns.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>size_xs, size_sm, size_md, size_lg, size_xl</av-col>
+        <av-col size="4" center>0-12</av-col>
+        <av-col size="4" center>Responsive width for each breakpoint.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>offset</av-col>
+        <av-col size="4" center>0-12</av-col>
+        <av-col size="4" center>Adds a left offset (empty space before the column).</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>offset_right</av-col>
+        <av-col size="4" center>0-12</av-col>
+        <av-col size="4" center>Adds a right offset (empty space after the column).</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>center</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Centers the column's content horizontally.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>use_container</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Enables container query mode for local responsiveness.</av-col>
+    </av-row>
+</div>
+
+<h3>Basic Example</h3>
+<av-code language="html">
+    <pre>
+&lt;av-row&gt;
+    &lt;av-col size="12" size_md="6" size_lg="4"&gt;
+        Responsive column
+    &lt;/av-col&gt;
+&lt;/av-row&gt;
+    </pre>
+</av-code>
+
+<p>Behavior:</p>
+<ul>
+    <li>XS (mobile) → full width (12/12)</li>
+    <li>MD (≥720px) → half width (6/12)</li>
+    <li>LG (≥960px) → one-third width (4/12)</li>
+</ul>
+
+<h3>Breakpoints</h3>
+<p>The grid supports five responsive breakpoints:</p>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Label</av-col>
+        <av-col size="4" center>Min width</av-col>
+        <av-col size="4" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>xs</av-col>
+        <av-col size="4" center>300px</av-col>
+        <av-col size="4" center>Extra small</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>sm</av-col>
+        <av-col size="4" center>540px</av-col>
+        <av-col size="4" center>Small</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>md</av-col>
+        <av-col size="4" center>720px</av-col>
+        <av-col size="4" center>Medium</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>lg</av-col>
+        <av-col size="4" center>960px</av-col>
+        <av-col size="4" center>Large</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>xl</av-col>
+        <av-col size="4" center>1140px</av-col>
+        <av-col size="4" center>Extra large</av-col>
+    </av-row>
+</div>
+
+<p>Each label can be used in size, offset, and offset-right attributes.</p>
+
+<h3>Offsets & Centering</h3>
+<p>Offsets are useful to create proportional spacing in your layout:</p>
+
+<av-code language="html">
+    <pre>
+&lt;av-row&gt;
+    &lt;av-col size="4" center offset="2"&gt;Offset by 2&lt;/av-col&gt;
+    &lt;av-col size="4" center offset_right="2"&gt;Offset to the right&lt;/av-col&gt;
+&lt;/av-row&gt;
+    </pre>
+</av-code>
+
+<p>To center content horizontally inside a column:</p>
+
+<av-code language="html">
+    <pre>
+&lt;av-row&gt;
+    &lt;av-col size="6" center&gt;Centered content&lt;/av-col&gt;
+&lt;/av-row&gt;
+    </pre>
+</av-code>
+
+<h3>Container Queries vs Media Queries</h3>
+<p>The grid can adapt using two distinct responsive modes:</p>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Mode</av-col>
+        <av-col size="4" center>Description</av-col>
+        <av-col size="4" center>Activation</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>Media Queries</av-col>
+        <av-col size="4" center>Reacts to the viewport width.</av-col>
+        <av-col size="4" center>Default (use_container = false)</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>Container Queries</av-col>
+        <av-col size="4" center>Reacts to the width of its parent &lt;av-row&gt;.</av-col>
+        <av-col size="4" center>Set use_container on &lt;av-col&gt; or globally via config</av-col>
+    </av-row>
+</div>
+
+<p>Local container example</p>
+<av-code language="html">
+    <pre>
+&lt;av-row&gt;
+    &lt;av-col use_container size_xs="12" size_md="6" size_lg="4"&gt;
+        Responsive to its container width
+    &lt;/av-col&gt;
+&lt;/av-row&gt;
+    </pre>
+</av-code>
+
+<p>You can enable container query mode globally for all columns:</p>
+<av-code language="ts">
+    <pre>
+Layout.Col.configure({
+    use_container: true
+});
+    </pre>
+</av-code>
+<p>All &lt;av-col&gt; components will then behave responsively based on their container width.</p>
+
+
+<h3>CSS Variables</h3>
+<p>You can customize spacing easily using CSS variables:</p>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Variable</av-col>
+        <av-col size="4" center>Description</av-col>
+        <av-col size="4" center>Default</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--col-padding</av-col>
+        <av-col size="4" center>Internal padding of a column</av-col>
+        <av-col size="4" center>8px</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--col-gap</av-col>
+        <av-col size="4" center>Horizontal gap between columns</av-col>
+        <av-col size="4" center>0px</av-col>
+    </av-row>
+</div>
+
+<h2>Row component</h2>
+<p>The &lt;av-row&gt; component:</p>
+<ul>
+    <li>Creates the grid container (display: flex; flex-wrap: wrap;)</li>
+    <li>Defines a container context (container-name: row; container-type: inline-size;)</li>
+    <li>Manages horizontal gaps between columns.</li>
+</ul>
+
+<h3>Technical Details</h3>
+<ul>
+    <li>Widths are computed dynamically with <span class="cn">calc(100% / 12 * n)</span> adjusted by the column gap.</li>
+    <li>Columns with <span class="cn">size="0"</span> are hidden (<span class="cn">display: none</span>).</li>
+    <li>The <span class="cn">container-name: row</span> enables container query behavior for <span class="cn">av-col[use_container]</span>.</li>
+    <li><span class="cn">use_container</span> mode allows nested responsive layouts that adapt to their parent width, not the entire viewport.</li>
+</ul>
+
+
+
+

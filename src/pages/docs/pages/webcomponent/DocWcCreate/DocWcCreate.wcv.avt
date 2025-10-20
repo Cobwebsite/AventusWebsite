@@ -22,6 +22,7 @@
     <li><span class="cn">&lt;style&gt;</span> : for Scss part</li>
     <li><span class="cn">&lt;script&gt;</span> : for Js part</li>
 </ul>
+<av-doc-wc-create-editor-0></av-doc-wc-create-editor-0>
 <p>or inside 3 different file. (This option is the adviced one because it allows developer to keep a well knowed
     architecture.)</p>
 <ul>
@@ -42,28 +43,28 @@
 <av-doc-wc-create-editor-3></av-doc-wc-create-editor-3>
 <p>There are sepcial attributes you can use to add feature to basic html: </p>
 <ul>
-    <li>@element : To select element(s). <av-router-link state="/docs/wc/element" class="font-sm">More
-            info</av-router-link></li>
-    <li>@for : To create a loop. <av-router-link state="/docs/wc/loop" class="font-sm">More info</av-router-link></li>
+    <li>@element : To select element(s). <av-link to="/docs/wc/element" class="font-sm">More
+            info</av-link></li>
+    <li>@for : To create a loop. <av-link to="/docs/wc/loop" class="font-sm">More info</av-link></li>
     <li>@bind(_<i><span class="cn">$event</span></i>)?(:<i><span class="cn">$field</span></i>)? : To bind data.
-        <av-router-link class="font-sm" state="/docs/wc/binding">More
-            info</av-router-link>
+        <av-link class="font-sm" to="/docs/wc/binding">More
+            info</av-link>
     </li>
-    <li>:<i><span class="cn">$field</span></i> : To inject data. <av-router-link state="/docs/wc/injection"
+    <li>:<i><span class="cn">$field</span></i> : To inject data. <av-link to="/docs/wc/injection"
             class="font-sm">More
-            info</av-router-link>
+            info</av-link>
     </li>
-    <li>@press : To add press event from PressManager. <av-router-link state="/docs/wc/event" class="font-sm">More
-            info</av-router-link>
+    <li>@press : To add press event from PressManager. <av-link to="/docs/wc/event" class="font-sm">More
+            info</av-link>
     </li>
-    <li>@<i><span class="cn">$eventName</span></i> : To add event listener. <av-router-link state="/docs/wc/event"
+    <li>@<i><span class="cn">$eventName</span></i> : To add event listener. <av-link to="/docs/wc/event"
             class="font-sm">More
-            info</av-router-link>
+            info</av-link>
     </li>
 </ul>
-<p>You can use interpolation inside tag content and normal attribute to have dynamic content. If you use <av-router-link
-        state="/docs/wc/event">a property value</av-router-link>&nbsp;or&nbsp;<av-router-link state="/docs/wc/event">a
-        watch value</av-router-link> the content will be refreshed.</p>
+<p>You can use interpolation inside tag content and normal attribute to have dynamic content. If you use <av-link
+        to="/docs/wc/event">a property value</av-link>&nbsp;or&nbsp;<av-link to="/docs/wc/event">a
+        watch value</av-link> the content will be refreshed.</p>
 <av-doc-wc-create-editor-4></av-doc-wc-create-editor-4>
 <h2>The style</h2>
 <p>This is just a simple SCSS file. The only think to know is that the style must be wrapped inside a :host{}.</p>
@@ -72,18 +73,18 @@
     \tcolor: red; // This ll change the behavior of the current webcomponent
     }
 </av-code>
-<p>You can find more informations about the style <av-router-link state="/docs/wc/style">here.</av-router-link></p>
+<p>You can find more information about the style <av-link to="/docs/wc/style">here.</av-link></p>
 <h2>The logic</h2>
 <p>When you create a new file *.wcl.avt you can notice that the file has region. This is set to allow developer to order
     the code. Each region has a goal. You can remove it but we advice you to keep it.</p>
 <ul>
     <li>static : Where you can write the static properties or methods for your webcomponent.</li>
-    <li>props : Where you can define the <av-router-link state="/docs/wc/attribute">attributes</av-router-link>, the
-        <av-router-link state="/docs/wc/property">properties</av-router-link>&nbsp;and the <av-router-link
-            state="/docs/wc/watch">watch variables.</av-router-link>
+    <li>props : Where you can define the <av-link to="/docs/wc/attribute">attributes</av-link>, the
+        <av-link to="/docs/wc/property">properties</av-link>&nbsp;and the <av-link
+            to="/docs/wc/watch">watch variables.</av-link>
     </li>
-    <li>variables : Where you can define the variables and the pointers on <av-router-link state="/docs/wc/element">view
-            element</av-router-link></li>
+    <li>variables : Where you can define the variables and the pointers on <av-link to="/docs/wc/element">view
+            element</av-link></li>
     <li>constructor : Where you can override the constructor for your webcomponent.</li>
     <li>methods : Where you can write the methods for your webcomponent.</li>
 </ul>
@@ -117,7 +118,7 @@
     <li><span class="cn">@TagName(name:string)</span> : to define the tag for the component</li>
     <li><span class="cn">@Debugger({ writeCompiled?: boolean, enableWatchHistory?: boolean})</span> : to debug component
         compilation and
-        state.
+        to.
     </li>
     <li><span class="cn">@Dependances({ type: Type, strong?:boolean}[])</span> : to add dependance not written inside
         component. The

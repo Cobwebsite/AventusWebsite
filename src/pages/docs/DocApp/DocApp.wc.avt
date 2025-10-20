@@ -39,108 +39,191 @@ import { DocLibPressManager } from "../pages/lib/DocLibPressManager/DocLibPressM
 import { DocLibResizeObserver } from "../pages/lib/DocLibResizeObserver/DocLibResizeObserver.wcl.avt";
 import { DocLibResourceLoader } from "../pages/lib/DocLibResourceLoader/DocLibResourceLoader.wcl.avt";
 import { DocLibWatcher } from "../pages/lib/DocLibWatcher/DocLibWatcher.wcl.avt";
-import { DocLibTools } from "../pages/lib/DocLibTools/DocLibTools.wcl.avt";
 import { Page404 } from "../../Page404/Page404.wcl.avt";
 import { DocWcCondition } from "../pages/webcomponent/DocWcCondition/DocWcCondition.wcl.avt";
 import { DocAdvancedNpmExport } from "../pages/advanced/DocAdvancedNpmExport/DocAdvancedNpmExport.wcl.avt";
 import { DocAdvancedStorybook } from "../pages/advanced/DocAdvancedStorybook/DocAdvancedStorybook.wcl.avt";
+import { DocAdvancedStore } from "../pages/advanced/DocAdvancedStore/DocAdvancedStore.wcl.avt";
+import { DocWcSignal } from "../pages/webcomponent/DocWcSignal/DocWcSignal.wcl.avt";
+import { DocI18nConfig } from "../pages/i18n/DocI18nConfig/DocI18nConfig.wcl.avt";
+import { DocI18nUsage } from "../pages/i18n/DocI18nUsage/DocI18nUsage.wcl.avt";
+import { DocUIButton } from "../pages/ui/DocUIButton/DocUIButton.wcl.avt";
+import { DocUIForm } from "../pages/ui/DocUIForm/DocUIForm.wcl.avt";
+import { DocUIFormElement } from "../pages/ui/DocUIFormElement/DocUIFormElement.wcl.avt";
+import { DocUICollapse } from "../pages/ui/DocUICollapse/DocUICollapse.wcl.avt";
+import { DocUIGridHelper } from "../pages/ui/DocUIGridHelper/DocUIGridHelper.wcl.avt";
+import { DocUICol } from "../pages/ui/DocUICol/DocUICol.wcl.avt";
+import { DocUIImage } from "../pages/ui/DocUIImage/DocUIImage.wcl.avt";
+import { DocUIScrollable } from "../pages/ui/DocUIScrollable/DocUIScrollable.wcl.avt";
+import { DocUITabs } from "../pages/ui/DocUITabs/DocUITabs.wcl.avt";
+import { DocUIModal } from "../pages/ui/DocUIModal/DocUIModal.wcl.avt";
+import { DocUIToast } from "../pages/ui/DocUIToast/DocUIToast.wcl.avt";
+import { DocUILink } from "../pages/ui/DocUILink/DocUILink.wcl.avt";
+import { DocUIPage } from "../pages/ui/DocUIPage/DocUIPage.wcl.avt";
+import { DocUIRouter } from "../pages/ui/DocUIRouter/DocUIRouter.wcl.avt";
+import { DocUIProcess } from "../pages/ui/DocUIProcess/DocUIProcess.wcl.avt";
+import { DocUIShortcut } from "../pages/ui/DocUIShortcut/DocUIShortcut.wcl.avt";
+import { DocUIIntroduction } from "../pages/ui/DocUIIntroduction/DocUIIntroduction.wcl.avt";
+import { DocUIPageForm } from "../pages/ui/DocUIPageForm/DocUIPageForm.wcl.avt";
+import { DocUIPageFormRoute } from "../pages/ui/DocUIPageFormRoute/DocUIPageFormRoute.wcl.avt";
+import { DocHttpIntroduction } from "../pages/http/DocHttpIntroduction/DocHttpIntroduction.wcl.avt";
+import { DocHttpRequest } from "../pages/http/DocHttpRequest/DocHttpRequest.wcl.avt";
+import { DocHttpRouter } from "../pages/http/DocHttpRouter/DocHttpRouter.wcl.avt";
+import { DocHttpRoute } from "../pages/http/DocHttpRoute/DocHttpRoute.wcl.avt";
+import { DocErrorGeneric } from "../pages/error/DocErrorGeneric/DocErrorGeneric.wcl.avt";
+import { DocErrorVoid } from "../pages/error/DocErrorVoid/DocErrorVoid.wcl.avt";
+import { DocErrorResult } from "../pages/error/DocErrorResult/DocErrorResult.wcl.avt";
+import { DocLibCompareObject } from "../pages/lib/DocLibCompareObject/DocLibCompareObject.wcl.avt";
+import { DocLibConverter } from "../pages/lib/DocLibConverter/DocLibConverter.wcl.avt";
+import { DocLibJson } from "../pages/lib/DocLibJson/DocLibJson.wcl.avt";
+import { DocLibMutex } from "../pages/lib/DocLibMutex/DocLibMutex.wcl.avt";
+import { DocLibSleep } from "../pages/lib/DocLibSleep/DocLibSleep.wcl.avt";
+import { DocLibUuid } from "../pages/lib/DocLibUuid/DocLibUuid.wcl.avt";
+import { DocLibValueFromObject } from "../pages/lib/DocLibValueFromObject/DocLibValueFromObject.wcl.avt";
 
 
-	export class DocApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
-	    private docPage?: DocPage;
-	    protected defineRoutes(): void {
-	        //#region doc install
-	        this.addRoute("/docs/introduction", DocIntroduction);
-	        this.addRoute("/docs/installation", DocInstallation);
-	        this.addRoute("/docs/experience", DocExperience);
-	        this.addRoute("/docs/first_app", DocFirstApp);
-	        //#endregion
+export class DocApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
+    private docPage?: DocPage;
+    protected defineRoutes(): void {
+        //#region doc install
+        this.addRoute("/docs/introduction", DocIntroduction);
+        this.addRoute("/docs/installation", DocInstallation);
+        this.addRoute("/docs/experience", DocExperience);
+        this.addRoute("/docs/first_app", DocFirstApp);
+        //#endregion
 
-	        //#region doc config
-	        this.addRoute("/docs/config/basic_prop", DocConfigBasic);
-	        this.addRoute("/docs/config/build", DocConfigBuild);
-	        this.addRoute("/docs/config/static", DocConfigStatic);
-	        this.addRoute("/docs/config/lib", DocConfigLib);
-	        //#endregion
+        //#region doc config
+        this.addRoute("/docs/config/basic_prop", DocConfigBasic);
+        this.addRoute("/docs/config/build", DocConfigBuild);
+        this.addRoute("/docs/config/static", DocConfigStatic);
+        this.addRoute("/docs/config/lib", DocConfigLib);
+        //#endregion
 
-	        //#region doc data
-	        this.addRoute("/docs/data/create", DocDataCreate);
-	        //#endregion
+        //#region doc data
+        this.addRoute("/docs/data/create", DocDataCreate);
+        //#endregion
 
-	        //#region doc ram
-	        this.addRoute("/docs/ram/create", DocRamCreate);
-	        this.addRoute("/docs/ram/crud", DocRamCrud);
-	        this.addRoute("/docs/ram/listen_changes", DocRamListenChanges);
-	        this.addRoute("/docs/ram/mixin", DocRamMixin);
-	        //#endregion
+        //#region doc data
+        this.addRoute("/docs/error/generic", DocErrorGeneric);
+        this.addRoute("/docs/error/void", DocErrorVoid);
+        this.addRoute("/docs/error/result", DocErrorResult);
+        //#endregion
 
-	        //#region doc state
-	        this.addRoute("/docs/state/create", DocStateCreate);
-	        this.addRoute("/docs/state/change", DocStateChange);
-	        this.addRoute("/docs/state/listen_changes", DocStateListen);
-	        //#endregion
+        //#region doc http
+        this.addRoute("/docs/http/introduction", DocHttpIntroduction);
+        this.addRoute("/docs/http/request", DocHttpRequest);
+        this.addRoute("/docs/http/router", DocHttpRouter);
+        this.addRoute("/docs/http/route", DocHttpRoute);
+        //#endregion
 
-	        //#region doc webcomponent
-	        this.addRoute("/docs/wc/create", DocWcCreate);
-	        this.addRoute("/docs/wc/inheritance", DocWcInheritance);
-	        this.addRoute("/docs/wc/attribute", DocWcAttribute);
-	        this.addRoute("/docs/wc/property", DocWcProperty);
-	        this.addRoute("/docs/wc/watch", DocWcWatch);
-	        this.addRoute("/docs/wc/style", DocWcStyle);
-	        this.addRoute("/docs/wc/interpolation", DocWcInterpolation);
-	        this.addRoute("/docs/wc/element", DocWcElement);
-	        this.addRoute("/docs/wc/binding", DocWcBinding);
-	        this.addRoute("/docs/wc/injection", DocWcInjection);
-	        this.addRoute("/docs/wc/loop", DocWcLoop);
-	        this.addRoute("/docs/wc/condition", DocWcCondition);
-	        this.addRoute("/docs/wc/event", DocWcEvent);
-	        this.addRoute("/docs/wc/state", DocWcState);
-	        //#endregion
+        //#region doc ram
+        this.addRoute("/docs/ram/create", DocRamCreate);
+        this.addRoute("/docs/ram/crud", DocRamCrud);
+        this.addRoute("/docs/ram/listen_changes", DocRamListenChanges);
+        this.addRoute("/docs/ram/mixin", DocRamMixin);
+        //#endregion
 
-	        //#region doc lib
-	        this.addRoute("/docs/lib/create", DocLibCreate);
-	        this.addRoute("/docs/lib/animation", DocLibAnimation);
-	        this.addRoute("/docs/lib/callback", DocLibCallback);
-	        this.addRoute("/docs/lib/drag_and_drop", DocLibDragAndDrop);
-	        this.addRoute("/docs/lib/instance", DocLibInstance);
-	        this.addRoute("/docs/lib/press_manager", DocLibPressManager);
-	        this.addRoute("/docs/lib/resize_observer", DocLibResizeObserver);
-	        this.addRoute("/docs/lib/resource_loader", DocLibResourceLoader);
-	        this.addRoute("/docs/lib/watcher", DocLibWatcher);
-	        this.addRoute("/docs/lib/tools", DocLibTools);
-	        //#endregion
+        //#region doc state
+        this.addRoute("/docs/state/create", DocStateCreate);
+        this.addRoute("/docs/state/change", DocStateChange);
+        this.addRoute("/docs/state/listen_changes", DocStateListen);
+        //#endregion
 
-	        //#region doc advanced
-	        this.addRoute("/docs/advanced/template", DocAdvancedTemplate);
-	        this.addRoute("/docs/advanced/npm_export", DocAdvancedNpmExport);
-	        this.addRoute("/docs/advanced/storybook", DocAdvancedStorybook);
-	        //#endregion
-	    }
+        //#region doc webcomponent
+        this.addRoute("/docs/wc/create", DocWcCreate);
+        this.addRoute("/docs/wc/inheritance", DocWcInheritance);
+        this.addRoute("/docs/wc/attribute", DocWcAttribute);
+        this.addRoute("/docs/wc/property", DocWcProperty);
+        this.addRoute("/docs/wc/watch", DocWcWatch);
+        this.addRoute("/docs/wc/signal", DocWcSignal);
+        this.addRoute("/docs/wc/style", DocWcStyle);
+        this.addRoute("/docs/wc/interpolation", DocWcInterpolation);
+        this.addRoute("/docs/wc/element", DocWcElement);
+        this.addRoute("/docs/wc/binding", DocWcBinding);
+        this.addRoute("/docs/wc/injection", DocWcInjection);
+        this.addRoute("/docs/wc/loop", DocWcLoop);
+        this.addRoute("/docs/wc/condition", DocWcCondition);
+        this.addRoute("/docs/wc/event", DocWcEvent);
+        this.addRoute("/docs/wc/state", DocWcState);
+        //#endregion
 
-		protected override error404(state: Aventus.State): (new () => Aventus.Navigation.Page) | null {
-			if(state.name.startsWith("/docs/")){
-				return Page404;
-			}
-			return null;
-		}
-	}
-	
-	
-	
+        //#region doc lib
+        this.addRoute("/docs/lib/animation", DocLibAnimation);
+        this.addRoute("/docs/lib/callback", DocLibCallback);
+        this.addRoute("/docs/lib/compare_object", DocLibCompareObject);
+        this.addRoute("/docs/lib/converter", DocLibConverter);
+        this.addRoute("/docs/lib/create", DocLibCreate);
+        this.addRoute("/docs/lib/drag_and_drop", DocLibDragAndDrop);
+        this.addRoute("/docs/lib/instance", DocLibInstance);
+        this.addRoute("/docs/lib/json", DocLibJson);
+        this.addRoute("/docs/lib/mutex", DocLibMutex);
+        this.addRoute("/docs/lib/press_manager", DocLibPressManager);
+        this.addRoute("/docs/lib/resize_observer", DocLibResizeObserver);
+        this.addRoute("/docs/lib/resource_loader", DocLibResourceLoader);
+        this.addRoute("/docs/lib/sleep", DocLibSleep);
+        this.addRoute("/docs/lib/uuid", DocLibUuid);
+        this.addRoute("/docs/lib/value_from_object", DocLibValueFromObject);
+        this.addRoute("/docs/lib/watcher", DocLibWatcher);
+        //#endregion
+
+        //#region doc i18n
+        this.addRoute("/docs/i18n/config", DocI18nConfig);
+        this.addRoute("/docs/i18n/usage", DocI18nUsage);
+        //#endregion
+
+        //#region doc ui
+        this.addRoute("/docs/ui/introduction", DocUIIntroduction);
+        this.addRoute("/docs/ui/button", DocUIButton);
+        this.addRoute("/docs/ui/form", DocUIForm);
+        this.addRoute("/docs/ui/form_element", DocUIFormElement);
+        this.addRoute("/docs/ui/col_row", DocUICol);
+        this.addRoute("/docs/ui/collapse", DocUICollapse);
+        this.addRoute("/docs/ui/grid_helper", DocUIGridHelper);
+        this.addRoute("/docs/ui/image", DocUIImage);
+        this.addRoute("/docs/ui/scrollable", DocUIScrollable);
+        this.addRoute("/docs/ui/tabs", DocUITabs);
+        this.addRoute("/docs/ui/modal", DocUIModal);
+        this.addRoute("/docs/ui/toast", DocUIToast);
+        this.addRoute("/docs/ui/link", DocUILink);
+        this.addRoute("/docs/ui/page", DocUIPage);
+        this.addRoute("/docs/ui/page_form", DocUIPageForm);
+        this.addRoute("/docs/ui/page_form_http", DocUIPageFormRoute);
+        this.addRoute("/docs/ui/router", DocUIRouter);
+        this.addRoute("/docs/ui/process", DocUIProcess);
+        this.addRoute("/docs/ui/shortcut", DocUIShortcut);
+        //#endregion
+
+        //#region doc advanced
+        this.addRoute("/docs/advanced/store", DocAdvancedStore);
+        this.addRoute("/docs/advanced/template", DocAdvancedTemplate);
+        this.addRoute("/docs/advanced/npm_export", DocAdvancedNpmExport);
+        this.addRoute("/docs/advanced/storybook", DocAdvancedStorybook);
+        //#endregion
+    }
+
+    protected override error404(state: Aventus.State): (new () => Aventus.Navigation.Page) | null {
+        if(state.name.startsWith("/docs/")) {
+            return Page404;
+        }
+        return null;
+    }
+}
+
+
+
 </script>
 
-<template>	
-	
+<template>
+    
 </template>
 
-<style>	
-		:host {
-			height: 100%;
-	
-	
-			.content {
-				height: 100%;
-			}
-		}
-	
+<style>
+    :host {
+    		height: 100%;
+    
+    
+    		.content {
+    			height: 100%;
+    		}
+    	}
 </style>

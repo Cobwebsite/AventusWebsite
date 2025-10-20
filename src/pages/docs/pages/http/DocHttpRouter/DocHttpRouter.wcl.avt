@@ -1,0 +1,60 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocHttpRouter extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "HttpRouter in Aventus";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to use Aventus.HttpRouter to define base endpoints and manage HTTP requests in Aventus. Discover how to configure base URLs, use helper methods for common HTTP verbs, integrate with HttpRequest for automatic body parsing and response transformation, and subclass routers for custom endpoint behavior.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus HttpRouter",
+            "HttpRouter class",
+            "Base endpoint Aventus",
+            "HTTP verbs Aventus",
+            "HttpRequest integration Aventus",
+            "Custom router Aventus",
+            "Base URL Aventus",
+            "RESTful operations Aventus",
+            "Subclass HttpRouter Aventus",
+            "Endpoint configuration Aventus",
+        ];
+    }
+
+    //#endregion
+
+}

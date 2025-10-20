@@ -1,0 +1,9 @@
+<div class="modal-header">
+    <h3 class="modal-title">Confirm</h3>
+    <mi-icon icon="close" class="close" @press="reject"></mi-icon>
+</div>
+<div class="modal-body">{{this.question}}</div>
+<div class="footer">
+    <av-button @press="reject">No</av-button>
+    <av-button @press="accept">Yes</av-button>
+</div>

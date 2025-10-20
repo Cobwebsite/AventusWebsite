@@ -1,0 +1,14 @@
+:host {
+	width: 100%;
+
+	.header {
+		border-bottom: 1px solid var(--border);
+		display: flex;
+		gap: 2rem;
+		margin-top: 2rem;
+	}
+
+	.body {
+		width: 100%;
+	}
+}

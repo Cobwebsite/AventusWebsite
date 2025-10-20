@@ -1,0 +1,44 @@
+import { PageFormRoute } from "Aventus@UI:Aventus.Navigation.package.avt";
+import { DocUIPageFormRouteEditor1LoginController, type DocUIPageFormRouteEditor1LoginRequest } from "../DocUIPageFormEditor1LoginAction.lib.avt";
+import type { ResultWithError } from "Aventus@Main:Aventus.package.avt";
+import { Required } from "Aventus@UI:Aventus.Form.Validators.package.avt";
+
+export class DocUIPageFormRouteEditor1Compiled extends PageFormRoute<typeof DocUIPageFormRouteEditor1LoginController, 'login'> implements Aventus.DefaultComponent {
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    public override route(): [typeof DocUIPageFormRouteEditor1LoginController, 'login'] {
+        return [DocUIPageFormRouteEditor1LoginController, 'login'];
+    }
+    /**
+     * @inheritdoc
+     */
+    public override onResult(result: ResultWithError<string> | null): Aventus.Asyncable<void> {
+        if(result?.success) {
+            //...
+        }
+    }
+    /**
+     * @inheritdoc
+     */
+    protected override formSchema(): Aventus.Form.FormSchema<DocUIPageFormRouteEditor1LoginRequest> {
+        return {
+            username: Required,
+            password: Required
+        };
+    }
+    /**
+     * @inheritdoc
+     */
+    public override configure(): Aventus.Asyncable<Aventus.Navigation.Page.PageConfig> {
+        return {
+            title: "Login"
+        };
+    }
+
+    //#endregion
+
+}

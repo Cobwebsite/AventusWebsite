@@ -1,0 +1,59 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocLibConverter extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Converter in Aventus";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to use Aventus.Converter.transform to convert data between formats, particularly for complex object structures. Discover how to transform JSON into class instances using fromJSON or Json.classFromJson, and how to create custom convertible classes with the @Convertible decorator for seamless data handling in Aventus.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus Converter",
+            "Converter.transform Aventus",
+            "Data transformation Aventus",
+            "JSON to object Aventus",
+            "fromJSON Aventus",
+            "Json.classFromJson Aventus",
+            "Convertible decorator Aventus",
+            "Custom data conversion Aventus",
+            "Object serialization Aventus",
+        ];
+    }
+
+    //#endregion
+
+}

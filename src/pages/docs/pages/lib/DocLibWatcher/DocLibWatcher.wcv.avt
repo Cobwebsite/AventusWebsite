@@ -38,6 +38,23 @@
     find a <span class="cn">computed</span> and an <span class="cn">effect</span> that are functions.</p>
 
 
+<h2>Signal</h2>
+<p>You can also use a signal to create a constant that triggers a change when the content is updated. The only difference is that the signal does not track changes in the object's children.</p>
+
+<av-code language="typescript" filename="Example.lib.avt">
+    <pre>
+        export function createSignal() {
+            const signal = Aventus.Watcher.signal(1);
+            // trigger change
+            signal.value = 2;
+            &nbsp;
+            const signal2 = Aventus.Watcher.signal({ name: "" });
+            // don't trigger change
+            signal2.value.name = "test"; 
+        }
+    </pre>
+</av-code>
+
 <h2>Effect</h2>
 <p>In Aventus, effects are functions that are executed in response to changes in state or data within your application.
     Effects are created using the <span class="cn">Aventus.Watcher.effect(fn: () =>

@@ -1,0 +1,56 @@
+<h1>Mutex</h1>
+<p>A Mutex (short for Mutual Exclusion) is a synchronization mechanism used in concurrent programming to control access
+    to a shared resource, ensuring that only one thread or process can access the resource at a time. This prevents race
+    conditions and ensures data consistency in multi-threaded or multi-process environments.</p>
+<ol>
+    <li>
+
+        <u>Waiting for the Mutex (waitOne):</u>
+        <ul>
+            <li>The waitOne function allows a thread or process to wait for the mutex to become available.</li>
+            <li>When a thread calls waitOne, it enters a blocked state until the mutex is released by another thread or
+                process.</li>
+            <li>If the mutex is currently locked, the waiting thread is queued, and subsequent threads will wait in line
+                until it's their turn.</li>
+        </ul>
+    </li>
+    <li>
+        <u>Acquiring the Mutex (release):</u>
+        <ul>
+            <li>The release function allows a thread or process to acquire (lock) the mutex, granting exclusive access
+                to the shared resource.</li>
+            <li>Once the mutex is acquired, the thread can safely perform operations on the shared resource.</li>
+            <li>After completing its task, the thread releases the mutex using the release function, allowing other
+                waiting threads or processes to acquire it.</li>
+        </ul>
+    </li>
+    <li>
+        <u>Releasing the Mutex (releaseOnlyLast):</u>
+        <ul>
+            <li>The releaseOnlyLast function is a variation of release that releases the mutex but allows only the last
+                function in the waiting list to acquire it.</li>
+            <li>This function is useful in scenarios where you want to prioritize the most recent request for the mutex
+                over older ones.</li>
+        </ul>
+    </li>
+    <li>
+        <u>Safe Execution within Mutex (safeRun, safeRunAsync, safeRunLast, safeRunLastAsync):</u>
+        <ul>
+            <li>These functions provide a convenient way to execute code safely within the mutex lock and release the
+                lock afterward.</li>
+            <li>safeRun and safeRunLast are used for synchronous code execution, while safeRunAsync and safeRunLastAsync
+                are used for asynchronous code execution.</li>
+            <li>They ensure that only one thread executes the provided callback function at a time, preventing
+                concurrent access to the shared resource.</li>
+            <li>After executing the callback function, the mutex is released to allow other waiting threads or processes
+                to acquire it.</li>
+        </ul>
+    </li>
+</ol>
+<av-doc-lib-mutex-editor-1></av-doc-lib-mutex-editor-1>
+<p>In this example:</p>
+<ul>
+    <li>Each thread waits for the mutex before updating the counter.</li>
+    <li>Only one thread can acquire the mutex at a time, ensuring that counter updates are performed sequentially.</li>
+    <li>Once a thread completes its task, it releases the mutex, allowing other threads to acquire it.</li>
+</ul>

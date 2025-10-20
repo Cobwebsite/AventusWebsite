@@ -1,0 +1,41 @@
+:host {
+	av-col {
+		flex-direction: column;
+	}
+	av-col[center] {
+		justify-content: center;
+		align-items: center;
+	}
+	.table {
+        margin: 40px 0;
+		av-row:not(.header) {
+
+			av-col {
+				padding: 3px;
+				text-align: left;
+			}
+
+			av-col:nth-child(2) {
+				text-align: justify;
+			}
+
+
+
+			av-link,
+			b,
+			i {
+				display: contents;
+			}
+		}
+
+		av-row:not(.header):nth-child(odd) {
+			background-color: rgba(0, 0, 0, 0.2);
+		}
+
+		.constraint {
+			display: block;
+			font-size: 14px;
+			margin-top: 5px;
+		}
+	}
+}

@@ -1,13 +1,15 @@
 import { readdirSync, lstatSync, readFileSync, writeFileSync } from 'fs'
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { EOL } from 'os';
 import { sep, dirname } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const outDir = [__dirname, "output"].join(sep);
+const outDir = __dirname;
+const inDir = join(__dirname, "src\\pages\\docs\\pages\\ui\\DocUIPageFormRoute\\compiled")
 
-const projectName = "Demo";
+const projectName = "Page With Form";
 let extensions = {
     'aventus.conf.json': 'json',
     '.json': 'json',
@@ -75,7 +77,7 @@ ${txt}
 }
 
 let txtHtml = `<av-code-editor name="${projectName}">` + EOL
-read(__dirname);
+read(inDir);
 
 txtHtml += `    <slot></slot>
 </av-code-editor>`+ EOL
@@ -86,4 +88,4 @@ txtHtml += `    <slot></slot>
 
 
 
-writeFileSync(outDir + "/output.wcv.avt", txtHtml);
+writeFileSync(outDir + "/compile.html", txtHtml);

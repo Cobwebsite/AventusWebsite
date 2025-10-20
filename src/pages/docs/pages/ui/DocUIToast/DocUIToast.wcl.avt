@@ -1,0 +1,60 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocUIToast extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+	 * @inheritdoc
+	 */
+    protected override Title(): string {
+        return "How to Use the Toast Component in AventusJs";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Learn how to use the abstract Toast component in AventusJs to manage temporary notifications and alert logic without predefined styles. This guide covers displaying, dismissing, and handling events for toasts within your application.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "AventusJs Toast",
+            "abstract Toast component",
+            "notification logic AventusJs",
+            "temporary alerts AventusJs",
+            "Aventus abstract components",
+            "toast state management",
+            "un-styled toast component",
+            "frontend notification handling",
+            "Aventus alert system",
+            "UI toast logic AventusJs",
+        ];
+    }
+
+    //#endregion
+
+}

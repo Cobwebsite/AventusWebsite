@@ -1,0 +1,57 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocHttpIntroduction extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override Title(): string {
+        return "Aventus HTTP Layer";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Explore the Aventus HTTP layer, a high-level, type-safe abstraction over the fetch API. Learn how to send and handle HTTP requests, manage JSON, text, and binary responses, intercept and transform requests and responses, handle errors consistently, work with form data, and integrate seamlessly with HttpRouter for clean endpoint definitions.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus HTTP layer",
+            "HttpRequest Aventus",
+            "Type-safe HTTP Aventus",
+            "HTTP requests Aventus",
+            "Handle HTTP responses Aventus",
+            "Intercept HTTP Aventus",
+            "HttpRouter Aventus",
+            "Networking Aventus",
+        ];
+    }
+    //#endregion
+
+}

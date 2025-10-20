@@ -1,0 +1,12 @@
+:host {
+    av-col {
+        flex-direction: row;
+    }
+    .table {
+        av-row {
+            av-col {
+                text-align: left;
+            }
+        }
+    }
+}

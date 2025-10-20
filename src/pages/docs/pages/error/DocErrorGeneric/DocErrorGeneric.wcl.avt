@@ -1,0 +1,57 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocErrorGeneric extends DocGenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+ * @inheritdoc
+ */
+    protected override Title(): string {
+        return "GenericError in Aventus";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Description(): string {
+        return "Understand how to use Aventus.GenericError to create structured and type-safe error handling in your Aventus applications. Learn how to define custom error codes, extend GenericError, and provide meaningful error messages for better debugging and maintainability.";
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected override Keywords(): string[] {
+        return [
+            "Aventus GenericError",
+            "GenericError class",
+            "Error handling Aventus",
+            "Custom error Aventus",
+            "Type-safe error Aventus",
+            "Error code enum Aventus",
+            "Aventus error management",
+            "Define error class Aventus",
+        ];
+    }
+    //#endregion
+
+}

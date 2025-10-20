@@ -25,7 +25,7 @@
             }
         </pre>
     </av-code>
-    <av-code language="css" filename="Style/src/@utility.wcs.avt">
+    <av-code language="css" filename="Style/src/@Utility.wcs.avt">
         <pre>
             .red {
             	color: red;

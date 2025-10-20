@@ -1,0 +1,131 @@
+<h1>I18n - Configuration</h1>
+
+<p>AventusJs includes a native i18n module, designed to simplify the process of translating your application. With i18n,
+    you can easily manage multiple languages, switch content dynamically, and ensure a seamless experience for users
+    around the world. By integrating i18n directly into AventusJs, we make it straightforward for developers to build
+    multilingual applications without relying on external libraries</p>
+
+<p>To enable I18n, you need to add the section <span class="cn">i18n</span> inside your <span
+        class="cn">aventus.conf.avt</span>.</p>
+
+<av-code language="json" filename="aventus.conf.avt">
+    <pre>
+        {
+            "module": "test",
+            "componentPrefix": "av",
+            "build": [
+                {
+                    "src": ["./src/*"],
+                    "compile": [
+                        {
+                            "output": "./dist/test.js"
+                        }
+                    ],
+                    "i18n": {
+                        "autoRegister": true,
+                        "fallback": "en-gb",
+                        "locales": [
+                            "en-gb",
+                            "fr-fr"
+                        ]
+                    }
+                }
+            ]
+        }
+    </pre>
+</av-code>
+
+<p>When you add this config, Aventus will automatically add the lib <span class="cn">Aventus@I18n</span> inside your
+    build.</p>
+<p>Inside the output folder you must have a new folder named <span class="cn">locales</span> that contains <span
+        class="cn">en-gb.json</span> and <span class="cn">fr-fr.json</span>. Thoses files contains all transalations you
+    need for your application.</p>
+
+<h2>General configuration</h2>
+<div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Name</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>autoRegister</av-col>
+        <av-col size="8">Define if aventus must autoRegister your i18n files. Default is
+            true</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>fallback</av-col>
+        <av-col size="8">Define the fallback locale</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>locales</av-col>
+        <av-col size="8">This is an array of string to define locales that is required inside your
+            project</av-col>
+    </av-row>
+</div>
+
+<h2>Compilation configuration</h2>
+<p>You can customize how Avenuts must handle you i18n files.</p>
+
+<av-code language="json" filename="aventus.conf.avt">
+    <pre>
+        {
+            "module": "test",
+            "componentPrefix": "av",
+            "build": [
+                {
+                    "src": ["./src/*"],
+                    "compile": [
+                        {
+                            "output": "./dist/test.js",
+                            "i18n": [
+                                {
+                                    "output": "dist/public",
+                                    "mode": "singleFile",
+                                    "mount": "/public"
+                                }
+                            ]
+                        }
+                    ],
+                    "i18n": {
+                        "autoRegister": true,
+                        "fallback": "en-gb",
+                        "locales": [
+                            "en-gb",
+                            "fr-fr"
+                        ]
+                    }
+                }
+            ]
+        }
+    </pre>
+</av-code>
+
+<div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Name</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>output</av-col>
+        <av-col size="8">This is string to define where to export i18n files.
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>mode</av-col>
+        <av-col size="8">
+            <span>This is string to define how aventus must compile your i18n.</span>
+            <ul>
+                <li>singleFile: export all translations inside a single file</li>
+                <li>oneToOne: export translation inside the same file name as input</li>
+                <li>groupComponent: group components transaltions inside a single file</li>
+                <li>basedOnAttribute: WIP</li>
+                <li>include: WIP</li>
+            </ul>
+        </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>mount</av-col>
+        <av-col size="8">This is string to define the http path to mount your i18n files.
+        </av-col>
+    </av-row>
+</div>
