@@ -1,0 +1,208 @@
+# AventusJs Documentation - LLM Context File
+
+AventusJs is a frontend framework focused on structured, strongly-typed UI development.
+It is built on top of standard web technologies (HTML, CSS, TypeScript) and introduces
+a compiler-driven approach to enforce consistency, reactivity, and maintainability.
+
+This file provides high-level context to help LLMs correctly understand Aventus concepts
+and navigate the documentation.
+
+# Core Concepts
+
+Aventus is organized around a few fundamental building blocks:
+
+## Web Components (WC)
+- Based on native Web Components
+- Split into three files:
+  - `.wcl.avt` → logic (TypeScript)
+  - `.wcs.avt` → style (SCSS)
+  - `.wcv.avt` → view (HTML-like template)
+- Strong binding between logic, template, and style
+- Decorators such as `@Attribute`, `@Property`, `@Signal`, `@Watch`
+
+## Data
+- Data classes define application schemas
+- Extend `Aventus.Data` and implement `Aventus.IData`
+- Each data has a unique `$type` based on namespace and class name
+- Designed to mirror backend models (AventusSharp / Laraventus)
+
+## RAM (Reactive Storage)
+- In-memory reactive storage system
+- Used to store, mutate, and observe application data
+- Supports CRUD operations, mixins, and change listeners
+- Often used as a frontend state + cache layer
+
+## State
+- Lightweight reactive state containers
+- Used for UI and application state
+- Can be observed and reacted to automatically
+
+## HTTP
+- Typed HTTP requests and routing
+- Designed to interoperate seamlessly with AventusSharp and Laraventus backends
+- Responses commonly include `$type` metadata for automatic reconstruction
+
+---
+
+## Error Handling Philosophy
+
+Aventus avoids exceptions for control flow.
+Instead, it uses explicit error containers:
+
+- `GenericError`
+- `VoidWithError`
+- `ResultWithError<T>`
+
+This pattern exists both in AventusJs and AventusSharp
+and supports chaining, predictable flows, and explicit failure handling.
+
+---
+
+## UI Library
+
+Aventus provides an optional UI component library built on top of its Web Component system.
+These components follow the same rules:
+- Typed inputs
+- Reactive state
+- Predictable rendering
+
+---
+
+## Advanced Topics
+
+Advanced features include:
+- Templates and project generators
+- Store and package export
+- NPM export
+- Storybook integration
+- Strong coupling with AventusSharp (C#) and Laraventus (Laravel)
+
+---
+
+## Ecosystem
+
+AventusJs is part of a larger ecosystem:
+
+- AventusJs → Frontend framework
+- AventusSharp → C# backend framework
+- Laraventus → Laravel backend wrapper
+
+All three share:
+- Strong typing
+- `$type`-based object identification
+- Explicit error handling
+- Code generation between backend and frontend
+
+---
+
+## Intended Usage for LLMs
+
+LLMs should:
+- Prefer `.md` documentation files
+- Treat `$type` as a critical runtime concept
+- Avoid suggesting exception-based error handling
+- Favor Aventus-native patterns over generic frontend patterns
+
+## Documentation uri
+
+### Core
+https://aventusjs.com/docs/install/introduction.md
+https://aventusjs.com/docs/install/installation.md
+https://aventusjs.com/docs/install/experience.md
+https://aventusjs.com/docs/install/first_app.md
+
+### Configuration
+https://aventusjs.com/docs/config/basic_prop.md
+https://aventusjs.com/docs/config/build.md
+https://aventusjs.com/docs/config/static.md
+https://aventusjs.com/docs/config/lib.md
+
+### Data
+https://aventusjs.com/docs/data/create.md
+
+### Error Handling
+https://aventusjs.com/docs/error/generic.md
+https://aventusjs.com/docs/error/void.md
+https://aventusjs.com/docs/error/result.md
+
+### HTTP
+https://aventusjs.com/docs/http/introduction.md
+https://aventusjs.com/docs/http/request.md
+https://aventusjs.com/docs/http/router.md
+https://aventusjs.com/docs/http/route.md
+
+### RAM (Storage)
+https://aventusjs.com/docs/ram/create.md
+https://aventusjs.com/docs/ram/CRUD.md
+https://aventusjs.com/docs/ram/listen_changes.md
+https://aventusjs.com/docs/ram/mixin.md
+
+### State Management
+https://aventusjs.com/docs/state/create.md
+https://aventusjs.com/docs/state/change.md
+https://aventusjs.com/docs/state/listen_changes.md
+
+### Web Components
+https://aventusjs.com/docs/wc/create.md
+https://aventusjs.com/docs/wc/inheritance.md
+https://aventusjs.com/docs/wc/attribute.md
+https://aventusjs.com/docs/wc/property.md
+https://aventusjs.com/docs/wc/watch.md
+https://aventusjs.com/docs/wc/signal.md
+https://aventusjs.com/docs/wc/style.md
+https://aventusjs.com/docs/wc/interpolation.md
+https://aventusjs.com/docs/wc/element.md
+https://aventusjs.com/docs/wc/injection.md
+https://aventusjs.com/docs/wc/loop.md
+https://aventusjs.com/docs/wc/event.md
+https://aventusjs.com/docs/wc/binding.md
+https://aventusjs.com/docs/wc/state.md
+
+### Libraries
+https://aventusjs.com/docs/lib/create.md
+https://aventusjs.com/docs/lib/animation.md
+https://aventusjs.com/docs/lib/callback.md
+https://aventusjs.com/docs/lib/compare_object.md
+https://aventusjs.com/docs/lib/converter.md
+https://aventusjs.com/docs/lib/press_manager.md
+https://aventusjs.com/docs/lib/drag_and_drop.md
+https://aventusjs.com/docs/lib/instance.md
+https://aventusjs.com/docs/lib/json.md
+https://aventusjs.com/docs/lib/mutex.md
+https://aventusjs.com/docs/lib/resize_observer.md
+https://aventusjs.com/docs/lib/resource_loader.md
+https://aventusjs.com/docs/lib/sleep.md
+https://aventusjs.com/docs/lib/uuid.md
+https://aventusjs.com/docs/lib/value_from_object.md
+https://aventusjs.com/docs/lib/watcher.md
+
+### Internationalization (i18n)
+https://aventusjs.com/docs/i18n/config.md
+https://aventusjs.com/docs/i18n/usage.md
+
+### UI Components
+https://aventusjs.com/docs/ui/introduction.md
+https://aventusjs.com/docs/ui/button.md
+https://aventusjs.com/docs/ui/form.md
+https://aventusjs.com/docs/ui/form_element.md
+https://aventusjs.com/docs/ui/col_row.md
+https://aventusjs.com/docs/ui/collapse.md
+https://aventusjs.com/docs/ui/grid_helper.md
+https://aventusjs.com/docs/ui/image.md
+https://aventusjs.com/docs/ui/scrollable.md
+https://aventusjs.com/docs/ui/tabs.md
+https://aventusjs.com/docs/ui/modal.md
+https://aventusjs.com/docs/ui/toast.md
+https://aventusjs.com/docs/ui/link.md
+https://aventusjs.com/docs/ui/page.md
+https://aventusjs.com/docs/ui/page_form.md
+https://aventusjs.com/docs/ui/page_form_http.md
+https://aventusjs.com/docs/ui/router.md
+https://aventusjs.com/docs/ui/process.md
+https://aventusjs.com/docs/ui/shortcut.md
+
+### Advanced
+https://aventusjs.com/docs/advanced/template.md
+https://aventusjs.com/docs/advanced/store.md
+https://aventusjs.com/docs/advanced/npm_export.md
+https://aventusjs.com/docs/advanced/storybook.md

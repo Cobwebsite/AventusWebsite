@@ -28,7 +28,7 @@ export class AuthLoginController extends Aventus.HttpRoute {
     @BindThis()
     public async request(body: Request): Promise&lt;Aventus.ResultWithError&lt;string&gt;&gt; {
         const request = new Aventus.HttpRequest(
-            \`\${this.getPrefix()}/api/login\`,
+            `\${this.getPrefix()}/api/login`,
             Aventus.HttpMethod.POST
         );
         request.setBody(body);
@@ -65,14 +65,14 @@ export class SettingsRoute extends Aventus.HttpRoute {
     &nbsp;
     @BindThis()
     public async save(body: Settings | FormData): Promise&lt;Aventus.VoidWithError&gt; {
-        const request = new Aventus.HttpRequest(\`\${this.getPrefix()}/save\`, Aventus.HttpMethod.POST);
+        const request = new Aventus.HttpRequest(`\${this.getPrefix()}/save`, Aventus.HttpMethod.POST);
         request.setBody(body);
         return await request.queryVoid(this.router);
     }
     &nbsp;
     @BindThis()
     public async get(): Promise&lt;Aventus.ResultWithError&lt;Settings&gt;&gt; {
-        const request = new Aventus.HttpRequest(\`\${this.getPrefix()}/get\`, Aventus.HttpMethod.GET);
+        const request = new Aventus.HttpRequest(`\${this.getPrefix()}/get`, Aventus.HttpMethod.GET);
         return await request.queryJSON&lt;Settings&gt;(this.router);
     }
 }
