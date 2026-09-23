@@ -31,6 +31,12 @@ It allows developers to register and handle keyboard combinations (shortcuts) wi
 <h2>Internal Behavior</h2>
 <p>The combination order doesn't matter. <span class="cn">Ctrl+S</span>, <span class="cn">S+Ctrl</span>, or <span class="cn">s+Control</span> are treated identically.</p>
 
+<p>Printable keys can be registered directly as strings. Use the literal <span class="cn">" "</span> to register the
+space bar:</p>
+<av-code language="ts">
+    <pre>ShortcutManager.subscribe(" ", () => console.log("Space pressed"));</pre>
+</av-code>
+
 <p>Certain browser shortcuts (like <span class="cn">Ctrl+P</span> or <span class="cn">Ctrl+S</span>) are automatically prevented to avoid conflicts. This can be useful in single-page applications (SPAs) to prevent the browser from executing system actions like Print, Open File, or Save Page. You can customize this behavior with :</p>
 
 <av-code language="ts">

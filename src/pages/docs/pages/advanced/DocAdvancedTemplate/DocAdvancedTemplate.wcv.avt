@@ -239,13 +239,15 @@
     </av-row>
 </div>
 
-<h2>Expose the template globaly</h2>
+<h2>Expose the template globally</h2>
 <p>
-    To use a template across multiple project, you can expose your template globaly. To complete that, you must run the
-    command <span class="cn">Aventus : Open storage</span> and go inside the folder <span class="cn">templates</span>.
-    Then you can copy paste the previous template here. Notice: Aventus watch the global templates folder only during
-    starting process, so when you create a new global template, you must reload your Vscode instance.
+    A global template is available during creation independently of the current project. Set
+    <span class="cn">isGlobal: true</span> in its metadata and install it in the <span class="cn">global</span> folder
+    shown by <span class="cn">Aventus : Open storage</span>. Additional shared folders can be registered with the
+    <span class="cn">aventus.globalPath</span> VS Code setting.
 </p>
+<p>Workspace-specific global templates can also be placed in <span class="cn">.aventus/global</span>. They are merged
+    with configured global templates and are available to quick creation.</p>
 
 <h2>Publish to the store</h2>
 <p>

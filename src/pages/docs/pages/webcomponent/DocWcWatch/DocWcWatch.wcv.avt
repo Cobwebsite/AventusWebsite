@@ -90,7 +90,7 @@
         info</av-link></p>
 <av-code language="typescript" filename="Test.lib.avt">
     export function createWatcher() {
-    \tlet watchableObj = Aventus.Watcher.get({}, (action: WatchAction, path: string, element: any) =&gt; {
+    \tlet watchableObj = Aventus.Watcher.get({}, (action: WatchAction, path: string, value: any) =&gt; {
     \t\tconsole.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);
     \t});
     \treturn watchableObj;

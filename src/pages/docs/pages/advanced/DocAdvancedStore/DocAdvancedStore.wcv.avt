@@ -163,6 +163,8 @@
         <div class="sub-info">If there are conflicts with existing folders, the new installation will overwrite the old one.</div>
     </li>
     <li><span class="cn">isProject</span>: Defines if the template need a <span class="cn">aventus.conf.avt</span></li>
+    <li><span class="cn">isGlobal</span>: Installs the template as a global creation template instead of a project or
+        component template.</li>
 </ul>
 
 <h3>Managing Template</h3>

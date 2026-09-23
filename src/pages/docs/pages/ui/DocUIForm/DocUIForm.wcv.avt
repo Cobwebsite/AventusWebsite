@@ -45,7 +45,7 @@
 
 <av-code language="ts">
     <pre>
-    const form = Aventus.Form.FormHandler.create({
+    const form = Aventus.Form.Form.create({
         email: Aventus.Form.Validators.Email,
         password: [Aventus.Form.Validators.Required],
     });
@@ -67,7 +67,7 @@
 
 <av-code language="ts">
     <pre>
-    Aventus.Form.FormHandler.configure({
+    Aventus.Form.Form.configure({
         validateOnChange: true,
     });
     </pre>
@@ -131,7 +131,7 @@ const emailValid = await handler.validate("email"); // only one field
 <p>If validation fails and there’s no registered UI element for a field, Aventus calls the handler’s error function:</p>
 <av-code language="ts">
     <pre>
-handleValidateNoInputError: (errors) => {
+onValidateFallback: (errors) => {
     console.warn("Unmapped validation errors:", errors);
 }
     </pre>
@@ -156,7 +156,14 @@ await handler.submit(async (body) => {
     <li>Handles and maps any backend errors</li>
 </ul>
 
-<p>If an input is associated with a field that produced an error, the handler pushes the error message into that element’s errors array automatically. Otherwise, the function <span class="cn">handleExecuteNoInputError</span> is called.</p>
+<p>If an input is associated with a field that produced an error, the handler pushes the message into that element’s
+errors array automatically. Validation errors without an input use <span class="cn">onValidateFallback</span>; unmapped
+server errors use <span class="cn">onServerFallback</span>.</p>
+
+<h3>Controller integration</h3>
+<p><span class="cn">Form.createFromController()</span> creates a typed handler directly from an
+<span class="cn">HttpRoute</span> method. Use the overload with a method name when the controller exposes more than one
+route, and the sub-form helpers when the submitted body is nested below a property.</p>
 
 <h2>Validators</h2>
 <p>Validators in Aventus are simple classes that implement a single method: validate().</p>

@@ -38,7 +38,7 @@ export class Home extends Page implements Aventus.DefaultComponent {
      * @inheritdoc
      */
     protected override Description(): string {
-        return "Explore Aventus, a JavaScript framework that leverages web components to build scalable applications with encapsulation, object-oriented programming, and type safety. Aventus offers an easy installation process and rapid project setup, exclusively as a VSCode extension, to enhance productivity and streamline web development.";
+        return "Explore Aventus, a JavaScript framework that leverages web components to build scalable applications with encapsulation, object-oriented programming and type safety. Use its VS Code extension or CLI for development, automation and CI workflows.";
     }
     /**
      * @inheritdoc

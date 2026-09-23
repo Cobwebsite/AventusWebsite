@@ -20,20 +20,23 @@ It handles tab switching, active state management, and layout rendering.</p>
 </ul>
 
 <p>Developers must implement the <span class="cn">defineTabHeader()</span> method to specify which header component should be used.</p>
-<p>Developers can also use the method <span class="cn">setActive(tabHeader: TabHeader&lt;T&gt; | number | string)</span> to set the active tab by reference, index, or tab identifier.</p>
+<p>Developers can also use the method <span class="cn">setActive(tabHeader: TabHeader&lt;T&gt; | number | string): boolean</span>
+    to set the active tab by reference, index, or tab identifier. It returns false when no matching tab exists.</p>
 
 <div><strong>Behavior</strong></div>
 <ul>
     <li>Tabs are hidden until selected.</li>
     <li>The first tab is automatically activated unless another one is marked as selected.</li>
     <li>The <span class="cn">Tabs</span> component controls both visual state and logical state (selected attribute).</li>
+    <li>Adding, removing or reordering slotted tabs automatically updates their headers.</li>
 </ul>
 
 
 <h2>Tab Class</h2>
 <p><span class="cn">Tab</span> represents the <strong>content</strong> of a tab, and provides the connection point between tab data and its header. To implement a <span class="cn">Tab</span>, the method <span class="cn">identifier() : string</span> have to be implemented.</p>
 
-<p>When the tab is active, the attribute <span class="cn">selected</span> is set to true.</p>
+<p>Once a tab is registered, <span class="cn">loaded</span> is set to true. When it is active,
+    <span class="cn">selected</span> is set to true.</p>
 
 
 <h2>TabHeader Class</h2>

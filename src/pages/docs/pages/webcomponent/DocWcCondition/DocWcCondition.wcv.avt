@@ -14,4 +14,7 @@
     developers to create dynamic and interactive user interfaces that cater to diverse user scenarios and requirements.
 </p>
 
+<p>Conditions narrow TypeScript types inside their block. After checking that an optional value is defined,
+    interpolations and injections use the narrowed type without a non-null assertion.</p>
+
 <av-doc-wc-condition-editor-1></av-doc-wc-condition-editor-1>

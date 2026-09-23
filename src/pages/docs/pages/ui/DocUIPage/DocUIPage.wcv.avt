@@ -74,6 +74,8 @@ export class HomePage extends Page {
     <li>If true, onShow() is called</li>
     <li>If false, onHide() is called</li>
 </ul>
+<p>Calling <span class="cn">show()</span> on a page that is already visible still calls <span class="cn">onShow()</span>,
+    which allows route data to be refreshed without hiding the page first.</p>
 
 <h2>Lifecycle Methods</h2>
 <div class="table">

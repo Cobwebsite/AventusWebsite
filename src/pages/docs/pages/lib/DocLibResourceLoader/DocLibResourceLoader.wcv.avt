@@ -7,7 +7,7 @@
     <li><span class="cn">loadInHead</span> that will append a style or script tag in head.</li>
 </ul>
 
-<p>When a resource is loaded, the resource laoder will keep it in memory or prevent adding twice a tag in head.</p>
+<p>When a resource is loaded, the resource loader keeps it in memory or prevents adding the same tag to the head twice.</p>
 
 
 <av-code language="typescript" filename="Example.wcl.avt">
@@ -26,10 +26,13 @@
     \t\tconst hasError = await Aventus.ResourceLoader.loadInHead("/style.css");
     \t\tconst hasError2 = await Aventus.ResourceLoader.loadInHead({
     \t\t\ttype: "css",
-    \t\t\turl: "/style.css"
+    \t\t\turl: "/style.css",
+    \t\t\tnonce: "content-security-policy-nonce"
     \t\t});
     \t}
     &nbsp;
     }
 </av-code>
 <p>By default Aventus will try to determine the type you want by analyze the extension set inside the uri. If it fails, you can specify the type you need by adding the <span class="cn">type</span> parameter.</p>
+<p>The optional <span class="cn">nonce</span> is applied to script and style elements created by
+    <span class="cn">loadInHead</span>, allowing them to comply with a Content Security Policy.</p>

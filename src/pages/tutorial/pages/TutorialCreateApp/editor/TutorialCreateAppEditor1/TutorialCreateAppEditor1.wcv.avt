@@ -5,7 +5,7 @@
             	"module": "TodoDemo",
             	"componentPrefix": "td",
             	"hideWarnings": true,
-            	"dependances": {
+                "dependencies": {
                     "Aventus@UI":{}
                 },
             	"build": [

@@ -21,9 +21,14 @@
                 todos: ["todo1", "todo3"]
             }
         &nbsp;
-            console.log(Aventus.compareObject(obj1, obj2)); // true
+            console.log(Aventus.compareObject(obj1, obj2)); // false: array order differs
+            console.log(Aventus.compareObject(obj1, obj2, false)); // true: ignore array order
             console.log(Aventus.compareObject(obj1, obj3)); // false
         &nbsp;
         }
     </pre>
 </av-code>
+
+<p>The third parameter, <span class="cn">tableOrder</span>, defaults to <span class="cn">true</span>. Set it to
+    <span class="cn">false</span> to compare arrays without considering their order. Aventus Date, DateTime, Time,
+    Map and watched proxy values are compared by their underlying values.</p>

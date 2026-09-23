@@ -12,6 +12,9 @@
         headers, and response transformation.</li>
 </ul>
 <p>You can subclass <span class="cn">HttpRouter</span> to customize its endpoint behavior or base URL.</p>
+<p>Use <span class="cn">HttpRouter.configure(options)</span> to change the global defaults. Override
+    <span class="cn">defineOptions(options)</span> in a subclass for router-specific configuration. The constructor does
+    not accept options.</p>
 <p>By default, the router's base URL is set to the current domain:</p>
 <av-code language="ts">
     <pre>

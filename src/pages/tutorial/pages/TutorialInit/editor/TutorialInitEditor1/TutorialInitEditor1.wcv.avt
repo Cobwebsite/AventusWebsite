@@ -5,8 +5,8 @@
             	"module": "TodoDemo",
             	"componentPrefix": "td",
             	"hideWarnings": true, // we don't need warnings during this demo
-				"dependances": {
-                    "Aventus@UI":{} // Load the native dependance Aventus@UI
+				"dependencies": {
+                    "Aventus@UI":{} // Load the native dependency Aventus@UI
                 },
             	"build": [
             		{

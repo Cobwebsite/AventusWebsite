@@ -19,6 +19,8 @@
 <h3>The compilation information</h3>
 <p>If you have at least one build, on the bottom of the vscode you can see a tick and a time. If you hover this text,
     you will see the last time your build was compiled.</p>
+<p>Use the <span class="cn">aventus.ideBuild</span> workspace setting to choose if builds are compiled by the IDE.
+    This does not disable those builds for CLI commands.</p>
 <div class="img-cont">
     <av-img src="/img/doc/install/experience/last_compiled.png"></av-img>
 </div>
@@ -30,3 +32,26 @@
 </div>
 <p>You can customize the live server inside the vscode
     settings under <b>Aventus &gt; Liveserver</b>.</p>
+
+<h3>Database and migration tools</h3>
+<p>Files ending with <span class="cn">.db.avt</span> open in the Aventus database diagram editor. The editor keeps the
+    diagram and its text document synchronized.</p>
+<p>The command <span class="cn">Aventus : Create migration</span> compares database schemas and generates a migration.
+    Database access uses the <span class="cn">AventusSharp.DatabaseQuery</span> .NET tool, which the extension can install
+    when needed.</p>
+
+<div class="img-cont">
+    <av-img src="/img/doc/install/experience/db.png"></av-img>
+</div>
+
+<h3>C# and PHP exports</h3>
+<p>The VS Code extension recognizes <span class="cn">aventus.sharp.avt</span> and
+    <span class="cn">aventus.php.avt</span>. Use <span class="cn">Aventus : Export sharp</span> or
+    <span class="cn">Aventus : Export Php</span> to generate the corresponding TypeScript definitions.</p>
+<p>C# export requires .NET and the global <span class="cn">AventusSharp.Converter</span> tool. The extension can install
+    it on first use; <span class="cn">Aventus : Update sharp tools</span> updates installed C# converter and database
+    query tools. PHP export requires PHP, Composer and the Aventus PHP transpiler.</p>
+<p>In <span class="cn">aventus.sharp.avt</span>, HTTP router and WebSocket export use the compiled assembly by default
+    (<span class="cn">useCompiledDll</span>). The application must call <span class="cn">app.UseAventusExport()</span>
+    so its endpoints can be inspected without starting normally. HTTP generation can also enable
+    <span class="cn">cacheByDefault</span>, <span class="cn">clearCacheFct</span> and <span class="cn">addFormData</span>.</p>

@@ -4,6 +4,8 @@
     app) and/or a
     Aventus Package File (for a lib).
 </p>
+<p>Aventus 1.5 uses the TypeScript 6 compiler with the ES2025 and Temporal libraries. Decorators use the current
+    standard decorator model; Aventus decorators keep the same source syntax while receiving stricter type checking.</p>
 
 <div class="table">
     <av-row class="header">
@@ -99,8 +101,10 @@
     </av-row>
     <av-row class="darker lvl-1">
         <av-col size="4" center>output</av-col>
-        <av-col size="8" center>This is string to define where the compiled JavaScript file must be written.
-            <span class="constraint">Must satisfy: ^\\S+\\.js</span>
+        <av-col size="8" center>This is a string, array or object defining the generated JavaScript outputs. An
+            object can select an output for each imported library and must contain <span class="cn">@default</span>.
+            Use <span class="cn">@npm</span> for npm exports. Each selected output can be a path or an object containing
+            <span class="cn">path</span> and <span class="cn">compressed</span>.
         </av-col>
     </av-row>
     <av-row class="darker lvl-1">
@@ -272,9 +276,9 @@
         </av-col>
     </av-row>
     <av-row>
-        <av-col size="4" center>dependances</av-col>
+        <av-col size="4" center>dependencies</av-col>
         <av-col size="8" center>
-            <span>This is an object of <av-link to="/docs/config/lib">dependance options</av-link> to
+            <span>This is an object of <av-link to="/docs/config/lib">dependency options</av-link> to
                 use code and/or autocompletion inside your code.</span>
         </av-col>
     </av-row>

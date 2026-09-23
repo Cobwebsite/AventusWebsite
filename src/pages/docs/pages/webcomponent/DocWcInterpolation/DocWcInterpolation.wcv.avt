@@ -9,3 +9,5 @@
 
 <av-doc-wc-interpolation-editor-1></av-doc-wc-interpolation-editor-1>
 <p>Because Aventus is using a <span class="cn">Signal</span> like system, any function that is using watchable variable will be auto refreshed when a value changed</p>
+
+<p>JavaScript template literals using backticks are supported inside view expressions and interpolations.</p>

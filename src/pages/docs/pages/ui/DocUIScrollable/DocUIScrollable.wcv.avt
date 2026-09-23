@@ -55,6 +55,11 @@
         <av-col size="4" center>Disables all user interaction with scrolling.</av-col>
     </av-row>
     <av-row>
+        <av-col size="4" center>flex</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Uses a vertical flex layout internally so child content can fill the remaining height.</av-col>
+    </av-row>
+    <av-row>
         <av-col size="4" center>mouse_drag</av-col>
         <av-col size="4" center>boolean</av-col>
         <av-col size="4" center>Enables dragging content with a mouse.</av-col>

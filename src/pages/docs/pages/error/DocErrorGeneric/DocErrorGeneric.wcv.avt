@@ -11,6 +11,10 @@
     that extends either number or an enumeration (Enum). By extending GenericError, you can create specific error types
     tailored to different error scenarios in your application.</p>
 
+<p>The constructor accepts an error code and any message value. Native <span class="cn">Error</span> instances use their
+    message, while other values are converted to strings. Use <span class="cn">details</span> for structured supplementary
+    information.</p>
+
 <av-code language="typescript" filename="Example.lib.avt">
     <pre>
         // Define an enumeration for error codes

@@ -22,7 +22,7 @@
     <pre>
 // Sets up a global error handler that is automatically invoked whenever an operation fails.
 Process.configure({
-    handleErrors: (msg) => {
+    handleErrors: (msg, errors) => {
         Alert.open({
             title: "Execution error",
             content: msg,
@@ -45,3 +45,6 @@ async function login() {
 }
     </pre>
 </av-code>
+<p>For <span class="cn">ResultWithError</span>, <span class="cn">execute</span> and
+    <span class="cn">parseErrors</span> return the result value. For <span class="cn">VoidWithError</span>, they return
+    the success boolean. Both return <span class="cn">undefined</span> after handled errors.</p>

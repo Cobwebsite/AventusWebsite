@@ -11,6 +11,14 @@
 
 <av-doc-lib-converter-editor-1></av-doc-lib-converter-editor-1>
 
+<h2>Date and time values</h2>
+<p>The converter recognizes <span class="cn">Aventus.Date</span>, <span class="cn">Aventus.DateTime</span> and
+    <span class="cn">Aventus.Time</span> ISO values. These immutable Temporal-based types provide parsing, comparison,
+    arithmetic, localized formatting and conversion back to Temporal values.</p>
+<p>The native JavaScript <span class="cn">Date</span> global is intentionally unavailable in Aventus source code. The
+    language server reports it as an error and excludes it from completion; import and use
+    <span class="cn">Aventus.Date</span> or <span class="cn">Aventus.DateTime</span> instead.</p>
+
 <p>By default, <span class="cn">Aventus.Data</span> is convertible. You can also create custom convertible class by adding the decorator <span class="cn">@Convertible</span>. You must define an unique key so that the converter can transform your json into the object.</p>
 
 <av-code language="typescript">

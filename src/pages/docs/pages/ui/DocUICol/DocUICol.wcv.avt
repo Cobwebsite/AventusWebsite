@@ -195,8 +195,18 @@ Layout.Col.configure({
     </av-row>
     <av-row>
         <av-col size="4" center>--col-gap</av-col>
-        <av-col size="4" center>Horizontal gap between columns</av-col>
+        <av-col size="4" center>Default horizontal and vertical gap</av-col>
         <av-col size="4" center>0px</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--col-gap-x</av-col>
+        <av-col size="4" center>Horizontal gap, overriding --col-gap</av-col>
+        <av-col size="4" center>--col-gap</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--col-gap-y</av-col>
+        <av-col size="4" center>Vertical gap, overriding --col-gap</av-col>
+        <av-col size="4" center>--col-gap</av-col>
     </av-row>
 </div>
 
@@ -205,7 +215,7 @@ Layout.Col.configure({
 <ul>
     <li>Creates the grid container (display: flex; flex-wrap: wrap;)</li>
     <li>Defines a container context (container-name: row; container-type: inline-size;)</li>
-    <li>Manages horizontal gaps between columns.</li>
+    <li>Manages independent horizontal and vertical gaps between columns.</li>
 </ul>
 
 <h3>Technical Details</h3>
