@@ -12,13 +12,13 @@
                 "./src/core/*",
                 "./src/pages/*"
             ],
-            "dependances": {
+            "dependencies": {
                 "Aventus@UI": {},
                 "Aventus@Sharp":{},
                 "TodoDemo@Main": {
                     "isLocal": true
                 },
-                "MaterialIcon": "1.0.0"
+                "MaterialIcon": "1.0.8"
             },
             "compile": [
                 {

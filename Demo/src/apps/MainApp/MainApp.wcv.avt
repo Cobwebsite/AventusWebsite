@@ -1,0 +1,12 @@
+<!-- The router has a slot name "before": we use it to define the sidenav -->
+<block name="before">
+    <div class="nav">
+        <av-link class="nav-item" to="/">
+            <span class="name">Todo list</span>
+        </av-link>
+        <av-link class="nav-item" @press="setCreateState" active_state="/create">
+            <span class="name">Create todo</span>
+        </av-link>
+    </div>
+</block>
+<slot></slot>

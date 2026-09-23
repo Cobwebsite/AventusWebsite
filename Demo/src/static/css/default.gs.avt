@@ -1,0 +1,18 @@
+@import "./_theme.gs.avt";
+
+/* Define the global style for elements not contained inside a shadow root */
+/* Compiled into default.css file */
+
+html,
+body {
+	background-color: var(--color-surface-mixed-100);
+	color: var(--font-color);
+	cursor: default !important;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	height: 100%;
+	margin: 0;
+	overflow: hidden;
+	padding: 0;
+	position: relative;
+	width: 100%;
+}

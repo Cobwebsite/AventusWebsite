@@ -1,0 +1,92 @@
+import { MainApp } from "../../MainApp.wcl.avt";
+import type { Todo } from "../../../../data/Todo.data.avt";
+import { Task } from "../../../../data/Task.data.avt";
+import { TodoCreateState } from "../../../../states/TodoCreateState.state.avt";
+import { GenericPage } from "../GenericPage/GenericPage.wcl.avt";
+import type { Input } from "../../../../components/Input/Input.wcl.avt";
+import { TodoRAM } from "../../../../ram/Todo.ram.avt";
+
+/**
+ * The page to create new todo
+ */
+export class TodoCreatePage extends GenericPage implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+    @Watch()
+    public todo!: Todo;
+
+    /**
+     * The input to create a description for the todo
+     */
+    @ViewElement()
+    protected taskDescEl!: Input;
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    public override configure(): Aventus.Asyncable<Aventus.Navigation.PageConfig> {
+        return {};
+    }
+    /**
+     * @inheritdoc
+     */
+    public override definePageTitle(): string {
+        return "Create todo";
+    }
+
+    public override onShow(): void {
+        if(this.state instanceof TodoCreateState && this.state.newTodo) {
+            this.todo = this.state.newTodo;
+        }
+        else {
+            MainApp.instance.navigate("/");
+        }
+    }
+
+    /**
+    * Add a new task into the todo
+    * The view will be refreshed because the todo is a @Watch()
+    */
+    protected addTask() {
+        if(this.taskDescEl.value) {
+            let newTask = new Task();
+            newTask.description = this.taskDescEl.value;
+            this.todo.tasks.push(newTask);
+            this.taskDescEl.value = "";
+        }
+    }
+
+    /**
+     * Save the todo into the RAM
+     */
+    protected async save() {
+        if(this.todo.name) {
+            await TodoRAM.getInstance().create(this.todo);
+            // clear the name to avoid confirmation popup
+            this.todo.name = "";
+            // navigate to the list page
+            MainApp.instance.navigate("/");
+        }
+
+    }
+    //#endregion
+
+}

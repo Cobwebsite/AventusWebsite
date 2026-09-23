@@ -1,3 +1,5 @@
+import { Time } from "Aventus@Main:Aventus.package.avt";
+
 export class DocWcCreateEditor4Clock extends Aventus.WebComponent implements Aventus.DefaultComponent {
 
 	//#region static
@@ -25,8 +27,7 @@ export class DocWcCreateEditor4Clock extends Aventus.WebComponent implements Ave
 
     //#region methods
     private calcTime() {
-        const d = new Date();
-        this.timeTxt = ((d.getHours() < 10) ? "0" : "") + d.getHours() + ":" + ((d.getMinutes() < 10) ? "0" : "") + d.getMinutes() + ":" + ((d.getSeconds() < 10) ? "0" : "") + d.getSeconds();
+        this.timeTxt = Time.now.toLocaleString();
     }
     protected override postCreation(): void {
         // When the component is rendered

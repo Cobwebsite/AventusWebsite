@@ -1,0 +1,38 @@
+import { Todo } from "../data/Todo.data.avt";
+
+export class TodoCreateState extends Aventus.State implements Aventus.IState {
+
+    /**
+     * This is the Todo that is currently created
+     */
+    public newTodo?: Todo;
+
+    /**
+     * @inheritdoc
+     */
+    public override get name(): string {
+        // we must define what will be the state name
+        // in our example we will use '/create' because it's the url of the page TodoCreatePage
+        return '/create';
+    }
+
+    /**
+     * This function is called when the current state is activated
+     */
+    public override onActivate(): void {
+        // You can init custom value for you todo here
+        this.newTodo = new Todo();
+    }
+
+    /**
+    * This function is called when the state will change
+    */
+    public override async askChange(state: Aventus.State, nextState: Aventus.State): Promise<boolean> {
+        if(this.newTodo?.name) {
+            // ask the question
+            return confirm("Changes are currently in progress. Are you sure you want to leave this page?")
+        }
+        // no change we can leave
+        return true;
+    }
+}

@@ -1,0 +1,41 @@
+:host {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
+
+    /* Add style to the sidenav */
+    .nav {
+        background-color: var(--color-surface-mixed-300);
+        height: 100%;
+        padding-top: 30px;
+        width: 200px;
+
+        /* Define style for sidnav item */
+        .nav-item {
+            align-items: center;
+            cursor: pointer;
+            display: flex;
+            margin: 5px 0;
+            padding: 5px 15px;
+            width: 100%;
+            transition: background-color 0.2s linear;
+        }
+
+        /* Define style for when the sidnav item is active. */
+        .nav-item.active {
+            background-color: var(--color-surface-mixed-600);
+        }
+        /* Define style for when the sidnav item is hover. */
+        .nav-item:not(.active):hover {
+            background-color: var(--color-surface-mixed-500);
+        }
+    }
+
+    /* Change style of the .content declared inside the Aventus.Navigation.Router Component */
+    .content {
+        width: calc(100% - 200px);
+        height: 100%;
+    }
+}

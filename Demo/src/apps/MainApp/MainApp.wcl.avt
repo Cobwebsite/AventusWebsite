@@ -1,0 +1,58 @@
+import { TodoCreateState } from "../../states/TodoCreateState.state.avt";
+import { TodoCreatePage } from "./pages/TodoCreatePage/TodoCreatePage.wcl.avt";
+import { TodoListPage } from "./pages/TodoListPage/TodoListPage.wcl.avt";
+
+/**
+ * The MainApp for the Demo.
+ * The parent Aventus.Navigation.Router is a component that allows routing management
+ */
+export class MainApp extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
+
+    //#region static
+    private static _instance: MainApp;
+    public static get instance(): MainApp {
+        return this._instance;
+    }
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregions
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    protected override defineRoutes(): void {
+        // define the routing here
+        this.addRoute("/", TodoListPage);
+        this.addRoute("/create", TodoCreatePage);
+    }
+
+    /**
+     * Set the create state
+     */
+    protected setCreateState() {
+        this.stateManager.setState(new TodoCreateState());
+    }
+
+    protected override postCreation(): void {
+        super.postCreation();
+        MainApp._instance = this;
+    }
+
+    //#endregion
+
+}
