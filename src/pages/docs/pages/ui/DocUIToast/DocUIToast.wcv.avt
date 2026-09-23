@@ -28,11 +28,11 @@
         <av-col size="6" center>Description</av-col>
     </av-row>
     <av-row>
-        <av-col size="6" center>static add(options: ToastOptions | ToastElement): Promise&lt;boolean&gt;</av-col>
+        <av-col size="6" center>static add(options: ToastOptions): Promise&lt;boolean&gt;</av-col>
         <av-col size="6">Displays a new toast.</av-col>
     </av-row>
     <av-row>
-        <av-col size="6" center>setOptions(options: T): Promise&lt;void&gt;</av-col>
+        <av-col size="6" center>setOptions(options: T): Asyncable&lt;void&gt;</av-col>
         <av-col size="6">Must be implemented to define how your toast handles the provided options (e.g., set text, color, or
             icon).</av-col>
     </av-row>
@@ -56,6 +56,7 @@
             defaultPosition: 'top right',
             defaultDelay: 4000,
             heightLimitPercent: 90,
+            gap: 12,
         });
     </pre>
 </av-code>
@@ -91,7 +92,12 @@
     <av-row>
         <av-col size="3" center>heightLimitPercent</av-col>
         <av-col size="3" center>number</av-col>
-        <av-col size="6">Max vertical space2 (in % of viewport height) that toasts can occupy. Default : 100</av-col>
+        <av-col size="6">Max vertical space (in % of viewport height) that toasts can occupy. Default: 100</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="3" center>gap</av-col>
+        <av-col size="3" center>number</av-col>
+        <av-col size="6">Space in pixels between stacked toasts. Default: 10</av-col>
     </av-row>
 </div>
 
@@ -101,6 +107,7 @@
     <li>The toast slides in at the specified position.</li>
     <li>Automatically disappears after delay milliseconds.</li>
     <li>If delay = -1, it stays visible until manually closed.</li>
+    <li>Stack recalculation waits for active CSS transitions before measuring toast sizes.</li>
 </ul>
 
 

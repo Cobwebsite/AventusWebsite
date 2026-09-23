@@ -8,7 +8,7 @@
 <av-code language="json">
     <pre>
     {
-        "dependances": {
+        "dependencies": {
             "MaterialIcon": "1.0.0",
         }
     }
@@ -58,7 +58,7 @@
         </av-col>
     </av-row>
     <av-row>
-        <av-col size="4" center>subDependancesInclude</av-col>
+        <av-col size="4" center>subDependenciesInclude</av-col>
         <av-col size="8" center>
             <span>This is a object where the key is the sub library name and the value is the inclusion pattern. The
                 will define how the library of the library must be included inside output js file.</span>
@@ -85,7 +85,7 @@
 <av-code language="json">
     <pre>
     {
-        "dependances": {
+        "dependencies": {
             "Aventus@UI": {},
         }
     }
@@ -102,7 +102,7 @@
 <av-code language="json" filename="aventus.conf.avt">
     <pre>
         {
-            dependances: {
+            dependencies: {
                 "Lib1@Main": {
                     "uri": "./myLibs/Lib1@Main.package.avt"
                 },
@@ -114,7 +114,7 @@
     </pre>
 </av-code>
 <h2>File via http</h2>
-<p>You can resolve dependance via http. Package will be stored inside the Aventus <span class="cn">storage&gt;packages&gt;http</span>. In this
+<p>You can resolve a dependency via HTTP. The package is stored inside <span class="cn">storage&gt;packages&gt;http</span>. In this
     folder, you must find
     a list
     of subfolder where the name is the md5 value of the uri that you set as uri. The entry point is a json named

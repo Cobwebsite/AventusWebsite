@@ -120,3 +120,8 @@
         }
     </pre>
 </av-code>
+
+<p><span class="cn">Watcher.effect()</span> returns an <span class="cn">Effect</span>. Call
+    <span class="cn">destroy()</span> when the effect is no longer needed. Use
+    <span class="cn">Watcher.untrack(() =&gt; value)</span> to read reactive values without registering them as
+    dependencies of the current effect.</p>

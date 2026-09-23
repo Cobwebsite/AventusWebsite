@@ -10,8 +10,11 @@
     <li><span class="cn">boolean</span></li>
     <li><span class="cn">date</span></li>
     <li><span class="cn">datetime</span></li>
+    <li><span class="cn">time</span></li>
     <li><span class="cn">literal</span> (ex: 'value1'|'value2')</li>
 </ul>
+<p>Date-related attributes use the immutable <span class="cn">Aventus.Date</span>,
+    <span class="cn">Aventus.DateTime</span> and <span class="cn">Aventus.Time</span> types and serialize as ISO values.</p>
 <p>The source code to create an attribute is the following.</p>
 
 <av-code language="typescript" filename="Example.wcl.avt">

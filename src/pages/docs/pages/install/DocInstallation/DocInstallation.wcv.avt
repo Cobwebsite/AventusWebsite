@@ -15,6 +15,9 @@
     <li><b>Aventus : Import templates</b> <av-icon icon="arrow-right"></av-icon> To import Aventus templates</li>
     <li><b>Aventus : Import projects</b> <av-icon icon="arrow-right"></av-icon> To import Aventus projects</li>
     <li><b>Aventus : Open storage</b> <av-icon icon="arrow-right"></av-icon> To open the folder where Aventus store data</li>
+    <li><b>Aventus : Create emmet snippets</b> <av-icon icon="arrow-right"></av-icon> To generate
+        <span class="cn">.aventus/emmet/snippets.json</span> from web components exported by project packages</li>
+    <li><b>Aventus : Format all files</b> <av-icon icon="arrow-right"></av-icon> To format all Aventus files loaded by the language server</li>
 </ul>
 
 <h2>CLI</h2>
@@ -23,6 +26,13 @@
     <pre>npm i @aventusjs/cli</pre>
 </av-code>
 <p>While the CLI is powerful for scripting and automation, it is still recommended to use the VSCode extension for development, as it includes all necessary tools in a user-friendly interface.</p>
+<p>Useful CLI commands include:</p>
+<ul>
+    <li><span class="cn">av format [aventus.conf.avt]</span> to format every Aventus file in a project; the optional
+        configuration path selects the project explicitly.</li>
+    <li><span class="cn">av dependencies help-llm</span> to generate dependency documentation for AI tools.</li>
+    <li><span class="cn">av update</span> to update the CLI package.</li>
+</ul>
 
 
 <h2>Source code</h2>

@@ -22,3 +22,7 @@
 
 <p>Below you can find an implementation example for a function that must transform a string in lowercase.</p>
 <av-doc-error-result-editor-1></av-doc-error-result-editor-1>
+
+<p><span class="cn">ResultWithError</span> inherits all composition helpers from
+    <span class="cn">VoidWithError</span>. Its <span class="cn">run()</span> and <span class="cn">runAsync()</span> methods
+    also copy the successful result returned by another <span class="cn">ResultWithError</span>.</p>

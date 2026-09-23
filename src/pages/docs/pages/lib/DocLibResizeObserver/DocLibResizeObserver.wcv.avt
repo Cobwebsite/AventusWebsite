@@ -5,5 +5,8 @@
     ResizeObserver under <span class="cn">Aventus.ResizeObserver</span>. The behavior is the same as the native one but
     behind, a <span class="cn">single instance</span> of native ResizeObserver is used and the callback function is
     limited to one trigger each <span class="cn">1000 / 60 ms</span>.</p>
+<p>The callback follows the native <span class="cn">ResizeObserverCallback</span> signature and receives the changed
+    entries followed by the shared native observer. Pass <span class="cn">fps</span> in the options to choose another
+    callback frequency.</p>
     
 <av-doc-lib-resize-observer-editor-1></av-doc-lib-resize-observer-editor-1>

@@ -32,3 +32,13 @@
 <h2>Callback on the State</h2>
 <p>You can also override the three methods directly inside a <span class="cn">State</span> class.</p>
 <av-doc-state-listen-editor-4></av-doc-state-listen-editor-4>
+
+<h2>Manager helpers</h2>
+<ul>
+    <li><span class="cn">subscribe(pattern, callbacks, autoActiveState)</span> immediately calls the active callback by default when the current state already matches.</li>
+    <li><span class="cn">activateAfterSubscribe()</span> performs that activation explicitly when automatic activation was disabled.</li>
+    <li><span class="cn">canChangeState()</span> registers a global asynchronous guard.</li>
+    <li><span class="cn">getStateSlugs(pattern)</span> returns the typed parameters of the active state.</li>
+    <li><span class="cn">onAfterStateChanged()</span> and <span class="cn">offAfterStateChanged()</span> manage callbacks executed after a successful transition.</li>
+    <li><span class="cn">StateManager.canBeActivate(pattern, stateName)</span> tests a state name without changing the current state.</li>
+</ul>

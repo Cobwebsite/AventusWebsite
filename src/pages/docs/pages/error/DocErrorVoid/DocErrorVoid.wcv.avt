@@ -17,3 +17,11 @@
         }
     </pre>
 </av-code>
+
+<h2>Composition helpers</h2>
+<ul>
+    <li><span class="cn">containsCode(code, type?)</span> checks whether a code is present.</li>
+    <li><span class="cn">run()</span> and <span class="cn">runAsync()</span> execute only while the result is successful and merge returned errors.</li>
+    <li><span class="cn">extract()</span> and <span class="cn">extractAsync()</span> unwrap a ResultWithError and propagate its errors.</li>
+    <li><span class="cn">toGeneric()</span> removes a specialized error type.</li>
+</ul>

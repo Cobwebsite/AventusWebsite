@@ -17,6 +17,9 @@
 
 <p>Developers should extend this class to create specific modal components (confirmation dialogs, forms, alerts, etc.).
 </p>
+<p>The modal content receives <span class="cn">role="dialog"</span> and <span class="cn">aria-modal="true"</span>
+    automatically. Its stacking level can be customized with the <span class="cn">--modal-z-index</span> CSS variable
+    (default: 60).</p>
 
 <h2>Example</h2>
 <av-doc-u-i-modal-editor-1></av-doc-u-i-modal-editor-1>

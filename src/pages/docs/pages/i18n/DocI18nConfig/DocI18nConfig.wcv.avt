@@ -64,7 +64,7 @@
 </div>
 
 <h2>Compilation configuration</h2>
-<p>You can customize how Avenuts must handle you i18n files.</p>
+<p>You can customize how Aventus handles your i18n files.</p>
 
 <av-code language="json" filename="aventus.conf.avt">
     <pre>

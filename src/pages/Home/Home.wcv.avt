@@ -71,10 +71,10 @@
                 construct robust applications without the need for an extensive array of libraries obtained via npm and
                 subsequently processed through a module bundler.</p>
             <p>Ease of installation and rapid project setup are paramount considerations. Users should have the ability
-                to swiftly access and generate templates to expedite development workflows. Presently, AventusJs is
-                exclusively offered as a VSCode extension, ensuring user-friendly accessibility and simplicity of
-                utilization. This decision simplifies the onboarding process, making the tool readily accessible to
-                developers, thereby enhancing overall productivity and efficiency in web development efforts.</p>
+                to swiftly access and generate templates to expedite development workflows. AventusJs provides both a
+                VS Code extension for an integrated development experience and a CLI for local development, scripting,
+                automation and CI environments. Both interfaces use the same language server and project configuration,
+                so teams can choose the workflow that best fits each task.</p>
         </div>
     </div>
     <av-footer></av-footer>

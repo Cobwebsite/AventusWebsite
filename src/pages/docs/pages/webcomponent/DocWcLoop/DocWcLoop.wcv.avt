@@ -51,6 +51,9 @@
 
 <av-doc-wc-loop-editor-2></av-doc-wc-loop-editor-2>
 
+<p><span class="cn">@Context</span> values keep their inferred TypeScript type in interpolations, injections and
+    nested conditions. Conditions inside a loop also narrow optional values for the guarded block.</p>
+
 <h2>For...in</h2>
 
 <p>The <span class="cn">for...in</span> loop in JavaScript iterates over the enumerable properties of an object, making it suitable for looping
@@ -58,6 +61,8 @@
     properties and render content dynamically based on each key-value pair.</p>
 
 <av-doc-wc-loop-editor-3></av-doc-wc-loop-editor-3>
+<p>A <span class="cn">for...in</span> key is a string. Convert it with <span class="cn">Number(index)</span> when it
+    is used as an array index requiring a number.</p>
 
 <h2>For...of</h2>
 

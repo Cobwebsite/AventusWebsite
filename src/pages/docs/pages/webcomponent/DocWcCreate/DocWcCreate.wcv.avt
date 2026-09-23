@@ -120,9 +120,9 @@
         compilation and
         to.
     </li>
-    <li><span class="cn">@Dependances({ type: Type, strong?:boolean}[])</span> : to add dependance not written inside
+    <li><span class="cn">@Dependencies({ type: Type, strong?:boolean}[])</span> : to add a dependency not written inside
         component. The
-        strong boolean define if the dependance must be loaded before the class.</li>
+        The strong boolean defines whether the dependency must be loaded before the class.</li>
     <li><span class="cn">@OverrideView({ removeViewVariables?: string[] })</span> : to fully override parent view. You
         can remove parent
         ViewElement needed, but you have to be aware of what you are doing.</li>
@@ -142,3 +142,6 @@
 <av-img src="/img/doc/wc/create/lifecylce.png"></av-img>
 
 <p>By default <span class="cn">postCreation</span> and <span class="cn">postDestruction</span> are empty.</p>
+<p>Use <span class="cn">postDisconnect()</span> for work performed whenever the component leaves the DOM.
+    <span class="cn">onPostDisconnect(callback)</span> and <span class="cn">onPostDestruction(callback)</span> register
+    cleanup callbacks without overriding the lifecycle methods.</p>

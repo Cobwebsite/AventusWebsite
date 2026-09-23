@@ -14,6 +14,10 @@
     information.</p>
 <av-doc-ram-crud-editor-1></av-doc-ram-crud-editor-1>
 <p>For the future explanations, only the functions in normal format will be explained</p>
+<p>CRUD inputs use the RAM's <span class="cn">Request</span> type, while returned and stored items use
+    <span class="cn">RamItem&lt;ResourceDetails, Request&gt;</span>. Consequently, an item's
+    <span class="cn">update(request)</span> method sends the request directly through the RAM and returns the unique
+    stored instance.</p>
 <h3>Read</h3>
 <div class="table">
     <av-row class="header">
@@ -22,8 +26,12 @@
     </av-row>
     <av-row>
         <av-col size="4" center>getAll</av-col>
-        <av-col size="8">Return all items stored inside the RAM like {[index: Index] : T}
+        <av-col size="8">Return all items stored inside the RAM as an array.
         </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>getRecords</av-col>
+        <av-col size="8">Return all items as a <span class="cn">Map&lt;Index, RamItem&gt;</span>.</av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>getList</av-col>
@@ -104,7 +112,8 @@
 <p>The last thing to know is that once an item a stored inside the ram, the item reference is always the same.</p>
 <av-code language="typescript" filename="Test.lib.avt">
     export async function test() {
-    \tlet person1: Person = await PersonRAM.getInstance().get(1); 
+    \tlet person1: Person | undefined = await PersonRAM.getInstance().get(1);
+    \tif(!person1) return;
     \tperson1.name = "John Doe 2";
     \tconst person: Person = await PersonRAM.getInstance().update(person1);
     \t// person == person1 =&gt; true

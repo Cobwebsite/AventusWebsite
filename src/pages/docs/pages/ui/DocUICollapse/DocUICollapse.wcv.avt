@@ -29,6 +29,16 @@ It's designed to handle open/close logic automatically while letting you define 
         <av-col size="4" center>boolean</av-col>
         <av-col size="4" center>Disables the transition animation.</av-col>
     </av-row>
+    <av-row>
+        <av-col size="4" center>horizontal</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Collapses columns horizontally instead of rows vertically.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>reverse</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Anchors collapsing content to the end side.</av-col>
+    </av-row>
 </div>
 
 <h2>CSS Variables</h2>

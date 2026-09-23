@@ -141,7 +141,7 @@ protected async validation(): Promise&lt;string[]&gt; {
 <h2>Example Integration</h2>
 <av-code language="ts">
     <pre>
-const loginForm = Form.FormHandler.create({
+const loginForm = Form.Form.create({
     email: [Form.Validators.Required, Form.Validators.Email],
 });
     </pre>
@@ -168,8 +168,8 @@ const loginForm = Form.FormHandler.create({
 <p>If your framework templating supports binding (example follows AventusJS syntax), you can bind the element directly to the FormHandler part:</p>
 <av-code language="ts">
     <pre>
-const loginForm = Avenuts.Form.FormHandler.create({
-  email: [Avenuts.Form.Validators.Required, Avenuts.Form.Validators.Email],
+const loginForm = Aventus.Form.Form.create({
+  email: [Aventus.Form.Validators.Required, Aventus.Form.Validators.Email],
 });
     </pre>
 </av-code>

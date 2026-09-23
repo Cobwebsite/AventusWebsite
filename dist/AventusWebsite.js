@@ -411,16 +411,38 @@ let Style=class Style {
         Style.noAnimation.replaceSync(`:host{-webkit-transition: none !important;-moz-transition: none !important;-ms-transition: none !important;-o-transition: none !important;transition: none !important;}:host *{-webkit-transition: none !important;-moz-transition: none !important;-ms-transition: none !important;-o-transition: none !important;transition: none !important;}`);
     }
     stylesheets = new Map();
+    stylesheetsWaiting = {};
     async load(name, url) {
         try {
+            const key = name + '°' + url;
+            if (this.stylesheetsWaiting.hasOwnProperty(key)) {
+                return await this.awaitFctHead(key);
+            }
+            this.stylesheetsWaiting[key] = [];
             let style = this.stylesheets.get(name);
             if (!style || style.cssRules.length == 0) {
                 let txt = await (await fetch(url)).text();
                 this.store(name, txt);
             }
+            this.releaseAwaitFctHead(key);
         }
         catch (e) {
         }
+    }
+    releaseAwaitFctHead(key) {
+        if (this.stylesheetsWaiting[key]) {
+            for (let i = 0; i < this.stylesheetsWaiting[key].length; i++) {
+                this.stylesheetsWaiting[key][i]();
+            }
+            delete this.stylesheetsWaiting[key];
+        }
+    }
+    awaitFctHead(key) {
+        return new Promise((resolve) => {
+            this.stylesheetsWaiting[key].push(() => {
+                resolve();
+            });
+        });
     }
     store(name, content) {
         let style = this.stylesheets.get(name);
@@ -13552,7 +13574,7 @@ this.__getStatic().__template.setActions({
         }, 1000);
     }
     __ea947f83f136b064363a866829451b4cmethod0() {
-        return this.getTimeTxt();
+        return (this.getTimeTxt());
     }
 }
 DocWcInjectionEditor2Example.Namespace=`AventusWebsite`;
@@ -13610,7 +13632,7 @@ this.__getStatic().__template.setActions({
         }, 1000);
     }
     __ecae68b7cc910637c9a7f833143dd526method0() {
-        return this.time;
+        return (this.time);
     }
 }
 DocWcInjectionEditor1Example.Namespace=`AventusWebsite`;
@@ -13804,7 +13826,7 @@ this.__getStatic().__template.setActions({
         return this.value;
     }
     __da3baae7677d72d52ac2bb0ec0788ff4method0() {
-        return this.value;
+        return (this.value);
     }
     __da3baae7677d72d52ac2bb0ec0788ff4method1(v) {
         if (this) {
@@ -13876,7 +13898,7 @@ this.__getStatic().__template.setActions({
         return this.value;
     }
     __f8af63ff30d8769af7e6fa720d2204d9method0() {
-        return this.value;
+        return (this.value);
     }
     __f8af63ff30d8769af7e6fa720d2204d9method1(v) {
         if (this) {
@@ -15594,10 +15616,10 @@ super.__getHtml();
                 construct robust applications without the need for an extensive array of libraries obtained via npm and
                 subsequently processed through a module bundler.</p>
             <p>Ease of installation and rapid project setup are paramount considerations. Users should have the ability
-                to swiftly access and generate templates to expedite development workflows. Presently, AventusJs is
-                exclusively offered as a VSCode extension, ensuring user-friendly accessibility and simplicity of
-                utilization. This decision simplifies the onboarding process, making the tool readily accessible to
-                developers, thereby enhancing overall productivity and efficiency in web development efforts.</p>
+                to swiftly access and generate templates to expedite development workflows. AventusJs provides both a
+                VS Code extension for an integrated development experience and a CLI for local development, scripting,
+                automation and CI environments. Both interfaces use the same language server and project configuration,
+                so teams can choose the workflow that best fits each task.</p>
         </div>
     </div>
     <av-footer></av-footer>
@@ -15611,7 +15633,7 @@ super.__getHtml();
         return "Aventus: The Web Component Framework for Scalable, Type-Safe Development";
     }
     Description() {
-        return "Explore Aventus, a JavaScript framework that leverages web components to build scalable applications with encapsulation, object-oriented programming, and type safety. Aventus offers an easy installation process and rapid project setup, exclusively as a VSCode extension, to enhance productivity and streamline web development.";
+        return "Explore Aventus, a JavaScript framework that leverages web components to build scalable applications with encapsulation, object-oriented programming and type safety. Use its VS Code extension or CLI for development, automation and CI workflows.";
     }
     Keywords() {
         return [
@@ -19035,6 +19057,8 @@ super.__getHtml();
         <div class="sub-info">If there are conflicts with existing folders, the new installation will overwrite the old one.</div>
     </li>
     <li><span class="cn">isProject</span>: Defines if the template need a <span class="cn">aventus.conf.avt</span></li>
+    <li><span class="cn">isGlobal</span>: Installs the template as a global creation template instead of a project or
+        component template.</li>
 </ul><h3>Managing Template</h3><p>You can edit the README content directly from the store website.</p><p>Templates can also be deleted from the store if you are the owner.</p>` }
     });
 }
@@ -19093,7 +19117,10 @@ It allows developers to register and handle keyboard combinations (shortcuts) wi
         // Later, remove the temporary shortcut and restore the previous one
         ShortcutManager.unsubscribe([SpecialTouch.Control, "s"], overriding);
     </pre>
-</av-code></av-code><h2>Internal Behavior</h2><p>The combination order doesn't matter. <span class="cn">Ctrl+S</span>, <span class="cn">S+Ctrl</span>, or <span class="cn">s+Control</span> are treated identically.</p><p>Certain browser shortcuts (like <span class="cn">Ctrl+P</span> or <span class="cn">Ctrl+S</span>) are automatically prevented to avoid conflicts. This can be useful in single-page applications (SPAs) to prevent the browser from executing system actions like Print, Open File, or Save Page. You can customize this behavior with :</p><av-code language="ts">
+</av-code></av-code><h2>Internal Behavior</h2><p>The combination order doesn't matter. <span class="cn">Ctrl+S</span>, <span class="cn">S+Ctrl</span>, or <span class="cn">s+Control</span> are treated identically.</p><p>Printable keys can be registered directly as strings. Use the literal <span class="cn">" "</span> to register the
+space bar:</p><av-code language="ts">
+    <pre>ShortcutManager.subscribe(" ", () => console.log("Space pressed"));</pre>
+</av-code></av-code><p>Certain browser shortcuts (like <span class="cn">Ctrl+P</span> or <span class="cn">Ctrl+S</span>) are automatically prevented to avoid conflicts. This can be useful in single-page applications (SPAs) to prevent the browser from executing system actions like Print, Open File, or Save Page. You can customize this behavior with :</p><av-code language="ts">
     <pre>
         ShortcutManager.setAutoPrevents([[SpecialTouch.Control, "s"], [SpecialTouch.Control, "p"]]);
     </pre>
@@ -19201,7 +19228,7 @@ super.__getHtml();
     <pre>
 // Sets up a global error handler that is automatically invoked whenever an operation fails.
 Process.configure({
-    handleErrors: (msg) => {
+    handleErrors: (msg, errors) => {
         Alert.open({
             title: "Execution error",
             content: msg,
@@ -19221,7 +19248,9 @@ async function login() {
 	}
 }
     </pre>
-</av-code></av-code>` }
+</av-code></av-code><p>For <span class="cn">ResultWithError</span>, <span class="cn">execute</span> and
+    <span class="cn">parseErrors</span> return the result value. For <span class="cn">VoidWithError</span>, they return
+    the success boolean. Both return <span class="cn">undefined</span> after handled errors.</p>` }
     });
 }
     getClassName() {
@@ -19274,7 +19303,7 @@ import { HomePage } from "../pages/Home.page.avt";
 import { AboutPage } from "../pages/About.page.avt";
 import { NotFoundPage } from "../pages/NotFound.page.avt";
 export class AppRouter extends Router {
-	protected defineRoutes(): void {
+	protected async defineRoutes(): Promise&lt;void&gt; {
 		this.addRoute("/", HomePage);
 		this.addRoute("/about", AboutPage);
 		this.addRouteAsync({
@@ -19295,7 +19324,7 @@ export class AppRouter extends Router {
 </av-code></av-code><h2>Template</h2><av-code language="html">
     <pre>
 &lt;slot name="before"&gt;&lt;/slot&gt;
-&lt;div class="content" @element="contentEl"&gt;&lt;/div&gt;
+&lt;main class="content" @element="contentEl"&gt;&lt;/main&gt;
 &lt;slot name="after"&gt;&lt;/slot&gt;
     </pre>
 </av-code></av-code><p>This structure allows you to insert additional UI before or after the router content, such as headers, sidebars, or footers.</p><h2>Configuration</h2><p>You can globally configure the Router's default behavior:</p><av-code language="ts">
@@ -19305,7 +19334,8 @@ Router.configure({
 	destroyPage: true,
 });
     </pre>
-</av-code></av-code><h2>Defining Routes</h2><p>Routes are defined in the abstract defineRoutes() method.</p><av-code language="ts">
+</av-code></av-code><h2>Defining Routes</h2><p>Routes are defined in the abstract <span class="cn">defineRoutes()</span> method. It may be asynchronous; the router
+    waits for it before registering routes and activating the initial URL.</p><av-code language="ts">
     <pre>
         this.addRoute("/home", HomePage);
         this.addRouteAsync({
@@ -19318,10 +19348,12 @@ Router.configure({
 When a route becomes active, the Router:</p><ul>
     <li>Instantiates or reuses the corresponding <span class="cn">Page</span> class.</li>
     <li>Calls <span class="cn">isAllowed()</span> on the page to check access control.</li>
+    <li>Calls <span class="cn">loadData(currentState, routePath)</span> before displaying it.</li>
     <li>Invokes <span class="cn">show()</span> on the new page and <span class="cn">hide()</span> on the previous one.</li>
     <li>Updates document metadata (<span class="cn">title</span>, <span class="cn">description</span>, <span class="cn">keywords</span>).</li>
     <li>Synchronizes the browser URL and navigation history.</li>
-</ul><p>Inactive pages are either removed or kept in memory depending on <span class="cn">destroyPage</span>.</p><h2>404 Handling</h2><p>If no route matches the current state, the Router:</p><ul>
+</ul><p>Inactive pages are either removed or kept in memory depending on <span class="cn">destroyPage</span>.</p><p>The boolean <span class="cn">initializing</span> attribute remains true until route registration and initial
+    navigation are complete, making it suitable for an initial loading state.</p><h2>404 Handling</h2><p>If no route matches the current state, the Router:</p><ul>
     <li>Instantiates the <span class="cn">page404</span> page (default or overridden)</li>
     <li>Displays it in the <span class="cn">contentEl</span></li>
     <li>Optionally updates the URL to a "not found" path.</li>
@@ -19385,8 +19417,8 @@ protected override defaultUrl(): string {
         <av-col size="6" center>Navigates to a specific route.</av-col>
     </av-row>
     <av-row>
-        <av-col size="6" center>getSlugs()</av-col>
-        <av-col size="6" center>Returns the parameters extracted from the current route (if any).</av-col>
+        <av-col size="6" center>getSlugs(path?: string)</av-col>
+        <av-col size="6" center>Returns parameters for the supplied path, or for the current route when omitted.</av-col>
     </av-row>
     <av-row>
         <av-col size="6" center>bindToUrl()</av-col>
@@ -19499,7 +19531,8 @@ export class HomePage extends Page {
 </div><p>The visible property is reactive when its value changes:</p><ul>
     <li>If true, onShow() is called</li>
     <li>If false, onHide() is called</li>
-</ul><h2>Lifecycle Methods</h2><div class="table">
+</ul><p>Calling <span class="cn">show()</span> on a page that is already visible still calls <span class="cn">onShow()</span>,
+    which allows route data to be refreshed without hiding the page first.</p><h2>Lifecycle Methods</h2><div class="table">
     <av-row class="header">
         <av-col size="6" center>Method</av-col>
         <av-col size="6" center>Description</av-col>
@@ -19976,13 +20009,23 @@ Layout.Col.configure({
     </av-row>
     <av-row>
         <av-col size="4" center>--col-gap</av-col>
-        <av-col size="4" center>Horizontal gap between columns</av-col>
+        <av-col size="4" center>Default horizontal and vertical gap</av-col>
         <av-col size="4" center>0px</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--col-gap-x</av-col>
+        <av-col size="4" center>Horizontal gap, overriding --col-gap</av-col>
+        <av-col size="4" center>--col-gap</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--col-gap-y</av-col>
+        <av-col size="4" center>Vertical gap, overriding --col-gap</av-col>
+        <av-col size="4" center>--col-gap</av-col>
     </av-row>
 </div><h2>Row component</h2><p>The &lt;av-row&gt; component:</p><ul>
     <li>Creates the grid container (display: flex; flex-wrap: wrap;)</li>
     <li>Defines a container context (container-name: row; container-type: inline-size;)</li>
-    <li>Manages horizontal gaps between columns.</li>
+    <li>Manages independent horizontal and vertical gaps between columns.</li>
 </ul><h3>Technical Details</h3><ul>
     <li>Widths are computed dynamically with <span class="cn">calc(100% / 12 * n)</span> adjusted by the column gap.</li>
     <li>Columns with <span class="cn">size="0"</span> are hidden (<span class="cn">display: none</span>).</li>
@@ -20052,7 +20095,7 @@ super.__getHtml();
     validation rules, and submission flow.</p><p>A <span class="cn">FormHandler</span> is typically created from a schema that describes the structure and validation
     logic of your data:</p><av-code language="ts">
     <pre>
-    const form = Aventus.Form.FormHandler.create({
+    const form = Aventus.Form.Form.create({
         email: Aventus.Form.Validators.Email,
         password: [Aventus.Form.Validators.Required],
     });
@@ -20066,7 +20109,7 @@ super.__getHtml();
     </pre>
 </av-code></av-code><p>You can also specify a global configuration or default validation behavior using:</p><av-code language="ts">
     <pre>
-    Aventus.Form.FormHandler.configure({
+    Aventus.Form.Form.configure({
         validateOnChange: true,
     });
     </pre>
@@ -20103,7 +20146,7 @@ const emailValid = await handler.validate("email"); // only one field
     </pre>
 </av-code></av-code><p>If validation fails and there’s no registered UI element for a field, Aventus calls the handler’s error function:</p><av-code language="ts">
     <pre>
-handleValidateNoInputError: (errors) => {
+onValidateFallback: (errors) => {
     console.warn("Unmapped validation errors:", errors);
 }
     </pre>
@@ -20118,7 +20161,11 @@ await handler.submit(async (body) => {
     <li>Validates the form</li>
     <li>Calls your submission function</li>
     <li>Handles and maps any backend errors</li>
-</ul><p>If an input is associated with a field that produced an error, the handler pushes the error message into that element’s errors array automatically. Otherwise, the function <span class="cn">handleExecuteNoInputError</span> is called.</p><h2>Validators</h2><p>Validators in Aventus are simple classes that implement a single method: validate().</p><h3>Example: Required</h3><av-code language="ts">
+</ul><p>If an input is associated with a field that produced an error, the handler pushes the message into that element’s
+errors array automatically. Validation errors without an input use <span class="cn">onValidateFallback</span>; unmapped
+server errors use <span class="cn">onServerFallback</span>.</p><h3>Controller integration</h3><p><span class="cn">Form.createFromController()</span> creates a typed handler directly from an
+<span class="cn">HttpRoute</span> method. Use the overload with a method name when the controller exposes more than one
+route, and the sub-form helpers when the submitted body is nested below a property.</p><h2>Validators</h2><p>Validators in Aventus are simple classes that implement a single method: validate().</p><h3>Example: Required</h3><av-code language="ts">
     <pre>
 export class Required extends Validator&lt;any&gt; {
     public static msg = "The field {name} is required";
@@ -20538,7 +20585,7 @@ super.__getHtml();
         <av-col size="8">This is an array of string to define locales that is required inside your
             project</av-col>
     </av-row>
-</div><h2>Compilation configuration</h2><p>You can customize how Avenuts must handle you i18n files.</p><av-code language="json" filename="aventus.conf.avt">
+</div><h2>Compilation configuration</h2><p>You can customize how Aventus handles your i18n files.</p><av-code language="json" filename="aventus.conf.avt">
     <pre>
         {
             "module": "test",
@@ -20726,7 +20773,10 @@ super.__getHtml();
             console.log(fullName.value); // write "Jane Doe"
         }
     </pre>
-</av-code></av-code>` }
+</av-code></av-code><p><span class="cn">Watcher.effect()</span> returns an <span class="cn">Effect</span>. Call
+    <span class="cn">destroy()</span> when the effect is no longer needed. Use
+    <span class="cn">Watcher.untrack(() =&gt; value)</span> to read reactive values without registering them as
+    dependencies of the current effect.</p>` }
     });
 }
     getClassName() {
@@ -20959,7 +21009,7 @@ super.__getHtml();
     this resource, you have to reload it again and again. To avoid this you can use <span class="cn">Aventus.ResourceLoader</span>. Two method can be used :</p><ul>
     <li><span class="cn">load</span> that will return you the resource as a string (base64 for img resource).</li>
     <li><span class="cn">loadInHead</span> that will append a style or script tag in head.</li>
-</ul><p>When a resource is loaded, the resource laoder will keep it in memory or prevent adding twice a tag in head.</p><av-code language="typescript" filename="Example.wcl.avt">
+</ul><p>When a resource is loaded, the resource loader keeps it in memory or prevents adding the same tag to the head twice.</p><av-code language="typescript" filename="Example.wcl.avt">
     export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
     &nbsp;
     \tpublic async load() {
@@ -20975,12 +21025,14 @@ super.__getHtml();
     \t\tconst hasError = await Aventus.ResourceLoader.loadInHead("/style.css");
     \t\tconst hasError2 = await Aventus.ResourceLoader.loadInHead({
     \t\t\ttype: "css",
-    \t\t\turl: "/style.css"
+    \t\t\turl: "/style.css",
+    \t\t\tnonce: "content-security-policy-nonce"
     \t\t});
     \t}
     &nbsp;
     }
-</av-code></av-code><p>By default Aventus will try to determine the type you want by analyze the extension set inside the uri. If it fails, you can specify the type you need by adding the <span class="cn">type</span> parameter.</p>` }
+</av-code></av-code><p>By default Aventus will try to determine the type you want by analyze the extension set inside the uri. If it fails, you can specify the type you need by adding the <span class="cn">type</span> parameter.</p><p>The optional <span class="cn">nonce</span> is applied to script and style elements created by
+    <span class="cn">loadInHead</span>, allowing them to comply with a Content Security Policy.</p>` }
     });
 }
     getClassName() {
@@ -21206,12 +21258,15 @@ super.__getHtml();
                 todos: ["todo1", "todo3"]
             }
         &nbsp;
-            console.log(Aventus.compareObject(obj1, obj2)); // true
+            console.log(Aventus.compareObject(obj1, obj2)); // false: array order differs
+            console.log(Aventus.compareObject(obj1, obj2, false)); // true: ignore array order
             console.log(Aventus.compareObject(obj1, obj3)); // false
         &nbsp;
         }
     </pre>
-</av-code></av-code>` }
+</av-code></av-code><p>The third parameter, <span class="cn">tableOrder</span>, defaults to <span class="cn">true</span>. Set it to
+    <span class="cn">false</span> to compare arrays without considering their order. Aventus Date, DateTime, Time,
+    Map and watched proxy values are compared by their underlying values.</p>` }
     });
 }
     getClassName() {
@@ -21567,7 +21622,9 @@ super.__getHtml();
     <li>Providing helper methods for common HTTP verbs (get, post, put, delete, option).</li>
     <li>Automatically integrating with the <span class="cn">HttpRequest</span> system, which handles body parsing,
         headers, and response transformation.</li>
-</ul><p>You can subclass <span class="cn">HttpRouter</span> to customize its endpoint behavior or base URL.</p><p>By default, the router's base URL is set to the current domain:</p><av-code language="ts">
+</ul><p>You can subclass <span class="cn">HttpRouter</span> to customize its endpoint behavior or base URL.</p><p>Use <span class="cn">HttpRouter.configure(options)</span> to change the global defaults. Override
+    <span class="cn">defineOptions(options)</span> in a subclass for router-specific configuration. The constructor does
+    not accept options.</p><p>By default, the router's base URL is set to the current domain:</p><av-code language="ts">
     <pre>
         location.protocol + "//" + location.host
     </pre>
@@ -21671,15 +21728,24 @@ HttpRequest.configure({
         });
         // request.enableMethodSpoofing();
     </pre>
-</av-code></av-code><h2>Body Serialization</h2><p>The <span class="cn">HttpRequest</span> class automatically detects how to encode the body:</p><ul>
+</av-code></av-code><h2>Request cache</h2><p>Enable the built-in cache for responses that can be reused.</p><av-code language="typescript"><pre>
+request.enableCache();
+const result = await request.queryJSON&lt;User[]&gt;();
+request.clearCache();
+</pre></av-code></av-code><p>Use <span class="cn">disableCache()</span> to force the next query to reach the server.</p><h2>Body Serialization</h2><p>The <span class="cn">HttpRequest</span> class automatically detects how to encode the body:</p><ul>
     <li>If it contains File objects or arrays of files → it uses <span class="cn">FormData</span>.</li>
     <li>Otherwise → it serializes the body as JSON</li>
-</ul><h2>Query Methods</h2><p>All query methods return either a <span class="cn">ResultWithError&lt;T&gt;</span> or a <span class="cn">VoidWithError</span>, ensuring safe and typed responses.</p><h3>query</h3><p>Executes the request and returns the raw Response object, wrapped in a ResultWithError.</p><av-code language="ts">
+</ul><h2>Query Methods</h2><p>All query methods return either a <span class="cn">ResultWithError&lt;T&gt;</span> or a <span class="cn">VoidWithError</span>, ensuring safe and typed responses.</p><h3>query</h3><p>Executes the request and returns an <span class="cn">Aventus.HttpResponse</span>, wrapped in a
+    <span class="cn">ResultWithError</span>. It exposes the native response metadata such as status, headers, URL and
+    redirect state.</p><av-code language="ts">
     <pre>
 const result = await request.query();
 if (!result.success) return console.error(result.errors);
+const data = await result.result.json&lt;User[]&gt;();
     </pre>
-</av-code></av-code><h3>queryJSON</h3><p>Parses the response as JSON and automatically transforms it into the expected type.</p><av-code language="ts">
+</av-code></av-code><p><span class="cn">HttpResponse</span> retains its parsed body, so <span class="cn">json()</span>,
+    <span class="cn">text()</span> or <span class="cn">blob()</span> can return the same cached content without consuming
+    the native response body again.</p><h3>queryJSON</h3><p>Parses the response as JSON and automatically transforms it into the expected type.</p><av-code language="ts">
     <pre>
 const result = await request.queryJSON&lt;User&gt;();
 if (result.success) console.log(result.result);
@@ -21701,7 +21767,12 @@ if (!result.success) console.error(result.errors);
     </pre>
 </av-code></av-code><h2>Integration with HttpRouter</h2><p>You can optionally provide a <span class="cn">HttpRouter</span> instance to prefix relative URLs or manage base routes dynamically.</p><av-code language="ts">
     <pre>
-const userRouter = new HttpRouter({ url: "/api/users" });
+class UserRouter extends HttpRouter {
+    protected override defineOptions(options: HttpRouterOptions): HttpRouterOptions {
+        return { ...options, url: "/api/users" };
+    }
+}
+const userRouter = new UserRouter();
 const req = new HttpRequest("/1", HttpMethod.GET);
 const result = await req.queryJSON&lt;User&gt;(userRouter);
     </pre>
@@ -21817,7 +21888,12 @@ super.__getHtml();
             console.error("Validation errors:", validation.errors);
         }
     </pre>
-</av-code></av-code>` }
+</av-code></av-code><h2>Composition helpers</h2><ul>
+    <li><span class="cn">containsCode(code, type?)</span> checks whether a code is present.</li>
+    <li><span class="cn">run()</span> and <span class="cn">runAsync()</span> execute only while the result is successful and merge returned errors.</li>
+    <li><span class="cn">extract()</span> and <span class="cn">extractAsync()</span> unwrap a ResultWithError and propagate its errors.</li>
+    <li><span class="cn">toGeneric()</span> removes a specialized error type.</li>
+</ul>` }
     });
 }
     getClassName() {
@@ -21867,7 +21943,9 @@ super.__getHtml();
     errors in your application. It
     allows you to define an error code along with a message to describe the error. The error code can be of any type
     that extends either number or an enumeration (Enum). By extending GenericError, you can create specific error types
-    tailored to different error scenarios in your application.</p><av-code language="typescript" filename="Example.lib.avt">
+    tailored to different error scenarios in your application.</p><p>The constructor accepts an error code and any message value. Native <span class="cn">Error</span> instances use their
+    message, while other values are converted to strings. Use <span class="cn">details</span> for structured supplementary
+    information.</p><av-code language="typescript" filename="Example.lib.avt">
     <pre>
         // Define an enumeration for error codes
         export enum MyErrorCode {
@@ -21926,7 +22004,7 @@ super.__getHtml();
     aventusjs store : <span class="cn"><a href="https://store.aventusjs.com">https://store.aventusjs.com</a></span></p><p>The easiest format is the following : </p><av-code language="json">
     <pre>
     {
-        "dependances": {
+        "dependencies": {
             "MaterialIcon": "1.0.0",
         }
     }
@@ -21971,7 +22049,7 @@ super.__getHtml();
         </av-col>
     </av-row>
     <av-row>
-        <av-col size="4" center>subDependancesInclude</av-col>
+        <av-col size="4" center>subDependenciesInclude</av-col>
         <av-col size="8" center>
             <span>This is a object where the key is the sub library name and the value is the inclusion pattern. The
                 will define how the library of the library must be included inside output js file.</span>
@@ -21993,7 +22071,7 @@ super.__getHtml();
 </ul><av-code language="json">
     <pre>
     {
-        "dependances": {
+        "dependencies": {
             "Aventus@UI": {},
         }
     }
@@ -22001,7 +22079,7 @@ super.__getHtml();
 </av-code></av-code><h2>Store</h2><p>You can search packages inside the aventus store. This is the recommanded way to load package.</p><p><a href="https://store.aventusjs.com/packages" target="_blank"><av-button>Open the store</av-button></a></p><h2>File uri</h2><p>You can add directly an uri that resolve a <span class="cn">.package.avt</span> file to import it.</p><av-code language="json" filename="aventus.conf.avt">
     <pre>
         {
-            dependances: {
+            dependencies: {
                 "Lib1@Main": {
                     "uri": "./myLibs/Lib1@Main.package.avt"
                 },
@@ -22011,7 +22089,7 @@ super.__getHtml();
             }
         }
     </pre>
-</av-code></av-code><h2>File via http</h2><p>You can resolve dependance via http. Package will be stored inside the Aventus <span class="cn">storage&gt;packages&gt;http</span>. In this
+</av-code></av-code><h2>File via http</h2><p>You can resolve a dependency via HTTP. The package is stored inside <span class="cn">storage&gt;packages&gt;http</span>. In this
     folder, you must find
     a list
     of subfolder where the name is the md5 value of the uri that you set as uri. The entry point is a json named
@@ -22143,7 +22221,8 @@ super.__getHtml();
     <span class="cn">Build</span>. The build job is to transform some Aventus input files into a JavaScript file (for an
     app) and/or a
     Aventus Package File (for a lib).
-</p><div class="table">
+</p><p>Aventus 1.5 uses the TypeScript 6 compiler with the ES2025 and Temporal libraries. Decorators use the current
+    standard decorator model; Aventus decorators keep the same source syntax while receiving stricter type checking.</p><div class="table">
     <av-row class="header">
         <av-col size="4" center>Name</av-col>
         <av-col size="8" center>Description</av-col>
@@ -22226,8 +22305,10 @@ super.__getHtml();
     </av-row>
     <av-row class="darker lvl-1">
         <av-col size="4" center>output</av-col>
-        <av-col size="8" center>This is string to define where the compiled JavaScript file must be written.
-            <span class="constraint">Must satisfy: ^\\S+\\.js</span>
+        <av-col size="8" center>This is a string, array or object defining the generated JavaScript outputs. An
+            object can select an output for each imported library and must contain <span class="cn">@default</span>.
+            Use <span class="cn">@npm</span> for npm exports. Each selected output can be a path or an object containing
+            <span class="cn">path</span> and <span class="cn">compressed</span>.
         </av-col>
     </av-row>
     <av-row class="darker lvl-1">
@@ -22399,9 +22480,9 @@ super.__getHtml();
         </av-col>
     </av-row>
     <av-row>
-        <av-col size="4" center>dependances</av-col>
+        <av-col size="4" center>dependencies</av-col>
         <av-col size="8" center>
-            <span>This is an object of <av-link to="/docs/config/lib">dependance options</av-link> to
+            <span>This is an object of <av-link to="/docs/config/lib">dependency options</av-link> to
                 use code and/or autocompletion inside your code.</span>
         </av-col>
     </av-row>
@@ -22547,7 +22628,10 @@ super.__getHtml();
     </av-row>
     <av-row>
         <av-col size="4" center>aliases</av-col>
-        <av-col size="8" center>This is an object of string that allows replacement of code. For example { "@root": "./"} will replace any @root to resolve the root folder</av-col>
+        <av-col size="8" center>This maps import aliases to folders. For example, <span class="cn">{ "@root": "./src/" }</span>
+            allows imports such as <span class="cn">import { User } from "@root/data/User.data.avt"</span>. When an
+            auto-import resolves inside an aliased folder, the language server writes the alias form instead of a long
+            relative path.</av-col>
     </av-row>
     <av-row>
         <av-col size="4" center><span class="mandatory">build</span></av-col>
@@ -22555,8 +22639,22 @@ super.__getHtml();
         </av-col>
     </av-row>
     <av-row>
-        <av-col size="4" center>dependances</av-col>
-        <av-col size="8" center>This is an array of <av-link to="/docs/config/lib">dependances options</av-link>.</av-col>
+        <av-col size="4" center>dependencies</av-col>
+        <av-col size="8" center>This is an object of <av-link to="/docs/config/lib">dependency options</av-link>.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>namespaceStrategy</av-col>
+        <av-col size="8" center>Global namespace strategy: <span class="cn">manual</span>, <span class="cn">followFolders</span>,
+            <span class="cn">followFoldersCamelCase</span> or <span class="cn">rules</span>.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>namespaceRoot</av-col>
+        <av-col size="8" center>Root folder used by folder-based namespace strategies.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>namespaceRules</av-col>
+        <av-col size="8" center>Path patterns used when <span class="cn">namespaceStrategy</span> is
+            <span class="cn">rules</span>.</av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>static</av-col>
@@ -22619,9 +22717,17 @@ super.__getHtml();
     <li><b>Aventus : Import templates</b> <av-icon icon="arrow-right"></av-icon> To import Aventus templates</li>
     <li><b>Aventus : Import projects</b> <av-icon icon="arrow-right"></av-icon> To import Aventus projects</li>
     <li><b>Aventus : Open storage</b> <av-icon icon="arrow-right"></av-icon> To open the folder where Aventus store data</li>
+    <li><b>Aventus : Create emmet snippets</b> <av-icon icon="arrow-right"></av-icon> To generate
+        <span class="cn">.aventus/emmet/snippets.json</span> from web components exported by project packages</li>
+    <li><b>Aventus : Format all files</b> <av-icon icon="arrow-right"></av-icon> To format all Aventus files loaded by the language server</li>
 </ul><h2>CLI</h2><p>Aventus also provides a <b>CLI</b> for DevOps tasks and automation. It can be installed via npm using:</p><av-code language="bash">
     <pre>npm i @aventusjs/cli</pre>
-</av-code></av-code><p>While the CLI is powerful for scripting and automation, it is still recommended to use the VSCode extension for development, as it includes all necessary tools in a user-friendly interface.</p><h2>Source code</h2><p>The Aventus source code can be downloaded on <a href="https://github.com/Cobwebsite/Aventus" target="_blank" rel="noopener noreferrer">github.</a></p>` }
+</av-code></av-code><p>While the CLI is powerful for scripting and automation, it is still recommended to use the VSCode extension for development, as it includes all necessary tools in a user-friendly interface.</p><p>Useful CLI commands include:</p><ul>
+    <li><span class="cn">av format [aventus.conf.avt]</span> to format every Aventus file in a project; the optional
+        configuration path selects the project explicitly.</li>
+    <li><span class="cn">av dependencies help-llm</span> to generate dependency documentation for AI tools.</li>
+    <li><span class="cn">av update</span> to update the CLI package.</li>
+</ul><h2>Source code</h2><p>The Aventus source code can be downloaded on <a href="https://github.com/Cobwebsite/Aventus" target="_blank" rel="noopener noreferrer">github.</a></p>` }
     });
 }
     getClassName() {
@@ -23168,7 +23274,7 @@ super.__getHtml();
             	"module": "TodoDemo",
             	"componentPrefix": "td",
             	"hideWarnings": true,
-            	"dependances": {
+                "dependencies": {
                     "Aventus@UI":{}
                 },
             	"build": [
@@ -23333,8 +23439,8 @@ super.__getHtml();
             	"module": "TodoDemo",
             	"componentPrefix": "td",
             	"hideWarnings": true, // we don't need warnings during this demo
-				"dependances": {
-                    "Aventus@UI":{} // Load the native dependance Aventus@UI
+				"dependencies": {
+                    "Aventus@UI":{} // Load the native dependency Aventus@UI
                 },
             	"build": [
             		{
@@ -23517,7 +23623,7 @@ super.__getHtml();
             	"module": "TodoDemo",
             	"componentPrefix": "td",
             	"hideWarnings": true,
-            	"dependances": {
+                "dependencies": {
                     "Aventus@UI":{}
                 },
             	"build": [
@@ -26927,7 +27033,8 @@ super.__getHtml();
         export async function readFunction() {
             const person1: Aventus.RamItem&lt;Person&gt; | undefined = await PersonRAM.getInstance().get(1);
             const person2: Aventus.RamItem&lt;Person&gt; | undefined = await PersonRAM.getInstance().getById(1);
-            const people1: Map&lt;number, Aventus.RamItem&lt;Person&gt;&gt; = await PersonRAM.getInstance().getAll();
+            const people1: Aventus.RamItem&lt;Person&gt;[] = await PersonRAM.getInstance().getAll();
+            const records: Map&lt;number, Aventus.RamItem&lt;Person&gt;&gt; = await PersonRAM.getInstance().getRecords();
             const people2: Aventus.RamItem&lt;Person&gt;[] = await PersonRAM.getInstance().getList();
             const people3: Aventus.RamItem&lt;Person&gt;[] = await PersonRAM.getInstance().getByIds([1, 2]);
         }
@@ -27660,13 +27767,26 @@ super.__getHtml();
     <li><b>Library</b><av-icon icon="arrow-right"></av-icon> Create a file to write any code</li>
     <li><b>State</b><av-icon icon="arrow-right"></av-icon> Create a state or a state manager</li>
 </ul><h3>The compilation information</h3><p>If you have at least one build, on the bottom of the vscode you can see a tick and a time. If you hover this text,
-    you will see the last time your build was compiled.</p><div class="img-cont">
+    you will see the last time your build was compiled.</p><p>Use the <span class="cn">aventus.ideBuild</span> workspace setting to choose if builds are compiled by the IDE.
+    This does not disable those builds for CLI commands.</p><div class="img-cont">
     <av-img src="/img/doc/install/experience/last_compiled.png"></av-img>
 </div><h3>The live server</h3><p>If you have at least one build, on the bottom of the vscode you can see a play button. If you click on it, the live
     sever will start and a stop button will replace the play button.</p><div class="img-cont">
     <av-img src="/img/doc/install/experience/start_server.png"></av-img>
 </div><p>You can customize the live server inside the vscode
-    settings under <b>Aventus &gt; Liveserver</b>.</p>` }
+    settings under <b>Aventus &gt; Liveserver</b>.</p><h3>Database and migration tools</h3><p>Files ending with <span class="cn">.db.avt</span> open in the Aventus database diagram editor. The editor keeps the
+    diagram and its text document synchronized.</p><p>The command <span class="cn">Aventus : Create migration</span> compares database schemas and generates a migration.
+    Database access uses the <span class="cn">AventusSharp.DatabaseQuery</span> .NET tool, which the extension can install
+    when needed.</p><div class="img-cont">
+    <av-img src="/img/doc/install/experience/db.png"></av-img>
+</div><h3>C# and PHP exports</h3><p>The VS Code extension recognizes <span class="cn">aventus.sharp.avt</span> and
+    <span class="cn">aventus.php.avt</span>. Use <span class="cn">Aventus : Export sharp</span> or
+    <span class="cn">Aventus : Export Php</span> to generate the corresponding TypeScript definitions.</p><p>C# export requires .NET and the global <span class="cn">AventusSharp.Converter</span> tool. The extension can install
+    it on first use; <span class="cn">Aventus : Update sharp tools</span> updates installed C# converter and database
+    query tools. PHP export requires PHP, Composer and the Aventus PHP transpiler.</p><p>In <span class="cn">aventus.sharp.avt</span>, HTTP router and WebSocket export use the compiled assembly by default
+    (<span class="cn">useCompiledDll</span>). The application must call <span class="cn">app.UseAventusExport()</span>
+    so its endpoints can be inspected without starting normally. HTTP generation can also enable
+    <span class="cn">cacheByDefault</span>, <span class="cn">clearCacheFct</span> and <span class="cn">addFormData</span>.</p>` }
     });
 }
     getClassName() {
@@ -28069,11 +28189,11 @@ super.__getHtml();
         /**
         * The class schema / This field is defined during compilation
         */
-        public static get $schema(): { [prop: string]: string; };
+        public static readonly $schema: { [prop: string]: string; };
         /**
         * The current namespace / This field is defined during compilation
         */
-        public static get Namespace(): string { return ""; }
+        public static readonly Namespace: string = "";
         /**
         * Get the unique type for the data. Define it as the namespace + class name
         */
@@ -28100,6 +28220,10 @@ super.__getHtml();
         * Get a JSON for the current object
         */
        public toJSON() {...}
+       /**
+       * Clone the instance through Aventus conversion metadata
+       */
+       public clone(): this {...}
     }
     </pre>
 </av-code></av-code><p>
@@ -28107,7 +28231,7 @@ super.__getHtml();
     field you can create an unique type name that allows to clearly identify each data inside your application. Because
     Javascript is not typed, a <span class="cn">$schema</span> is created for each class to keep information about what
     the class must contain. In future version of Aventus, this will help the manager to synchronize data between each
-    instances.
+    instances and restore typed values when JSON is converted.
 </p><p>The last thing to know is that every properties must have an initializer.</p><av-code language="typescript" filename="Person.data.avt">
     <pre>
         export class Person extends Aventus.Data implements Aventus.IData {
@@ -28177,7 +28301,9 @@ super.__getHtml();
             console.error("Error:", result.errors[0].message);
         }
     </pre>
-</av-code></av-code><p>Below you can find an implementation example for a function that must transform a string in lowercase.</p><av-doc-error-result-editor-1></av-doc-error-result-editor-1>` }
+</av-code></av-code><p>Below you can find an implementation example for a function that must transform a string in lowercase.</p><av-doc-error-result-editor-1></av-doc-error-result-editor-1><p><span class="cn">ResultWithError</span> inherits all composition helpers from
+    <span class="cn">VoidWithError</span>. Its <span class="cn">run()</span> and <span class="cn">runAsync()</span> methods
+    also copy the successful result returned by another <span class="cn">ResultWithError</span>.</p>` }
     });
 }
     getClassName() {
@@ -28227,7 +28353,12 @@ super.__getHtml();
     a store (ex: Person will create a PersonRAM class). This will create a basic RAM class:</p><av-doc-ram-create-editor-1></av-doc-ram-create-editor-1><p>By default, the Aventus.RAM store data by index that must be a <span class="cn">number</span>. The method <span class="cn">defineIndexKey</span> ask
     you to define which key of your object is the primary key to index data. For example if you want to get a data
     inside your RAM you must provide a number that is egal to the index key defined. With the previous example, the code
-    <span class="cn">PersonRAM.getInstance().get(1)</span> will check if the storage contains a Person where id is egal to 1.</p><p>If you need another kind of index key, you can extend <span class="cn">Aventus.GenericRam</span> instead of Aventus.Ram</p><av-doc-ram-create-editor-2></av-doc-ram-create-editor-2><p>The <span class="cn">getTypeForData</span> method allows you to define which object must be instanciated for a specific data. This
+    <span class="cn">PersonRAM.getInstance().get(1)</span> will check if the storage contains a Person where id is egal to 1.</p><p>If you need another kind of index key, you can extend <span class="cn">Aventus.GenericRam</span> instead of Aventus.Ram</p><av-doc-ram-create-editor-2></av-doc-ram-create-editor-2><p>The current RAM types can distinguish the payload sent to the backend from the resources returned by it:</p><av-code language="typescript">
+    <pre>GenericRam&lt;Index, Item, Request, ResourceSimple, ResourceDetails&gt;
+Ram&lt;Item, Request, ResourceSimple, ResourceDetails&gt;</pre>
+</av-code></av-code><p><span class="cn">Request</span> is accepted by create, update and save operations. Stored values are
+    <span class="cn">ResourceDetails</span>; list responses may use <span class="cn">ResourceSimple</span>. The shorter
+    generic forms remain available when the same data type is used everywhere.</p><p>The <span class="cn">getTypeForData</span> method allows you to define which object must be instanciated for a specific data. This
     isn't usefull when you work with concrete classes but if you have abstract classes or interfaces, you have to define
     which child must be stored inside RAM.</p><av-doc-ram-create-editor-3></av-doc-ram-create-editor-3>` }
     });
@@ -28279,15 +28410,22 @@ super.__getHtml();
     <li>Delete - To delete data from your RAM</li>
 </ul><h2>Basic operations</h2><p>Inside Aventus RAM, each function to perfom operation can be written in two format. The first format is the normal.
     You call the function and get the result.</p><p>The second format is the detailed. You call the function with <span class="cn">WithError</span> at the end to obtain more
-    information.</p><av-doc-ram-crud-editor-1></av-doc-ram-crud-editor-1><p>For the future explanations, only the functions in normal format will be explained</p><h3>Read</h3><div class="table">
+    information.</p><av-doc-ram-crud-editor-1></av-doc-ram-crud-editor-1><p>For the future explanations, only the functions in normal format will be explained</p><p>CRUD inputs use the RAM's <span class="cn">Request</span> type, while returned and stored items use
+    <span class="cn">RamItem&lt;ResourceDetails, Request&gt;</span>. Consequently, an item's
+    <span class="cn">update(request)</span> method sends the request directly through the RAM and returns the unique
+    stored instance.</p><h3>Read</h3><div class="table">
     <av-row class="header">
         <av-col size="4" center>Function</av-col>
         <av-col size="8" center>Description</av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>getAll</av-col>
-        <av-col size="8">Return all items stored inside the RAM like {[index: Index] : T}
+        <av-col size="8">Return all items stored inside the RAM as an array.
         </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>getRecords</av-col>
+        <av-col size="8">Return all items as a <span class="cn">Map&lt;Index, RamItem&gt;</span>.</av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>getList</av-col>
@@ -28356,7 +28494,8 @@ super.__getHtml();
     </av-row>
 </div><av-doc-ram-crud-editor-5></av-doc-ram-crud-editor-5><p>The last thing to know is that once an item a stored inside the ram, the item reference is always the same.</p><av-code language="typescript" filename="Test.lib.avt">
     export async function test() {
-    \tlet person1: Person = await PersonRAM.getInstance().get(1); 
+    \tlet person1: Person | undefined = await PersonRAM.getInstance().get(1);
+    \tif(!person1) return;
     \tperson1.name = "John Doe 2";
     \tconst person: Person = await PersonRAM.getInstance().update(person1);
     \t// person == person1 =&gt; true
@@ -28609,7 +28748,14 @@ super.__getHtml();
     be displayed. If you set the current state to <span class="cn">/other</span>, the inactive state will be called.
     It's important to know that if your state stay active between two state changes, the function <span class="cn">inactive</span> won't be fired.</p><av-doc-state-listen-editor-2></av-doc-state-listen-editor-2><p>If we come back to the previous example, if we set the user to <span class="cn">id = 3</span> the function <span class="cn">askChange</span> will return a false what involves that no more state changes are allowed. A use case
     for this feature is when the user is editing data and he decides to change state without saving item. You can
-    display a popup to confirm if edition must be dropped or not.</p><p>If you need to know the current state of the manager, you can at any time call the function <span class="cn">getState</span> to obtain the current state object instance. Furthermore, you can use operator <span class="cn">instanceof</span> to obtain more information and share some data between subscribers.</p><av-doc-state-listen-editor-3></av-doc-state-listen-editor-3><h2>Callback on the State</h2><p>You can also override the three methods directly inside a <span class="cn">State</span> class.</p><av-doc-state-listen-editor-4></av-doc-state-listen-editor-4>` }
+    display a popup to confirm if edition must be dropped or not.</p><p>If you need to know the current state of the manager, you can at any time call the function <span class="cn">getState</span> to obtain the current state object instance. Furthermore, you can use operator <span class="cn">instanceof</span> to obtain more information and share some data between subscribers.</p><av-doc-state-listen-editor-3></av-doc-state-listen-editor-3><h2>Callback on the State</h2><p>You can also override the three methods directly inside a <span class="cn">State</span> class.</p><av-doc-state-listen-editor-4></av-doc-state-listen-editor-4><h2>Manager helpers</h2><ul>
+    <li><span class="cn">subscribe(pattern, callbacks, autoActiveState)</span> immediately calls the active callback by default when the current state already matches.</li>
+    <li><span class="cn">activateAfterSubscribe()</span> performs that activation explicitly when automatic activation was disabled.</li>
+    <li><span class="cn">canChangeState()</span> registers a global asynchronous guard.</li>
+    <li><span class="cn">getStateSlugs(pattern)</span> returns the typed parameters of the active state.</li>
+    <li><span class="cn">onAfterStateChanged()</span> and <span class="cn">offAfterStateChanged()</span> manage callbacks executed after a successful transition.</li>
+    <li><span class="cn">StateManager.canBeActivate(pattern, stateName)</span> tests a state name without changing the current state.</li>
+</ul>` }
     });
 }
     getClassName() {
@@ -29263,9 +29409,9 @@ super.__getHtml();
         compilation and
         to.
     </li>
-    <li><span class="cn">@Dependances({ type: Type, strong?:boolean}[])</span> : to add dependance not written inside
+    <li><span class="cn">@Dependencies({ type: Type, strong?:boolean}[])</span> : to add a dependency not written inside
         component. The
-        strong boolean define if the dependance must be loaded before the class.</li>
+        The strong boolean defines whether the dependency must be loaded before the class.</li>
     <li><span class="cn">@OverrideView({ removeViewVariables?: string[] })</span> : to fully override parent view. You
         can remove parent
         ViewElement needed, but you have to be aware of what you are doing.</li>
@@ -29276,7 +29422,9 @@ super.__getHtml();
     @TagName("my-tag-name")
     export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
     }
-</av-code></av-code><h2>Lifecycle</h2><p>The webcomponent has the following lifecycle</p><av-img src="/img/doc/wc/create/lifecylce.png"></av-img><p>By default <span class="cn">postCreation</span> and <span class="cn">postDestruction</span> are empty.</p>` }
+</av-code></av-code><h2>Lifecycle</h2><p>The webcomponent has the following lifecycle</p><av-img src="/img/doc/wc/create/lifecylce.png"></av-img><p>By default <span class="cn">postCreation</span> and <span class="cn">postDestruction</span> are empty.</p><p>Use <span class="cn">postDisconnect()</span> for work performed whenever the component leaves the DOM.
+    <span class="cn">onPostDisconnect(callback)</span> and <span class="cn">onPostDestruction(callback)</span> register
+    cleanup callbacks without overriding the lifecycle methods.</p>` }
     });
 }
     getClassName() {
@@ -29886,8 +30034,10 @@ super.__getHtml();
     <li><span class="cn">boolean</span></li>
     <li><span class="cn">date</span></li>
     <li><span class="cn">datetime</span></li>
+    <li><span class="cn">time</span></li>
     <li><span class="cn">literal</span> (ex: 'value1'|'value2')</li>
-</ul><p>The source code to create an attribute is the following.</p><av-code language="typescript" filename="Example.wcl.avt">
+</ul><p>Date-related attributes use the immutable <span class="cn">Aventus.Date</span>,
+    <span class="cn">Aventus.DateTime</span> and <span class="cn">Aventus.Time</span> types and serialize as ISO values.</p><p>The source code to create an attribute is the following.</p><av-code language="typescript" filename="Example.wcl.avt">
     export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
     &nbsp;
     \t//#region static
@@ -30102,8 +30252,11 @@ super.__getHtml();
     <li><span class="cn">boolean</span></li>
     <li><span class="cn">date</span></li>
     <li><span class="cn">datetime</span></li>
+    <li><span class="cn">time</span></li>
     <li><span class="cn">literal</span> (ex: 'value1'|'value2')</li>
-</ul><p>In Aventus, you can declare a property by adding a <span class="cn">decorator</span> on a field.</p><av-code language="typescript" filename="Example.wcl.avt">
+</ul><p>The <span class="cn">date</span>, <span class="cn">datetime</span> and <span class="cn">time</span> types use
+    <span class="cn">Aventus.Date</span>, <span class="cn">Aventus.DateTime</span> and <span class="cn">Aventus.Time</span>.
+    These immutable types are based on Temporal and serialize to ISO strings.</p><p>Add <span class="cn">@NoType()</span> when a public component field must stay out of generated component type metadata.</p><p>In Aventus, you can declare a property by adding a <span class="cn">decorator</span> on a field.</p><av-code language="typescript" filename="Example.wcl.avt">
     export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
     &nbsp;
     \t//#region props
@@ -30423,7 +30576,7 @@ super.__getHtml();
     available inside your DevTools Console.</p><av-img src="/img/doc/wc/watch/debug.png"></av-img><h2>Using watch outisde component</h2><p>You can watch what occur on an object everywhere on your code. To achieve that, you must use the <span class="cn">Aventus.Watcher.get</span> and work only with the result of the function. <av-link class="font-sm" to="/docs/lib/watcher">More
         info</av-link></p><av-code language="typescript" filename="Test.lib.avt">
     export function createWatcher() {
-    \tlet watchableObj = Aventus.Watcher.get({}, (action: WatchAction, path: string, element: any) =&gt; {
+    \tlet watchableObj = Aventus.Watcher.get({}, (action: WatchAction, path: string, value: any) =&gt; {
     \t\tconsole.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);
     \t});
     \treturn watchableObj;
@@ -31050,7 +31203,7 @@ const DocWcInterpolation = class DocWcInterpolation extends DocGenericPage {
     __getHtml() {
 super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Webcomponent - Interpolation</h1><p>In this section you are going to learn how to use interpolation inside webcomponent.</p><p>Interpolation refers to embedding expressions into marked up text. You can notify an interpolation by using <span class="cn">&#123;&#123; myCode &#125;&#125;</span>. Interpolation can be written anywhere inside a <span class="cn">*.wcv.avt</span>. If the variable is a <span class="cn"><av-link to="/docs/wc/property">Property</av-link></span> or a <span class="cn"><av-link to="/docs/wc/watch">Watch</av-link></span> the view will be auto refreshed when the value changed.</p><av-doc-wc-interpolation-editor-1></av-doc-wc-interpolation-editor-1><p>Because Aventus is using a <span class="cn">Signal</span> like system, any function that is using watchable variable will be auto refreshed when a value changed</p>` }
+        blocks: { 'default':`<h1>Webcomponent - Interpolation</h1><p>In this section you are going to learn how to use interpolation inside webcomponent.</p><p>Interpolation refers to embedding expressions into marked up text. You can notify an interpolation by using <span class="cn">&#123;&#123; myCode &#125;&#125;</span>. Interpolation can be written anywhere inside a <span class="cn">*.wcv.avt</span>. If the variable is a <span class="cn"><av-link to="/docs/wc/property">Property</av-link></span> or a <span class="cn"><av-link to="/docs/wc/watch">Watch</av-link></span> the view will be auto refreshed when the value changed.</p><av-doc-wc-interpolation-editor-1></av-doc-wc-interpolation-editor-1><p>Because Aventus is using a <span class="cn">Signal</span> like system, any function that is using watchable variable will be auto refreshed when a value changed</p><p>JavaScript template literals using backticks are supported inside view expressions and interpolations.</p>` }
     });
 }
     getClassName() {
@@ -31294,7 +31447,7 @@ this.__getStatic().__template.setActions({
         return this.value;
     }
     __77083cda2f6373a8d72b2660cd45bdf9method0() {
-        return this.value;
+        return (this.value);
     }
     __77083cda2f6373a8d72b2660cd45bdf9method1(v) {
         if (this) {
@@ -31553,7 +31706,7 @@ this.__getStatic().__template.setActions({
         return this.value;
     }
     __e31c65bc70f15a42dc3a676fbe4e86abmethod0() {
-        return this.value;
+        return (this.value);
     }
     __e31c65bc70f15a42dc3a676fbe4e86abmethod1(v) {
         if (this) {
@@ -32059,7 +32212,9 @@ const DocWcInjection = class DocWcInjection extends DocGenericPage {
     __getHtml() {
 super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>Webcomponent - Injection</h1><p>In this section you are going to learn how you can inject data from parent into the child.</p><h2>Add injection</h2><p>To bind add an injection on a child inside the shadowroot, you can use the following syntax : <span class="cn">:fieldOnChild=""</span></p><p>With the code below, the input value will be incremented each second</p><av-doc-wc-injection-editor-1></av-doc-wc-injection-editor-1><p>The injected value will be refreshed only if you use a <span class="cn">Property</span> or any <span class="cn">watchables variables</span></p><av-doc-wc-injection-editor-2></av-doc-wc-injection-editor-2><p>To help the user find out which fields are injectable into your component, you can use the <span class="cn">@Injectable</span> decorator.</p><av-doc-wc-injection-editor-3></av-doc-wc-injection-editor-3>` }
+        blocks: { 'default':`<h1>Webcomponent - Injection</h1><p>In this section you are going to learn how you can inject data from parent into the child.</p><h2>Add injection</h2><p>To bind add an injection on a child inside the shadowroot, you can use the following syntax : <span class="cn">:fieldOnChild=""</span></p><p>With the code below, the input value will be incremented each second</p><av-doc-wc-injection-editor-1></av-doc-wc-injection-editor-1><p>The injected value will be refreshed only if you use a <span class="cn">Property</span> or any <span class="cn">watchables variables</span></p><av-doc-wc-injection-editor-2></av-doc-wc-injection-editor-2><p>To help the user find out which fields are injectable into your component, you can use the <span class="cn">@Injectable</span> decorator.</p><p>The view compiler checks the injected expression against the child field type. Unknown injectable fields and
+    incompatible values are reported as diagnostics. Expressions inside <span class="cn">if</span> blocks use the
+    narrowed type established by the condition.</p><av-doc-wc-injection-editor-3></av-doc-wc-injection-editor-3>` }
     });
 }
     getClassName() {
@@ -32505,9 +32660,11 @@ super.__getHtml();
     iteration directly using the context variable within inner loops. This approach significantly reduces code
     verbosity, enhances code clarity, and improves maintainability, especially in scenarios involving complex nested
     loops and data structures. Ultimately, <span class="cn">@Context</span> streamlines the template development process
-    and promotes cleaner and more concise code.</p><av-doc-wc-loop-editor-2></av-doc-wc-loop-editor-2><h2>For...in</h2><p>The <span class="cn">for...in</span> loop in JavaScript iterates over the enumerable properties of an object, making it suitable for looping
+    and promotes cleaner and more concise code.</p><av-doc-wc-loop-editor-2></av-doc-wc-loop-editor-2><p><span class="cn">@Context</span> values keep their inferred TypeScript type in interpolations, injections and
+    nested conditions. Conditions inside a loop also narrow optional values for the guarded block.</p><h2>For...in</h2><p>The <span class="cn">for...in</span> loop in JavaScript iterates over the enumerable properties of an object, making it suitable for looping
     through key-value pairs. In Aventus templates, it offers a convenient way to iterate over object
-    properties and render content dynamically based on each key-value pair.</p><av-doc-wc-loop-editor-3></av-doc-wc-loop-editor-3><h2>For...of</h2><p>
+    properties and render content dynamically based on each key-value pair.</p><av-doc-wc-loop-editor-3></av-doc-wc-loop-editor-3><p>A <span class="cn">for...in</span> key is a string. Convert it with <span class="cn">Number(index)</span> when it
+    is used as an array index requiring a number.</p><h2>For...of</h2><p>
     The <span class="cn">for...of</span> loop is a modern iteration construct introduced in ES6, designed specifically for iterating over
     iterable objects such as arrays, strings, and other collection types. In Aventus templates, it
     simplifies the iteration process by directly accessing the values of iterable objects, enabling seamless content
@@ -32686,7 +32843,8 @@ super.__getHtml();
     based on user preferences.</p><p>Conditional rendering is seamlessly integrated into the template syntax. Developers can use control flow constructs
     such as if statements to conditionally include or exclude content within the template markup. This approach empowers
     developers to create dynamic and interactive user interfaces that cater to diverse user scenarios and requirements.
-</p><av-doc-wc-condition-editor-1></av-doc-wc-condition-editor-1>` }
+</p><p>Conditions narrow TypeScript types inside their block. After checking that an optional value is defined,
+    interpolations and injections use the narrowed type without a non-null assertion.</p><av-doc-wc-condition-editor-1></av-doc-wc-condition-editor-1>` }
     });
 }
     getClassName() {
@@ -34184,7 +34342,11 @@ super.__getHtml();
     providing a consistent interface for conversion operations.</p><p>Suppose you have an application that receives JSON data from an API and needs to convert it into JavaScript objects
     for further processing. In this case, you can utilize the Converter.transform method to perform the conversion
     seamlessly.</p><p>By default, the Converter will populate the class instances through the method <span class="cn">fromJSON</span> on
-    your object or through the method <span class="cn">Json.classFromJson</span>.</p><av-doc-lib-converter-editor-1></av-doc-lib-converter-editor-1><p>By default, <span class="cn">Aventus.Data</span> is convertible. You can also create custom convertible class by adding the decorator <span class="cn">@Convertible</span>. You must define an unique key so that the converter can transform your json into the object.</p><av-code language="typescript">
+    your object or through the method <span class="cn">Json.classFromJson</span>.</p><av-doc-lib-converter-editor-1></av-doc-lib-converter-editor-1><h2>Date and time values</h2><p>The converter recognizes <span class="cn">Aventus.Date</span>, <span class="cn">Aventus.DateTime</span> and
+    <span class="cn">Aventus.Time</span> ISO values. These immutable Temporal-based types provide parsing, comparison,
+    arithmetic, localized formatting and conversion back to Temporal values.</p><p>The native JavaScript <span class="cn">Date</span> global is intentionally unavailable in Aventus source code. The
+    language server reports it as an error and excludes it from completion; import and use
+    <span class="cn">Aventus.Date</span> or <span class="cn">Aventus.DateTime</span> instead.</p><p>By default, <span class="cn">Aventus.Data</span> is convertible. You can also create custom convertible class by adding the decorator <span class="cn">@Convertible</span>. You must define an unique key so that the converter can transform your json into the object.</p><av-code language="typescript">
     <pre>
         @Convertible()
         export class Test {
@@ -34936,7 +35098,9 @@ super.__getHtml();
         blocks: { 'default':`<h1>Library - ResizeObserver</h1><p>To know when an element is changing you can use the native function <span class="cn"><a href="https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver" target="_blank">ResizeObserver</a></span>. Inside Aventus, you can find an optimized version of
     ResizeObserver under <span class="cn">Aventus.ResizeObserver</span>. The behavior is the same as the native one but
     behind, a <span class="cn">single instance</span> of native ResizeObserver is used and the callback function is
-    limited to one trigger each <span class="cn">1000 / 60 ms</span>.</p><av-doc-lib-resize-observer-editor-1></av-doc-lib-resize-observer-editor-1>` }
+    limited to one trigger each <span class="cn">1000 / 60 ms</span>.</p><p>The callback follows the native <span class="cn">ResizeObserverCallback</span> signature and receives the changed
+    entries followed by the shared native observer. Pass <span class="cn">fps</span> in the options to choose another
+    callback frequency.</p><av-doc-lib-resize-observer-editor-1></av-doc-lib-resize-observer-editor-1>` }
     });
 }
     getClassName() {
@@ -35287,7 +35451,7 @@ protected async validation(): Promise&lt;string[]&gt; {
     <li>Design freedom: full control over rendering and layout</li>
 </ul><h2>Example Integration</h2><av-code language="ts">
     <pre>
-const loginForm = Form.FormHandler.create({
+const loginForm = Form.Form.create({
     email: [Form.Validators.Required, Form.Validators.Email],
 });
     </pre>
@@ -35304,8 +35468,8 @@ const loginForm = Form.FormHandler.create({
     <li>Value and error synchronization work the same way as when the element is registered via the <span class="cn">Form</span> container.</li>
 </ul><p>If your framework templating supports binding (example follows AventusJS syntax), you can bind the element directly to the FormHandler part:</p><av-code language="ts">
     <pre>
-const loginForm = Avenuts.Form.FormHandler.create({
-  email: [Avenuts.Form.Validators.Required, Avenuts.Form.Validators.Email],
+const loginForm = Aventus.Form.Form.create({
+  email: [Aventus.Form.Validators.Required, Aventus.Form.Validators.Email],
 });
     </pre>
 </av-code></av-code><av-code language="html">
@@ -35435,6 +35599,16 @@ It's designed to handle open/close logic automatically while letting you define 
         <av-col size="4" center>no_animation</av-col>
         <av-col size="4" center>boolean</av-col>
         <av-col size="4" center>Disables the transition animation.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>horizontal</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Collapses columns horizontally instead of rows vertically.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>reverse</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Anchors collapsing content to the end side.</av-col>
     </av-row>
 </div><h2>CSS Variables</h2><p>You can customize the animation behavior using these CSS variables:</p><div class="table">
     <av-row class="header">
@@ -35872,6 +36046,11 @@ super.__getHtml();
         <av-col size="4" center>disable</av-col>
         <av-col size="4" center>boolean</av-col>
         <av-col size="4" center>Disables all user interaction with scrolling.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>flex</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Uses a vertical flex layout internally so child content can fill the remaining height.</av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>mouse_drag</av-col>
@@ -36480,11 +36659,14 @@ It handles tab switching, active state management, and layout rendering.</p><p>D
     <li>the list of tabs and their headers</li>
     <li>which tab is currently active</li>
     <li>tab visibility and selection state</li>
-</ul><p>Developers must implement the <span class="cn">defineTabHeader()</span> method to specify which header component should be used.</p><p>Developers can also use the method <span class="cn">setActive(tabHeader: TabHeader&lt;T&gt; | number | string)</span> to set the active tab by reference, index, or tab identifier.</p><div><strong>Behavior</strong></div><ul>
+</ul><p>Developers must implement the <span class="cn">defineTabHeader()</span> method to specify which header component should be used.</p><p>Developers can also use the method <span class="cn">setActive(tabHeader: TabHeader&lt;T&gt; | number | string): boolean</span>
+    to set the active tab by reference, index, or tab identifier. It returns false when no matching tab exists.</p><div><strong>Behavior</strong></div><ul>
     <li>Tabs are hidden until selected.</li>
     <li>The first tab is automatically activated unless another one is marked as selected.</li>
     <li>The <span class="cn">Tabs</span> component controls both visual state and logical state (selected attribute).</li>
-</ul><h2>Tab Class</h2><p><span class="cn">Tab</span> represents the <strong>content</strong> of a tab, and provides the connection point between tab data and its header. To implement a <span class="cn">Tab</span>, the method <span class="cn">identifier() : string</span> have to be implemented.</p><p>When the tab is active, the attribute <span class="cn">selected</span> is set to true.</p><h2>TabHeader Class</h2><p><span class="cn">TabHeader&lt;T extends Tab&gt;</span> represents the clickable tab title associated with a <span class="cn">Tab</span>. It handles user interaction and manages synchronization between UI and logic.</p><p>The method <span class="cn">render()</span> must be implemented. The property <span class="cn">tab : T</span> is useful to get data from the <span class="cn">Tab</span> during rendering.</p><av-code language="ts">
+    <li>Adding, removing or reordering slotted tabs automatically updates their headers.</li>
+</ul><h2>Tab Class</h2><p><span class="cn">Tab</span> represents the <strong>content</strong> of a tab, and provides the connection point between tab data and its header. To implement a <span class="cn">Tab</span>, the method <span class="cn">identifier() : string</span> have to be implemented.</p><p>Once a tab is registered, <span class="cn">loaded</span> is set to true. When it is active,
+    <span class="cn">selected</span> is set to true.</p><h2>TabHeader Class</h2><p><span class="cn">TabHeader&lt;T extends Tab&gt;</span> represents the clickable tab title associated with a <span class="cn">Tab</span>. It handles user interaction and manages synchronization between UI and logic.</p><p>The method <span class="cn">render()</span> must be implemented. The property <span class="cn">tab : T</span> is useful to get data from the <span class="cn">Tab</span> during rendering.</p><av-code language="ts">
     <pre>
     /**
      * @inheritdoc
@@ -36845,7 +37027,9 @@ super.__getHtml();
     <li>automatic closure via Escape key or click outside</li>
     <li>customizable options for behavior and rejection values</li>
 </ul><p>Developers should extend this class to create specific modal components (confirmation dialogs, forms, alerts, etc.).
-</p><h2>Example</h2><av-doc-u-i-modal-editor-1></av-doc-u-i-modal-editor-1><h2>ModalElement Class</h2><p>ModalElement&lt;T, U extends ModalOptions&lt;T&gt; = ModalOptions&lt;T&gt;&gt; defines the core functionality for
+</p><p>The modal content receives <span class="cn">role="dialog"</span> and <span class="cn">aria-modal="true"</span>
+    automatically. Its stacking level can be customized with the <span class="cn">--modal-z-index</span> CSS variable
+    (default: 60).</p><h2>Example</h2><av-doc-u-i-modal-editor-1></av-doc-u-i-modal-editor-1><h2>ModalElement Class</h2><p>ModalElement&lt;T, U extends ModalOptions&lt;T&gt; = ModalOptions&lt;T&gt;&gt; defines the core functionality for
     modals.
     It manages showing, closing, resolving, and rejecting, using built-in support for keyboard and click interactions.
 </p><div class="table">
@@ -37196,11 +37380,11 @@ super.__getHtml();
         <av-col size="6" center>Description</av-col>
     </av-row>
     <av-row>
-        <av-col size="6" center>static add(options: ToastOptions | ToastElement): Promise&lt;boolean&gt;</av-col>
+        <av-col size="6" center>static add(options: ToastOptions): Promise&lt;boolean&gt;</av-col>
         <av-col size="6">Displays a new toast.</av-col>
     </av-row>
     <av-row>
-        <av-col size="6" center>setOptions(options: T): Promise&lt;void&gt;</av-col>
+        <av-col size="6" center>setOptions(options: T): Asyncable&lt;void&gt;</av-col>
         <av-col size="6">Must be implemented to define how your toast handles the provided options (e.g., set text, color, or
             icon).</av-col>
     </av-row>
@@ -37216,6 +37400,7 @@ super.__getHtml();
             defaultPosition: 'top right',
             defaultDelay: 4000,
             heightLimitPercent: 90,
+            gap: 12,
         });
     </pre>
 </av-code></av-code><p><strong>ToastManagerOptions</strong></p><div class="table">
@@ -37247,12 +37432,18 @@ super.__getHtml();
     <av-row>
         <av-col size="3" center>heightLimitPercent</av-col>
         <av-col size="3" center>number</av-col>
-        <av-col size="6">Max vertical space2 (in % of viewport height) that toasts can occupy. Default : 100</av-col>
+        <av-col size="6">Max vertical space (in % of viewport height) that toasts can occupy. Default: 100</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="3" center>gap</av-col>
+        <av-col size="3" center>number</av-col>
+        <av-col size="6">Space in pixels between stacked toasts. Default: 10</av-col>
     </av-row>
 </div><h2>Behavior</h2><ul>
     <li>The toast slides in at the specified position.</li>
     <li>Automatically disappears after delay milliseconds.</li>
     <li>If delay = -1, it stays visible until manually closed.</li>
+    <li>Stack recalculation waits for active CSS transitions before measuring toast sizes.</li>
 </ul>` }
     });
 }
@@ -37502,12 +37693,13 @@ super.__getHtml();
             <div>Helper to wait x ms</div>
         </av-col>
     </av-row>
-</div><h2>Expose the template globaly</h2><p>
-    To use a template across multiple project, you can expose your template globaly. To complete that, you must run the
-    command <span class="cn">Aventus : Open storage</span> and go inside the folder <span class="cn">templates</span>.
-    Then you can copy paste the previous template here. Notice: Aventus watch the global templates folder only during
-    starting process, so when you create a new global template, you must reload your Vscode instance.
-</p><h2>Publish to the store</h2><p>
+</div><h2>Expose the template globally</h2><p>
+    A global template is available during creation independently of the current project. Set
+    <span class="cn">isGlobal: true</span> in its metadata and install it in the <span class="cn">global</span> folder
+    shown by <span class="cn">Aventus : Open storage</span>. Additional shared folders can be registered with the
+    <span class="cn">aventus.globalPath</span> VS Code setting.
+</p><p>Workspace-specific global templates can also be placed in <span class="cn">.aventus/global</span>. They are merged
+    with configured global templates and are available to quick creation.</p><h2>Publish to the store</h2><p>
     You can publish your template to the store by <span class="cn">right clicking</span> on the <span class="cn">template.avt.ts</span> and press <span class="cn">Aventus: Publish template to the store</span>
 </p><h2>Download from the store</h2><p>
     You can download amazing templates directly from the store just by clicking on the download button on a package
@@ -43964,7 +44156,7 @@ super.__getHtml();
 </ul><p>You can create folder where you want named <span class="cn">demo</span> and open it with VSCode. You can right click
     on the Explorer section and select <span class="cn">Aventus : Create...</span>.</p><av-img src="/img/tuto/init/create.png"></av-img><p>Then select <span class="cn">Init</span>.</p><av-img src="/img/tuto/init/init.png"></av-img><p>Choose <span class="cn">Default</span></p><av-img src="/img/tuto/init/default.png"></av-img><p>Fill the name with <span class="cn">TodoDemo</span></p><av-img src="/img/tuto/init/name.png"></av-img><p>Fill the component prefix with <span class="cn">td</span></p><av-img src="/img/tuto/init/prefix.png"></av-img><p>The file <span class="cn">aventus.conf.avt</span> will open and the following structure is created. Apply the following actions:</p><ul>
     <li>Add <span class="cn">"hideWarnings": true,</span> - This will hide warnings tell you that you need add documentation</li>
-    <li>Add <span class="cn">"dependances": {"Aventus@UI":{}},</span> - This will load Aventus@UI as <a state="/docs/config/lib">dependances</a></li>
+    <li>Add <span class="cn">"dependencies": {"Aventus@UI":{}},</span> - This loads Aventus@UI as a <a state="/docs/config/lib">dependency</a></li>
     <li>Replace <span class="cn">"output": "./dist/TodoDemo.js"</span> by <span class="cn">"output": "./dist/todo.js"</span> - This is the file compiled</li>
 </ul><av-tutorial-init-editor-1></av-tutorial-init-editor-1><p>Inside the folder static you can create three new files :</p><ul>
     <li><span class="cn">/src/static/index.html</span> : The default page to render</li>

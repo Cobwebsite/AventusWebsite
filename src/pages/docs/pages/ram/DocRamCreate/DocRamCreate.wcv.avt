@@ -19,6 +19,14 @@
     <span class="cn">PersonRAM.getInstance().get(1)</span> will check if the storage contains a Person where id is egal to 1.</p>
 <p>If you need another kind of index key, you can extend <span class="cn">Aventus.GenericRam</span> instead of Aventus.Ram</p>
 <av-doc-ram-create-editor-2></av-doc-ram-create-editor-2>
+<p>The current RAM types can distinguish the payload sent to the backend from the resources returned by it:</p>
+<av-code language="typescript">
+    <pre>GenericRam&lt;Index, Item, Request, ResourceSimple, ResourceDetails&gt;
+Ram&lt;Item, Request, ResourceSimple, ResourceDetails&gt;</pre>
+</av-code>
+<p><span class="cn">Request</span> is accepted by create, update and save operations. Stored values are
+    <span class="cn">ResourceDetails</span>; list responses may use <span class="cn">ResourceSimple</span>. The shorter
+    generic forms remain available when the same data type is used everywhere.</p>
 <p>The <span class="cn">getTypeForData</span> method allows you to define which object must be instanciated for a specific data. This
     isn't usefull when you work with concrete classes but if you have abstract classes or interfaces, you have to define
     which child must be stored inside RAM.</p>

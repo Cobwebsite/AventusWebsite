@@ -19,8 +19,15 @@
     <li><span class="cn">boolean</span></li>
     <li><span class="cn">date</span></li>
     <li><span class="cn">datetime</span></li>
+    <li><span class="cn">time</span></li>
     <li><span class="cn">literal</span> (ex: 'value1'|'value2')</li>
 </ul>
+
+<p>The <span class="cn">date</span>, <span class="cn">datetime</span> and <span class="cn">time</span> types use
+    <span class="cn">Aventus.Date</span>, <span class="cn">Aventus.DateTime</span> and <span class="cn">Aventus.Time</span>.
+    These immutable types are based on Temporal and serialize to ISO strings.</p>
+
+<p>Add <span class="cn">@NoType()</span> when a public component field must stay out of generated component type metadata.</p>
 
 <p>In Aventus, you can declare a property by adding a <span class="cn">decorator</span> on a field.</p>
 <av-code language="typescript" filename="Example.wcl.avt">

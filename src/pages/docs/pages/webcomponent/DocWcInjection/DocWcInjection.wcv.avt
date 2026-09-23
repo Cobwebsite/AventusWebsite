@@ -9,4 +9,7 @@
 <p>The injected value will be refreshed only if you use a <span class="cn">Property</span> or any <span class="cn">watchables variables</span></p>
 <av-doc-wc-injection-editor-2></av-doc-wc-injection-editor-2>
 <p>To help the user find out which fields are injectable into your component, you can use the <span class="cn">@Injectable</span> decorator.</p>
+<p>The view compiler checks the injected expression against the child field type. Unknown injectable fields and
+    incompatible values are reported as diagnostics. Expressions inside <span class="cn">if</span> blocks use the
+    narrowed type established by the condition.</p>
 <av-doc-wc-injection-editor-3></av-doc-wc-injection-editor-3>

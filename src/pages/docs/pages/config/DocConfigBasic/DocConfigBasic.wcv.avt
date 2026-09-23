@@ -71,7 +71,10 @@
     
     <av-row>
         <av-col size="4" center>aliases</av-col>
-        <av-col size="8" center>This is an object of string that allows replacement of code. For example { "@root": "./"} will replace any @root to resolve the root folder</av-col>
+        <av-col size="8" center>This maps import aliases to folders. For example, <span class="cn">{ "@root": "./src/" }</span>
+            allows imports such as <span class="cn">import { User } from "@root/data/User.data.avt"</span>. When an
+            auto-import resolves inside an aliased folder, the language server writes the alias form instead of a long
+            relative path.</av-col>
     </av-row>
     <av-row>
         <av-col size="4" center><span class="mandatory">build</span></av-col>
@@ -79,8 +82,22 @@
         </av-col>
     </av-row>
     <av-row>
-        <av-col size="4" center>dependances</av-col>
-        <av-col size="8" center>This is an array of <av-link to="/docs/config/lib">dependances options</av-link>.</av-col>
+        <av-col size="4" center>dependencies</av-col>
+        <av-col size="8" center>This is an object of <av-link to="/docs/config/lib">dependency options</av-link>.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>namespaceStrategy</av-col>
+        <av-col size="8" center>Global namespace strategy: <span class="cn">manual</span>, <span class="cn">followFolders</span>,
+            <span class="cn">followFoldersCamelCase</span> or <span class="cn">rules</span>.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>namespaceRoot</av-col>
+        <av-col size="8" center>Root folder used by folder-based namespace strategies.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>namespaceRules</av-col>
+        <av-col size="8" center>Path patterns used when <span class="cn">namespaceStrategy</span> is
+            <span class="cn">rules</span>.</av-col>
     </av-row>
     <av-row>
         <av-col size="4" center>static</av-col>
