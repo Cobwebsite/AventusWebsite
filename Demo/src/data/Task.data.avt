@@ -1,0 +1,7 @@
+/**
+ * A task represents what you have to do to complete the Todo
+ */
+export class Task extends Aventus.Data implements Aventus.IData {
+    public id: number = 0;
+    public description: string = "";
+}

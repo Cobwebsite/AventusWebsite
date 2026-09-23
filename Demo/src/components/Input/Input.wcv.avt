@@ -1,0 +1,2 @@
+<label for="input">{{ this.label }}</label>
+<input id="input" type="text" @element="inputEl" @input="updateValue">

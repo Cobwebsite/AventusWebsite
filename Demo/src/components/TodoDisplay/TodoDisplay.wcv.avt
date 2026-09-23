@@ -1,0 +1,9 @@
+<div class="title">
+    <span>{{ this.todo.name }}</span>
+    <td-icon icon="delete" @press="removeTodo"></td-icon>
+</div>
+<ul>
+    for(let task of this.todo.tasks) {
+        <li>{{ task.description }}</li>
+    }
+</ul>

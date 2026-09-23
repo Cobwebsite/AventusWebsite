@@ -1,0 +1,70 @@
+import type { IconType } from "./IconType.lib.avt";
+
+export class Icon extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+    /**
+     * Icon from https://fonts.google.com/icons
+     */
+    @Property((target: Icon) => {
+        if(target.isReady)
+            target.shadowRoot.innerHTML = target.icon;
+    })
+    public icon: IconType = "check_box_outline_blank";
+
+    /**
+     * The type of the icon
+     */
+    @Property((target: Icon) => {
+        if(target.isReady)
+            target.loadFont();
+    })
+    public type: 'sharp' | 'rounded' | 'outlined' = 'outlined';
+
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * Add link tag into document head to load the font based on the type
+     */
+    private async loadFont() {
+        if(!this.type) return;
+
+        let url = 'https://fonts.googleapis.com/icon?family=Material+Symbols+';
+        url += this.type.charAt(0).toUpperCase() + this.type.slice(1);
+        // check if the url exist inside head and create a link tag if not exist
+        await Aventus.ResourceLoader.loadInHead({
+            type: "css",
+            url: url
+        });
+    }
+    /**
+     * Init the icon after rendering
+     */
+    private async init() {
+        await this.loadFont();
+        this.shadowRoot.innerHTML = this.icon;
+    }
+    protected override postCreation(): void {
+        this.init();
+    }
+    //#endregion
+
+}

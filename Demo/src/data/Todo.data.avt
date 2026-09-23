@@ -1,0 +1,10 @@
+import type { Task } from "./Task.data.avt";
+
+/**
+ * Represent a todo
+ */
+export class Todo extends Aventus.Data implements Aventus.IData {
+    public id: number = 0;
+    public name: string = "";
+    public tasks: Task[] = [];
+}

@@ -1,0 +1,7 @@
+<!-- use scrollable to display a scrollbar if the content is bigger than the size of the scrollable component -->
+<av-scrollable>
+    <!-- Generic page title define by children pages -->
+    <div class="page-title">{{ this.definePageTitle() }}</div>
+    <!-- Add a slot so that the children can add custom content -->
+    <slot></slot>
+</av-scrollable>

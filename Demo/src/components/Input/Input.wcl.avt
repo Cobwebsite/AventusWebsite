@@ -1,0 +1,60 @@
+export class Input extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+    /**
+     * Label for the input
+     */
+    @Property()
+    public label?: string;
+
+    /**
+     * Current value of the input
+     */
+    @Property((target: Input) => {
+        // When something change the td-input value property, we must update the input element value
+        target.inputEl.value = target.value;
+    })
+    public value: string = "";
+    //#endregion
+
+
+    //#region variables
+    private _onChange: Aventus.Callback<(value: string) => void> = new Aventus.Callback();
+    /**
+     * A function trigger when the input value change
+     * Only trigger when a manual input change the vaue
+     */
+    public get onChange(): Aventus.Callback<(value: string) => void> {
+        return this._onChange;
+    }
+
+    /**
+     * A reference to the input element
+     */
+    @ViewElement()
+    protected inputEl!: HTMLInputElement;
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+
+    /**
+     * A function to emit refresh value and emit event when the value changed
+     */
+    protected updateValue() {
+        this.value = this.inputEl.value;
+        this.onChange.trigger(this.value);
+    }
+    //#endregion
+
+}

@@ -1,0 +1,11 @@
+<div class="card">
+    if(this.todos.length == 0) {
+        <p>No todo</p>
+    }
+    else {
+        for(let i = 0; i < this.todos.length; i++) {
+            @Context('todo', this.todos[i])
+            <td-todo-display todo_id="{{ todo.id }}"></td-todo-display>
+        }
+    }
+</div>

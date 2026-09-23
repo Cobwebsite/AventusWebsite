@@ -7,8 +7,8 @@ export class AvCode extends Aventus.WebComponent implements Aventus.DefaultCompo
 
     //#region props
     @Property((target: AvCode) => {
-        if(window['Prism']) {
-            if(!window['Prism'].languages.hasOwnProperty(target.language)) {
+        if(target.prism) {
+            if(!target.prism.languages.hasOwnProperty(target.language)) {
                 target.language = 'plain';
             }
         }
@@ -34,6 +34,11 @@ export class AvCode extends Aventus.WebComponent implements Aventus.DefaultCompo
     protected filenameEl!: HTMLSpanElement;
 
     public code: string = "";
+
+    public get prism(): any {
+        const w = window as any;
+        return w['Prism']
+    }
     //#endregion
 
 
@@ -60,21 +65,21 @@ export class AvCode extends Aventus.WebComponent implements Aventus.DefaultCompo
 
     }
     private init() {
-        if(!window['Prism'].languages.hasOwnProperty(this.language)) {
+        if(!this.prism.languages.hasOwnProperty(this.language)) {
             this.language = 'plain';
         }
 
-        if(this.innerHTML.includes("<ha-my-component></ha-my-component>")) debugger;
+        
         let code = this.innerHTML.replace(/<pre>/g, "").replace(/<\/pre>/g, "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         // code = code.split("\n").map(p => p.replace("    ", "")).join("\n");
         this.codeEl.innerHTML = code;
         this.code = code;
         this.innerHTML = "";
-        window['Prism'].highlightElement(this.codeEl);
+        this.prism.highlightElement(this.codeEl);
 
     }
     protected override postCreation(): void {
-        if(!window['Prism']) {
+        if(!this.prism) {
             this.loadFiles();
         }
         else {

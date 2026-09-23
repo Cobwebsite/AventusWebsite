@@ -1,0 +1,52 @@
+import { Todo } from "../../data/Todo.data.avt";
+import { Task } from "../../data/Task.data.avt";
+import { TodoRAM } from "../../ram/Todo.ram.avt";
+
+export class TodoDisplay extends Aventus.WebComponent implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+    @Attribute()
+    public todo_id!: number;
+    //#endregion
+
+
+    //#region variables
+    @Watch()
+    public todo!: Todo;
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    protected async loadData() {
+        const todo = await TodoRAM.getInstance().get(this.todo_id);
+        if(todo) {
+            this.todo = todo;
+        }
+        else {
+            this.remove();
+        }
+    }
+
+    /**
+    * Remove the todo
+    */
+    protected async removeTodo() {
+        await TodoRAM.getInstance().deleteById(this.todo_id);
+    }
+
+    protected override postCreation(): void {
+        this.loadData();
+    }
+    //#endregion
+
+}

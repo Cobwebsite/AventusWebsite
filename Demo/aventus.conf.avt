@@ -1,0 +1,34 @@
+{
+	"module": "TodoDemo",
+	"componentPrefix": "td",
+	"hideWarnings": true,
+	"dependencies": {
+        "Aventus@UI":{}
+    },
+	"build": [
+		{
+			"name": "Main",
+			"disabled": true,
+			"src": [
+				"./src/apps/*",
+				"./src/components/*",
+				"./src/data/*",
+				"./src/lib/*",
+				"./src/ram/*",
+				"./src/states/*"
+			],
+			"compile": [
+				{
+					// "output": "./dist/todo.js"
+				}
+			]
+		}
+	],
+	"static": [
+		// {
+		// 	"name": "Main",
+		// 	"input": "./src/static/*",
+		// 	"output": "./dist/"
+		// }
+	]
+}

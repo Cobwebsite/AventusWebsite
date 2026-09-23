@@ -1,0 +1,18 @@
+<div class="card">
+    <td-input label="Todo name" @bind="this.todo.name"></td-input>
+    <div class="tasks">
+        <div class="sub-title">Tasks</div>
+        <ul class="list">
+            for(let task of this.todo.tasks) {
+                <li>{{ task.description }}</li>
+            }
+        </ul>
+        <div class="new-task">
+            <td-input label="Task name" @element="taskDescEl"></td-input>
+            <td-icon icon="add_circle" @press="addTask"></td-icon>
+        </div>
+    </div>
+    <div class="create-container">
+        <button class="create-btn" @press="save">Create</button>
+    </div>
+</div>

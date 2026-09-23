@@ -64,8 +64,6 @@ import { DocUIRouter } from "../pages/ui/DocUIRouter/DocUIRouter.wcl.avt";
 import { DocUIProcess } from "../pages/ui/DocUIProcess/DocUIProcess.wcl.avt";
 import { DocUIShortcut } from "../pages/ui/DocUIShortcut/DocUIShortcut.wcl.avt";
 import { DocUIIntroduction } from "../pages/ui/DocUIIntroduction/DocUIIntroduction.wcl.avt";
-import { DocUIPageForm } from "../pages/ui/DocUIPageForm/DocUIPageForm.wcl.avt";
-import { DocUIPageFormRoute } from "../pages/ui/DocUIPageFormRoute/DocUIPageFormRoute.wcl.avt";
 import { DocHttpIntroduction } from "../pages/http/DocHttpIntroduction/DocHttpIntroduction.wcl.avt";
 import { DocHttpRequest } from "../pages/http/DocHttpRequest/DocHttpRequest.wcl.avt";
 import { DocHttpRouter } from "../pages/http/DocHttpRouter/DocHttpRouter.wcl.avt";
@@ -186,8 +184,6 @@ export class DocApp extends Aventus.Navigation.Router implements Aventus.Default
         this.addRoute("/docs/ui/toast", DocUIToast);
         this.addRoute("/docs/ui/link", DocUILink);
         this.addRoute("/docs/ui/page", DocUIPage);
-        this.addRoute("/docs/ui/page_form", DocUIPageForm);
-        this.addRoute("/docs/ui/page_form_http", DocUIPageFormRoute);
         this.addRoute("/docs/ui/router", DocUIRouter);
         this.addRoute("/docs/ui/process", DocUIProcess);
         this.addRoute("/docs/ui/shortcut", DocUIShortcut);

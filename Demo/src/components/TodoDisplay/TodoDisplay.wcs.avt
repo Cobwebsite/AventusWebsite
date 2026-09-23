@@ -1,0 +1,11 @@
+:host {
+    .title {
+        display: flex;
+        align-items: center;
+        td-icon {
+            color: red;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+    }
+}

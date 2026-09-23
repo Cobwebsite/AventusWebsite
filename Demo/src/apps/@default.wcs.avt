@@ -1,0 +1,20 @@
+// this is the default style for all components
+:host {
+    box-sizing: border-box;
+    display: inline-block;
+}
+
+:host * {
+    box-sizing: border-box;
+}
+
+.card {
+    background-color: var(--color-surface-mixed-200);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: auto;
+    max-width: 500px;
+    padding: 15px;
+}
