@@ -1,22 +1,73 @@
 :host {
 	background-color: var(--primary-color);
 	height: 50px;
+	padding: 0 30px;
 	width: 100%;
 
 	av-link {
 		display: inline-block;
 	}
 
+
 	.container {
 		display: flex;
 		height: 100%;
 		justify-content: space-between;
 		margin: auto;
-		max-width: 1200px;
 
 		.left {
+			align-items: center;
+			display: flex;
 			height: 100%;
 			justify-self: start;
+
+			.input {
+				align-items: center;
+				background-color: var(--light-primary-color);
+				border-radius: 8px;
+				color: var(--aventus-font-color);
+				display: flex;
+				gap: 6px;
+				margin-left: 280px;
+				padding: 4px 14px;
+				position: relative;
+
+				.border {
+					border: 1px solid #323232;
+					border-radius: 8px;
+					inset: -1px;
+					pointer-events: none;
+					position: absolute;
+					transition: border 0.1s linear;
+				}
+
+				mi-icon {
+					font-size: 16px;
+				}
+
+				input {
+					background-color: transparent;
+					border: none !important;
+					color: var(--aventus-font-color);
+					min-width: 0;
+					outline: none !important;
+					pointer-events: none;
+				}
+
+				.shortcut {
+					background-color: var(--primary-color);
+					border-radius: 4px;
+					font-size: 0.7em;
+					padding: 4px 8px;
+				}
+			}
+
+			.input:hover {
+				.border {
+					border: 2px solid #bdbdbd;
+				}
+			}
+
 
 			av-link {
 				display: inline-block;

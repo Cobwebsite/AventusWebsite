@@ -1,0 +1,60 @@
+:host {
+	align-items: flex-start;
+	backdrop-filter: blur(4px);
+	padding: 6rem 3rem;
+
+	.modal {
+		background-color: var(--primary-color);
+		border: 1px solid color-mix(in oklab, black 5%, var(--primary-color));
+		border-radius: 8px;
+		box-shadow: var(--elevation-10);
+		padding: 2rem 3rem;
+		width: 800px;
+
+		.header {
+			.input {
+				align-items: center;
+				background-color: var(--light-primary-color);
+				border-radius: 8px;
+				color: var(--aventus-font-color);
+				display: flex;
+				gap: 6px;
+				padding: 4px 14px;
+				position: relative;
+
+				.border {
+					border: 1px solid color-mix(in oklab, black 20%, var(--text-color));
+					// border: 1px solid #323232;
+					border-radius: 8px;
+					inset: -1px;
+					pointer-events: none;
+					position: absolute;
+					transition: border 0.1s linear;
+				}
+
+				mi-icon {
+					font-size: 16px;
+				}
+
+				input {
+					background-color: transparent;
+					border: none !important;
+					color: var(--aventus-font-color);
+					height: 28px;
+					min-width: 0;
+					outline: none !important;
+				}
+			}
+
+			.input:hover {
+				.border {
+					border: 2px solid #bdbdbd;
+				}
+			}
+		}
+
+		.body {
+			padding: 16px;
+		}
+	}
+}
