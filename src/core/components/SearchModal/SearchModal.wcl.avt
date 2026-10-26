@@ -1,0 +1,45 @@
+import { ModalElement } from "Aventus@UI:Aventus.Modal.package.avt";
+
+export class SearchModal extends ModalElement<void> implements Aventus.DefaultComponent {
+
+    //#region static
+
+    //#endregion
+
+
+    //#region props
+
+    //#endregion
+
+
+    //#region variables
+
+    //#endregion
+
+
+    //#region constructor
+
+    //#endregion
+
+
+    //#region methods
+    /**
+     * @inheritdoc
+     */
+    public override configure(): Aventus.Modal.ModalOptions<void> {
+        return {};
+    }
+
+    protected override postCreation(): void {
+        super.postCreation();
+        const uri = '/pagefind/pagefind.js';
+        import(uri).then(async pagefind => {
+            const results = await pagefind.search('router');
+            const pages = await Promise.all(results.results.map((result: any) => result.data()));
+            console.log(pages); // url, meta.title, excerpt, ...
+        });
+    }
+
+    //#endregion
+
+}

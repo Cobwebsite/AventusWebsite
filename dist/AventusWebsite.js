@@ -8,39 +8,35 @@ var npmCompilation;
 npmCompilation['c940c285ff5c6f70f9e3538ac79e1aec']['saveAs'] = _.default['saveAs'];
 
 })(npmCompilation);
-if(!Object.hasOwn(window, "AvInstance")) {
-	Object.defineProperty(window, "AvInstance", {
-		get() {return Aventus?.Instance;}
-	});
-
-	(() => {
-		Map.prototype._defaultHas = Map.prototype.has;
-		Map.prototype._defaultSet = Map.prototype.set;
-		Map.prototype._defaultGet = Map.prototype.get;
-		Map.prototype.has = function(key) {
-			if(Aventus.Watcher?.is(key)) {
-				return Map.prototype._defaultHas.call(this,key.getTarget())
-			}
-			return Map.prototype._defaultHas.call(this,key);
-		}
-
-		Map.prototype.set = function(key, value) {
-			if(Aventus.Watcher?.is(key)) {
-				return Map.prototype._defaultSet.call(this, key.getTarget(), value)
-			}
-			return Map.prototype._defaultSet.call(this, key, value);
-		}
-		Map.prototype.get = function(key) {
-			if(Aventus.Watcher?.is(key)) {
-				return Map.prototype._defaultGet.call(this, key.getTarget())
-			}
-			return Map.prototype._defaultGet.call(this, key);
-		}
-	})();
-}
 var Aventus;
 (Aventus||(Aventus = {}));
 (function (Aventus) {
+(() => {
+    if (!Map.prototype._aventusReady) {
+        Map.prototype._aventusReady = true;
+        Map.prototype._defaultHas = Map.prototype.has;
+        Map.prototype._defaultSet = Map.prototype.set;
+        Map.prototype._defaultGet = Map.prototype.get;
+        Map.prototype.has = function (key) {
+            if (Aventus.Watcher?.is(key)) {
+                return Map.prototype._defaultHas.call(this, key.getTarget())
+            }
+            return Map.prototype._defaultHas.call(this, key);
+        }
+        Map.prototype.set = function (key, value) {
+            if (Aventus.Watcher?.is(key)) {
+                return Map.prototype._defaultSet.call(this, key.getTarget(), value)
+            }
+            return Map.prototype._defaultSet.call(this, key, value);
+        }
+        Map.prototype.get = function (key) {
+            if (Aventus.Watcher?.is(key)) {
+                return Map.prototype._defaultGet.call(this, key.getTarget())
+            }
+            return Map.prototype._defaultGet.call(this, key);
+        }
+    }
+})();
 const __as1 = (o, k, c) => { if (o[k] !== undefined) for (let w in o[k]) { c[w] = o[k][w] } o[k] = c; }
 const moduleName = `Aventus`;
 const _ = {};
@@ -481,19 +477,18 @@ __as1(_, 'Style', Style);
 
 let setValueToObject=function setValueToObject(path, obj, value) {
     path = path.replace(/\[(.*?)\]/g, '.$1');
-    const val = (key) => {
-        if (obj instanceof Map) {
-            return obj.get(key);
-        }
-        return obj[key];
-    };
     let splitted = path.split(".");
     for (let i = 0; i < splitted.length - 1; i++) {
         let split = splitted[i];
-        let value = val(split);
+        let value = obj instanceof Map ? obj.get(split) : obj[split];
         if (!value) {
-            obj[split] = {};
-            value = obj[split];
+            value = {};
+            if (obj instanceof Map) {
+                obj.set(split, value);
+            }
+            else {
+                obj[split] = value;
+            }
         }
         obj = value;
     }
@@ -5571,18 +5566,28 @@ let ResourceLoader=class ResourceLoader {
             return await this.awaitFctHead(_options.url);
         }
         else {
-            this.headerWaiting[_options.url] = [];
             let tagEl;
             if (_options.type == "js") {
                 tagEl = document.createElement("SCRIPT");
+                const el = document.querySelector(`script[src="${_options.url}"]`);
+                if (el) {
+                    this.headerLoaded[_options.url] = true;
+                    return true;
+                }
             }
             else if (_options.type == "css") {
                 tagEl = document.createElement("LINK");
                 tagEl.setAttribute("rel", "stylesheet");
+                const el = document.querySelector(`link[rel="stylesheet"][href="${_options.url}"]`);
+                if (el) {
+                    this.headerLoaded[_options.url] = true;
+                    return true;
+                }
             }
             else {
                 throw "unknow type " + _options.type + " to append into head";
             }
+            this.headerWaiting[_options.url] = [];
             if (_options.nonce) {
                 tagEl.setAttribute("nonce", _options.nonce);
             }
@@ -12239,6 +12244,51 @@ Result.Tag=`av-result`;
 __as1(_, 'Result', Result);
 if(!window.customElements.get('av-result')){window.customElements.define('av-result', Result);Aventus.WebComponentInstance.registerDefinition(Result);}
 
+const SearchModal = class SearchModal extends Aventus.Modal.ModalElement {
+    static __style = `:host{align-items:flex-start;backdrop-filter:blur(4px);padding:6rem 3rem}:host .modal{background-color:var(--primary-color);border:1px solid color-mix(in oklab, black 5%, var(--primary-color));border-radius:8px;box-shadow:var(--elevation-10);padding:2rem 3rem;width:800px}:host .modal .header .input{align-items:center;background-color:var(--light-primary-color);border-radius:8px;color:var(--aventus-font-color);display:flex;gap:6px;padding:4px 14px;position:relative}:host .modal .header .input .border{border:1px solid color-mix(in oklab, black 20%, var(--text-color));border-radius:8px;inset:-1px;pointer-events:none;position:absolute;transition:border .1s linear}:host .modal .header .input mi-icon{font-size:16px}:host .modal .header .input input{background-color:rgba(0,0,0,0);border:none !important;color:var(--aventus-font-color);height:28px;min-width:0;outline:none !important}:host .modal .header .input:hover .border{border:2px solid #bdbdbd}:host .modal .body{padding:16px}`;
+    __getStatic() {
+        return SearchModal;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(SearchModal.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<div class="header">
+    <div class="input">
+        <div class="border"></div>
+        <mi-icon icon="search"></mi-icon>
+        <input type="text" placeholder="Search" />
+    </div>
+</div><div class="body">
+    <div class="result"></div>
+</div>` }
+    });
+}
+    getClassName() {
+        return "SearchModal";
+    }
+    configure() {
+        return {};
+    }
+    postCreation() {
+        super.postCreation();
+        const uri = '/pagefind/pagefind.js';
+        import(uri).then(async (pagefind) => {
+            const results = await pagefind.search('router');
+            const pages = await Promise.all(results.results.map((result) => result.data()));
+            console.log(pages); // url, meta.title, excerpt, ...
+        });
+    }
+}
+SearchModal.Namespace=`AventusWebsite`;
+SearchModal.Tag=`av-search-modal`;
+__as1(_, 'SearchModal', SearchModal);
+if(!window.customElements.get('av-search-modal')){window.customElements.define('av-search-modal', SearchModal);Aventus.WebComponentInstance.registerDefinition(SearchModal);}
+
 const TutorialFooter = class TutorialFooter extends Aventus.WebComponent {
     get 'hide_previous'() { return this.getBoolAttr('hide_previous') }
     set 'hide_previous'(val) { this.setBoolAttr('hide_previous', val) }
@@ -18358,163 +18408,6 @@ Icon.Namespace=`AventusWebsite`;
 Icon.Tag=`av-icon`;
 __as1(_, 'Icon', Icon);
 if(!window.customElements.get('av-icon')){window.customElements.define('av-icon', Icon);Aventus.WebComponentInstance.registerDefinition(Icon);}
-
-const Navbar = class Navbar extends Aventus.WebComponent {
-    get 'open'() { return this.getBoolAttr('open') }
-    set 'open'(val) { this.setBoolAttr('open', val) }
-get 'is_dark'() { return this.getBoolAttr('is_dark') }
-    set 'is_dark'(val) { this.setBoolAttr('is_dark', val) }
-    static __style = `:host{background-color:var(--primary-color);height:50px;width:100%}:host av-link{display:inline-block}:host .container{display:flex;height:100%;justify-content:space-between;margin:auto;max-width:1200px}:host .container .left{height:100%;justify-self:start}:host .container .left av-link{display:inline-block;height:100%;user-select:none}:host .container .left av-link av-img{--img-color: var(--aventus-color);cursor:pointer;height:100%;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right{align-items:center;color:var(--primary-font-color);display:flex;justify-self:end}:host .container .right .menu{border-radius:5px;color:var(--primary-font-color);cursor:pointer;margin:0 5px;padding:5px 10px;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0);text-decoration:none;transition:color .5s var(--bezier-curve),background-color .5s var(--bezier-curve);user-select:none}:host .container .right .menu:not(.drop):hover{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu.active{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu-title{color:var(--aventus-color);display:none;font-size:2.4rem;margin:16px 0;text-align:center;width:100%}:host .container .right .menu-close-icon{display:none}:host .container .right .menu.drop:hover .drop-content{display:flex}:host .container .right .drop-content{background-color:var(--primary-color);display:none;flex-direction:column;gap:5px;padding:15px 10px;padding-top:10px;position:absolute;right:0;top:29px;z-index:99}:host .container .right .drop-content .drop-item{align-items:center;border-radius:5px;color:var(--primary-font-color);cursor:pointer;display:flex;gap:10px;margin:0 5px;padding:5px 10px;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0);text-decoration:none;transition:color .5s var(--bezier-curve),background-color .5s var(--bezier-curve);user-select:none}:host .container .right .drop-content .drop-item a{color:inherit;display:contents;text-decoration:none}:host .container .right .drop-content .drop-item .drop-icon{align-items:center;display:flex;height:30px;justify-content:center;width:30px}:host .container .right .drop-content .drop-item .drop-icon mi-icon{font-size:20px}:host .container .right .drop-content .drop-item .drop-icon av-img{height:30px;width:30px}:host .container .right .drop-content .drop-item:hover{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .icon-links{display:flex;gap:10px;margin-left:30px}:host .container .right .icon-links a{height:18px;width:18px}:host .container .right .icon-links a svg{fill:var(--primary-font-color);height:100%;transition:fill .5s var(--bezier-curve);width:100%}:host .container .right .icon-links a .reddit-logo{height:28px;margin-left:-5px;margin-top:-5px;width:28px}:host .container .right .icon-links a:hover svg{fill:var(--aventus-color)}:host .container .right .mode{align-items:center;cursor:pointer;display:flex;margin-left:30px;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right .mode mi-icon{font-size:1em}:host .container .right .mode .slider{align-items:center;background-color:var(--secondary-color);border:1px solid var(--primary-font-color);border-radius:15px;display:flex;height:15px;margin:0 10px;transition:background-color .5s;user-select:none;width:30px}:host .container .right .mode .slider .button{background-color:var(--text-color);border-radius:13px;height:9px;margin-left:2px;transition:inherit;transition:margin-left .2s linear;width:9px}:host .container .icon{align-items:center;color:var(--aventus-color);display:none;font-size:22px;height:100%;margin-right:16px}:host .container .hider{display:none}@media screen and (max-width: 1100px){:host .container .right{align-items:self-start;background-color:var(--primary-color);box-shadow:0 -10px 5px var(--aventus-color);color:var(--primary-font-color);flex-direction:column;height:100%;position:fixed;right:-300px;top:0px;transition:.4s right var(--bezier-curve);width:250px;z-index:90}:host .container .right .menu-title{display:block}:host .container .right .menu{margin:5px 0;margin-left:24px;order:1}:host .container .right .menu-close-icon{color:var(--aventus-color);display:block;font-size:21px;left:16px;position:absolute;top:13px}:host .container .right .drop-title{display:none}:host .container .right .drop-content{display:flex;padding:0;position:relative;right:auto;top:auto}:host .container .right .drop-content .drop-item{margin:0;padding-left:0}:host .container .right .icon-links{gap:20px;justify-content:center;margin:20px 0;margin-top:40px;order:3;width:100%}:host .container .right .icon-links a{height:24px;width:24px}:host .container .right .icon-links a .reddit-logo{height:34px;margin-left:-8px;margin-top:-6px;width:34px}:host .container .right .mode{justify-content:center;margin:0;margin-top:20px;order:2;width:100%}:host .container .icon{display:flex}:host .container .hider{background-color:rgba(0,0,0,0);display:none;height:100%;left:0;position:fixed;top:0;width:100%;z-index:9}:host([open]) .container .right{right:0}:host([open]) .container .hider{display:block}}:host([is_dark]) .container .right .mode .slider .button{margin-left:calc(100% - 11px)}`;
-    constructor() {
-        super();
-        let mode = localStorage.getItem("mode");
-        if (mode == 'dark') {
-            document.querySelector("html")?.classList.add("dark");
-            this.is_dark = true;
-        }
-    }
-    __getStatic() {
-        return Navbar;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(Navbar.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<div class="container">
-    <div class="left">
-        <av-link to="/"><av-img src="/img/icon.png"></av-img></av-link>
-    </div>
-    <div class="right">
-        <av-icon class="menu-close-icon" icon="close" _id="navbar_0"></av-icon>
-        <div class="menu-title">Aventus</div>
-        <av-link to="/" class="menu">Home</av-link>
-        <av-link to="/docs/installation" active_pattern="^/docs/installation*$" class="menu">Install</av-link>
-        <av-link to="/docs/introduction" active_pattern="^/docs/(?!installation)*$" class="menu">Docs</av-link>
-        <av-link to="/tutorial/introduction" active_pattern="^/tutorial/.*$" class="menu">Tutorial</av-link>
-        <av-link to="/about" class="menu">About</av-link>
-        <div class="menu drop">
-            <div class="drop-title">Others</div>
-            <div class="drop-content">
-                <div class="drop-item">
-                    <a href="https://aventussharp.com" target="_blank">
-                        <div class="drop-icon">
-                            <av-img src="/img/aventussharp.svg"></av-img>
-                        </div>
-                        <div class="drop-name" style="color:#368832">AventusSharp</div>
-                    </a>
-                </div>
-                <div class="drop-item">
-                    <a href="https://laraventus.com" target="_blank">
-                        <div class="drop-icon">
-                            <av-img src="/img/laraventus.svg"></av-img>
-                        </div>
-                        <div class="drop-name" style="color:#C72620">Laraventus</div>
-                    </a>
-                </div>
-                <div class="drop-item">
-                    <a href="https://store.aventusjs.com" target="_blank">
-                        <div class="drop-icon">
-                            <mi-icon icon="store"></mi-icon>
-                        </div>
-                        <div class="drop-name">Store</div>
-                    </a>
-                </div>
-            </div>
-        </div>
-        <div class="icon-links">
-            <a href="https://www.reddit.com/r/aventusjs/" target="_blank" class="link">
-                <svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" class="reddit-logo">
-                    <path d="M666.8 400c.08 5.48-.6 10.95-2.04 16.24s-3.62 10.36-6.48 15.04c-2.85 4.68-6.35 8.94-10.39 12.65s-8.58 6.83-13.49 9.27c.11 1.46.2 2.93.25 4.4a107.268 107.268 0 0 1 0 8.8c-.05 1.47-.14 2.94-.25 4.4 0 89.6-104.4 162.4-233.2 162.4S168 560.4 168 470.8c-.11-1.46-.2-2.93-.25-4.4a107.268 107.268 0 0 1 0-8.8c.05-1.47.14-2.94.25-4.4a58.438 58.438 0 0 1-31.85-37.28 58.41 58.41 0 0 1 7.8-48.42 58.354 58.354 0 0 1 41.93-25.4 58.4 58.4 0 0 1 46.52 15.5 286.795 286.795 0 0 1 35.89-20.71c12.45-6.02 25.32-11.14 38.51-15.3s26.67-7.35 40.32-9.56 27.45-3.42 41.28-3.63L418 169.6c.33-1.61.98-3.13 1.91-4.49.92-1.35 2.11-2.51 3.48-3.4 1.38-.89 2.92-1.5 4.54-1.8 1.61-.29 3.27-.26 4.87.09l98 19.6c9.89-16.99 30.65-24.27 48.98-17.19s28.81 26.43 24.71 45.65c-4.09 19.22-21.55 32.62-41.17 31.61-19.63-1.01-35.62-16.13-37.72-35.67L440 186l-26 124.8c13.66.29 27.29 1.57 40.77 3.82a284.358 284.358 0 0 1 77.8 24.86A284.412 284.412 0 0 1 568 360a58.345 58.345 0 0 1 29.4-15.21 58.361 58.361 0 0 1 32.95 3.21 58.384 58.384 0 0 1 25.91 20.61A58.384 58.384 0 0 1 666.8 400zm-396.96 55.31c2.02 4.85 4.96 9.26 8.68 12.97 3.71 3.72 8.12 6.66 12.97 8.68A40.049 40.049 0 0 0 306.8 480c16.18 0 30.76-9.75 36.96-24.69 6.19-14.95 2.76-32.15-8.68-43.59s-28.64-14.87-43.59-8.68c-14.94 6.2-24.69 20.78-24.69 36.96 0 5.25 1.03 10.45 3.04 15.31zm229.1 96.02c2.05-2 3.22-4.73 3.26-7.59.04-2.87-1.07-5.63-3.07-7.68s-4.73-3.22-7.59-3.26c-2.87-.04-5.63 1.07-7.94 2.8a131.06 131.06 0 0 1-19.04 11.35 131.53 131.53 0 0 1-20.68 7.99c-7.1 2.07-14.37 3.54-21.72 4.39-7.36.85-14.77 1.07-22.16.67-7.38.33-14.78.03-22.11-.89a129.01 129.01 0 0 1-21.64-4.6c-7.08-2.14-13.95-4.88-20.56-8.18s-12.93-7.16-18.89-11.53c-2.07-1.7-4.7-2.57-7.38-2.44s-5.21 1.26-7.11 3.15c-1.89 1.9-3.02 4.43-3.15 7.11s.74 5.31 2.44 7.38c7.03 5.3 14.5 9.98 22.33 14s16 7.35 24.4 9.97 17.01 4.51 25.74 5.66c8.73 1.14 17.54 1.53 26.33 1.17 8.79.36 17.6-.03 26.33-1.17A153.961 153.961 0 0 0 476.87 564c7.83-4.02 15.3-8.7 22.33-14zm-7.34-68.13c5.42.06 10.8-.99 15.81-3.07 5.01-2.09 9.54-5.17 13.32-9.06s6.72-8.51 8.66-13.58A39.882 39.882 0 0 0 532 441.6c0-16.18-9.75-30.76-24.69-36.96-14.95-6.19-32.15-2.76-43.59 8.68s-14.87 28.64-8.68 43.59c6.2 14.94 20.78 24.69 36.96 24.69z"></path>
-                </svg>
-            </a>
-            <a href="https://bsky.app/profile/aventus.bsky.social" target="_blank" class="link">
-                <svg viewBox="0 0 600 530" version="1.1" xmlns="http://www.w3.org/2000/svg">
-                    <path d="m135.72 44.03c66.496 49.921 138.02 151.14 164.28 205.46 26.262-54.316 97.782-155.54 164.28-205.46 47.98-36.021 125.72-63.892 125.72 24.795 0 17.712-10.155 148.79-16.111 170.07-20.703 73.984-96.144 92.854-163.25 81.433 117.3 19.964 147.14 86.092 82.697 152.22-122.39 125.59-175.91-31.511-189.63-71.766-2.514-7.3797-3.6904-10.832-3.7077-7.8964-0.0174-2.9357-1.1937 0.51669-3.7077 7.8964-13.714 40.255-67.233 197.36-189.63 71.766-64.444-66.128-34.605-132.26 82.697-152.22-67.108 11.421-142.55-7.4491-163.25-81.433-5.9562-21.282-16.111-152.36-16.111-170.07 0-88.687 77.742-60.816 125.72-24.795z"></path>
-                </svg>
-            </a>
-            <a href="https://discord.gg/DZ5rTKP6Xt" target="_blank" class="link">
-                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 -28.5 256 256" version="1.1" preserveAspectRatio="xMidYMid">
-                    <path d="M216.856339,16.5966031 C200.285002,8.84328665 182.566144,3.2084988 164.041564,0 C161.766523,4.11318106 159.108624,9.64549908 157.276099,14.0464379 C137.583995,11.0849896 118.072967,11.0849896 98.7430163,14.0464379 C96.9108417,9.64549908 94.1925838,4.11318106 91.8971895,0 C73.3526068,3.2084988 55.6133949,8.86399117 39.0420583,16.6376612 C5.61752293,67.146514 -3.4433191,116.400813 1.08711069,164.955721 C23.2560196,181.510915 44.7403634,191.567697 65.8621325,198.148576 C71.0772151,190.971126 75.7283628,183.341335 79.7352139,175.300261 C72.104019,172.400575 64.7949724,168.822202 57.8887866,164.667963 C59.7209612,163.310589 61.5131304,161.891452 63.2445898,160.431257 C105.36741,180.133187 151.134928,180.133187 192.754523,160.431257 C194.506336,161.891452 196.298154,163.310589 198.110326,164.667963 C191.183787,168.842556 183.854737,172.420929 176.223542,175.320965 C180.230393,183.341335 184.861538,190.991831 190.096624,198.16893 C211.238746,191.588051 232.743023,181.531619 254.911949,164.955721 C260.227747,108.668201 245.831087,59.8662432 216.856339,16.5966031 Z M85.4738752,135.09489 C72.8290281,135.09489 62.4592217,123.290155 62.4592217,108.914901 C62.4592217,94.5396472 72.607595,82.7145587 85.4738752,82.7145587 C98.3405064,82.7145587 108.709962,94.5189427 108.488529,108.914901 C108.508531,123.290155 98.3405064,135.09489 85.4738752,135.09489 Z M170.525237,135.09489 C157.88039,135.09489 147.510584,123.290155 147.510584,108.914901 C147.510584,94.5396472 157.658606,82.7145587 170.525237,82.7145587 C183.391518,82.7145587 193.761324,94.5189427 193.539891,108.914901 C193.539891,123.290155 183.391518,135.09489 170.525237,135.09489 Z" fill-rule="nonzero">
-                    </path>
-                </svg>
-            </a>
-            <a href="https://github.com/Cobwebsite/Aventus" target="_blank" class="link">
-                <svg data-v-a71028e4="" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" viewBox="0 0 24 24" class="social-icon">
-                    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12">
-                    </path>
-                </svg>
-            </a>
-        </div>
-        <div class="mode" _id="navbar_1">
-            <mi-icon icon="light_mode"></mi-icon>
-            <div class="slider">
-                <div class="button"></div>
-            </div>
-            <mi-icon icon="dark_mode"></mi-icon>
-        </div>
-    </div>
-    <av-icon icon="navicon" class="icon" _id="navbar_2"></av-icon>
-    <div class="hider" _id="navbar_3"></div>
-</div>` }
-    });
-}
-    __registerTemplateAction() { super.__registerTemplateAction();
-this.__getStatic().__template.setActions({
-  "pressEvents": [
-    {
-      "id": "navbar_0",
-      "onPress": (e, pressInstance, c) => { c.comp.closeMenu(e, pressInstance); }
-    },
-    {
-      "id": "navbar_1",
-      "onPress": (e, pressInstance, c) => { c.comp.toggleMode(e, pressInstance); }
-    },
-    {
-      "id": "navbar_2",
-      "onPress": (e, pressInstance, c) => { c.comp.openMenu(e, pressInstance); }
-    },
-    {
-      "id": "navbar_3",
-      "onPress": (e, pressInstance, c) => { c.comp.closeMenu(e, pressInstance); }
-    }
-  ]
-});
- }
-    getClassName() {
-        return "Navbar";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('open')) { this.attributeChangedCallback('open', false, false); }
-if(!this.hasAttribute('is_dark')) { this.attributeChangedCallback('is_dark', false, false); }
- }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('open');
-this.__upgradeProperty('is_dark');
- }
-    __listBoolProps() { return ["open","is_dark"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-    openMenu() {
-        this.open = true;
-    }
-    closeMenu() {
-        this.open = false;
-    }
-    toggleMode() {
-        document.querySelector("html")?.classList.toggle("dark");
-        if (document.querySelector("html")?.classList.contains("dark")) {
-            this.is_dark = true;
-            localStorage.setItem("mode", "dark");
-        }
-        else {
-            this.is_dark = false;
-            localStorage.removeItem("mode");
-        }
-    }
-}
-Navbar.Namespace=`AventusWebsite`;
-Navbar.Tag=`av-navbar`;
-__as1(_, 'Navbar', Navbar);
-if(!window.customElements.get('av-navbar')){window.customElements.define('av-navbar', Navbar);Aventus.WebComponentInstance.registerDefinition(Navbar);}
 
 const TutorialSidenav = class TutorialSidenav extends Aventus.WebComponent {
     static __style = `:host{background-color:var(--light-primary-color);font-size:14px;padding:30px;padding-right:5px;width:300px}:host .menu{height:100%;width:100%;z-index:2}:host .menu av-collapse{width:100%}:host .menu av-collapse .title{color:var(--aventus-color);font-size:18px;font-variant:small-caps;font-weight:bold;margin-bottom:5px;margin-top:15px}:host .menu av-collapse ul{margin:0;padding:0}:host .menu av-collapse ul li{color:var(--primary-font-color);cursor:pointer;font-size:12px;letter-spacing:1px;list-style:none;margin:6px;margin-left:15px;padding:0;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .menu av-collapse ul li av-link{user-select:none;transition:opacity .3s var(--bezier-curve)}:host .menu av-collapse ul li av-link:not(.active):hover{opacity:.7}:host .menu av-collapse ul li av-link.active{color:var(--aventus-color)}:host .menu av-collapse ul li av-link.active::before{background-color:var(--aventus-color);bottom:0;content:"";left:-15px;position:absolute;top:0;width:5px}:host .close-icon{color:var(--aventus-color);font-size:24px;position:absolute;right:24px;top:12px;display:none}@media screen and (max-width: 1100px){:host .menu av-collapse ul li{margin:12px;margin-left:15px;font-size:16px}:host .close-icon{display:block}}`;
@@ -44299,6 +44192,179 @@ TutorialPage.Namespace=`AventusWebsite`;
 TutorialPage.Tag=`av-tutorial-page`;
 __as1(_, 'TutorialPage', TutorialPage);
 if(!window.customElements.get('av-tutorial-page')){window.customElements.define('av-tutorial-page', TutorialPage);Aventus.WebComponentInstance.registerDefinition(TutorialPage);}
+
+const Navbar = class Navbar extends Aventus.WebComponent {
+    get 'open'() { return this.getBoolAttr('open') }
+    set 'open'(val) { this.setBoolAttr('open', val) }
+get 'is_dark'() { return this.getBoolAttr('is_dark') }
+    set 'is_dark'(val) { this.setBoolAttr('is_dark', val) }
+    static __style = `:host{background-color:var(--primary-color);height:50px;padding:0 30px;width:100%}:host av-link{display:inline-block}:host .container{display:flex;height:100%;justify-content:space-between;margin:auto}:host .container .left{align-items:center;display:flex;height:100%;justify-self:start}:host .container .left .input{align-items:center;background-color:var(--light-primary-color);border-radius:8px;color:var(--aventus-font-color);display:flex;gap:6px;margin-left:280px;padding:4px 14px;position:relative}:host .container .left .input .border{border:1px solid #323232;border-radius:8px;inset:-1px;pointer-events:none;position:absolute;transition:border .1s linear}:host .container .left .input mi-icon{font-size:16px}:host .container .left .input input{background-color:rgba(0,0,0,0);border:none !important;color:var(--aventus-font-color);min-width:0;outline:none !important;pointer-events:none}:host .container .left .input .shortcut{background-color:var(--primary-color);border-radius:4px;font-size:.7em;padding:4px 8px}:host .container .left .input:hover .border{border:2px solid #bdbdbd}:host .container .left av-link{display:inline-block;height:100%;user-select:none}:host .container .left av-link av-img{--img-color: var(--aventus-color);cursor:pointer;height:100%;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right{align-items:center;color:var(--primary-font-color);display:flex;justify-self:end}:host .container .right .menu{border-radius:5px;color:var(--primary-font-color);cursor:pointer;margin:0 5px;padding:5px 10px;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0);text-decoration:none;transition:color .5s var(--bezier-curve),background-color .5s var(--bezier-curve);user-select:none}:host .container .right .menu:not(.drop):hover{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu.active{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu-title{color:var(--aventus-color);display:none;font-size:2.4rem;margin:16px 0;text-align:center;width:100%}:host .container .right .menu-close-icon{display:none}:host .container .right .menu.drop:hover .drop-content{display:flex}:host .container .right .drop-content{background-color:var(--primary-color);display:none;flex-direction:column;gap:5px;padding:15px 10px;padding-top:10px;position:absolute;right:0;top:29px;z-index:99}:host .container .right .drop-content .drop-item{align-items:center;border-radius:5px;color:var(--primary-font-color);cursor:pointer;display:flex;gap:10px;margin:0 5px;padding:5px 10px;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0);text-decoration:none;transition:color .5s var(--bezier-curve),background-color .5s var(--bezier-curve);user-select:none}:host .container .right .drop-content .drop-item a{color:inherit;display:contents;text-decoration:none}:host .container .right .drop-content .drop-item .drop-icon{align-items:center;display:flex;height:30px;justify-content:center;width:30px}:host .container .right .drop-content .drop-item .drop-icon mi-icon{font-size:20px}:host .container .right .drop-content .drop-item .drop-icon av-img{height:30px;width:30px}:host .container .right .drop-content .drop-item:hover{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .icon-links{display:flex;gap:10px;margin-left:30px}:host .container .right .icon-links a{height:18px;width:18px}:host .container .right .icon-links a svg{fill:var(--primary-font-color);height:100%;transition:fill .5s var(--bezier-curve);width:100%}:host .container .right .icon-links a .reddit-logo{height:28px;margin-left:-5px;margin-top:-5px;width:28px}:host .container .right .icon-links a:hover svg{fill:var(--aventus-color)}:host .container .right .mode{align-items:center;cursor:pointer;display:flex;margin-left:30px;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right .mode mi-icon{font-size:1em}:host .container .right .mode .slider{align-items:center;background-color:var(--secondary-color);border:1px solid var(--primary-font-color);border-radius:15px;display:flex;height:15px;margin:0 10px;transition:background-color .5s;user-select:none;width:30px}:host .container .right .mode .slider .button{background-color:var(--text-color);border-radius:13px;height:9px;margin-left:2px;transition:inherit;transition:margin-left .2s linear;width:9px}:host .container .icon{align-items:center;color:var(--aventus-color);display:none;font-size:22px;height:100%;margin-right:16px}:host .container .hider{display:none}@media screen and (max-width: 1100px){:host .container .right{align-items:self-start;background-color:var(--primary-color);box-shadow:0 -10px 5px var(--aventus-color);color:var(--primary-font-color);flex-direction:column;height:100%;position:fixed;right:-300px;top:0px;transition:.4s right var(--bezier-curve);width:250px;z-index:90}:host .container .right .menu-title{display:block}:host .container .right .menu{margin:5px 0;margin-left:24px;order:1}:host .container .right .menu-close-icon{color:var(--aventus-color);display:block;font-size:21px;left:16px;position:absolute;top:13px}:host .container .right .drop-title{display:none}:host .container .right .drop-content{display:flex;padding:0;position:relative;right:auto;top:auto}:host .container .right .drop-content .drop-item{margin:0;padding-left:0}:host .container .right .icon-links{gap:20px;justify-content:center;margin:20px 0;margin-top:40px;order:3;width:100%}:host .container .right .icon-links a{height:24px;width:24px}:host .container .right .icon-links a .reddit-logo{height:34px;margin-left:-8px;margin-top:-6px;width:34px}:host .container .right .mode{justify-content:center;margin:0;margin-top:20px;order:2;width:100%}:host .container .icon{display:flex}:host .container .hider{background-color:rgba(0,0,0,0);display:none;height:100%;left:0;position:fixed;top:0;width:100%;z-index:9}:host([open]) .container .right{right:0}:host([open]) .container .hider{display:block}}:host([is_dark]) .container .right .mode .slider .button{margin-left:calc(100% - 11px)}`;
+    constructor() {
+        super();
+        let mode = localStorage.getItem("mode");
+        if (mode == 'dark') {
+            document.querySelector("html")?.classList.add("dark");
+            this.is_dark = true;
+        }
+    }
+    __getStatic() {
+        return Navbar;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Navbar.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<div class="container">
+    <div class="left">
+        <av-link to="/"><av-img src="/img/icon.png"></av-img></av-link>
+        <div class="input">
+            <div class="border"></div>
+            <mi-icon icon="search"></mi-icon>
+            <input type="text" class="search" placeholder="Search" />
+            <div class="shortcut">
+                <span>Ctrl</span>
+                <span>K</span>
+            </div>
+        </div>
+    </div>
+    <div class="right">
+        <av-icon class="menu-close-icon" icon="close" _id="navbar_0"></av-icon>
+        <div class="menu-title">Aventus</div>
+        <av-link to="/" class="menu">Home</av-link>
+        <av-link to="/docs/installation" active_pattern="^/docs/installation*$" class="menu">Install</av-link>
+        <av-link to="/docs/introduction" active_pattern="^/docs/(?!installation)*$" class="menu">Docs</av-link>
+        <av-link to="/tutorial/introduction" active_pattern="^/tutorial/.*$" class="menu">Tutorial</av-link>
+        <av-link to="/about" class="menu">About</av-link>
+        <div class="menu drop">
+            <div class="drop-title">Others</div>
+            <div class="drop-content">
+                <div class="drop-item">
+                    <a href="https://aventussharp.com" target="_blank">
+                        <div class="drop-icon">
+                            <av-img src="/img/aventussharp.svg"></av-img>
+                        </div>
+                        <div class="drop-name" style="color:#368832">AventusSharp</div>
+                    </a>
+                </div>
+                <div class="drop-item">
+                    <a href="https://laraventus.com" target="_blank">
+                        <div class="drop-icon">
+                            <av-img src="/img/laraventus.svg"></av-img>
+                        </div>
+                        <div class="drop-name" style="color:#C72620">Laraventus</div>
+                    </a>
+                </div>
+                <div class="drop-item">
+                    <a href="https://store.aventusjs.com" target="_blank">
+                        <div class="drop-icon">
+                            <mi-icon icon="store"></mi-icon>
+                        </div>
+                        <div class="drop-name">Store</div>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="icon-links">
+            <a href="https://www.reddit.com/r/aventusjs/" target="_blank" class="link">
+                <svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" class="reddit-logo">
+                    <path d="M666.8 400c.08 5.48-.6 10.95-2.04 16.24s-3.62 10.36-6.48 15.04c-2.85 4.68-6.35 8.94-10.39 12.65s-8.58 6.83-13.49 9.27c.11 1.46.2 2.93.25 4.4a107.268 107.268 0 0 1 0 8.8c-.05 1.47-.14 2.94-.25 4.4 0 89.6-104.4 162.4-233.2 162.4S168 560.4 168 470.8c-.11-1.46-.2-2.93-.25-4.4a107.268 107.268 0 0 1 0-8.8c.05-1.47.14-2.94.25-4.4a58.438 58.438 0 0 1-31.85-37.28 58.41 58.41 0 0 1 7.8-48.42 58.354 58.354 0 0 1 41.93-25.4 58.4 58.4 0 0 1 46.52 15.5 286.795 286.795 0 0 1 35.89-20.71c12.45-6.02 25.32-11.14 38.51-15.3s26.67-7.35 40.32-9.56 27.45-3.42 41.28-3.63L418 169.6c.33-1.61.98-3.13 1.91-4.49.92-1.35 2.11-2.51 3.48-3.4 1.38-.89 2.92-1.5 4.54-1.8 1.61-.29 3.27-.26 4.87.09l98 19.6c9.89-16.99 30.65-24.27 48.98-17.19s28.81 26.43 24.71 45.65c-4.09 19.22-21.55 32.62-41.17 31.61-19.63-1.01-35.62-16.13-37.72-35.67L440 186l-26 124.8c13.66.29 27.29 1.57 40.77 3.82a284.358 284.358 0 0 1 77.8 24.86A284.412 284.412 0 0 1 568 360a58.345 58.345 0 0 1 29.4-15.21 58.361 58.361 0 0 1 32.95 3.21 58.384 58.384 0 0 1 25.91 20.61A58.384 58.384 0 0 1 666.8 400zm-396.96 55.31c2.02 4.85 4.96 9.26 8.68 12.97 3.71 3.72 8.12 6.66 12.97 8.68A40.049 40.049 0 0 0 306.8 480c16.18 0 30.76-9.75 36.96-24.69 6.19-14.95 2.76-32.15-8.68-43.59s-28.64-14.87-43.59-8.68c-14.94 6.2-24.69 20.78-24.69 36.96 0 5.25 1.03 10.45 3.04 15.31zm229.1 96.02c2.05-2 3.22-4.73 3.26-7.59.04-2.87-1.07-5.63-3.07-7.68s-4.73-3.22-7.59-3.26c-2.87-.04-5.63 1.07-7.94 2.8a131.06 131.06 0 0 1-19.04 11.35 131.53 131.53 0 0 1-20.68 7.99c-7.1 2.07-14.37 3.54-21.72 4.39-7.36.85-14.77 1.07-22.16.67-7.38.33-14.78.03-22.11-.89a129.01 129.01 0 0 1-21.64-4.6c-7.08-2.14-13.95-4.88-20.56-8.18s-12.93-7.16-18.89-11.53c-2.07-1.7-4.7-2.57-7.38-2.44s-5.21 1.26-7.11 3.15c-1.89 1.9-3.02 4.43-3.15 7.11s.74 5.31 2.44 7.38c7.03 5.3 14.5 9.98 22.33 14s16 7.35 24.4 9.97 17.01 4.51 25.74 5.66c8.73 1.14 17.54 1.53 26.33 1.17 8.79.36 17.6-.03 26.33-1.17A153.961 153.961 0 0 0 476.87 564c7.83-4.02 15.3-8.7 22.33-14zm-7.34-68.13c5.42.06 10.8-.99 15.81-3.07 5.01-2.09 9.54-5.17 13.32-9.06s6.72-8.51 8.66-13.58A39.882 39.882 0 0 0 532 441.6c0-16.18-9.75-30.76-24.69-36.96-14.95-6.19-32.15-2.76-43.59 8.68s-14.87 28.64-8.68 43.59c6.2 14.94 20.78 24.69 36.96 24.69z"></path>
+                </svg>
+            </a>
+            <a href="https://bsky.app/profile/aventus.bsky.social" target="_blank" class="link">
+                <svg viewBox="0 0 600 530" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                    <path d="m135.72 44.03c66.496 49.921 138.02 151.14 164.28 205.46 26.262-54.316 97.782-155.54 164.28-205.46 47.98-36.021 125.72-63.892 125.72 24.795 0 17.712-10.155 148.79-16.111 170.07-20.703 73.984-96.144 92.854-163.25 81.433 117.3 19.964 147.14 86.092 82.697 152.22-122.39 125.59-175.91-31.511-189.63-71.766-2.514-7.3797-3.6904-10.832-3.7077-7.8964-0.0174-2.9357-1.1937 0.51669-3.7077 7.8964-13.714 40.255-67.233 197.36-189.63 71.766-64.444-66.128-34.605-132.26 82.697-152.22-67.108 11.421-142.55-7.4491-163.25-81.433-5.9562-21.282-16.111-152.36-16.111-170.07 0-88.687 77.742-60.816 125.72-24.795z"></path>
+                </svg>
+            </a>
+            <a href="https://discord.gg/DZ5rTKP6Xt" target="_blank" class="link">
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 -28.5 256 256" version="1.1" preserveAspectRatio="xMidYMid">
+                    <path d="M216.856339,16.5966031 C200.285002,8.84328665 182.566144,3.2084988 164.041564,0 C161.766523,4.11318106 159.108624,9.64549908 157.276099,14.0464379 C137.583995,11.0849896 118.072967,11.0849896 98.7430163,14.0464379 C96.9108417,9.64549908 94.1925838,4.11318106 91.8971895,0 C73.3526068,3.2084988 55.6133949,8.86399117 39.0420583,16.6376612 C5.61752293,67.146514 -3.4433191,116.400813 1.08711069,164.955721 C23.2560196,181.510915 44.7403634,191.567697 65.8621325,198.148576 C71.0772151,190.971126 75.7283628,183.341335 79.7352139,175.300261 C72.104019,172.400575 64.7949724,168.822202 57.8887866,164.667963 C59.7209612,163.310589 61.5131304,161.891452 63.2445898,160.431257 C105.36741,180.133187 151.134928,180.133187 192.754523,160.431257 C194.506336,161.891452 196.298154,163.310589 198.110326,164.667963 C191.183787,168.842556 183.854737,172.420929 176.223542,175.320965 C180.230393,183.341335 184.861538,190.991831 190.096624,198.16893 C211.238746,191.588051 232.743023,181.531619 254.911949,164.955721 C260.227747,108.668201 245.831087,59.8662432 216.856339,16.5966031 Z M85.4738752,135.09489 C72.8290281,135.09489 62.4592217,123.290155 62.4592217,108.914901 C62.4592217,94.5396472 72.607595,82.7145587 85.4738752,82.7145587 C98.3405064,82.7145587 108.709962,94.5189427 108.488529,108.914901 C108.508531,123.290155 98.3405064,135.09489 85.4738752,135.09489 Z M170.525237,135.09489 C157.88039,135.09489 147.510584,123.290155 147.510584,108.914901 C147.510584,94.5396472 157.658606,82.7145587 170.525237,82.7145587 C183.391518,82.7145587 193.761324,94.5189427 193.539891,108.914901 C193.539891,123.290155 183.391518,135.09489 170.525237,135.09489 Z" fill-rule="nonzero">
+                    </path>
+                </svg>
+            </a>
+            <a href="https://github.com/Cobwebsite/Aventus" target="_blank" class="link">
+                <svg data-v-a71028e4="" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" viewBox="0 0 24 24" class="social-icon">
+                    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12">
+                    </path>
+                </svg>
+            </a>
+        </div>
+        <div class="mode" _id="navbar_1">
+            <mi-icon icon="light_mode"></mi-icon>
+            <div class="slider">
+                <div class="button"></div>
+            </div>
+            <mi-icon icon="dark_mode"></mi-icon>
+        </div>
+    </div>
+    <av-icon icon="navicon" class="icon" _id="navbar_2"></av-icon>
+    <div class="hider" _id="navbar_3"></div>
+</div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
+  "pressEvents": [
+    {
+      "id": "navbar_0",
+      "onPress": (e, pressInstance, c) => { c.comp.closeMenu(e, pressInstance); }
+    },
+    {
+      "id": "navbar_1",
+      "onPress": (e, pressInstance, c) => { c.comp.toggleMode(e, pressInstance); }
+    },
+    {
+      "id": "navbar_2",
+      "onPress": (e, pressInstance, c) => { c.comp.openMenu(e, pressInstance); }
+    },
+    {
+      "id": "navbar_3",
+      "onPress": (e, pressInstance, c) => { c.comp.closeMenu(e, pressInstance); }
+    }
+  ]
+});
+ }
+    getClassName() {
+        return "Navbar";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('open')) { this.attributeChangedCallback('open', false, false); }
+if(!this.hasAttribute('is_dark')) { this.attributeChangedCallback('is_dark', false, false); }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('open');
+this.__upgradeProperty('is_dark');
+ }
+    __listBoolProps() { return ["open","is_dark"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    openMenu() {
+        this.open = true;
+    }
+    closeMenu() {
+        this.open = false;
+    }
+    toggleMode() {
+        document.querySelector("html")?.classList.toggle("dark");
+        if (document.querySelector("html")?.classList.contains("dark")) {
+            this.is_dark = true;
+            localStorage.setItem("mode", "dark");
+        }
+        else {
+            this.is_dark = false;
+            localStorage.removeItem("mode");
+        }
+    }
+    postCreation() {
+        super.postCreation();
+        Aventus.Lib.ShortcutManager.subscribe([Aventus.Lib.SpecialTouch.Control, "k"], () => {
+            const modal = new SearchModal();
+            modal.show();
+        });
+    }
+}
+Navbar.Namespace=`AventusWebsite`;
+Navbar.Tag=`av-navbar`;
+__as1(_, 'Navbar', Navbar);
+if(!window.customElements.get('av-navbar')){window.customElements.define('av-navbar', Navbar);Aventus.WebComponentInstance.registerDefinition(Navbar);}
 
 const App = class App extends Aventus.Navigation.Router {
     static __style = `:host{display:flex;flex-direction:column;font-size:1.6rem;height:100%;width:100%}:host .content{height:calc(100% - 50px);width:100%}`;

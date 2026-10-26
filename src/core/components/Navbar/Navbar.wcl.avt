@@ -1,3 +1,6 @@
+import { ShortcutManager, SpecialTouch } from "Aventus@UI:Aventus.Lib.package.avt";
+import { SearchModal } from "@root/core/components/SearchModal/SearchModal.wcl.avt";
+
 export class Navbar extends Aventus.WebComponent implements Aventus.DefaultComponent {
 
     //#region static
@@ -59,6 +62,16 @@ export class Navbar extends Aventus.WebComponent implements Aventus.DefaultCompo
             this.is_dark = false;
             localStorage.removeItem("mode");
         }
+    }
+
+
+
+    protected override postCreation(): void {
+        super.postCreation();
+        ShortcutManager.subscribe([SpecialTouch.Control, "k"], () => {
+            const modal = new SearchModal();
+            modal.show();
+        });
     }
 
     //#endregion

@@ -1,0 +1,10 @@
+<div class="header">
+    <div class="input">
+        <div class="border"></div>
+        <mi-icon icon="search"></mi-icon>
+        <input type="text" placeholder="Search"/>
+    </div>
+</div>
+<div class="body">
+    <div class="result"></div>
+</div>
