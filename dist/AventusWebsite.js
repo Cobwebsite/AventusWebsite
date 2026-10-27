@@ -48,12 +48,6 @@ let sleep=function sleep(ms) {
 }
 __as1(_, 'sleep', sleep);
 
-let DragElementXYType= [SVGGElement, SVGRectElement, SVGEllipseElement, SVGTextElement];
-__as1(_, 'DragElementXYType', DragElementXYType);
-
-let DragElementLeftTopType= [HTMLElement, SVGSVGElement];
-__as1(_, 'DragElementLeftTopType', DragElementLeftTopType);
-
 let isClass=function isClass(v) {
     return typeof v === 'function' && /^\s*class\s+/.test(v.toString());
 }
@@ -74,6 +68,12 @@ var HttpMethod;
     HttpMethod["OPTION"] = "OPTION";
 })(HttpMethod || (HttpMethod = {}));
 __as1(_, 'HttpMethod', HttpMethod);
+
+let DragElementXYType= [SVGGElement, SVGRectElement, SVGEllipseElement, SVGTextElement];
+__as1(_, 'DragElementXYType', DragElementXYType);
+
+let DragElementLeftTopType= [HTMLElement, SVGSVGElement];
+__as1(_, 'DragElementLeftTopType', DragElementLeftTopType);
 
 let ElementExtension=class ElementExtension {
     /**
@@ -5463,93 +5463,577 @@ let ResizeObserver=class ResizeObserver {
 ResizeObserver.Namespace=`Aventus`;
 __as1(_, 'ResizeObserver', ResizeObserver);
 
-let Animation=class Animation {
+let DragAndDrop=class DragAndDrop {
     /**
-     * Default FPS for all Animation if not set inside options
+     * Default offset before drag element
      */
-    static FPS_DEFAULT = 60;
+    static defaultOffsetDrag = 20;
+    pressManager;
     options;
-    nextFrame = 0;
-    fpsInterval;
-    continueAnimation = false;
-    frame_id = 0;
+    startCursorPosition = { x: 0, y: 0 };
+    startElementPosition = { x: 0, y: 0 };
+    isEnable = true;
+    draggableElement;
     constructor(options) {
-        if (!options.animate) {
-            options.animate = () => { };
-        }
-        if (!options.stopped) {
-            options.stopped = () => { };
-        }
-        if (!options.fps) {
-            options.fps = Animation.FPS_DEFAULT;
-        }
-        this.options = options;
-        this.fpsInterval = 1000 / options.fps;
+        this.options = this.getDefaultOptions(options.element);
+        this.mergeProperties(options);
+        this.mergeFunctions(options);
+        this.options.elementTrigger.style.touchAction = 'none';
+        this.pressManager = new PressManager({
+            element: this.options.elementTrigger,
+            onPressStart: this.onPressStart.bind(this),
+            onPressEnd: this.onPressEnd.bind(this),
+            onDragStart: this.onDragStart.bind(this),
+            onDrag: this.onDrag.bind(this),
+            onDragEnd: this.onDragEnd.bind(this),
+            offsetDrag: this.options.offsetDrag,
+            dragDirection: this.options.dragDirection,
+            stopPropagation: this.options.stopPropagation
+        });
     }
-    animate() {
-        let now = window.performance.now();
-        let elapsed = now - this.nextFrame;
-        if (elapsed <= this.fpsInterval) {
-            this.frame_id = requestAnimationFrame(() => this.animate());
-            return;
+    getDefaultOptions(element) {
+        return {
+            applyDrag: true,
+            element: element,
+            elementTrigger: element,
+            offsetDrag: DragAndDrop.defaultOffsetDrag,
+            dragDirection: 'XY',
+            shadow: {
+                enable: false,
+                container: document.body,
+                removeOnStop: true,
+                transform: () => { },
+                delete: (el) => {
+                    el.remove();
+                }
+            },
+            strict: false,
+            targets: [],
+            usePercent: false,
+            stopPropagation: true,
+            useMouseFinalPosition: false,
+            useTransform: false,
+            isDragEnable: () => true,
+            getZoom: () => 1,
+            getOffsetX: () => 0,
+            getOffsetY: () => 0,
+            onPointerDown: (e) => { },
+            onPointerUp: (e) => { },
+            onStart: (e) => { },
+            onMove: (e) => { },
+            onStop: (e) => { },
+            onDrop: (element, targets) => { },
+            correctPosition: (position) => position
+        };
+    }
+    mergeProperties(options) {
+        if (options.element === void 0) {
+            throw "You must define the element for the drag&drop";
         }
-        this.nextFrame = now - (elapsed % this.fpsInterval);
-        setTimeout(() => {
-            this.options.animate();
-        }, 0);
-        if (this.continueAnimation) {
-            this.frame_id = requestAnimationFrame(() => this.animate());
+        this.options.element = options.element;
+        if (options.elementTrigger === void 0) {
+            this.options.elementTrigger = this.options.element;
         }
         else {
-            this.options.stopped();
+            this.options.elementTrigger = options.elementTrigger;
+        }
+        this.defaultMerge(options, "applyDrag");
+        this.defaultMerge(options, "offsetDrag");
+        this.defaultMerge(options, "dragDirection");
+        this.defaultMerge(options, "strict");
+        this.defaultMerge(options, "targets");
+        this.defaultMerge(options, "usePercent");
+        this.defaultMerge(options, "stopPropagation");
+        this.defaultMerge(options, "useMouseFinalPosition");
+        this.defaultMerge(options, "useTransform");
+        if (options.shadow !== void 0) {
+            this.options.shadow.enable = options.shadow.enable;
+            if (options.shadow.container !== void 0) {
+                this.options.shadow.container = options.shadow.container;
+            }
+            else {
+                this.options.shadow.container = document.body;
+            }
+            if (options.shadow.removeOnStop !== void 0) {
+                this.options.shadow.removeOnStop = options.shadow.removeOnStop;
+            }
+            if (options.shadow.transform !== void 0) {
+                this.options.shadow.transform = options.shadow.transform;
+            }
+            if (options.shadow.delete !== void 0) {
+                this.options.shadow.delete = options.shadow.delete;
+            }
+        }
+    }
+    mergeFunctions(options) {
+        this.defaultMerge(options, "isDragEnable");
+        this.defaultMerge(options, "getZoom");
+        this.defaultMerge(options, "getOffsetX");
+        this.defaultMerge(options, "getOffsetY");
+        this.defaultMerge(options, "onPointerDown");
+        this.defaultMerge(options, "onPointerUp");
+        this.defaultMerge(options, "onStart");
+        this.defaultMerge(options, "onMove");
+        this.defaultMerge(options, "onStop");
+        this.defaultMerge(options, "onDrop");
+        this.defaultMerge(options, "correctPosition");
+    }
+    defaultMerge(options, name) {
+        if (options[name] !== void 0) {
+            const opts = this.options;
+            opts[name] = options[name];
+        }
+    }
+    positionShadowRelativeToElement = { x: 0, y: 0 };
+    onPressStart(e) {
+        this.options.onPointerDown(e);
+    }
+    onPressEnd(e) {
+        this.options.onPointerUp(e);
+    }
+    onDragStart(e) {
+        this.isEnable = this.options.isDragEnable();
+        if (!this.isEnable) {
+            return false;
+        }
+        let draggableElement = this.options.element;
+        this.startCursorPosition = {
+            x: e.pageX,
+            y: e.pageY
+        };
+        this.startElementPosition = this.getBoundingBoxRelative(draggableElement);
+        if (this.options.shadow.enable) {
+            draggableElement = this.options.element.cloneNode(true);
+            let elBox = this.options.element.getBoundingClientRect();
+            let containerBox = this.options.shadow.container.getBoundingClientRect();
+            this.positionShadowRelativeToElement = {
+                x: elBox.x - containerBox.x,
+                y: elBox.y - containerBox.y
+            };
+            if (this.options.applyDrag) {
+                draggableElement.style.position = "absolute";
+                draggableElement.style.top = this.positionShadowRelativeToElement.y + this.options.getOffsetY() + 'px';
+                draggableElement.style.left = this.positionShadowRelativeToElement.x + this.options.getOffsetX() + 'px';
+                this.options.shadow.transform(draggableElement);
+                this.options.shadow.container.appendChild(draggableElement);
+            }
+        }
+        this.draggableElement = draggableElement;
+        const result = this.options.onStart(e);
+        if (result !== false) {
+            document.body.style.userSelect = 'none';
+            if (window.getSelection) {
+                window.getSelection()?.removeAllRanges();
+            }
+        }
+        return result;
+    }
+    onDrag(e) {
+        if (!this.isEnable) {
+            return;
+        }
+        let zoom = this.options.getZoom();
+        let diff = {
+            x: 0,
+            y: 0
+        };
+        if (this.options.shadow.enable) {
+            diff = {
+                x: (e.pageX - this.startCursorPosition.x) + this.positionShadowRelativeToElement.x + this.options.getOffsetX(),
+                y: (e.pageY - this.startCursorPosition.y) + this.positionShadowRelativeToElement.y + this.options.getOffsetY(),
+            };
+        }
+        else {
+            diff = {
+                x: (e.pageX - this.startCursorPosition.x) / zoom + this.startElementPosition.x + this.options.getOffsetX(),
+                y: (e.pageY - this.startCursorPosition.y) / zoom + this.startElementPosition.y + this.options.getOffsetY()
+            };
+        }
+        let newPos = this.setPosition(diff);
+        this.options.onMove(e, newPos);
+    }
+    onDragEnd(e) {
+        if (!this.isEnable) {
+            return;
+        }
+        document.body.style.userSelect = '';
+        let targets = this.options.useMouseFinalPosition ? this.getMatchingTargetsWithMousePosition({
+            x: e.clientX,
+            y: e.clientY
+        }) : this.getMatchingTargets();
+        let draggableElement = this.draggableElement;
+        if (this.options.shadow.enable && this.options.shadow.removeOnStop) {
+            this.options.shadow.delete(draggableElement);
+        }
+        if (targets.length > 0) {
+            this.options.onDrop(this.options.element, targets);
+        }
+        this.options.onStop(e);
+    }
+    setPosition(position) {
+        let draggableElement = this.draggableElement;
+        if (this.options.usePercent) {
+            let elementParent = this.getOffsetParent(draggableElement);
+            if (elementParent instanceof HTMLElement) {
+                let percentPosition = {
+                    x: (position.x / elementParent.offsetWidth) * 100,
+                    y: (position.y / elementParent.offsetHeight) * 100
+                };
+                percentPosition = this.options.correctPosition(percentPosition);
+                if (this.options.applyDrag) {
+                    draggableElement.style.left = percentPosition.x + '%';
+                    draggableElement.style.top = percentPosition.y + '%';
+                }
+                return percentPosition;
+            }
+            else {
+                console.error("Can't find parent. Contact an admin", draggableElement);
+            }
+        }
+        else {
+            position = this.options.correctPosition(position);
+            if (this.options.applyDrag) {
+                if (this.isLeftTopElement(draggableElement)) {
+                    draggableElement.style.left = position.x + 'px';
+                    draggableElement.style.top = position.y + 'px';
+                }
+                else {
+                    if (this.options.useTransform) {
+                        draggableElement.setAttribute("transform", `translate(${position.x},${position.y})`);
+                    }
+                    else {
+                        draggableElement.style.left = position.x + 'px';
+                        draggableElement.style.top = position.y + 'px';
+                    }
+                }
+            }
+        }
+        return position;
+    }
+    getTargets() {
+        if (typeof this.options.targets == "function") {
+            return this.options.targets();
+        }
+        else {
+            return this.options.targets;
         }
     }
     /**
-     * Start the of animation
+     * Get targets within the current element position is matching
      */
-    start() {
-        if (this.continueAnimation == false) {
-            this.continueAnimation = true;
-            this.nextFrame = window.performance.now();
-            this.animate();
+    getMatchingTargets() {
+        let draggableElement = this.draggableElement;
+        let matchingTargets = [];
+        let srcTargets = this.getTargets();
+        for (let target of srcTargets) {
+            let elementCoordinates = this.getBoundingBoxAbsolute(draggableElement);
+            let targetCoordinates = this.getBoundingBoxAbsolute(target);
+            let offsetX = this.options.getOffsetX();
+            let offsetY = this.options.getOffsetY();
+            let zoom = this.options.getZoom();
+            targetCoordinates.x += offsetX;
+            targetCoordinates.y += offsetY;
+            targetCoordinates.width *= zoom;
+            targetCoordinates.height *= zoom;
+            if (this.options.strict) {
+                if ((elementCoordinates.x >= targetCoordinates.x && elementCoordinates.x + elementCoordinates.width <= targetCoordinates.x + targetCoordinates.width) &&
+                    (elementCoordinates.y >= targetCoordinates.y && elementCoordinates.y + elementCoordinates.height <= targetCoordinates.y + targetCoordinates.height)) {
+                    matchingTargets.push(target);
+                }
+            }
+            else {
+                let elementLeft = elementCoordinates.x;
+                let elementRight = elementCoordinates.x + elementCoordinates.width;
+                let elementTop = elementCoordinates.y;
+                let elementBottom = elementCoordinates.y + elementCoordinates.height;
+                let targetLeft = targetCoordinates.x;
+                let targetRight = targetCoordinates.x + targetCoordinates.width;
+                let targetTop = targetCoordinates.y;
+                let targetBottom = targetCoordinates.y + targetCoordinates.height;
+                if (!(elementRight < targetLeft ||
+                    elementLeft > targetRight ||
+                    elementBottom < targetTop ||
+                    elementTop > targetBottom)) {
+                    matchingTargets.push(target);
+                }
+            }
         }
+        return matchingTargets;
     }
     /**
-     * Stop the animation
+     * This function will return the targets that are matching with the mouse position
+     * @param mouse The mouse position
      */
-    stop() {
-        this.continueAnimation = false;
+    getMatchingTargetsWithMousePosition(mouse) {
+        let matchingTargets = [];
+        if (this.options.shadow.enable == false || this.options.shadow.container == null) {
+            console.warn("DragAndDrop : To use useMouseFinalPosition=true, you must enable shadow and set a container");
+            return matchingTargets;
+        }
+        const container = this.options.shadow.container;
+        let xCorrected = mouse.x - container.getBoundingClientRect().left;
+        let yCorrected = mouse.y - container.getBoundingClientRect().top;
+        for (let target of this.getTargets()) {
+            if (this.isLeftTopElement(target)) {
+                if (this.matchPosition(target, { x: mouse.x, y: mouse.y })) {
+                    matchingTargets.push(target);
+                }
+            }
+            else {
+                if (this.matchPosition(target, { x: xCorrected, y: yCorrected })) {
+                    matchingTargets.push(target);
+                }
+            }
+        }
+        return matchingTargets;
+    }
+    matchPosition(element, point) {
+        let elementCoordinates = this.getBoundingBoxAbsolute(element);
+        if (point.x >= elementCoordinates.x &&
+            point.x <= elementCoordinates.x + elementCoordinates.width &&
+            point.y >= elementCoordinates.y &&
+            point.y <= elementCoordinates.y + elementCoordinates.height) {
+            return true;
+        }
+        return false;
     }
     /**
-     * Stop the animation
+     * Get element currently dragging
      */
-    immediateStop() {
-        cancelAnimationFrame(this.frame_id);
-        this.continueAnimation = false;
-        this.options.stopped();
+    getElementDrag() {
+        return this.options.element;
     }
     /**
-     * Get the FPS
+     * Set targets where to drop
      */
-    getFPS() {
-        return this.options.fps;
+    setTargets(targets) {
+        this.options.targets = targets;
     }
     /**
-     * Set the FPS
+     * Set targets where to drop
      */
-    setFPS(fps) {
-        this.options.fps = fps;
-        this.fpsInterval = 1000 / this.options.fps;
+    setTargetsFct(targets) {
+        this.options.targets = targets;
     }
     /**
-     * Get the animation status (true if animation is running)
+     * Destroy the current drag&drop instance
      */
-    isStarted() {
-        return this.continueAnimation;
+    destroy() {
+        this.pressManager.destroy();
+    }
+    isLeftTopElement(element) {
+        for (let Type of DragElementLeftTopType) {
+            if (element instanceof Type) {
+                return true;
+            }
+        }
+        return false;
+    }
+    isXYElement(element) {
+        for (let Type of DragElementXYType) {
+            if (element instanceof Type) {
+                return true;
+            }
+        }
+        return false;
+    }
+    getCoordinateFromAttribute(element) {
+        if (this.options.useTransform) {
+            const transform = element.getAttribute("transform");
+            const tvalue = transform?.match(/translate\(([^,]+),([^,]+)\)/);
+            const x = tvalue ? parseFloat(tvalue[1]) : 0;
+            const y = tvalue ? parseFloat(tvalue[2]) : 0;
+            return {
+                x: x,
+                y: y
+            };
+        }
+        return {
+            x: parseFloat(element.getAttribute("x")),
+            y: parseFloat(element.getAttribute("y"))
+        };
+    }
+    XYElementToRelativeBox(element) {
+        let coordinates = this.getCoordinateFromAttribute(element);
+        const width = parseFloat(element.getAttribute("width"));
+        const height = parseFloat(element.getAttribute("height"));
+        return {
+            x: coordinates.x,
+            y: coordinates.y,
+            width: width,
+            height: height,
+            bottom: coordinates.y + height,
+            right: coordinates.x + width,
+            top: coordinates.y,
+            left: coordinates.x,
+            toJSON() {
+                return JSON.stringify(this);
+            }
+        };
+    }
+    XYElementToAbsoluteBox(element) {
+        let coordinates = this.getCoordinateFromAttribute(element);
+        const parent = this.getOffsetParent(element);
+        if (parent) {
+            const box = parent.getBoundingClientRect();
+            coordinates = {
+                x: coordinates.x + box.x,
+                y: coordinates.y + box.y
+            };
+        }
+        const width = parseFloat(element.getAttribute("width"));
+        const height = parseFloat(element.getAttribute("height"));
+        return {
+            x: coordinates.x,
+            y: coordinates.y,
+            width: width,
+            height: height,
+            bottom: coordinates.y + height,
+            right: coordinates.x + width,
+            top: coordinates.y,
+            left: coordinates.x,
+            toJSON() {
+                return JSON.stringify(this);
+            }
+        };
+    }
+    getBoundingBoxAbsolute(element) {
+        if (this.isLeftTopElement(element)) {
+            if (element instanceof HTMLElement) {
+                const bounds = element.getBoundingClientRect();
+                return {
+                    x: bounds.x,
+                    y: bounds.y,
+                    width: bounds.width,
+                    height: bounds.height,
+                    bottom: bounds.bottom,
+                    right: bounds.right,
+                    top: bounds.top,
+                    left: bounds.left,
+                    toJSON() {
+                        return JSON.stringify(this);
+                    }
+                };
+            }
+        }
+        else if (this.isXYElement(element)) {
+            return this.XYElementToAbsoluteBox(element);
+        }
+        const parent = this.getOffsetParent(element);
+        if (parent instanceof HTMLElement) {
+            const rect = element.getBoundingClientRect();
+            const rectParent = parent.getBoundingClientRect();
+            const x = rect.left - rectParent.left;
+            const y = rect.top - rectParent.top;
+            return {
+                x: x,
+                y: y,
+                width: rect.width,
+                height: rect.height,
+                bottom: y + rect.height,
+                right: x + rect.width,
+                left: rect.left - rectParent.left,
+                top: rect.top - rectParent.top,
+                toJSON() {
+                    return JSON.stringify(this);
+                }
+            };
+        }
+        console.error("Element type not supported");
+        return {
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0,
+            bottom: 0,
+            right: 0,
+            top: 0,
+            left: 0,
+            toJSON() {
+                return JSON.stringify(this);
+            }
+        };
+    }
+    getBoundingBoxRelative(element) {
+        if (this.isLeftTopElement(element)) {
+            if (element instanceof HTMLElement) {
+                return {
+                    x: element.offsetLeft,
+                    y: element.offsetTop,
+                    width: element.offsetWidth,
+                    height: element.offsetHeight,
+                    bottom: element.offsetTop + element.offsetHeight,
+                    right: element.offsetLeft + element.offsetWidth,
+                    top: element.offsetTop,
+                    left: element.offsetLeft,
+                    toJSON() {
+                        return JSON.stringify(this);
+                    }
+                };
+            }
+        }
+        else if (this.isXYElement(element)) {
+            return this.XYElementToRelativeBox(element);
+        }
+        const parent = this.getOffsetParent(element);
+        if (parent instanceof HTMLElement) {
+            const rect = element.getBoundingClientRect();
+            const rectParent = parent.getBoundingClientRect();
+            const x = rect.left - rectParent.left;
+            const y = rect.top - rectParent.top;
+            return {
+                x: x,
+                y: y,
+                width: rect.width,
+                height: rect.height,
+                bottom: y + rect.height,
+                right: x + rect.width,
+                left: rect.left - rectParent.left,
+                top: rect.top - rectParent.top,
+                toJSON() {
+                    return JSON.stringify(this);
+                }
+            };
+        }
+        console.error("Element type not supported");
+        return {
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0,
+            bottom: 0,
+            right: 0,
+            top: 0,
+            left: 0,
+            toJSON() {
+                return JSON.stringify(this);
+            }
+        };
+    }
+    getOffsetParent(element) {
+        if (element instanceof HTMLElement) {
+            return element.offsetParent;
+        }
+        let current = element.parentNode;
+        while (current) {
+            if (current instanceof Element) {
+                const style = getComputedStyle(current);
+                if (style.position !== 'static') {
+                    return current;
+                }
+            }
+            if (current instanceof ShadowRoot) {
+                current = current.host;
+            }
+            else {
+                current = current.parentNode;
+            }
+        }
+        return null;
     }
 }
-Animation.Namespace=`Aventus`;
-__as1(_, 'Animation', Animation);
+DragAndDrop.Namespace=`Aventus`;
+__as1(_, 'DragAndDrop', DragAndDrop);
 
 let ResourceLoader=class ResourceLoader {
     static headerLoaded = {};
@@ -6200,6 +6684,94 @@ Data.$schema={"namespace":"string","$type":"string","className":"string"};
 Converter.register(Data.Fullname, Data);
 __as1(_, 'Data', Data);
 
+let Animation=class Animation {
+    /**
+     * Default FPS for all Animation if not set inside options
+     */
+    static FPS_DEFAULT = 60;
+    options;
+    nextFrame = 0;
+    fpsInterval;
+    continueAnimation = false;
+    frame_id = 0;
+    constructor(options) {
+        if (!options.animate) {
+            options.animate = () => { };
+        }
+        if (!options.stopped) {
+            options.stopped = () => { };
+        }
+        if (!options.fps) {
+            options.fps = Animation.FPS_DEFAULT;
+        }
+        this.options = options;
+        this.fpsInterval = 1000 / options.fps;
+    }
+    animate() {
+        let now = window.performance.now();
+        let elapsed = now - this.nextFrame;
+        if (elapsed <= this.fpsInterval) {
+            this.frame_id = requestAnimationFrame(() => this.animate());
+            return;
+        }
+        this.nextFrame = now - (elapsed % this.fpsInterval);
+        setTimeout(() => {
+            this.options.animate();
+        }, 0);
+        if (this.continueAnimation) {
+            this.frame_id = requestAnimationFrame(() => this.animate());
+        }
+        else {
+            this.options.stopped();
+        }
+    }
+    /**
+     * Start the of animation
+     */
+    start() {
+        if (this.continueAnimation == false) {
+            this.continueAnimation = true;
+            this.nextFrame = window.performance.now();
+            this.animate();
+        }
+    }
+    /**
+     * Stop the animation
+     */
+    stop() {
+        this.continueAnimation = false;
+    }
+    /**
+     * Stop the animation
+     */
+    immediateStop() {
+        cancelAnimationFrame(this.frame_id);
+        this.continueAnimation = false;
+        this.options.stopped();
+    }
+    /**
+     * Get the FPS
+     */
+    getFPS() {
+        return this.options.fps;
+    }
+    /**
+     * Set the FPS
+     */
+    setFPS(fps) {
+        this.options.fps = fps;
+        this.fpsInterval = 1000 / this.options.fps;
+    }
+    /**
+     * Get the animation status (true if animation is running)
+     */
+    isStarted() {
+        return this.continueAnimation;
+    }
+}
+Animation.Namespace=`Aventus`;
+__as1(_, 'Animation', Animation);
+
 let GenericError=// @Dependencies([{ type: Aventus.Converter, strong: true }, { type: Converter, strong: true }])
 class GenericError {
     static converter = new Converter();
@@ -6724,578 +7296,6 @@ let HttpRoute=class HttpRoute {
 }
 HttpRoute.Namespace=`Aventus`;
 __as1(_, 'HttpRoute', HttpRoute);
-
-let DragAndDrop=class DragAndDrop {
-    /**
-     * Default offset before drag element
-     */
-    static defaultOffsetDrag = 20;
-    pressManager;
-    options;
-    startCursorPosition = { x: 0, y: 0 };
-    startElementPosition = { x: 0, y: 0 };
-    isEnable = true;
-    draggableElement;
-    constructor(options) {
-        this.options = this.getDefaultOptions(options.element);
-        this.mergeProperties(options);
-        this.mergeFunctions(options);
-        this.options.elementTrigger.style.touchAction = 'none';
-        this.pressManager = new PressManager({
-            element: this.options.elementTrigger,
-            onPressStart: this.onPressStart.bind(this),
-            onPressEnd: this.onPressEnd.bind(this),
-            onDragStart: this.onDragStart.bind(this),
-            onDrag: this.onDrag.bind(this),
-            onDragEnd: this.onDragEnd.bind(this),
-            offsetDrag: this.options.offsetDrag,
-            dragDirection: this.options.dragDirection,
-            stopPropagation: this.options.stopPropagation
-        });
-    }
-    getDefaultOptions(element) {
-        return {
-            applyDrag: true,
-            element: element,
-            elementTrigger: element,
-            offsetDrag: DragAndDrop.defaultOffsetDrag,
-            dragDirection: 'XY',
-            shadow: {
-                enable: false,
-                container: document.body,
-                removeOnStop: true,
-                transform: () => { },
-                delete: (el) => {
-                    el.remove();
-                }
-            },
-            strict: false,
-            targets: [],
-            usePercent: false,
-            stopPropagation: true,
-            useMouseFinalPosition: false,
-            useTransform: false,
-            isDragEnable: () => true,
-            getZoom: () => 1,
-            getOffsetX: () => 0,
-            getOffsetY: () => 0,
-            onPointerDown: (e) => { },
-            onPointerUp: (e) => { },
-            onStart: (e) => { },
-            onMove: (e) => { },
-            onStop: (e) => { },
-            onDrop: (element, targets) => { },
-            correctPosition: (position) => position
-        };
-    }
-    mergeProperties(options) {
-        if (options.element === void 0) {
-            throw "You must define the element for the drag&drop";
-        }
-        this.options.element = options.element;
-        if (options.elementTrigger === void 0) {
-            this.options.elementTrigger = this.options.element;
-        }
-        else {
-            this.options.elementTrigger = options.elementTrigger;
-        }
-        this.defaultMerge(options, "applyDrag");
-        this.defaultMerge(options, "offsetDrag");
-        this.defaultMerge(options, "dragDirection");
-        this.defaultMerge(options, "strict");
-        this.defaultMerge(options, "targets");
-        this.defaultMerge(options, "usePercent");
-        this.defaultMerge(options, "stopPropagation");
-        this.defaultMerge(options, "useMouseFinalPosition");
-        this.defaultMerge(options, "useTransform");
-        if (options.shadow !== void 0) {
-            this.options.shadow.enable = options.shadow.enable;
-            if (options.shadow.container !== void 0) {
-                this.options.shadow.container = options.shadow.container;
-            }
-            else {
-                this.options.shadow.container = document.body;
-            }
-            if (options.shadow.removeOnStop !== void 0) {
-                this.options.shadow.removeOnStop = options.shadow.removeOnStop;
-            }
-            if (options.shadow.transform !== void 0) {
-                this.options.shadow.transform = options.shadow.transform;
-            }
-            if (options.shadow.delete !== void 0) {
-                this.options.shadow.delete = options.shadow.delete;
-            }
-        }
-    }
-    mergeFunctions(options) {
-        this.defaultMerge(options, "isDragEnable");
-        this.defaultMerge(options, "getZoom");
-        this.defaultMerge(options, "getOffsetX");
-        this.defaultMerge(options, "getOffsetY");
-        this.defaultMerge(options, "onPointerDown");
-        this.defaultMerge(options, "onPointerUp");
-        this.defaultMerge(options, "onStart");
-        this.defaultMerge(options, "onMove");
-        this.defaultMerge(options, "onStop");
-        this.defaultMerge(options, "onDrop");
-        this.defaultMerge(options, "correctPosition");
-    }
-    defaultMerge(options, name) {
-        if (options[name] !== void 0) {
-            const opts = this.options;
-            opts[name] = options[name];
-        }
-    }
-    positionShadowRelativeToElement = { x: 0, y: 0 };
-    onPressStart(e) {
-        this.options.onPointerDown(e);
-    }
-    onPressEnd(e) {
-        this.options.onPointerUp(e);
-    }
-    onDragStart(e) {
-        this.isEnable = this.options.isDragEnable();
-        if (!this.isEnable) {
-            return false;
-        }
-        let draggableElement = this.options.element;
-        this.startCursorPosition = {
-            x: e.pageX,
-            y: e.pageY
-        };
-        this.startElementPosition = this.getBoundingBoxRelative(draggableElement);
-        if (this.options.shadow.enable) {
-            draggableElement = this.options.element.cloneNode(true);
-            let elBox = this.options.element.getBoundingClientRect();
-            let containerBox = this.options.shadow.container.getBoundingClientRect();
-            this.positionShadowRelativeToElement = {
-                x: elBox.x - containerBox.x,
-                y: elBox.y - containerBox.y
-            };
-            if (this.options.applyDrag) {
-                draggableElement.style.position = "absolute";
-                draggableElement.style.top = this.positionShadowRelativeToElement.y + this.options.getOffsetY() + 'px';
-                draggableElement.style.left = this.positionShadowRelativeToElement.x + this.options.getOffsetX() + 'px';
-                this.options.shadow.transform(draggableElement);
-                this.options.shadow.container.appendChild(draggableElement);
-            }
-        }
-        this.draggableElement = draggableElement;
-        const result = this.options.onStart(e);
-        if (result !== false) {
-            document.body.style.userSelect = 'none';
-            if (window.getSelection) {
-                window.getSelection()?.removeAllRanges();
-            }
-        }
-        return result;
-    }
-    onDrag(e) {
-        if (!this.isEnable) {
-            return;
-        }
-        let zoom = this.options.getZoom();
-        let diff = {
-            x: 0,
-            y: 0
-        };
-        if (this.options.shadow.enable) {
-            diff = {
-                x: (e.pageX - this.startCursorPosition.x) + this.positionShadowRelativeToElement.x + this.options.getOffsetX(),
-                y: (e.pageY - this.startCursorPosition.y) + this.positionShadowRelativeToElement.y + this.options.getOffsetY(),
-            };
-        }
-        else {
-            diff = {
-                x: (e.pageX - this.startCursorPosition.x) / zoom + this.startElementPosition.x + this.options.getOffsetX(),
-                y: (e.pageY - this.startCursorPosition.y) / zoom + this.startElementPosition.y + this.options.getOffsetY()
-            };
-        }
-        let newPos = this.setPosition(diff);
-        this.options.onMove(e, newPos);
-    }
-    onDragEnd(e) {
-        if (!this.isEnable) {
-            return;
-        }
-        document.body.style.userSelect = '';
-        let targets = this.options.useMouseFinalPosition ? this.getMatchingTargetsWithMousePosition({
-            x: e.clientX,
-            y: e.clientY
-        }) : this.getMatchingTargets();
-        let draggableElement = this.draggableElement;
-        if (this.options.shadow.enable && this.options.shadow.removeOnStop) {
-            this.options.shadow.delete(draggableElement);
-        }
-        if (targets.length > 0) {
-            this.options.onDrop(this.options.element, targets);
-        }
-        this.options.onStop(e);
-    }
-    setPosition(position) {
-        let draggableElement = this.draggableElement;
-        if (this.options.usePercent) {
-            let elementParent = this.getOffsetParent(draggableElement);
-            if (elementParent instanceof HTMLElement) {
-                let percentPosition = {
-                    x: (position.x / elementParent.offsetWidth) * 100,
-                    y: (position.y / elementParent.offsetHeight) * 100
-                };
-                percentPosition = this.options.correctPosition(percentPosition);
-                if (this.options.applyDrag) {
-                    draggableElement.style.left = percentPosition.x + '%';
-                    draggableElement.style.top = percentPosition.y + '%';
-                }
-                return percentPosition;
-            }
-            else {
-                console.error("Can't find parent. Contact an admin", draggableElement);
-            }
-        }
-        else {
-            position = this.options.correctPosition(position);
-            if (this.options.applyDrag) {
-                if (this.isLeftTopElement(draggableElement)) {
-                    draggableElement.style.left = position.x + 'px';
-                    draggableElement.style.top = position.y + 'px';
-                }
-                else {
-                    if (this.options.useTransform) {
-                        draggableElement.setAttribute("transform", `translate(${position.x},${position.y})`);
-                    }
-                    else {
-                        draggableElement.style.left = position.x + 'px';
-                        draggableElement.style.top = position.y + 'px';
-                    }
-                }
-            }
-        }
-        return position;
-    }
-    getTargets() {
-        if (typeof this.options.targets == "function") {
-            return this.options.targets();
-        }
-        else {
-            return this.options.targets;
-        }
-    }
-    /**
-     * Get targets within the current element position is matching
-     */
-    getMatchingTargets() {
-        let draggableElement = this.draggableElement;
-        let matchingTargets = [];
-        let srcTargets = this.getTargets();
-        for (let target of srcTargets) {
-            let elementCoordinates = this.getBoundingBoxAbsolute(draggableElement);
-            let targetCoordinates = this.getBoundingBoxAbsolute(target);
-            let offsetX = this.options.getOffsetX();
-            let offsetY = this.options.getOffsetY();
-            let zoom = this.options.getZoom();
-            targetCoordinates.x += offsetX;
-            targetCoordinates.y += offsetY;
-            targetCoordinates.width *= zoom;
-            targetCoordinates.height *= zoom;
-            if (this.options.strict) {
-                if ((elementCoordinates.x >= targetCoordinates.x && elementCoordinates.x + elementCoordinates.width <= targetCoordinates.x + targetCoordinates.width) &&
-                    (elementCoordinates.y >= targetCoordinates.y && elementCoordinates.y + elementCoordinates.height <= targetCoordinates.y + targetCoordinates.height)) {
-                    matchingTargets.push(target);
-                }
-            }
-            else {
-                let elementLeft = elementCoordinates.x;
-                let elementRight = elementCoordinates.x + elementCoordinates.width;
-                let elementTop = elementCoordinates.y;
-                let elementBottom = elementCoordinates.y + elementCoordinates.height;
-                let targetLeft = targetCoordinates.x;
-                let targetRight = targetCoordinates.x + targetCoordinates.width;
-                let targetTop = targetCoordinates.y;
-                let targetBottom = targetCoordinates.y + targetCoordinates.height;
-                if (!(elementRight < targetLeft ||
-                    elementLeft > targetRight ||
-                    elementBottom < targetTop ||
-                    elementTop > targetBottom)) {
-                    matchingTargets.push(target);
-                }
-            }
-        }
-        return matchingTargets;
-    }
-    /**
-     * This function will return the targets that are matching with the mouse position
-     * @param mouse The mouse position
-     */
-    getMatchingTargetsWithMousePosition(mouse) {
-        let matchingTargets = [];
-        if (this.options.shadow.enable == false || this.options.shadow.container == null) {
-            console.warn("DragAndDrop : To use useMouseFinalPosition=true, you must enable shadow and set a container");
-            return matchingTargets;
-        }
-        const container = this.options.shadow.container;
-        let xCorrected = mouse.x - container.getBoundingClientRect().left;
-        let yCorrected = mouse.y - container.getBoundingClientRect().top;
-        for (let target of this.getTargets()) {
-            if (this.isLeftTopElement(target)) {
-                if (this.matchPosition(target, { x: mouse.x, y: mouse.y })) {
-                    matchingTargets.push(target);
-                }
-            }
-            else {
-                if (this.matchPosition(target, { x: xCorrected, y: yCorrected })) {
-                    matchingTargets.push(target);
-                }
-            }
-        }
-        return matchingTargets;
-    }
-    matchPosition(element, point) {
-        let elementCoordinates = this.getBoundingBoxAbsolute(element);
-        if (point.x >= elementCoordinates.x &&
-            point.x <= elementCoordinates.x + elementCoordinates.width &&
-            point.y >= elementCoordinates.y &&
-            point.y <= elementCoordinates.y + elementCoordinates.height) {
-            return true;
-        }
-        return false;
-    }
-    /**
-     * Get element currently dragging
-     */
-    getElementDrag() {
-        return this.options.element;
-    }
-    /**
-     * Set targets where to drop
-     */
-    setTargets(targets) {
-        this.options.targets = targets;
-    }
-    /**
-     * Set targets where to drop
-     */
-    setTargetsFct(targets) {
-        this.options.targets = targets;
-    }
-    /**
-     * Destroy the current drag&drop instance
-     */
-    destroy() {
-        this.pressManager.destroy();
-    }
-    isLeftTopElement(element) {
-        for (let Type of DragElementLeftTopType) {
-            if (element instanceof Type) {
-                return true;
-            }
-        }
-        return false;
-    }
-    isXYElement(element) {
-        for (let Type of DragElementXYType) {
-            if (element instanceof Type) {
-                return true;
-            }
-        }
-        return false;
-    }
-    getCoordinateFromAttribute(element) {
-        if (this.options.useTransform) {
-            const transform = element.getAttribute("transform");
-            const tvalue = transform?.match(/translate\(([^,]+),([^,]+)\)/);
-            const x = tvalue ? parseFloat(tvalue[1]) : 0;
-            const y = tvalue ? parseFloat(tvalue[2]) : 0;
-            return {
-                x: x,
-                y: y
-            };
-        }
-        return {
-            x: parseFloat(element.getAttribute("x")),
-            y: parseFloat(element.getAttribute("y"))
-        };
-    }
-    XYElementToRelativeBox(element) {
-        let coordinates = this.getCoordinateFromAttribute(element);
-        const width = parseFloat(element.getAttribute("width"));
-        const height = parseFloat(element.getAttribute("height"));
-        return {
-            x: coordinates.x,
-            y: coordinates.y,
-            width: width,
-            height: height,
-            bottom: coordinates.y + height,
-            right: coordinates.x + width,
-            top: coordinates.y,
-            left: coordinates.x,
-            toJSON() {
-                return JSON.stringify(this);
-            }
-        };
-    }
-    XYElementToAbsoluteBox(element) {
-        let coordinates = this.getCoordinateFromAttribute(element);
-        const parent = this.getOffsetParent(element);
-        if (parent) {
-            const box = parent.getBoundingClientRect();
-            coordinates = {
-                x: coordinates.x + box.x,
-                y: coordinates.y + box.y
-            };
-        }
-        const width = parseFloat(element.getAttribute("width"));
-        const height = parseFloat(element.getAttribute("height"));
-        return {
-            x: coordinates.x,
-            y: coordinates.y,
-            width: width,
-            height: height,
-            bottom: coordinates.y + height,
-            right: coordinates.x + width,
-            top: coordinates.y,
-            left: coordinates.x,
-            toJSON() {
-                return JSON.stringify(this);
-            }
-        };
-    }
-    getBoundingBoxAbsolute(element) {
-        if (this.isLeftTopElement(element)) {
-            if (element instanceof HTMLElement) {
-                const bounds = element.getBoundingClientRect();
-                return {
-                    x: bounds.x,
-                    y: bounds.y,
-                    width: bounds.width,
-                    height: bounds.height,
-                    bottom: bounds.bottom,
-                    right: bounds.right,
-                    top: bounds.top,
-                    left: bounds.left,
-                    toJSON() {
-                        return JSON.stringify(this);
-                    }
-                };
-            }
-        }
-        else if (this.isXYElement(element)) {
-            return this.XYElementToAbsoluteBox(element);
-        }
-        const parent = this.getOffsetParent(element);
-        if (parent instanceof HTMLElement) {
-            const rect = element.getBoundingClientRect();
-            const rectParent = parent.getBoundingClientRect();
-            const x = rect.left - rectParent.left;
-            const y = rect.top - rectParent.top;
-            return {
-                x: x,
-                y: y,
-                width: rect.width,
-                height: rect.height,
-                bottom: y + rect.height,
-                right: x + rect.width,
-                left: rect.left - rectParent.left,
-                top: rect.top - rectParent.top,
-                toJSON() {
-                    return JSON.stringify(this);
-                }
-            };
-        }
-        console.error("Element type not supported");
-        return {
-            x: 0,
-            y: 0,
-            width: 0,
-            height: 0,
-            bottom: 0,
-            right: 0,
-            top: 0,
-            left: 0,
-            toJSON() {
-                return JSON.stringify(this);
-            }
-        };
-    }
-    getBoundingBoxRelative(element) {
-        if (this.isLeftTopElement(element)) {
-            if (element instanceof HTMLElement) {
-                return {
-                    x: element.offsetLeft,
-                    y: element.offsetTop,
-                    width: element.offsetWidth,
-                    height: element.offsetHeight,
-                    bottom: element.offsetTop + element.offsetHeight,
-                    right: element.offsetLeft + element.offsetWidth,
-                    top: element.offsetTop,
-                    left: element.offsetLeft,
-                    toJSON() {
-                        return JSON.stringify(this);
-                    }
-                };
-            }
-        }
-        else if (this.isXYElement(element)) {
-            return this.XYElementToRelativeBox(element);
-        }
-        const parent = this.getOffsetParent(element);
-        if (parent instanceof HTMLElement) {
-            const rect = element.getBoundingClientRect();
-            const rectParent = parent.getBoundingClientRect();
-            const x = rect.left - rectParent.left;
-            const y = rect.top - rectParent.top;
-            return {
-                x: x,
-                y: y,
-                width: rect.width,
-                height: rect.height,
-                bottom: y + rect.height,
-                right: x + rect.width,
-                left: rect.left - rectParent.left,
-                top: rect.top - rectParent.top,
-                toJSON() {
-                    return JSON.stringify(this);
-                }
-            };
-        }
-        console.error("Element type not supported");
-        return {
-            x: 0,
-            y: 0,
-            width: 0,
-            height: 0,
-            bottom: 0,
-            right: 0,
-            top: 0,
-            left: 0,
-            toJSON() {
-                return JSON.stringify(this);
-            }
-        };
-    }
-    getOffsetParent(element) {
-        if (element instanceof HTMLElement) {
-            return element.offsetParent;
-        }
-        let current = element.parentNode;
-        while (current) {
-            if (current instanceof Element) {
-                const style = getComputedStyle(current);
-                if (style.position !== 'static') {
-                    return current;
-                }
-            }
-            if (current instanceof ShadowRoot) {
-                current = current.host;
-            }
-            else {
-                current = current.parentNode;
-            }
-        }
-        return null;
-    }
-}
-DragAndDrop.Namespace=`Aventus`;
-__as1(_, 'DragAndDrop', DragAndDrop);
 
 
 for(let key in _) { Aventus[key] = _[key] }
@@ -8006,72 +8006,559 @@ Layout.Row.Tag=`av-row`;
 __as1(_.Layout, 'Row', Layout.Row);
 if(!window.customElements.get('av-row')){window.customElements.define('av-row', Layout.Row);Aventus.WebComponentInstance.registerDefinition(Layout.Row);}
 
-let Tracker=class Tracker {
-    /**
-     * Multiplier for velocity calculations based on device pixel ratio.
-     */
-    velocityMultiplier = window.devicePixelRatio;
-    /**
-     * Timestamp of the last update.
-     */
-    updateTime = performance.now();
-    /**
-     * Change in position since the last update.
-     */
-    delta = { x: 0, y: 0 };
-    /**
-     * Current velocity of the tracker.
-     */
-    velocity = { x: 0, y: 0 };
-    /**
-     * Last recorded position.
-     */
-    lastPosition = { x: 0, y: 0 };
-    /**
-     * Initializes a new Tracker instance.
-     */
-    constructor(touch) {
-        this.lastPosition = this.getPosition(touch);
+Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
+    static get observedAttributes() {return ["zoom"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'y_scroll_visible'() { return this.getBoolAttr('y_scroll_visible') }
+    set 'y_scroll_visible'(val) { this.setBoolAttr('y_scroll_visible', val) }
+get 'x_scroll_visible'() { return this.getBoolAttr('x_scroll_visible') }
+    set 'x_scroll_visible'(val) { this.setBoolAttr('x_scroll_visible', val) }
+get 'floating_scroll'() { return this.getBoolAttr('floating_scroll') }
+    set 'floating_scroll'(val) { this.setBoolAttr('floating_scroll', val) }
+get 'x_scroll'() { return this.getBoolAttr('x_scroll') }
+    set 'x_scroll'(val) { this.setBoolAttr('x_scroll', val) }
+get 'y_scroll'() { return this.getBoolAttr('y_scroll') }
+    set 'y_scroll'(val) { this.setBoolAttr('y_scroll', val) }
+get 'auto_hide'() { return this.getBoolAttr('auto_hide') }
+    set 'auto_hide'(val) { this.setBoolAttr('auto_hide', val) }
+get 'disable'() { return this.getBoolAttr('disable') }
+    set 'disable'(val) { this.setBoolAttr('disable', val) }
+get 'no_user_select'() { return this.getBoolAttr('no_user_select') }
+    set 'no_user_select'(val) { this.setBoolAttr('no_user_select', val) }
+get 'mouse_drag'() { return this.getBoolAttr('mouse_drag') }
+    set 'mouse_drag'(val) { this.setBoolAttr('mouse_drag', val) }
+    get 'zoom'() { return this.getNumberProp('zoom') }
+    set 'zoom'(val) { this.setNumberAttr('zoom', val) }
+    get 'allowResizeObserver'() {
+						return this.__signals["allowResizeObserver"].value;
+					}
+					set 'allowResizeObserver'(val) {
+						this.__signals["allowResizeObserver"].value = val;
+					}
+    observer;
+    contentWrapperSize = { x: 0, y: 0 };
+    display = { x: 0, y: 0 };
+    margin = {
+        x: 0,
+        y: 0
+    };
+    scroller = {
+        x: () => {
+            if (!this.horizontalScroller) {
+                throw 'can\'t find the horizontalScroller';
+            }
+            return this.horizontalScroller;
+        },
+        y: () => {
+            if (!this.verticalScroller) {
+                throw 'can\'t find the verticalScroller';
+            }
+            return this.verticalScroller;
+        }
+    };
+    max = {
+        x: 0,
+        y: 0
+    };
+    hideDelay = { x: 0, y: 0 };
+    get x() {
+        return this.contentHidder.scrollLeft;
     }
-    /**
-     * Updates the tracker's position, delta, and velocity.
-     */
-    update(touch) {
-        const { velocity, updateTime, lastPosition, } = this;
-        const now = performance.now();
-        const position = this.getPosition(touch);
-        const delta = {
-            x: -(position.x - lastPosition.x),
-            y: -(position.y - lastPosition.y),
-        };
-        const duration = (now - updateTime) || 16.7;
-        const vx = delta.x / duration * 16.7;
-        const vy = delta.y / duration * 16.7;
-        velocity.x = vx * this.velocityMultiplier;
-        velocity.y = vy * this.velocityMultiplier;
-        this.delta = delta;
-        this.updateTime = now;
-        this.lastPosition = position;
+    get y() {
+        return this.contentHidder.scrollTop;
     }
-    /**
-     * Extracts pointer data from a given event.
-     */
-    getPointerData(evt) {
-        return evt.touches ? evt.touches[evt.touches.length - 1] : evt;
+    get xMax() {
+        return this.max.x;
     }
-    /**
-     * Retrieves the client coordinates from a pointer event.
-     */
-    getPosition(evt) {
-        const data = this.getPointerData(evt);
-        return {
-            x: data.clientX,
-            y: data.clientY,
-        };
+    get yMax() {
+        return this.max.y;
+    }
+    scrollTimeout = 0;
+    onScrollChange = new Aventus.Callback();
+    onZoomChange = new Aventus.Callback();
+    __registerSignalsActions() { this.__signals["allowResizeObserver"] = null;
+ super.__registerSignalsActions(); this.__addSignalActions("allowResizeObserver", ((target) => {
+    if (target.allowResizeObserver) {
+        target.dimensionRefreshed();
+    }
+}));
+ }
+    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("zoom", ((target) => {
+    target.changeZoom();
+}));
+ }
+    static __style = `:host{--_scrollbar-container-color: var(--scrollbar-container-color, transparent);--_scrollbar-color: var(--scrollbar-color, #757575);--_scrollbar-active-color: var(--scrollbar-active-color, #858585);--_scroller-width: var(--scroller-width, 6px);--_scroller-top: var(--scroller-top, 3px);--_scroller-bottom: var(--scroller-bottom, 3px);--_scroller-right: var(--scroller-right, 3px);--_scroller-left: var(--scroller-left, 3px);--_scrollbar-content-padding: var(--scrollbar-content-padding, 0);--_scrollbar-container-display: var(--scrollbar-container-display, inline-block)}:host{display:block;height:100%;min-height:inherit;min-width:inherit;overflow:clip;position:relative;-webkit-user-drag:none;-khtml-user-drag:none;-moz-user-drag:none;-o-user-drag:none;width:100%}:host .scroll-main-container{display:block;height:100%;min-height:inherit;min-width:inherit;position:relative;width:100%}:host .scroll-main-container .content-zoom{display:block;height:100%;min-height:inherit;min-width:inherit;position:relative;transform-origin:0 0;width:100%;z-index:4}:host .scroll-main-container .content-zoom .content-hidder{display:block;height:100%;min-height:inherit;min-width:inherit;overflow:auto;-webkit-overflow-scrolling:touch;-ms-overflow-style:none;position:relative;scrollbar-width:none;width:100%}:host .scroll-main-container .content-zoom .content-hidder::-webkit-scrollbar{display:none}:host .scroll-main-container .content-zoom .content-hidder .content-wrapper{display:var(--_scrollbar-container-display);height:100%;min-height:inherit;min-width:inherit;padding:var(--_scrollbar-content-padding);position:relative;width:100%}:host .scroll-main-container .scroller-wrapper .container-scroller{display:none;overflow:hidden;position:absolute;transition:transform .2s linear;z-index:5}:host .scroll-main-container .scroller-wrapper .container-scroller .shadow-scroller{background-color:var(--_scrollbar-container-color);border-radius:5px}:host .scroll-main-container .scroller-wrapper .container-scroller .shadow-scroller .scroller{background-color:var(--_scrollbar-color);border-radius:5px;cursor:pointer;position:absolute;-webkit-tap-highlight-color:rgba(0,0,0,0);touch-action:none;z-index:5}:host .scroll-main-container .scroller-wrapper .container-scroller .scroller.active{background-color:var(--_scrollbar-active-color)}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical{height:calc(100% - var(--_scroller-bottom)*2 - var(--_scroller-width));padding-left:var(--_scroller-left);right:var(--_scroller-right);top:var(--_scroller-bottom);transform:0;width:calc(var(--_scroller-width) + var(--_scroller-left))}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical.hide{transform:translateX(calc(var(--_scroller-width) + var(--_scroller-left)))}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical .shadow-scroller{height:100%}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical .shadow-scroller .scroller{width:calc(100% - var(--_scroller-left))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal{bottom:var(--_scroller-bottom);height:calc(var(--_scroller-width) + var(--_scroller-top));left:var(--_scroller-right);padding-top:var(--_scroller-top);transform:0;width:calc(100% - var(--_scroller-right)*2 - var(--_scroller-width))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal.hide{transform:translateY(calc(var(--_scroller-width) + var(--_scroller-top)))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal .shadow-scroller{height:100%}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal .shadow-scroller .scroller{height:calc(100% - var(--_scroller-top))}:host([y_scroll]) .scroll-main-container .content-zoom .content-hidder .content-wrapper{height:auto}:host([x_scroll]) .scroll-main-container .content-zoom .content-hidder .content-wrapper{width:auto}:host([y_scroll_visible]) .scroll-main-container .scroller-wrapper .container-scroller.vertical{display:block}:host([x_scroll_visible]) .scroll-main-container .scroller-wrapper .container-scroller.horizontal{display:block}:host([no_user_select]) .content-wrapper *{user-select:none}:host([no_user_select]) ::slotted{user-select:none}:host([flex]){display:flex;flex-direction:column;min-height:0}:host([flex]) .scroll-main-container{display:flex;flex-direction:column}:host([flex]) .scroll-main-container .content-zoom{display:flex;flex-direction:column}:host([disable]) .scroll-main-container .content-zoom .content-hidder{overflow:hidden}:host([disable]) .scroll-main-container .scroller-wrapper{display:none}:host([is_scrolling]) .content-wrapper{pointer-events:none}`;
+    __getStatic() {
+        return Scrollable;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Scrollable.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<div class="scroll-main-container" _id="scrollable_0">
+    <div class="content-zoom" _id="scrollable_1">
+        <div class="content-hidder" _id="scrollable_2">
+            <div class="content-wrapper" part="content-wrapper" _id="scrollable_3">
+                <slot></slot>
+            </div>
+        </div>
+    </div>
+    <div class="scroller-wrapper">
+        <div class="container-scroller vertical" _id="scrollable_4">
+            <div class="shadow-scroller">
+                <div class="scroller" _id="scrollable_5"></div>
+            </div>
+        </div>
+        <div class="container-scroller horizontal" _id="scrollable_6">
+            <div class="shadow-scroller">
+                <div class="scroller" _id="scrollable_7"></div>
+            </div>
+        </div>
+    </div>
+</div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "mainContainer",
+      "ids": [
+        "scrollable_0"
+      ]
+    },
+    {
+      "name": "contentZoom",
+      "ids": [
+        "scrollable_1"
+      ]
+    },
+    {
+      "name": "contentHidder",
+      "ids": [
+        "scrollable_2"
+      ]
+    },
+    {
+      "name": "contentWrapper",
+      "ids": [
+        "scrollable_3"
+      ]
+    },
+    {
+      "name": "verticalScrollerContainer",
+      "ids": [
+        "scrollable_4"
+      ]
+    },
+    {
+      "name": "verticalScroller",
+      "ids": [
+        "scrollable_5"
+      ]
+    },
+    {
+      "name": "horizontalScrollerContainer",
+      "ids": [
+        "scrollable_6"
+      ]
+    },
+    {
+      "name": "horizontalScroller",
+      "ids": [
+        "scrollable_7"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "eventName": "scroll",
+      "id": "scrollable_2",
+      "fct": (e, c) => c.comp.onScrollEvent(e)
+    }
+  ]
+});
+ }
+    getClassName() {
+        return "Scrollable";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('y_scroll_visible')) { this.attributeChangedCallback('y_scroll_visible', false, false); }
+if(!this.hasAttribute('x_scroll_visible')) { this.attributeChangedCallback('x_scroll_visible', false, false); }
+if(!this.hasAttribute('floating_scroll')) { this.attributeChangedCallback('floating_scroll', false, false); }
+if(!this.hasAttribute('x_scroll')) { this.attributeChangedCallback('x_scroll', false, false); }
+if(!this.hasAttribute('y_scroll')) {this.setAttribute('y_scroll' ,'true'); }
+if(!this.hasAttribute('auto_hide')) { this.attributeChangedCallback('auto_hide', false, false); }
+if(!this.hasAttribute('disable')) { this.attributeChangedCallback('disable', false, false); }
+if(!this.hasAttribute('no_user_select')) { this.attributeChangedCallback('no_user_select', false, false); }
+if(!this.hasAttribute('mouse_drag')) { this.attributeChangedCallback('mouse_drag', false, false); }
+if(!this.hasAttribute('zoom')){ this['zoom'] = 1; }
+ }
+    __defaultValuesSignal(s) { super.__defaultValuesSignal(s); s["allowResizeObserver"] = true;
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('x');
+this.__correctGetter('y');
+this.__correctGetter('xMax');
+this.__correctGetter('yMax');
+this.__upgradeProperty('y_scroll_visible');
+this.__upgradeProperty('x_scroll_visible');
+this.__upgradeProperty('floating_scroll');
+this.__upgradeProperty('x_scroll');
+this.__upgradeProperty('y_scroll');
+this.__upgradeProperty('auto_hide');
+this.__upgradeProperty('disable');
+this.__upgradeProperty('no_user_select');
+this.__upgradeProperty('mouse_drag');
+this.__upgradeProperty('zoom');
+this.__correctGetter('allowResizeObserver');
+ }
+    __listBoolProps() { return ["y_scroll_visible","x_scroll_visible","floating_scroll","x_scroll","y_scroll","auto_hide","disable","no_user_select","mouse_drag"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    calculateRealSize() {
+        if (!this.contentZoom || !this.mainContainer || !this.contentWrapper) {
+            return false;
+        }
+        const currentOffsetWidth = this.contentZoom.offsetWidth;
+        const currentOffsetHeight = this.contentZoom.offsetHeight;
+        let hasChanged = false;
+        if (this.contentWrapper.offsetWidth != this.contentWrapperSize.x || this.contentWrapper.offsetHeight != this.contentWrapperSize.y)
+            hasChanged = true;
+        this.contentWrapperSize.x = this.contentWrapper.offsetWidth;
+        this.contentWrapperSize.y = this.contentWrapper.offsetHeight;
+        if (this.zoom < 1) {
+            // scale the container for zoom
+            this.contentZoom.style.width = this.div(this.mainContainer.offsetWidth, this.zoom) + 'px';
+            this.contentZoom.style.height = this.div(this.mainContainer.offsetHeight, this.zoom) + 'px';
+            this.contentZoom.style.maxHeight = this.div(this.mainContainer.offsetHeight, this.zoom) + 'px';
+            if (currentOffsetHeight != this.display.y || currentOffsetWidth != this.display.x)
+                hasChanged = true;
+            this.display.y = currentOffsetHeight;
+            this.display.x = currentOffsetWidth;
+        }
+        else {
+            const newX = this.div(currentOffsetWidth, this.zoom);
+            const newY = this.div(currentOffsetHeight, this.zoom);
+            if (newY != this.display.y || newX != this.display.x)
+                hasChanged = true;
+            this.display.y = newY;
+            this.display.x = newX;
+            this.contentZoom.style.width = '';
+            this.contentZoom.style.height = '';
+            this.contentZoom.style.maxHeight = '';
+        }
+        return hasChanged;
+    }
+    calculatePositionScrollerContainer(direction) {
+        if (direction == 'y') {
+            this.calculatePositionScrollerContainerY();
+        }
+        else {
+            this.calculatePositionScrollerContainerX();
+        }
+    }
+    calculatePositionScrollerContainerY() {
+        const leftMissing = this.mainContainer.offsetWidth - this.verticalScrollerContainer.offsetLeft;
+        if (leftMissing > 0 && this.y_scroll_visible && !this.floating_scroll) {
+            this.contentHidder.style.width = 'calc(100% - ' + leftMissing + 'px)';
+            this.contentHidder.style.marginRight = leftMissing + 'px';
+            this.margin.x = leftMissing;
+        }
+        else {
+            this.contentHidder.style.width = '';
+            this.contentHidder.style.marginRight = '';
+            this.margin.x = 0;
+        }
+    }
+    calculatePositionScrollerContainerX() {
+        const topMissing = this.mainContainer.offsetHeight - this.horizontalScrollerContainer.offsetTop;
+        if (topMissing > 0 && this.x_scroll_visible && !this.floating_scroll) {
+            this.contentHidder.style.height = 'calc(100% - ' + topMissing + 'px)';
+            this.contentHidder.style.marginBottom = topMissing + 'px';
+            this.margin.y = topMissing;
+        }
+        else {
+            this.contentHidder.style.height = '';
+            this.contentHidder.style.marginBottom = '';
+            this.margin.y = 0;
+        }
+    }
+    calculateSizeScroller(direction) {
+        const scrollerSize = (this.div((this.display[direction] - this.margin[direction]), this.contentWrapperSize[direction]) * 100);
+        if (direction == "y") {
+            this.scroller[direction]().style.height = scrollerSize + '%';
+        }
+        else {
+            this.scroller[direction]().style.width = scrollerSize + '%';
+        }
+        let maxScrollContent = this.contentWrapperSize[direction] - this.display[direction];
+        if (maxScrollContent < 0) {
+            maxScrollContent = 0;
+        }
+        this.max[direction] = maxScrollContent + this.margin[direction];
+    }
+    changeZoom() {
+        this.contentZoom.style.transform = 'scale(' + this.zoom + ')';
+        this.dimensionRefreshed(true);
+    }
+    dimensionRefreshed(force = false) {
+        if (!this.calculateRealSize() && !force) {
+            return;
+        }
+        if (this.contentWrapperSize.y - this.display.y > 0) {
+            if (!this.y_scroll_visible) {
+                this.y_scroll_visible = true;
+                this.calculatePositionScrollerContainer('y');
+            }
+            this.calculateSizeScroller('y');
+        }
+        else if (this.y_scroll_visible) {
+            this.y_scroll_visible = false;
+            this.calculatePositionScrollerContainer('y');
+            this.calculateSizeScroller('y');
+        }
+        if (this.contentWrapperSize.x - this.display.x > 0) {
+            if (!this.x_scroll_visible) {
+                this.x_scroll_visible = true;
+                this.calculatePositionScrollerContainer('x');
+            }
+            this.calculateSizeScroller('x');
+        }
+        else if (this.x_scroll_visible) {
+            this.x_scroll_visible = false;
+            this.calculatePositionScrollerContainer('x');
+            this.calculateSizeScroller('x');
+        }
+    }
+    createResizeObserver() {
+        let inProgress = false;
+        return new Aventus.ResizeObserver({
+            callback: entries => {
+                if (inProgress) {
+                    return;
+                }
+                if (!this.allowResizeObserver)
+                    return;
+                inProgress = true;
+                this.dimensionRefreshed();
+                inProgress = false;
+            },
+            fps: 30
+        });
+    }
+    addResizeObserver() {
+        if (this.observer == undefined) {
+            this.observer = this.createResizeObserver();
+        }
+        this.observer.observe(this.contentWrapper);
+        this.observer.observe(this);
+    }
+    onScrollEvent(e) {
+        this.calculatePosition();
+        window.dispatchEvent(new CustomEvent("scroll", { detail: { source: this } }));
+    }
+    calculatePosition() {
+        if (!this.hasAttribute('is-scrolling')) {
+            this.setAttribute('is-scrolling', '');
+        }
+        const container = this.contentHidder;
+        // Calcul de la position verticale
+        if (this.y_scroll_visible) {
+            const scrollTop = container.scrollTop;
+            const scrollHeight = container.scrollHeight;
+            const clientHeight = container.clientHeight;
+            // Ratio de déplacement (0 à 1)
+            const scrollPercentY = scrollTop / (scrollHeight - clientHeight);
+            // Taille disponible dans le conteneur de la scrollbar
+            const trackHeight = this.verticalScrollerContainer.offsetHeight;
+            const thumbHeight = this.verticalScroller.offsetHeight;
+            const maxMoveY = trackHeight - thumbHeight;
+            // Application de la transformation
+            const translateY = scrollPercentY * maxMoveY;
+            this.verticalScroller.style.transform = `translateY(${translateY}px)`;
+            if (this.auto_hide) {
+                this.verticalScrollerContainer.classList.remove("hide");
+                clearTimeout(this.hideDelay['y']);
+                this.hideDelay['y'] = setTimeout(() => {
+                    this.verticalScrollerContainer.classList.add("hide");
+                }, 1000);
+            }
+        }
+        // Calcul de la position horizontale
+        if (this.x_scroll_visible) {
+            const scrollLeft = container.scrollLeft;
+            const scrollWidth = container.scrollWidth;
+            const clientWidth = container.clientWidth;
+            const scrollPercentX = scrollLeft / (scrollWidth - clientWidth);
+            const trackWidth = this.horizontalScrollerContainer.offsetWidth;
+            const thumbWidth = this.horizontalScroller.offsetWidth;
+            const maxMoveX = trackWidth - thumbWidth;
+            const translateX = scrollPercentX * maxMoveX;
+            this.horizontalScroller.style.transform = `translateX(${translateX}px)`;
+            if (this.auto_hide) {
+                this.horizontalScrollerContainer.classList.remove("hide");
+                clearTimeout(this.hideDelay['x']);
+                this.hideDelay['x'] = setTimeout(() => {
+                    this.horizontalScrollerContainer.classList.add("hide");
+                }, 1000);
+            }
+        }
+        this.triggerScrollChange();
+        clearTimeout(this.scrollTimeout);
+        this.scrollTimeout = setTimeout(() => {
+            this.removeAttribute('is-scrolling');
+        }, 150);
+    }
+    triggerScrollChange() {
+        this.onScrollChange.trigger(this.x, this.y);
+    }
+    div(nb1, nb2) {
+        if (!nb2)
+            return nb1;
+        return nb1 / nb2;
+    }
+    applyAutoHide() {
+        if (this.auto_hide) {
+            this.horizontalScrollerContainer.classList.remove("hide");
+            clearTimeout(this.hideDelay['x']);
+            this.hideDelay['x'] = setTimeout(() => {
+                this.horizontalScrollerContainer.classList.add("hide");
+            }, 1000);
+            this.verticalScrollerContainer.classList.remove("hide");
+            clearTimeout(this.hideDelay['y']);
+            this.hideDelay['y'] = setTimeout(() => {
+                this.verticalScrollerContainer.classList.add("hide");
+            }, 1000);
+        }
+    }
+    addScrollDrag(direction) {
+        let scroller = this.scroller[direction]();
+        let startScroll = 0;
+        const drag = new Aventus.DragAndDrop({
+            element: scroller,
+            applyDrag: false,
+            usePercent: true,
+            offsetDrag: 0,
+            isDragEnable: () => !this.disable,
+            onStart: (e) => {
+                this.no_user_select = true;
+                scroller.classList.add("active");
+                if (direction === 'y') {
+                    startScroll = this.contentHidder.scrollTop;
+                }
+                else {
+                    startScroll = this.contentHidder.scrollLeft;
+                }
+            },
+            onMove: (e, position) => {
+                const scrollDelta = (position[direction] / 100) * this.contentWrapperSize[direction];
+                if (direction === 'y') {
+                    this.contentHidder.scrollTop = startScroll + scrollDelta;
+                }
+                else {
+                    this.contentHidder.scrollLeft = startScroll + scrollDelta;
+                }
+            },
+            onStop: () => {
+                this.no_user_select = false;
+                scroller.classList.remove("active");
+            }
+        });
+    }
+    scrollX(x) {
+        this.contentHidder.scrollLeft = x;
+        this.calculatePositionScrollerContainer('x');
+    }
+    scrollY(y) {
+        this.contentHidder.scrollTop = y;
+        this.calculatePositionScrollerContainer('y');
+    }
+    addAction() {
+        if (this.mouse_drag) {
+            let startScrollX = 0;
+            let startScrollY = 0;
+            let posX = 0;
+            let posY = 0;
+            this.addEventListener("pointerdown", (e) => {
+                if (!this.x_scroll_visible && !this.y_scroll_visible) {
+                    return;
+                }
+                startScrollX = this.contentHidder.scrollLeft;
+                startScrollY = this.contentHidder.scrollTop;
+                posX = e.pageX;
+                posY = e.pageY;
+                this.no_user_select = true;
+            });
+            this.addEventListener("pointermove", (e) => {
+                if (this.x_scroll_visible) {
+                    this.contentHidder.scrollLeft = startScrollX + (posX - e.pageX);
+                }
+                if (this.y_scroll_visible) {
+                    this.contentHidder.scrollTop = startScrollY + (posY - e.pageY);
+                }
+            });
+            this.addEventListener("pointerup", (e) => {
+                this.no_user_select = false;
+            });
+            this.addEventListener("pointercancel", (e) => {
+                this.no_user_select = false;
+            });
+            // new PressManager({
+            //     element: this,
+            //     offsetDrag: 0,
+            //     onDragStart: (e) => {
+            //         if(!this.x_scroll_visible && !this.y_scroll_visible) {
+            //             return false;
+            //         }
+            //         if(e.event instanceof PointerEvent) {
+            //             startScrollX = this.contentHidder.scrollLeft;
+            //             startScrollY = this.contentHidder.scrollTop;
+            //             posX = e.event.pageX;
+            //             posY = e.event.pageY;
+            //             this.no_user_select = true;
+            //             return true;
+            //         }
+            //         return false;
+            //     },
+            //     onDrag: (e) => {
+            //         if(e.event instanceof PointerEvent) {
+            //         }
+            //     },
+            //     onDragEnd: (e) => {
+            //         this.no_user_select = false;
+            //     }
+            // });
+        }
+        this.addScrollDrag('x');
+        this.addScrollDrag('y');
+    }
+    focusElementByAnchor() {
+        const id = window.location.hash.substring(1);
+        if (id) {
+            const elements = this.getElementsInSlot();
+            for (let element of elements) {
+                const target = element.id == id ? element : element.querySelector("#" + id);
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }
+        }
+    }
+    postCreation() {
+        this.dimensionRefreshed();
+        this.addResizeObserver();
+        this.applyAutoHide();
+        this.addAction();
+        this.focusElementByAnchor();
     }
 }
-Tracker.Namespace=`Aventus`;
-__as1(_, 'Tracker', Tracker);
+Layout.Scrollable.Namespace=`Aventus.Layout`;
+Layout.Scrollable.Tag=`av-scrollable`;
+__as1(_.Layout, 'Scrollable', Layout.Scrollable);
+if(!window.customElements.get('av-scrollable')){window.customElements.define('av-scrollable', Layout.Scrollable);Aventus.WebComponentInstance.registerDefinition(Layout.Scrollable);}
 
 let RouterStateManager=class RouterStateManager extends Aventus.StateManager {
     /**
@@ -8558,1155 +9045,6 @@ this.__upgradeProperty('initializing');
 }
 Navigation.Router.Namespace=`Aventus.Navigation`;
 __as1(_.Navigation, 'Router', Navigation.Router);
-
-let TouchRecord=class TouchRecord {
-    /**
-     * The identifier of the currently active touch/pointer.
-     */
-    _activeTouchID;
-    /**
-     * A map of active touch/pointer IDs to their respective Trackers.
-     */
-    _touchList = {};
-    /**
-     * Returns a primitive zero-value coordinate object.
-     */
-    get _primitiveValue() {
-        return { x: 0, y: 0 };
-    }
-    /**
-     * Checks if there is an active touch/pointer event.
-     */
-    isActive() {
-        return this._activeTouchID !== undefined;
-    }
-    /**
-     * Retrieves the delta movement of the active tracker.
-     */
-    getDelta() {
-        const tracker = this._getActiveTracker();
-        if (!tracker) {
-            return this._primitiveValue;
-        }
-        return { ...tracker.delta };
-    }
-    /**
-     * Retrieves the velocity of the active tracker.
-     */
-    getVelocity() {
-        const tracker = this._getActiveTracker();
-        if (!tracker) {
-            return this._primitiveValue;
-        }
-        return { ...tracker.velocity };
-    }
-    /**
-     * Returns the number of active touch/pointer events.
-     */
-    getNbOfTouches() {
-        return Object.values(this._touchList).length;
-    }
-    /**
-     * Returns an array of active Tracker instances.
-     */
-    getTouches() {
-        return Object.values(this._touchList);
-    }
-    /**
-     * Calculates the easing distance based on current velocity and damping.
-     */
-    getEasingDistance(damping) {
-        const deAcceleration = 1 - damping;
-        let distance = {
-            x: 0,
-            y: 0,
-        };
-        const vel = this.getVelocity();
-        Object.keys(vel).forEach((_dir) => {
-            const dir = _dir;
-            let v = Math.abs(vel[dir]) <= 10 ? 0 : vel[dir];
-            while (v !== 0) {
-                distance[dir] += v;
-                v = (v * deAcceleration) | 0;
-            }
-        });
-        return distance;
-    }
-    /**
-     * Starts tracking new touch/pointer events.
-     */
-    track(evt) {
-        if ('TouchEvent' in window && evt instanceof TouchEvent) {
-            const { targetTouches, } = evt;
-            Array.from(targetTouches).forEach(touch => {
-                this._add(touch);
-            });
-        }
-        else {
-            this._add(evt);
-        }
-        return this._touchList;
-    }
-    /**
-     * Updates existing tracked touch/pointer events.
-     */
-    update(evt) {
-        if ('TouchEvent' in window && evt instanceof TouchEvent) {
-            const { touches, changedTouches, } = evt;
-            Array.from(touches).forEach(touch => {
-                this._renew(touch);
-            });
-            this._setActiveID(changedTouches);
-        }
-        else if (evt instanceof PointerEvent) {
-            this._renew(evt);
-            this._setActiveID(evt);
-        }
-        return this._touchList;
-    }
-    /**
-     * Releases tracking for ended touch/pointer events.
-     */
-    release(evt) {
-        if ('TouchEvent' in window && evt instanceof TouchEvent) {
-            Array.from(evt.changedTouches).forEach(touch => {
-                this._delete(touch);
-            });
-        }
-        else {
-            this._delete(evt);
-        }
-    }
-    /**
-     * Retrieves a unique identifier for a touch or pointer event.
-     */
-    _getIdentifier(touch) {
-        if ('Touch' in window && touch instanceof Touch)
-            return touch.identifier;
-        if (touch instanceof PointerEvent)
-            return touch.pointerId;
-        return touch.button;
-    }
-    /**
-     * Adds a new touch/pointer event to the tracker list.
-     */
-    _add(touch) {
-        if (this._has(touch)) {
-            this._delete(touch);
-        }
-        const tracker = new Tracker(touch);
-        const identifier = this._getIdentifier(touch);
-        this._touchList[identifier] = tracker;
-    }
-    /**
-     * Renews an existing touch/pointer event in the tracker list.
-     */
-    _renew(touch) {
-        if (!this._has(touch)) {
-            return;
-        }
-        const identifier = this._getIdentifier(touch);
-        const tracker = this._touchList[identifier];
-        tracker.update(touch);
-    }
-    /**
-     * Deletes a touch/pointer event from the tracker list.
-     */
-    _delete(touch) {
-        const identifier = this._getIdentifier(touch);
-        delete this._touchList[identifier];
-        if (this._activeTouchID == identifier) {
-            this._activeTouchID = undefined;
-        }
-    }
-    /**
-     * Checks if a touch/pointer event is being tracked.
-     */
-    _has(touch) {
-        const identifier = this._getIdentifier(touch);
-        return this._touchList.hasOwnProperty(identifier);
-    }
-    /**
-     * Sets the identifier of the currently active touch/pointer event.
-     */
-    _setActiveID(touches) {
-        if (touches instanceof PointerEvent || touches instanceof MouseEvent) {
-            this._activeTouchID = this._getIdentifier(touches);
-        }
-        else {
-            this._activeTouchID = touches[touches.length - 1].identifier;
-        }
-    }
-    /**
-     * Retrieves the currently active Tracker instance.
-     */
-    _getActiveTracker() {
-        const { _touchList, _activeTouchID, } = this;
-        if (_activeTouchID !== undefined) {
-            return _touchList[_activeTouchID];
-        }
-        return undefined;
-    }
-}
-TouchRecord.Namespace=`Aventus`;
-__as1(_, 'TouchRecord', TouchRecord);
-
-Layout.Scrollable = class Scrollable extends Aventus.WebComponent {
-    static get observedAttributes() {return ["zoom"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
-    get 'min_zoom'() { return this.getNumberAttr('min_zoom') }
-    set 'min_zoom'(val) { this.setNumberAttr('min_zoom', val) }
-get 'max_zoom'() { return this.getNumberAttr('max_zoom') }
-    set 'max_zoom'(val) { this.setNumberAttr('max_zoom', val) }
-get 'y_scroll_visible'() { return this.getBoolAttr('y_scroll_visible') }
-    set 'y_scroll_visible'(val) { this.setBoolAttr('y_scroll_visible', val) }
-get 'x_scroll_visible'() { return this.getBoolAttr('x_scroll_visible') }
-    set 'x_scroll_visible'(val) { this.setBoolAttr('x_scroll_visible', val) }
-get 'floating_scroll'() { return this.getBoolAttr('floating_scroll') }
-    set 'floating_scroll'(val) { this.setBoolAttr('floating_scroll', val) }
-get 'x_scroll'() { return this.getBoolAttr('x_scroll') }
-    set 'x_scroll'(val) { this.setBoolAttr('x_scroll', val) }
-get 'y_scroll'() { return this.getBoolAttr('y_scroll') }
-    set 'y_scroll'(val) { this.setBoolAttr('y_scroll', val) }
-get 'auto_hide'() { return this.getBoolAttr('auto_hide') }
-    set 'auto_hide'(val) { this.setBoolAttr('auto_hide', val) }
-get 'break'() { return this.getNumberAttr('break') }
-    set 'break'(val) { this.setNumberAttr('break', val) }
-get 'disable'() { return this.getBoolAttr('disable') }
-    set 'disable'(val) { this.setBoolAttr('disable', val) }
-get 'no_user_select'() { return this.getBoolAttr('no_user_select') }
-    set 'no_user_select'(val) { this.setBoolAttr('no_user_select', val) }
-get 'mouse_drag'() { return this.getBoolAttr('mouse_drag') }
-    set 'mouse_drag'(val) { this.setBoolAttr('mouse_drag', val) }
-get 'pinch'() { return this.getBoolAttr('pinch') }
-    set 'pinch'(val) { this.setBoolAttr('pinch', val) }
-get 'flex'() { return this.getBoolAttr('flex') }
-    set 'flex'(val) { this.setBoolAttr('flex', val) }
-    get 'zoom'() { return this.getNumberProp('zoom') }
-    set 'zoom'(val) { this.setNumberAttr('zoom', val) }
-    observer;
-    display = { x: 0, y: 0 };
-    max = {
-        x: 0,
-        y: 0
-    };
-    margin = {
-        x: 0,
-        y: 0
-    };
-    position = {
-        x: 0,
-        y: 0
-    };
-    momentum = { x: 0, y: 0 };
-    contentWrapperSize = { x: 0, y: 0 };
-    scroller = {
-        x: () => {
-            if (!this.horizontalScroller) {
-                throw 'can\'t find the horizontalScroller';
-            }
-            return this.horizontalScroller;
-        },
-        y: () => {
-            if (!this.verticalScroller) {
-                throw 'can\'t find the verticalScroller';
-            }
-            return this.verticalScroller;
-        }
-    };
-    scrollerContainer = {
-        x: () => {
-            if (!this.horizontalScrollerContainer) {
-                throw 'can\'t find the horizontalScrollerContainer';
-            }
-            return this.horizontalScrollerContainer;
-        },
-        y: () => {
-            if (!this.verticalScrollerContainer) {
-                throw 'can\'t find the verticalScrollerContainer';
-            }
-            return this.verticalScrollerContainer;
-        }
-    };
-    hideDelay = { x: 0, y: 0 };
-    touchRecord;
-    pointerCount = 0;
-    loadedOnce = false;
-    savedPercent;
-    isDragScroller = false;
-    cachedSvg;
-    previousMidPoint;
-    previousDistance;
-    startTranslate = { x: 0, y: 0 };
-    get x() {
-        return this.position.x;
-    }
-    get y() {
-        return this.position.y;
-    }
-    get xMax() {
-        return this.max.x;
-    }
-    get yMax() {
-        return this.max.y;
-    }
-    onScrollChange = new Aventus.Callback();
-    onZoomChange = new Aventus.Callback();
-    renderAnimation;
-    autoScrollInterval = {
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-    };
-    autoScrollSpeed = {
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-    };
-    pressManager;
-    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("zoom", ((target) => {
-    target.changeZoom();
-}));
- }
-    static __style = `:host{--_scrollbar-container-color: var(--scrollbar-container-color, transparent);--_scrollbar-color: var(--scrollbar-color, #757575);--_scrollbar-active-color: var(--scrollbar-active-color, #858585);--_scroller-width: var(--scroller-width, 6px);--_scroller-top: var(--scroller-top, 3px);--_scroller-bottom: var(--scroller-bottom, 3px);--_scroller-right: var(--scroller-right, 3px);--_scroller-left: var(--scroller-left, 3px);--_scrollbar-content-padding: var(--scrollbar-content-padding, 0);--_scrollbar-container-display: var(--scrollbar-container-display, inline-block)}:host{display:block;height:100%;min-height:inherit;min-width:inherit;overflow:clip;position:relative;-webkit-user-drag:none;-khtml-user-drag:none;-moz-user-drag:none;-o-user-drag:none;width:100%}:host .scroll-main-container{display:block;height:100%;min-height:inherit;min-width:inherit;position:relative;width:100%}:host .scroll-main-container .content-zoom{display:block;height:100%;min-height:inherit;min-width:inherit;position:relative;transform-origin:0 0;width:100%;z-index:4}:host .scroll-main-container .content-zoom .content-hidder{display:block;height:100%;min-height:inherit;min-width:inherit;overflow:clip;position:relative;width:100%}:host .scroll-main-container .content-zoom .content-hidder .content-wrapper{display:var(--_scrollbar-container-display);height:100%;min-height:inherit;min-width:inherit;padding:var(--_scrollbar-content-padding);position:relative;width:100%}:host .scroll-main-container .scroller-wrapper .container-scroller{display:none;overflow:hidden;position:absolute;transition:transform .2s linear;z-index:5}:host .scroll-main-container .scroller-wrapper .container-scroller .shadow-scroller{background-color:var(--_scrollbar-container-color);border-radius:5px}:host .scroll-main-container .scroller-wrapper .container-scroller .shadow-scroller .scroller{background-color:var(--_scrollbar-color);border-radius:5px;cursor:pointer;position:absolute;-webkit-tap-highlight-color:rgba(0,0,0,0);touch-action:none;z-index:5}:host .scroll-main-container .scroller-wrapper .container-scroller .scroller.active{background-color:var(--_scrollbar-active-color)}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical{height:calc(100% - var(--_scroller-bottom)*2 - var(--_scroller-width));padding-left:var(--_scroller-left);right:var(--_scroller-right);top:var(--_scroller-bottom);transform:0;width:calc(var(--_scroller-width) + var(--_scroller-left))}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical.hide{transform:translateX(calc(var(--_scroller-width) + var(--_scroller-left)))}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical .shadow-scroller{height:100%}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical .shadow-scroller .scroller{width:calc(100% - var(--_scroller-left))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal{bottom:var(--_scroller-bottom);height:calc(var(--_scroller-width) + var(--_scroller-top));left:var(--_scroller-right);padding-top:var(--_scroller-top);transform:0;width:calc(100% - var(--_scroller-right)*2 - var(--_scroller-width))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal.hide{transform:translateY(calc(var(--_scroller-width) + var(--_scroller-top)))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal .shadow-scroller{height:100%}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal .shadow-scroller .scroller{height:calc(100% - var(--_scroller-top))}:host([y_scroll]) .scroll-main-container .content-zoom .content-hidder .content-wrapper{height:auto}:host([x_scroll]) .scroll-main-container .content-zoom .content-hidder .content-wrapper{width:auto}:host([y_scroll_visible]) .scroll-main-container .scroller-wrapper .container-scroller.vertical{display:block}:host([x_scroll_visible]) .scroll-main-container .scroller-wrapper .container-scroller.horizontal{display:block}:host([no_user_select]) .content-wrapper *{user-select:none}:host([no_user_select]) ::slotted{user-select:none}:host([flex]){display:flex;flex-direction:column;min-height:0}:host([flex]) .scroll-main-container{display:flex;flex-direction:column}:host([flex]) .scroll-main-container .content-zoom{display:flex;flex-direction:column}`;
-    constructor() {
-        super();
-        this.renderAnimation = this.createAnimation();
-        this.onWheel = this.onWheel.bind(this);
-        this.onTouchStart = this.onTouchStart.bind(this);
-        this.onTouchMovePointer = this.onTouchMovePointer.bind(this);
-        this.onTouchMove = this.onTouchMove.bind(this);
-        this.onTouchMovePointer = this.onTouchMovePointer.bind(this);
-        this.onTouchEnd = this.onTouchEnd.bind(this);
-        this.onTouchEndPointer = this.onTouchEndPointer.bind(this);
-        this.touchRecord = new TouchRecord();
-    }
-    __getStatic() {
-        return Scrollable;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(Scrollable.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<div class="scroll-main-container" _id="scrollable_0">
-    <div class="content-zoom" _id="scrollable_1">
-        <div class="content-hidder" _id="scrollable_2">
-            <div class="content-wrapper" part="content-wrapper" _id="scrollable_3">
-                <slot></slot>
-            </div>
-        </div>
-    </div>
-    <div class="scroller-wrapper">
-        <div class="container-scroller vertical" _id="scrollable_4">
-            <div class="shadow-scroller">
-                <div class="scroller" _id="scrollable_5"></div>
-            </div>
-        </div>
-        <div class="container-scroller horizontal" _id="scrollable_6">
-            <div class="shadow-scroller">
-                <div class="scroller" _id="scrollable_7"></div>
-            </div>
-        </div>
-    </div>
-</div>` }
-    });
-}
-    __registerTemplateAction() { super.__registerTemplateAction();
-this.__getStatic().__template.setActions({
-  "elements": [
-    {
-      "name": "mainContainer",
-      "ids": [
-        "scrollable_0"
-      ]
-    },
-    {
-      "name": "contentZoom",
-      "ids": [
-        "scrollable_1"
-      ]
-    },
-    {
-      "name": "contentHidder",
-      "ids": [
-        "scrollable_2"
-      ]
-    },
-    {
-      "name": "contentWrapper",
-      "ids": [
-        "scrollable_3"
-      ]
-    },
-    {
-      "name": "verticalScrollerContainer",
-      "ids": [
-        "scrollable_4"
-      ]
-    },
-    {
-      "name": "verticalScroller",
-      "ids": [
-        "scrollable_5"
-      ]
-    },
-    {
-      "name": "horizontalScrollerContainer",
-      "ids": [
-        "scrollable_6"
-      ]
-    },
-    {
-      "name": "horizontalScroller",
-      "ids": [
-        "scrollable_7"
-      ]
-    }
-  ]
-});
- }
-    getClassName() {
-        return "Scrollable";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('min_zoom')){ this['min_zoom'] = 1; }
-if(!this.hasAttribute('max_zoom')){ this['max_zoom'] = undefined; }
-if(!this.hasAttribute('y_scroll_visible')) { this.attributeChangedCallback('y_scroll_visible', false, false); }
-if(!this.hasAttribute('x_scroll_visible')) { this.attributeChangedCallback('x_scroll_visible', false, false); }
-if(!this.hasAttribute('floating_scroll')) { this.attributeChangedCallback('floating_scroll', false, false); }
-if(!this.hasAttribute('x_scroll')) { this.attributeChangedCallback('x_scroll', false, false); }
-if(!this.hasAttribute('y_scroll')) {this.setAttribute('y_scroll' ,'true'); }
-if(!this.hasAttribute('auto_hide')) { this.attributeChangedCallback('auto_hide', false, false); }
-if(!this.hasAttribute('break')){ this['break'] = 0.1; }
-if(!this.hasAttribute('disable')) { this.attributeChangedCallback('disable', false, false); }
-if(!this.hasAttribute('no_user_select')) { this.attributeChangedCallback('no_user_select', false, false); }
-if(!this.hasAttribute('mouse_drag')) { this.attributeChangedCallback('mouse_drag', false, false); }
-if(!this.hasAttribute('pinch')) { this.attributeChangedCallback('pinch', false, false); }
-if(!this.hasAttribute('flex')) { this.attributeChangedCallback('flex', false, false); }
-if(!this.hasAttribute('zoom')){ this['zoom'] = 1; }
- }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('x');
-this.__correctGetter('y');
-this.__correctGetter('xMax');
-this.__correctGetter('yMax');
-this.__upgradeProperty('min_zoom');
-this.__upgradeProperty('max_zoom');
-this.__upgradeProperty('y_scroll_visible');
-this.__upgradeProperty('x_scroll_visible');
-this.__upgradeProperty('floating_scroll');
-this.__upgradeProperty('x_scroll');
-this.__upgradeProperty('y_scroll');
-this.__upgradeProperty('auto_hide');
-this.__upgradeProperty('break');
-this.__upgradeProperty('disable');
-this.__upgradeProperty('no_user_select');
-this.__upgradeProperty('mouse_drag');
-this.__upgradeProperty('pinch');
-this.__upgradeProperty('flex');
-this.__upgradeProperty('zoom');
- }
-    __listBoolProps() { return ["y_scroll_visible","x_scroll_visible","floating_scroll","x_scroll","y_scroll","auto_hide","disable","no_user_select","mouse_drag","pinch","flex"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-    createAnimation() {
-        return new Aventus.Animation({
-            fps: 60,
-            animate: () => {
-                const nextX = this.nextPosition('x');
-                const nextY = this.nextPosition('y');
-                this.momentum.x = nextX.momentum;
-                this.momentum.y = nextY.momentum;
-                this.scrollDirection('x', nextX.position);
-                this.scrollDirection('y', nextY.position);
-                if (!this.momentum.x && !this.momentum.y) {
-                    this.renderAnimation.stop();
-                }
-            },
-            stopped: () => {
-                if (this.momentum.x || this.momentum.y) {
-                    this.renderAnimation.start();
-                }
-            }
-        });
-    }
-    nextPosition(direction) {
-        const current = this.position[direction];
-        const remain = this.momentum[direction];
-        let result = {
-            momentum: 0,
-            position: 0,
-        };
-        if (Math.abs(remain) <= 0.1) {
-            result.position = current + remain;
-        }
-        else {
-            const _break = this.pointerCount > 0 ? 0.5 : this.break;
-            let nextMomentum = remain * (1 - _break);
-            nextMomentum |= 0;
-            result.momentum = nextMomentum;
-            result.position = current + remain - nextMomentum;
-        }
-        let correctPosition = this.correctScrollValue(result.position, direction);
-        if (correctPosition != result.position) {
-            result.position = correctPosition;
-            result.momentum = 0;
-        }
-        return result;
-    }
-    scrollDirection(direction, value) {
-        const max = this.max[direction];
-        if (max != 0) {
-            this.position[direction] = this.correctScrollValue(value, direction);
-        }
-        else {
-            this.position[direction] = 0;
-        }
-        let container = this.scrollerContainer[direction]();
-        let scroller = this.scroller[direction]();
-        if (this.auto_hide) {
-            container.classList.remove("hide");
-            clearTimeout(this.hideDelay[direction]);
-            this.hideDelay[direction] = setTimeout(() => {
-                container.classList.add("hide");
-            }, 1000);
-        }
-        let containerSize = direction == 'y' ? container.offsetHeight : container.offsetWidth;
-        if (this.contentWrapperSize[direction] != 0) {
-            let scrollPosition = this.div(this.position[direction], this.contentWrapperSize[direction]) * containerSize;
-            scroller.style.transform = `translate${direction.toUpperCase()}(${scrollPosition}px)`;
-            this.contentWrapper.style.transform = `translate3d(${-1 * this.x}px, ${-1 * this.y}px, 0)`;
-        }
-        this.triggerScrollChange();
-    }
-    scrollDirectionPercent(direction, percent) {
-        const max = this.max[direction];
-        this.scrollDirection(direction, max * percent / 100);
-    }
-    correctScrollValue(value, direction) {
-        if (value < 0) {
-            value = 0;
-        }
-        else if (value > this.max[direction]) {
-            value = this.max[direction];
-        }
-        return value;
-    }
-    triggerScrollChange() {
-        this.onScrollChange.trigger(this.x, this.y);
-    }
-    scrollToPosition(x, y) {
-        this.scrollDirection('x', x);
-        this.scrollDirection('y', y);
-    }
-    scrollX(x) {
-        this.scrollDirection('x', x);
-    }
-    scrollXPercent(x) {
-        this.scrollDirectionPercent('x', x);
-    }
-    scrollY(y) {
-        this.scrollDirection('y', y);
-    }
-    scrollYPercent(y) {
-        this.scrollDirectionPercent('y', y);
-    }
-    startAutoScrollRight() {
-        if (!this.autoScrollInterval.right) {
-            this.stopAutoScrollLeft();
-            this.autoScrollInterval.right = setInterval(() => {
-                if (this.x == this.max.x) {
-                    this.stopAutoScrollRight();
-                    return;
-                }
-                this.addDelta({
-                    x: this.autoScrollSpeed.right,
-                    y: 0
-                });
-            }, 100);
-        }
-    }
-    autoScrollRight(percent = 50) {
-        let slow = this.max.x * 1 / 100;
-        let fast = this.max.x * 10 / 100;
-        this.autoScrollSpeed.right = (fast - slow) * (percent / 100) + slow;
-        this.startAutoScrollRight();
-    }
-    stopAutoScrollRight() {
-        if (this.autoScrollInterval.right) {
-            clearInterval(this.autoScrollInterval.right);
-            this.autoScrollInterval.right = 0;
-        }
-    }
-    startAutoScrollLeft() {
-        if (!this.autoScrollInterval.left) {
-            this.stopAutoScrollRight();
-            this.autoScrollInterval.left = setInterval(() => {
-                if (this.x == 0) {
-                    this.stopAutoScrollLeft();
-                    return;
-                }
-                this.addDelta({
-                    x: this.autoScrollSpeed.left * -1,
-                    y: 0
-                });
-            }, 100);
-        }
-    }
-    autoScrollLeft(percent = 50) {
-        let slow = this.max.x * 1 / 100;
-        let fast = this.max.x * 10 / 100;
-        this.autoScrollSpeed.left = (fast - slow) * (percent / 100) + slow;
-        this.startAutoScrollLeft();
-    }
-    stopAutoScrollLeft() {
-        if (this.autoScrollInterval.left) {
-            clearInterval(this.autoScrollInterval.left);
-            this.autoScrollInterval.left = 0;
-        }
-    }
-    startAutoScrollTop() {
-        if (!this.autoScrollInterval.top) {
-            this.stopAutoScrollBottom();
-            this.autoScrollInterval.top = setInterval(() => {
-                if (this.y == 0) {
-                    this.stopAutoScrollTop();
-                    return;
-                }
-                this.addDelta({
-                    x: 0,
-                    y: this.autoScrollSpeed.top * -1
-                });
-            }, 100);
-        }
-    }
-    autoScrollTop(percent = 50) {
-        let slow = this.max.y * 1 / 100;
-        let fast = this.max.y * 10 / 100;
-        this.autoScrollSpeed.top = (fast - slow) * (percent / 100) + slow;
-        this.startAutoScrollTop();
-    }
-    stopAutoScrollTop() {
-        if (this.autoScrollInterval.top) {
-            clearInterval(this.autoScrollInterval.top);
-            this.autoScrollInterval.top = 0;
-        }
-    }
-    startAutoScrollBottom() {
-        if (!this.autoScrollInterval.bottom) {
-            this.stopAutoScrollTop();
-            this.autoScrollInterval.bottom = setInterval(() => {
-                if (this.y == this.max.y) {
-                    this.stopAutoScrollBottom();
-                    return;
-                }
-                this.addDelta({
-                    x: 0,
-                    y: this.autoScrollSpeed.bottom
-                });
-            }, 100);
-        }
-    }
-    autoScrollBottom(percent = 50) {
-        let slow = this.max.y * 1 / 100;
-        let fast = this.max.y * 10 / 100;
-        this.autoScrollSpeed.bottom = (fast - slow) * (percent / 100) + slow;
-        this.startAutoScrollBottom();
-    }
-    stopAutoScrollBottom() {
-        if (this.autoScrollInterval.bottom) {
-            clearInterval(this.autoScrollInterval.bottom);
-            this.autoScrollInterval.bottom = 0;
-        }
-    }
-    createMatrix() {
-        if (!this.cachedSvg) {
-            this.cachedSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        }
-        return this.cachedSvg.createSVGMatrix();
-    }
-    getMidPoint(a, b) {
-        return {
-            x: (a.lastPosition.x + b.lastPosition.x) / 2,
-            y: (a.lastPosition.y + b.lastPosition.y) / 2,
-        };
-    }
-    getDistance(a, b) {
-        return Math.sqrt((b.lastPosition.x - a.lastPosition.x) ** 2 + (b.lastPosition.y - a.lastPosition.y) ** 2);
-    }
-    zoomOnPoint(clientX, clientY, newZoom) {
-        let targetCoordinates = this.getBoundingClientRect();
-        let mousePositionRelativeToTarget = {
-            x: targetCoordinates.x - clientX,
-            y: targetCoordinates.y - clientY
-        };
-        let oldScale = this.zoom;
-        let newScale;
-        if (this.max_zoom > 0) {
-            newScale = Math.max(this.min_zoom, Math.min(this.max_zoom, newZoom));
-        }
-        else {
-            newScale = Math.max(this.min_zoom, newZoom);
-        }
-        let scaleDiff = this.div(newScale, oldScale);
-        const matrix = this.createMatrix()
-            .translate(this.x, this.y)
-            .translate(mousePositionRelativeToTarget.x, mousePositionRelativeToTarget.y)
-            .scale(scaleDiff)
-            .translate(-mousePositionRelativeToTarget.x, -mousePositionRelativeToTarget.y)
-            .scale(this.zoom);
-        const newZoomFinal = matrix.a || 1;
-        const newX = matrix.e || 0;
-        const newY = matrix.f || 0;
-        this.zoom = newZoomFinal;
-        this.onZoomChange.trigger(newZoomFinal);
-        this.scrollDirection('x', newX);
-        this.scrollDirection('y', newY);
-    }
-    pinchAction() {
-        const touches = this.touchRecord.getTouches();
-        if (touches.length == 2) {
-            const newMidpoint = this.getMidPoint(touches[0], touches[1]);
-            const prevMidpoint = this.previousMidPoint ?? newMidpoint;
-            const positioningElRect = this.getBoundingClientRect();
-            const originX = (positioningElRect.left + this.x - this.startTranslate.x) - prevMidpoint.x;
-            const originY = (positioningElRect.top + this.y - this.startTranslate.y) - prevMidpoint.y;
-            const newDistance = this.getDistance(touches[0], touches[1]);
-            const prevDistance = this.previousDistance;
-            let scaleDiff = prevDistance ? this.div(newDistance, prevDistance) : 1;
-            const panX = prevMidpoint.x - newMidpoint.x;
-            const panY = prevMidpoint.y - newMidpoint.y;
-            let oldScale = this.zoom;
-            let newScale;
-            if (this.max_zoom > 0) {
-                newScale = Math.max(this.min_zoom, Math.min(this.max_zoom, oldScale * scaleDiff));
-            }
-            else {
-                newScale = Math.max(this.min_zoom, oldScale * scaleDiff);
-            }
-            scaleDiff = this.div(newScale, oldScale);
-            const matrix = this.createMatrix()
-                .translate(panX, panY)
-                .translate(originX, originY)
-                .translate(this.x, this.y)
-                .scale(scaleDiff)
-                .translate(-originX, -originY)
-                .scale(this.zoom);
-            const newZoom = matrix.a || 1;
-            const newX = matrix.e || 0;
-            const newY = matrix.f || 0;
-            this.zoom = newZoom;
-            this.onZoomChange.trigger(newZoom);
-            this.scrollDirection('x', newX);
-            this.scrollDirection('y', newY);
-            this.previousMidPoint = newMidpoint;
-            this.previousDistance = newDistance;
-        }
-        return null;
-    }
-    addAction() {
-        this.addEventListener("wheel", this.onWheel, { passive: false });
-        this.pressManager = new Aventus.PressManager({
-            element: this,
-            offsetDrag: 0,
-            onPressStart: (e) => {
-                this.touchRecord.track(e.event);
-                this.pointerCount = this.touchRecord.getNbOfTouches();
-            },
-            onPressEnd: (e) => {
-                this.touchRecord.release(e.event);
-                this.pointerCount = this.touchRecord.getNbOfTouches();
-            },
-            onDragStart: (e) => {
-                if (!this.pinch && !this.x_scroll_visible && !this.y_scroll_visible) {
-                    return false;
-                }
-                return this.onTouchStartPointer(e);
-            },
-            onDrag: (e) => {
-                this.onTouchMovePointer(e);
-            },
-            onDragEnd: (e) => {
-                this.onTouchEndPointer(e);
-            }
-        });
-        // this.addEventListener("touchstart", this.onTouchStart);
-        // this.addEventListener("trigger_pointer_pressstart", this.onTouchStartPointer);
-        if (this.mouse_drag) {
-            // this.addEventListener("mousedown", this.onTouchStart);
-        }
-        this.addScrollDrag('x');
-        this.addScrollDrag('y');
-    }
-    addActionMove() {
-        // document.body.addEventListener("touchmove", this.onTouchMove);
-        // document.body.addEventListener("trigger_pointer_pressmove", this.onTouchMovePointer);
-        // document.body.addEventListener("touchcancel", this.onTouchEnd);
-        // document.body.addEventListener("touchend", this.onTouchEnd);
-        // document.body.addEventListener("trigger_pointer_pressend", this.onTouchEndPointer);
-        if (this.mouse_drag) {
-            // document.body.addEventListener("mousemove", this.onTouchMove);
-            // document.body.addEventListener("mouseup", this.onTouchEnd);
-        }
-    }
-    removeActionMove() {
-        // document.body.removeEventListener("touchmove", this.onTouchMove);
-        // document.body.removeEventListener("trigger_pointer_pressmove", this.onTouchMovePointer);
-        // document.body.removeEventListener("touchcancel", this.onTouchEnd);
-        // document.body.removeEventListener("touchend", this.onTouchEnd);
-        // document.body.removeEventListener("trigger_pointer_pressend", this.onTouchEndPointer);
-        // document.body.removeEventListener("mousemove", this.onTouchMove);
-        // document.body.removeEventListener("mouseup", this.onTouchEnd);
-    }
-    addScrollDrag(direction) {
-        let scroller = this.scroller[direction]();
-        let startPosition = 0;
-        new Aventus.DragAndDrop({
-            element: scroller,
-            applyDrag: false,
-            usePercent: true,
-            offsetDrag: 0,
-            isDragEnable: () => !this.disable,
-            onStart: (e) => {
-                this.isDragScroller = true;
-                this.no_user_select = true;
-                scroller.classList.add("active");
-                startPosition = this.position[direction];
-            },
-            onMove: (e, position) => {
-                let delta = position[direction] / 100 * this.contentWrapperSize[direction];
-                let value = startPosition + delta;
-                this.scrollDirection(direction, value);
-            },
-            onStop: () => {
-                this.no_user_select = false;
-                scroller.classList.remove("active");
-                this.isDragScroller = false;
-            }
-        });
-    }
-    shouldStopPropagation(e, delta) {
-        if (!this.y_scroll && this.x_scroll) {
-            if ((delta.x > 0 && this.x != this.max.x) ||
-                (delta.x <= 0 && this.x != 0)) {
-                e.stopPropagation();
-            }
-        }
-        else {
-            if ((delta.y > 0 && this.y != this.max.y) ||
-                (delta.y <= 0 && this.y != 0)) {
-                e.stopPropagation();
-            }
-        }
-    }
-    addDelta(delta) {
-        if (this.disable) {
-            return;
-        }
-        this.momentum.x += delta.x;
-        this.momentum.y += delta.y;
-        this.renderAnimation?.start();
-    }
-    onWheel(e) {
-        if (e.ctrlKey) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (this.pinch) {
-                let factor = 0.9;
-                if (e.deltaY < 0) {
-                    factor = 1.1;
-                }
-                this.zoomOnPoint(e.clientX, e.clientY, this.zoom * factor);
-            }
-            return;
-        }
-        const DELTA_MODE = [1.0, 28.0, 500.0];
-        const mode = DELTA_MODE[e.deltaMode] || DELTA_MODE[0];
-        let newValue = {
-            x: 0,
-            y: e.deltaY * mode,
-        };
-        if (!this.y_scroll && this.x_scroll) {
-            newValue = {
-                x: e.deltaY * mode,
-                y: 0,
-            };
-        }
-        else if (this.x_scroll && e.altKey) {
-            newValue = {
-                x: e.deltaY * mode,
-                y: 0,
-            };
-        }
-        this.shouldStopPropagation(e, newValue);
-        this.addDelta(newValue);
-    }
-    onTouchStartPointer(e) {
-        const ev = e.event;
-        if ('TouchEvent' in window && ev instanceof TouchEvent) {
-            this.onTouchStart(ev);
-            return true;
-        }
-        else if (ev instanceof PointerEvent) {
-            if (this.mouse_drag || ev.pointerType == "touch") {
-                this.onTouchStart(ev);
-                return true;
-            }
-        }
-        return false;
-    }
-    onTouchStart(e) {
-        if (this.isDragScroller)
-            return;
-        this.touchRecord.track(e);
-        this.momentum = {
-            x: 0,
-            y: 0
-        };
-        if (this.pointerCount === 0) {
-            this.addActionMove();
-        }
-        this.pointerCount = this.touchRecord.getNbOfTouches();
-        if (this.pinch && this.pointerCount == 2) {
-            this.startTranslate = { x: this.x, y: this.y };
-        }
-    }
-    onTouchMovePointer(e) {
-        const ev = e.event;
-        if ('TouchEvent' in window && ev instanceof TouchEvent) {
-            this.onTouchMove(ev);
-        }
-        else if (ev instanceof PointerEvent) {
-            if (this.mouse_drag || ev.pointerType == "touch") {
-                this.onTouchMove(ev);
-            }
-        }
-    }
-    onTouchMove(e) {
-        if (this.isDragScroller)
-            return;
-        this.touchRecord.update(e);
-        if (this.pinch && this.pointerCount == 2) {
-            // zoom
-            e.stopPropagation();
-            this.renderAnimation?.stop();
-            this.pinchAction();
-        }
-        else {
-            const delta = this.touchRecord.getDelta();
-            this.shouldStopPropagation(e, delta);
-            this.addDelta(delta);
-        }
-    }
-    onTouchEndPointer(e) {
-        const ev = e.event;
-        if ('TouchEvent' in window && ev instanceof TouchEvent) {
-            this.onTouchEnd(ev);
-        }
-        else if (ev instanceof PointerEvent) {
-            if (this.mouse_drag || ev.pointerType == "touch") {
-                this.onTouchEnd(ev);
-            }
-        }
-    }
-    onTouchEnd(e) {
-        if (this.isDragScroller)
-            return;
-        const delta = this.touchRecord.getEasingDistance(this.break);
-        this.shouldStopPropagation(e, delta);
-        this.addDelta(delta);
-        this.touchRecord.release(e);
-        this.pointerCount = this.touchRecord.getNbOfTouches();
-        if (this.pointerCount === 0) {
-            this.removeActionMove();
-        }
-        if (this.pointerCount < 2) {
-            this.previousMidPoint = undefined;
-            this.previousDistance = undefined;
-        }
-    }
-    calculateRealSize() {
-        if (!this.contentZoom || !this.mainContainer || !this.contentWrapper) {
-            return false;
-        }
-        const currentOffsetWidth = this.contentZoom.offsetWidth;
-        const currentOffsetHeight = this.contentZoom.offsetHeight;
-        let hasChanged = false;
-        if (this.contentWrapper.offsetWidth != this.contentWrapperSize.x || this.contentWrapper.offsetHeight != this.contentWrapperSize.y)
-            hasChanged = true;
-        this.contentWrapperSize.x = this.contentWrapper.offsetWidth;
-        this.contentWrapperSize.y = this.contentWrapper.offsetHeight;
-        if (this.zoom < 1) {
-            // scale the container for zoom
-            this.contentZoom.style.width = this.div(this.mainContainer.offsetWidth, this.zoom) + 'px';
-            this.contentZoom.style.height = this.div(this.mainContainer.offsetHeight, this.zoom) + 'px';
-            this.contentZoom.style.maxHeight = this.div(this.mainContainer.offsetHeight, this.zoom) + 'px';
-            if (currentOffsetHeight != this.display.y || currentOffsetWidth != this.display.x)
-                hasChanged = true;
-            this.display.y = currentOffsetHeight;
-            this.display.x = currentOffsetWidth;
-        }
-        else {
-            const newX = this.div(currentOffsetWidth, this.zoom);
-            const newY = this.div(currentOffsetHeight, this.zoom);
-            if (newY != this.display.y || newX != this.display.x)
-                hasChanged = true;
-            this.display.y = newY;
-            this.display.x = newX;
-            this.contentZoom.style.width = '';
-            this.contentZoom.style.height = '';
-            this.contentZoom.style.maxHeight = '';
-        }
-        return hasChanged;
-    }
-    calculatePositionScrollerContainer(direction) {
-        if (direction == 'y') {
-            this.calculatePositionScrollerContainerY();
-        }
-        else {
-            this.calculatePositionScrollerContainerX();
-        }
-    }
-    calculatePositionScrollerContainerY() {
-        const leftMissing = this.mainContainer.offsetWidth - this.verticalScrollerContainer.offsetLeft;
-        if (leftMissing > 0 && this.y_scroll_visible && !this.floating_scroll) {
-            this.contentHidder.style.width = 'calc(100% - ' + leftMissing + 'px)';
-            this.contentHidder.style.marginRight = leftMissing + 'px';
-            this.margin.x = leftMissing;
-        }
-        else {
-            this.contentHidder.style.width = '';
-            this.contentHidder.style.marginRight = '';
-            this.margin.x = 0;
-        }
-    }
-    calculatePositionScrollerContainerX() {
-        const topMissing = this.mainContainer.offsetHeight - this.horizontalScrollerContainer.offsetTop;
-        if (topMissing > 0 && this.x_scroll_visible && !this.floating_scroll) {
-            this.contentHidder.style.height = 'calc(100% - ' + topMissing + 'px)';
-            this.contentHidder.style.marginBottom = topMissing + 'px';
-            this.margin.y = topMissing;
-        }
-        else {
-            this.contentHidder.style.height = '';
-            this.contentHidder.style.marginBottom = '';
-            this.margin.y = 0;
-        }
-    }
-    calculateSizeScroller(direction) {
-        const scrollerSize = (this.div((this.display[direction] - this.margin[direction]), this.contentWrapperSize[direction]) * 100);
-        if (direction == "y") {
-            this.scroller[direction]().style.height = scrollerSize + '%';
-        }
-        else {
-            this.scroller[direction]().style.width = scrollerSize + '%';
-        }
-        let maxScrollContent = this.contentWrapperSize[direction] - this.display[direction];
-        if (maxScrollContent < 0) {
-            maxScrollContent = 0;
-        }
-        this.max[direction] = maxScrollContent + this.margin[direction];
-    }
-    changeZoom() {
-        this.contentZoom.style.transform = 'scale(' + this.zoom + ')';
-        this.dimensionRefreshed(true);
-    }
-    dimensionRefreshed(force = false) {
-        if (this.contentWrapper.offsetHeight > 0 && this.contentWrapper.offsetWidth > 0) {
-            this.loadedOnce = true;
-            if (this.savedPercent) {
-                this.position.x = this.contentWrapper.offsetWidth * this.savedPercent.x;
-                this.position.y = this.contentWrapper.offsetHeight * this.savedPercent.y;
-                this.savedPercent = undefined;
-            }
-        }
-        else if (this.loadedOnce) {
-            this.savedPercent = {
-                x: this.div(this.position.x, this.contentWrapperSize.x),
-                y: this.div(this.position.y, this.contentWrapperSize.y)
-            };
-        }
-        if (!this.calculateRealSize() && !force) {
-            return;
-        }
-        if (this.contentWrapperSize.y - this.display.y > 0) {
-            if (!this.y_scroll_visible) {
-                this.y_scroll_visible = true;
-                this.calculatePositionScrollerContainer('y');
-            }
-            this.calculateSizeScroller('y');
-            this.scrollDirection('y', this.y);
-        }
-        else if (this.y_scroll_visible) {
-            this.y_scroll_visible = false;
-            this.calculatePositionScrollerContainer('y');
-            this.calculateSizeScroller('y');
-            this.scrollDirection('y', 0);
-        }
-        if (this.contentWrapperSize.x - this.display.x > 0) {
-            if (!this.x_scroll_visible) {
-                this.x_scroll_visible = true;
-                this.calculatePositionScrollerContainer('x');
-            }
-            this.calculateSizeScroller('x');
-            this.scrollDirection('x', this.x);
-        }
-        else if (this.x_scroll_visible) {
-            this.x_scroll_visible = false;
-            this.calculatePositionScrollerContainer('x');
-            this.calculateSizeScroller('x');
-            this.scrollDirection('x', 0);
-        }
-    }
-    createResizeObserver() {
-        let inProgress = false;
-        return new Aventus.ResizeObserver({
-            callback: entries => {
-                if (inProgress) {
-                    return;
-                }
-                inProgress = true;
-                this.dimensionRefreshed();
-                inProgress = false;
-            },
-            fps: 30
-        });
-    }
-    addResizeObserver() {
-        if (this.observer == undefined) {
-            this.observer = this.createResizeObserver();
-        }
-        this.observer.observe(this.contentWrapper);
-        this.observer.observe(this);
-    }
-    div(nb1, nb2) {
-        if (!nb2)
-            return nb1;
-        return nb1 / nb2;
-    }
-    postCreation() {
-        this.dimensionRefreshed();
-        this.addResizeObserver();
-        this.addAction();
-    }
-    static lock(element) {
-        const container = element.findParentByType(Layout.Scrollable);
-        if (container) {
-            container.disable = true;
-        }
-    }
-    static unlock(element) {
-        const container = element.findParentByType(Layout.Scrollable);
-        if (container) {
-            container.disable = false;
-        }
-    }
-}
-Layout.Scrollable.Namespace=`Aventus.Layout`;
-Layout.Scrollable.Tag=`av-scrollable`;
-__as1(_.Layout, 'Scrollable', Layout.Scrollable);
-if(!window.customElements.get('av-scrollable')){window.customElements.define('av-scrollable', Layout.Scrollable);Aventus.WebComponentInstance.registerDefinition(Layout.Scrollable);}
 
 Layout.Col = class Col extends Aventus.WebComponent {
     get 'use_container'() { return this.getBoolAttr('use_container') }
@@ -12183,8 +11521,6 @@ if(!window.customElements.get('av-toast-manager')){window.customElements.define(
 for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
 
-
-
 var AventusWebsite;
 (AventusWebsite||(AventusWebsite = {}));
 (function (AventusWebsite) {
@@ -12245,7 +11581,11 @@ __as1(_, 'Result', Result);
 if(!window.customElements.get('av-result')){window.customElements.define('av-result', Result);Aventus.WebComponentInstance.registerDefinition(Result);}
 
 const SearchModal = class SearchModal extends Aventus.Modal.ModalElement {
-    static __style = `:host{align-items:flex-start;backdrop-filter:blur(4px);padding:6rem 3rem}:host .modal{background-color:var(--primary-color);border:1px solid color-mix(in oklab, black 5%, var(--primary-color));border-radius:8px;box-shadow:var(--elevation-10);padding:2rem 3rem;width:800px}:host .modal .header .input{align-items:center;background-color:var(--light-primary-color);border-radius:8px;color:var(--aventus-font-color);display:flex;gap:6px;padding:4px 14px;position:relative}:host .modal .header .input .border{border:1px solid color-mix(in oklab, black 20%, var(--text-color));border-radius:8px;inset:-1px;pointer-events:none;position:absolute;transition:border .1s linear}:host .modal .header .input mi-icon{font-size:16px}:host .modal .header .input input{background-color:rgba(0,0,0,0);border:none !important;color:var(--aventus-font-color);height:28px;min-width:0;outline:none !important}:host .modal .header .input:hover .border{border:2px solid #bdbdbd}:host .modal .body{padding:16px}`;
+    get 'is_focus'() { return this.getBoolAttr('is_focus') }
+    set 'is_focus'(val) { this.setBoolAttr('is_focus', val) }
+    pagefind;
+    timeoutSearch;
+    static __style = `:host{align-items:flex-start;backdrop-filter:blur(4px);padding:6rem 3rem}:host .modal{background-color:var(--primary-color);border:1px solid color-mix(in oklab, black 5%, var(--primary-color));border-radius:8px;box-shadow:var(--elevation-10);padding:2rem 3rem;width:800px}:host .modal .header .input{align-items:center;background-color:var(--light-primary-color);border-radius:8px;color:var(--aventus-font-color);display:flex;gap:6px;padding:4px 14px;position:relative}:host .modal .header .input .border{border:1px solid color-mix(in oklab, black 20%, var(--text-color));border-radius:8px;inset:-1px;pointer-events:none;position:absolute;transition:border .1s linear}:host .modal .header .input mi-icon{font-size:16px}:host .modal .header .input input{background-color:rgba(0,0,0,0);border:none !important;color:var(--aventus-font-color);height:28px;min-width:0;outline:none !important}:host .modal .header .input:hover .border{border:2px solid #bdbdbd}:host .modal .body{padding:16px}:host([is_focus]) .modal .header .input .border{border:2px solid #bdbdbd}`;
     __getStatic() {
         return SearchModal;
     }
@@ -12261,27 +11601,85 @@ super.__getHtml();
     <div class="input">
         <div class="border"></div>
         <mi-icon icon="search"></mi-icon>
-        <input type="text" placeholder="Search" />
+        <input type="text" placeholder="Search" _id="searchmodal_0" />
     </div>
 </div><div class="body">
     <div class="result"></div>
 </div>` }
     });
 }
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "inputEl",
+      "ids": [
+        "searchmodal_0"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "eventName": "focus",
+      "id": "searchmodal_0",
+      "fct": (e, c) => c.comp.onFocus(e)
+    },
+    {
+      "eventName": "blur",
+      "id": "searchmodal_0",
+      "fct": (e, c) => c.comp.onBlur(e)
+    },
+    {
+      "eventName": "input",
+      "id": "searchmodal_0",
+      "fct": (e, c) => c.comp.onInputChanged(e)
+    }
+  ]
+});
+ }
     getClassName() {
         return "SearchModal";
     }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('is_focus')) { this.attributeChangedCallback('is_focus', false, false); }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('is_focus');
+ }
+    __listBoolProps() { return ["is_focus"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
     configure() {
         return {};
+    }
+    onFocus() {
+        this.is_focus = true;
+    }
+    onBlur() {
+        this.is_focus = false;
+    }
+    async onInputChanged() {
+        this.searchDelay();
+    }
+    searchDelay() {
+        if (this.timeoutSearch != undefined)
+            clearTimeout(this.timeoutSearch);
+        this.timeoutSearch = setTimeout(() => {
+            this.timeoutSearch = undefined;
+            this.search();
+        }, 300);
+    }
+    async search() {
+        if (!this.pagefind)
+            return;
+        const search = this.inputEl.value;
+        const results = await this.pagefind.search(search);
+        const pages = await Promise.all(results.results.map((result) => result.data()));
+        console.log(pages);
     }
     postCreation() {
         super.postCreation();
         const uri = '/pagefind/pagefind.js';
         import(uri).then(async (pagefind) => {
-            const results = await pagefind.search('router');
-            const pages = await Promise.all(results.results.map((result) => result.data()));
-            console.log(pages); // url, meta.title, excerpt, ...
+            this.pagefind = pagefind;
         });
+        this.inputEl.focus();
     }
 }
 SearchModal.Namespace=`AventusWebsite`;
@@ -44198,7 +43596,8 @@ const Navbar = class Navbar extends Aventus.WebComponent {
     set 'open'(val) { this.setBoolAttr('open', val) }
 get 'is_dark'() { return this.getBoolAttr('is_dark') }
     set 'is_dark'(val) { this.setBoolAttr('is_dark', val) }
-    static __style = `:host{background-color:var(--primary-color);height:50px;padding:0 30px;width:100%}:host av-link{display:inline-block}:host .container{display:flex;height:100%;justify-content:space-between;margin:auto}:host .container .left{align-items:center;display:flex;height:100%;justify-self:start}:host .container .left .input{align-items:center;background-color:var(--light-primary-color);border-radius:8px;color:var(--aventus-font-color);display:flex;gap:6px;margin-left:280px;padding:4px 14px;position:relative}:host .container .left .input .border{border:1px solid #323232;border-radius:8px;inset:-1px;pointer-events:none;position:absolute;transition:border .1s linear}:host .container .left .input mi-icon{font-size:16px}:host .container .left .input input{background-color:rgba(0,0,0,0);border:none !important;color:var(--aventus-font-color);min-width:0;outline:none !important;pointer-events:none}:host .container .left .input .shortcut{background-color:var(--primary-color);border-radius:4px;font-size:.7em;padding:4px 8px}:host .container .left .input:hover .border{border:2px solid #bdbdbd}:host .container .left av-link{display:inline-block;height:100%;user-select:none}:host .container .left av-link av-img{--img-color: var(--aventus-color);cursor:pointer;height:100%;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right{align-items:center;color:var(--primary-font-color);display:flex;justify-self:end}:host .container .right .menu{border-radius:5px;color:var(--primary-font-color);cursor:pointer;margin:0 5px;padding:5px 10px;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0);text-decoration:none;transition:color .5s var(--bezier-curve),background-color .5s var(--bezier-curve);user-select:none}:host .container .right .menu:not(.drop):hover{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu.active{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu-title{color:var(--aventus-color);display:none;font-size:2.4rem;margin:16px 0;text-align:center;width:100%}:host .container .right .menu-close-icon{display:none}:host .container .right .menu.drop:hover .drop-content{display:flex}:host .container .right .drop-content{background-color:var(--primary-color);display:none;flex-direction:column;gap:5px;padding:15px 10px;padding-top:10px;position:absolute;right:0;top:29px;z-index:99}:host .container .right .drop-content .drop-item{align-items:center;border-radius:5px;color:var(--primary-font-color);cursor:pointer;display:flex;gap:10px;margin:0 5px;padding:5px 10px;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0);text-decoration:none;transition:color .5s var(--bezier-curve),background-color .5s var(--bezier-curve);user-select:none}:host .container .right .drop-content .drop-item a{color:inherit;display:contents;text-decoration:none}:host .container .right .drop-content .drop-item .drop-icon{align-items:center;display:flex;height:30px;justify-content:center;width:30px}:host .container .right .drop-content .drop-item .drop-icon mi-icon{font-size:20px}:host .container .right .drop-content .drop-item .drop-icon av-img{height:30px;width:30px}:host .container .right .drop-content .drop-item:hover{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .icon-links{display:flex;gap:10px;margin-left:30px}:host .container .right .icon-links a{height:18px;width:18px}:host .container .right .icon-links a svg{fill:var(--primary-font-color);height:100%;transition:fill .5s var(--bezier-curve);width:100%}:host .container .right .icon-links a .reddit-logo{height:28px;margin-left:-5px;margin-top:-5px;width:28px}:host .container .right .icon-links a:hover svg{fill:var(--aventus-color)}:host .container .right .mode{align-items:center;cursor:pointer;display:flex;margin-left:30px;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right .mode mi-icon{font-size:1em}:host .container .right .mode .slider{align-items:center;background-color:var(--secondary-color);border:1px solid var(--primary-font-color);border-radius:15px;display:flex;height:15px;margin:0 10px;transition:background-color .5s;user-select:none;width:30px}:host .container .right .mode .slider .button{background-color:var(--text-color);border-radius:13px;height:9px;margin-left:2px;transition:inherit;transition:margin-left .2s linear;width:9px}:host .container .icon{align-items:center;color:var(--aventus-color);display:none;font-size:22px;height:100%;margin-right:16px}:host .container .hider{display:none}@media screen and (max-width: 1100px){:host .container .right{align-items:self-start;background-color:var(--primary-color);box-shadow:0 -10px 5px var(--aventus-color);color:var(--primary-font-color);flex-direction:column;height:100%;position:fixed;right:-300px;top:0px;transition:.4s right var(--bezier-curve);width:250px;z-index:90}:host .container .right .menu-title{display:block}:host .container .right .menu{margin:5px 0;margin-left:24px;order:1}:host .container .right .menu-close-icon{color:var(--aventus-color);display:block;font-size:21px;left:16px;position:absolute;top:13px}:host .container .right .drop-title{display:none}:host .container .right .drop-content{display:flex;padding:0;position:relative;right:auto;top:auto}:host .container .right .drop-content .drop-item{margin:0;padding-left:0}:host .container .right .icon-links{gap:20px;justify-content:center;margin:20px 0;margin-top:40px;order:3;width:100%}:host .container .right .icon-links a{height:24px;width:24px}:host .container .right .icon-links a .reddit-logo{height:34px;margin-left:-8px;margin-top:-6px;width:34px}:host .container .right .mode{justify-content:center;margin:0;margin-top:20px;order:2;width:100%}:host .container .icon{display:flex}:host .container .hider{background-color:rgba(0,0,0,0);display:none;height:100%;left:0;position:fixed;top:0;width:100%;z-index:9}:host([open]) .container .right{right:0}:host([open]) .container .hider{display:block}}:host([is_dark]) .container .right .mode .slider .button{margin-left:calc(100% - 11px)}`;
+    modalOpen = false;
+    static __style = `:host{background-color:var(--primary-color);height:50px;padding:0 30px;width:100%}:host av-link{display:inline-block}:host .container{display:flex;height:100%;justify-content:space-between;margin:auto}:host .container .left{align-items:center;display:flex;height:100%;justify-self:start}:host .container .left .input{align-items:center;background-color:var(--light-primary-color);border-radius:8px;color:var(--aventus-font-color);display:flex;gap:6px;margin-left:280px;padding:4px 14px;position:relative}:host .container .left .input .border{border:1px solid #323232;border-radius:8px;inset:-1px;pointer-events:none;position:absolute;transition:border .1s linear}:host .container .left .input mi-icon{font-size:16px;width:16px}:host .container .left .input input{background-color:rgba(0,0,0,0);border:none !important;color:var(--aventus-font-color);min-width:0;outline:none !important;pointer-events:none}:host .container .left .input .shortcut{background-color:var(--primary-color);border-radius:4px;font-size:.7em;padding:4px 8px}:host .container .left .input:hover .border{border:2px solid #bdbdbd}:host .container .left av-link{display:inline-block;height:100%;user-select:none}:host .container .left av-link av-img{--img-color: var(--aventus-color);cursor:pointer;height:100%;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right{align-items:center;color:var(--primary-font-color);display:flex;justify-self:end}:host .container .right .menu{border-radius:5px;color:var(--primary-font-color);cursor:pointer;margin:0 5px;padding:5px 10px;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0);text-decoration:none;transition:color .5s var(--bezier-curve),background-color .5s var(--bezier-curve);user-select:none}:host .container .right .menu:not(.drop):hover{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu.active{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu-title{color:var(--aventus-color);display:none;font-size:2.4rem;margin:16px 0;text-align:center;width:100%}:host .container .right .menu-close-icon{display:none}:host .container .right .menu.drop:hover .drop-content{display:flex}:host .container .right .drop-content{background-color:var(--primary-color);display:none;flex-direction:column;gap:5px;padding:15px 10px;padding-top:10px;position:absolute;right:0;top:29px;z-index:99}:host .container .right .drop-content .drop-item{align-items:center;border-radius:5px;color:var(--primary-font-color);cursor:pointer;display:flex;gap:10px;margin:0 5px;padding:5px 10px;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0);text-decoration:none;transition:color .5s var(--bezier-curve),background-color .5s var(--bezier-curve);user-select:none}:host .container .right .drop-content .drop-item a{color:inherit;display:contents;text-decoration:none}:host .container .right .drop-content .drop-item .drop-icon{align-items:center;display:flex;height:30px;justify-content:center;width:30px}:host .container .right .drop-content .drop-item .drop-icon mi-icon{font-size:20px}:host .container .right .drop-content .drop-item .drop-icon av-img{height:30px;width:30px}:host .container .right .drop-content .drop-item:hover{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .icon-links{display:flex;gap:10px;margin-left:30px}:host .container .right .icon-links a{height:18px;width:18px}:host .container .right .icon-links a svg{fill:var(--primary-font-color);height:100%;transition:fill .5s var(--bezier-curve);width:100%}:host .container .right .icon-links a .reddit-logo{height:28px;margin-left:-5px;margin-top:-5px;width:28px}:host .container .right .icon-links a:hover svg{fill:var(--aventus-color)}:host .container .right .mode{align-items:center;cursor:pointer;display:flex;margin-left:30px;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right .mode mi-icon{font-size:1em}:host .container .right .mode .slider{align-items:center;background-color:var(--secondary-color);border:1px solid var(--primary-font-color);border-radius:15px;display:flex;height:15px;margin:0 10px;transition:background-color .5s;user-select:none;width:30px}:host .container .right .mode .slider .button{background-color:var(--text-color);border-radius:13px;height:9px;margin-left:2px;transition:inherit;transition:margin-left .2s linear;width:9px}:host .container .icon{align-items:center;color:var(--aventus-color);display:none;font-size:22px;height:100%;margin-right:16px}:host .container .hider{display:none}@media screen and (max-width: 1100px){:host .container .right{align-items:self-start;background-color:var(--primary-color);box-shadow:0 -10px 5px var(--aventus-color);color:var(--primary-font-color);flex-direction:column;height:100%;position:fixed;right:-300px;top:0px;transition:.4s right var(--bezier-curve);width:250px;z-index:90}:host .container .right .menu-title{display:block}:host .container .right .menu{margin:5px 0;margin-left:24px;order:1}:host .container .right .menu-close-icon{color:var(--aventus-color);display:block;font-size:21px;left:16px;position:absolute;top:13px}:host .container .right .drop-title{display:none}:host .container .right .drop-content{display:flex;padding:0;position:relative;right:auto;top:auto}:host .container .right .drop-content .drop-item{margin:0;padding-left:0}:host .container .right .icon-links{gap:20px;justify-content:center;margin:20px 0;margin-top:40px;order:3;width:100%}:host .container .right .icon-links a{height:24px;width:24px}:host .container .right .icon-links a .reddit-logo{height:34px;margin-left:-8px;margin-top:-6px;width:34px}:host .container .right .mode{justify-content:center;margin:0;margin-top:20px;order:2;width:100%}:host .container .icon{display:flex}:host .container .hider{background-color:rgba(0,0,0,0);display:none;height:100%;left:0;position:fixed;top:0;width:100%;z-index:9}:host([open]) .container .right{right:0}:host([open]) .container .hider{display:block}}:host([is_dark]) .container .right .mode .slider .button{margin-left:calc(100% - 11px)}`;
     constructor() {
         super();
         let mode = localStorage.getItem("mode");
@@ -44206,6 +43605,7 @@ get 'is_dark'() { return this.getBoolAttr('is_dark') }
             document.querySelector("html")?.classList.add("dark");
             this.is_dark = true;
         }
+        this.openModal = this.openModal.bind(this);
     }
     __getStatic() {
         return Navbar;
@@ -44220,7 +43620,7 @@ get 'is_dark'() { return this.getBoolAttr('is_dark') }
         blocks: { 'default':`<div class="container">
     <div class="left">
         <av-link to="/"><av-img src="/img/icon.png"></av-img></av-link>
-        <div class="input">
+        <div class="input" _id="navbar_0">
             <div class="border"></div>
             <mi-icon icon="search"></mi-icon>
             <input type="text" class="search" placeholder="Search" />
@@ -44231,7 +43631,7 @@ get 'is_dark'() { return this.getBoolAttr('is_dark') }
         </div>
     </div>
     <div class="right">
-        <av-icon class="menu-close-icon" icon="close" _id="navbar_0"></av-icon>
+        <av-icon class="menu-close-icon" icon="close" _id="navbar_1"></av-icon>
         <div class="menu-title">Aventus</div>
         <av-link to="/" class="menu">Home</av-link>
         <av-link to="/docs/installation" active_pattern="^/docs/installation*$" class="menu">Install</av-link>
@@ -44291,7 +43691,7 @@ get 'is_dark'() { return this.getBoolAttr('is_dark') }
                 </svg>
             </a>
         </div>
-        <div class="mode" _id="navbar_1">
+        <div class="mode" _id="navbar_2">
             <mi-icon icon="light_mode"></mi-icon>
             <div class="slider">
                 <div class="button"></div>
@@ -44299,28 +43699,35 @@ get 'is_dark'() { return this.getBoolAttr('is_dark') }
             <mi-icon icon="dark_mode"></mi-icon>
         </div>
     </div>
-    <av-icon icon="navicon" class="icon" _id="navbar_2"></av-icon>
-    <div class="hider" _id="navbar_3"></div>
+    <av-icon icon="navicon" class="icon" _id="navbar_3"></av-icon>
+    <div class="hider" _id="navbar_4"></div>
 </div>` }
     });
 }
     __registerTemplateAction() { super.__registerTemplateAction();
 this.__getStatic().__template.setActions({
+  "events": [
+    {
+      "eventName": "click",
+      "id": "navbar_0",
+      "fct": (e, c) => c.comp.openModal(e)
+    }
+  ],
   "pressEvents": [
     {
-      "id": "navbar_0",
+      "id": "navbar_1",
       "onPress": (e, pressInstance, c) => { c.comp.closeMenu(e, pressInstance); }
     },
     {
-      "id": "navbar_1",
+      "id": "navbar_2",
       "onPress": (e, pressInstance, c) => { c.comp.toggleMode(e, pressInstance); }
     },
     {
-      "id": "navbar_2",
+      "id": "navbar_3",
       "onPress": (e, pressInstance, c) => { c.comp.openMenu(e, pressInstance); }
     },
     {
-      "id": "navbar_3",
+      "id": "navbar_4",
       "onPress": (e, pressInstance, c) => { c.comp.closeMenu(e, pressInstance); }
     }
   ]
@@ -44353,11 +43760,18 @@ this.__upgradeProperty('is_dark');
             localStorage.removeItem("mode");
         }
     }
+    async openModal() {
+        if (this.modalOpen)
+            return;
+        this.modalOpen = true;
+        const modal = new SearchModal();
+        await modal.show();
+        this.modalOpen = false;
+    }
     postCreation() {
         super.postCreation();
         Aventus.Lib.ShortcutManager.subscribe([Aventus.Lib.SpecialTouch.Control, "k"], () => {
-            const modal = new SearchModal();
-            modal.show();
+            this.openModal();
         });
     }
 }
@@ -44370,7 +43784,9 @@ const App = class App extends Aventus.Navigation.Router {
     static __style = `:host{display:flex;flex-direction:column;font-size:1.6rem;height:100%;width:100%}:host .content{height:calc(100% - 50px);width:100%}`;
     constructor() {
         super();
-        MaterialIcon.Icon.defaultType = "outlined";
+        MaterialIcon.Icon.configure({
+            type: "outlined"
+        });
     }
     __getStatic() {
         return App;

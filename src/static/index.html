@@ -28,6 +28,12 @@
 
 <body>
     <av-app></av-app>
+    <script>
+        document.body.addEventListener("scroll", (e) => {
+            document.body.scrollTop = 0;
+            document.body.scrollLeft = 0;
+        });
+    </script>
 </body>
 
 </html>

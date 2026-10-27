@@ -58,3 +58,15 @@
 		}
 	}
 }
+
+:host([is_focus]) {
+	.modal {
+		.header {
+			.input {
+				.border {
+					border: 2px solid #bdbdbd;
+				}
+			}
+		}
+	}
+}

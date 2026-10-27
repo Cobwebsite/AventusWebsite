@@ -2,7 +2,7 @@
     <div class="input">
         <div class="border"></div>
         <mi-icon icon="search"></mi-icon>
-        <input type="text" placeholder="Search"/>
+        <input type="text" placeholder="Search" @element="inputEl" @focus="onFocus" @blur="onBlur" @input="onInputChanged"/>
     </div>
 </div>
 <div class="body">

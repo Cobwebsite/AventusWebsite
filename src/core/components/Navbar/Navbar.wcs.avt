@@ -43,6 +43,7 @@
 
 				mi-icon {
 					font-size: 16px;
+					width: 16px;
 				}
 
 				input {

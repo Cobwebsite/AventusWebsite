@@ -8,7 +8,9 @@
 	export class App extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
 		public constructor() {
 			super();
-			MaterialIcon.Icon.defaultType = "outlined"
+			MaterialIcon.Icon.configure({
+				type: "outlined"
+			})
 		}
 	    protected defineRoutes(): void {
 	        this.addRoute("/", Home);

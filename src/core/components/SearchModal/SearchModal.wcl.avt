@@ -8,12 +8,17 @@ export class SearchModal extends ModalElement<void> implements Aventus.DefaultCo
 
 
     //#region props
-
+    @Attribute()
+    public is_focus!: boolean;
     //#endregion
 
 
     //#region variables
+    @ViewElement()
+    protected inputEl!: HTMLInputElement;
 
+    private pagefind: any;
+    private timeoutSearch?: number;
     //#endregion
 
 
@@ -30,14 +35,49 @@ export class SearchModal extends ModalElement<void> implements Aventus.DefaultCo
         return {};
     }
 
+    /**
+     * 
+     */
+    protected onFocus() {
+        this.is_focus = true;
+    }
+    /**
+    * 
+    */
+    protected onBlur() {
+        this.is_focus = false;
+    }
+    /**
+    * 
+    */
+    protected async onInputChanged() {
+        this.searchDelay();
+    }
+
+    protected searchDelay() {
+        if(this.timeoutSearch != undefined) clearTimeout(this.timeoutSearch);
+
+        this.timeoutSearch = setTimeout(() => {
+            this.timeoutSearch = undefined;
+            this.search();
+        }, 300);
+    }
+    protected async search() {
+        if(!this.pagefind) return;
+        const search = this.inputEl.value;
+        const results = await this.pagefind.search(search);
+        const pages = await Promise.all(results.results.map((result: any) => result.data()));
+        console.log(pages);
+    }
+
+
     protected override postCreation(): void {
         super.postCreation();
         const uri = '/pagefind/pagefind.js';
         import(uri).then(async pagefind => {
-            const results = await pagefind.search('router');
-            const pages = await Promise.all(results.results.map((result: any) => result.data()));
-            console.log(pages); // url, meta.title, excerpt, ...
+            this.pagefind = pagefind;
         });
+        this.inputEl.focus();
     }
 
     //#endregion
