@@ -1,7 +1,7 @@
 <h1>Configuration - Static</h1>
 <p>Even if Aventus is great for your project, you will need others files like .html, .png, etc. You can put your source file inside a static folder that will be exported.</p>
 
-<h2>Properties</h2>
+<h2 id="properties">Properties</h2>
 <div class="table">
     <av-row class="header">
         <av-col size="4" center>Name</av-col>
@@ -25,7 +25,7 @@
     </av-row>
 </div>
 
-<h2>Special files</h2>
+<h2 id="special-files">Special files</h2>
 <p>Inside the static folder, you can write some specials files that will be compiled to be supported by the browser.</p>
 
 <h3>Sass</h3>

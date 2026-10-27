@@ -26,7 +26,7 @@
     boilerplate code. This approach enhances developer productivity and promotes a more intuitive and efficient
     workflow, ultimately contributing to a more enjoyable and streamlined development experience.</p>
 
-<h2>For</h2>
+<h2 id="for">For</h2>
 
 <p>The <span class="cn">for</span> loop is a classic iteration construct in programming, commonly used to traverse
     arrays or perform repetitive
@@ -54,7 +54,7 @@
 <p><span class="cn">@Context</span> values keep their inferred TypeScript type in interpolations, injections and
     nested conditions. Conditions inside a loop also narrow optional values for the guarded block.</p>
 
-<h2>For...in</h2>
+<h2 id="for-in">For...in</h2>
 
 <p>The <span class="cn">for...in</span> loop in JavaScript iterates over the enumerable properties of an object, making it suitable for looping
     through key-value pairs. In Aventus templates, it offers a convenient way to iterate over object
@@ -64,7 +64,7 @@
 <p>A <span class="cn">for...in</span> key is a string. Convert it with <span class="cn">Number(index)</span> when it
     is used as an array index requiring a number.</p>
 
-<h2>For...of</h2>
+<h2 id="for-of">For...of</h2>
 
 <p>
     The <span class="cn">for...of</span> loop is a modern iteration construct introduced in ES6, designed specifically for iterating over

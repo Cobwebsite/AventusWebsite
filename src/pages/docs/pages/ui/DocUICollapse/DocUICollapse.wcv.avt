@@ -3,7 +3,7 @@
 It's designed to handle open/close logic automatically while letting you define your own layout and header appearance.</p>
 <p>Unlike pre-styled accordions, this component handles only the logic and transitions, leaving full styling control to you.</p>
 
-<h2>Concept</h2>
+<h2 id="concept">Concept</h2>
 <p>&lt;av-collapse&gt; consists of two main parts:</p>
 <ul>
     <li>A header slot (<span class="cn">slot="header"</span>) that acts as the clickable trigger.</li>
@@ -12,7 +12,7 @@ It's designed to handle open/close logic automatically while letting you define 
 
 <p>By default, clicking the header toggles the open state with an animated transition.</p>
 
-<h2>Attributes</h2>
+<h2 id="attributes">Attributes</h2>
 <div class="table">
     <av-row class="header">
         <av-col size="4" center>Attribute</av-col>
@@ -41,7 +41,7 @@ It's designed to handle open/close logic automatically while letting you define 
     </av-row>
 </div>
 
-<h2>CSS Variables</h2>
+<h2 id="css-variables">CSS Variables</h2>
 <p>You can customize the animation behavior using these CSS variables:</p>
 <div class="table">
     <av-row class="header">
@@ -61,5 +61,5 @@ It's designed to handle open/close logic automatically while letting you define 
     </av-row>
 </div>
 
-<h2>Example</h2>
+<h2 id="example">Example</h2>
 <av-doc-u-i-collapse-editor-1></av-doc-u-i-collapse-editor-1>

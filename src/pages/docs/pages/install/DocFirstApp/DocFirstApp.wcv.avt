@@ -1,5 +1,5 @@
 <h1>Create your first project</h1>
-<h2>Init the project</h2>
+<h2 id="init-the-project">Init the project</h2>
 <p>In your file explorer create a new folder <span class="cn">HelloAventus</span> and open it with vscode.</p>
 <p>You can create a new file named <span class="cn">aventus.conf.avt</span>. The minimal content for your config file is
     the following

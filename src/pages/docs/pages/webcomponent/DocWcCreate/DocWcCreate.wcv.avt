@@ -1,7 +1,7 @@
 <h1>Webcomponent - Create</h1>
 <p>In this section you are going to learn what is a webcomponent and how you can create it inside Aventus.</p>
 
-<h2>Definition</h2>
+<h2 id="definition">Definition</h2>
 <p>Web Components is a suite of different technologies allowing you to create reusable custom elements — with their
     functionality encapsulated away from the rest of your code — and utilize them in your web apps. (<i><a
             href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components"
@@ -10,7 +10,7 @@
     tag. You can build your full webapp by building one component after another without worring about side effects (the
     developer's worst nightmare).</p>
 
-<h2>Inside Aventus</h2>
+<h2 id="inside-aventus">Inside Aventus</h2>
 <p>Inside Aventus you can create web component by right clicking one the explorer part inside vscode, choose <i>Aventus
         : Create...</i> and choose <i>Component</i>. Inside the input you can enter the name for the typescript class.
     By convention, this name should be in Snake case. You can write your webcomponent inside a single file
@@ -31,7 +31,7 @@
     <li><span class="cn">*.wcl.avt</span> : Web Componenent View for Ts part</li>
 </ul>
 <av-doc-wc-create-editor-1></av-doc-wc-create-editor-1>
-<h2>The Html</h2>
+<h2 id="the-html">The Html</h2>
 <p>You can use any basic tag or any tag you imported or created. The auto-completion will help you to find knowed tags.
     There are 2 special tags that you must know :</p>
 <h3>&lt;slot&gt;</h3>
@@ -66,7 +66,7 @@
         to="/docs/wc/event">a property value</av-link>&nbsp;or&nbsp;<av-link to="/docs/wc/event">a
         watch value</av-link> the content will be refreshed.</p>
 <av-doc-wc-create-editor-4></av-doc-wc-create-editor-4>
-<h2>The style</h2>
+<h2 id="the-style">The style</h2>
 <p>This is just a simple SCSS file. The only think to know is that the style must be wrapped inside a :host{}.</p>
 <av-code language="css" filename="TextRed.wcs.avt">
     :host {
@@ -74,7 +74,7 @@
     }
 </av-code>
 <p>You can find more information about the style <av-link to="/docs/wc/style">here.</av-link></p>
-<h2>The logic</h2>
+<h2 id="the-logic">The logic</h2>
 <p>When you create a new file *.wcl.avt you can notice that the file has region. This is set to allow developer to order
     the code. Each region has a goal. You can remove it but we advice you to keep it.</p>
 <ul>
@@ -137,7 +137,7 @@
     }
 </av-code>
 
-<h2>Lifecycle</h2>
+<h2 id="lifecycle">Lifecycle</h2>
 <p>The webcomponent has the following lifecycle</p>
 <av-img src="/img/doc/wc/create/lifecylce.png"></av-img>
 

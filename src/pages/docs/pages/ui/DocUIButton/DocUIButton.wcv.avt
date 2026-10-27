@@ -3,7 +3,7 @@
     Just like other UI elements in the framework, it focuses purely on behavior and interaction, leaving style and
     presentation entirely up to you.</p>
 
-<h2>Overview</h2>
+<h2 id="overview">Overview</h2>
 
 <p>Buttons are one of the most fundamental interactive elements in any UI.
     In Aventus, a ButtonElement is not a styled component. It's a behavioral foundation that handles:</p>
@@ -18,7 +18,7 @@
 <p>This allows you to design your own visual button components with custom HTML, CSS, or frameworks like Tailwind while
     relying on a robust, consistent behavior layer.</p>
 
-<h2>Core Concepts</h2>
+<h2 id="core-concepts">Core Concepts</h2>
 
 <h3>1. Form Association</h3>
 <p>The <span class="cn">ButtonElement</span> integrates seamlessly with the <span class="cn">Form</span> system in
@@ -75,7 +75,7 @@ public type: 'button' | 'submit' | 'reset' | 'menu' = 'button';
 
 
 
-<h2>Why It Matters</h2>
+<h2 id="why-it-matters">Why It Matters</h2>
 <p>By abstracting out repetitive button behavior (submission, keyboard handling, and event management) the ButtonElement
     lets you:</p>
 
@@ -86,7 +86,7 @@ public type: 'button' | 'submit' | 'reset' | 'menu' = 'button';
 </ul>
 <p>Every Aventus button you create inherits reliable interaction patterns without any extra boilerplate.</p>
 
-<h2>Summary</h2>
+<h2 id="summary">Summary</h2>
 
 <div class="table">
     <av-row class="header">

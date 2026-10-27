@@ -15,14 +15,14 @@
 <p>It's ideal for applications that need precise control over scroll behavior, including drag-to-scroll, zoomable
     content, and custom scrollbars.</p>
 
-<h2>Concept</h2>
+<h2 id="concept">Concept</h2>
 <p><span class="cn">av-scrollable</span> wraps content in a scrollable container with custom scrollbars. Unlike native
     scroll elements, it supports momentum, pinch zoom, and dragging, with fully customizable styling.</p>
 
 <p>Example:</p>
 <av-doc-u-i-scrollable-editor-1></av-doc-u-i-scrollable-editor-1>
 
-<h2>Attributes</h2>
+<h2 id="attributes">Attributes</h2>
 <div class="table">
     <av-row class="header">
         <av-col size="4" center>Attribute</av-col>
@@ -91,7 +91,7 @@
     </av-row>
 </div>
 
-<h2>Features</h2>
+<h2 id="features">Features</h2>
 <h3>1. Momentum-based scrolling</h3>
 <p><span class="cn">av-scrollable</span> applies smooth momentum when dragging or using the mouse wheel. The break
     attribute controls easing.</p>
@@ -114,7 +114,7 @@
     <li>Momentum continues after release for a natural feel.</li>
 </ul>
 
-<h2>Callbacks</h2>
+<h2 id="callbacks">Callbacks</h2>
 
 <div class="table">
     <av-row class="header">
@@ -132,7 +132,7 @@
 </div>
 
 
-<h2>Methods</h2>
+<h2 id="methods">Methods</h2>
 <div class="table">
     <av-row class="header">
         <av-col size="6" center>Method</av-col>
@@ -196,7 +196,7 @@
     </av-row>
 </div>
 
-<h2>CSS Variables</h2>
+<h2 id="css-variables">CSS Variables</h2>
 <div class="table">
     <av-row class="header">
         <av-col size="4" center>Variable</av-col>
@@ -255,7 +255,7 @@
     </av-row>
 </div>
 
-<h2>Notes</h2>
+<h2 id="notes">Notes</h2>
 <ul>
     <li>Scrollbars are automatically shown or hidden based on content size.</li>
     <li><span class="cn">disable</span> temporarily locks scrolling and zooming.</li>

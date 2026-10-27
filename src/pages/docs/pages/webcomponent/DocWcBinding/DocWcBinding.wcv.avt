@@ -6,7 +6,7 @@
     when the child trigger a specific event, it will take value from child to assign it to the parent.
 </p>
 
-<h2>Basic binding</h2>
+<h2 id="basic-binding">Basic binding</h2>
 <p>To add binding you must add the attribute <span class="cn">@bind</span> inside your <span class="cn">*.wcv.avt</span>
     and add the field to watch as attribute value.</p>
 <av-doc-wc-binding-editor-1></av-doc-wc-binding-editor-1>
@@ -22,14 +22,14 @@
     <li><b>Nb:</b> for all tag, the value checked on child must be named <span class="cn">value</span></li>
 </ul>
 
-<h2>Select the event to listen to</h2>
+<h2 id="select-the-event-to-listen-to">Select the event to listen to</h2>
 <p>If you need to define which event or CallbackManger the code must listen, you can write your binding like below.</p>
 <av-doc-wc-binding-editor-2></av-doc-wc-binding-editor-2>
 <p>In this example, the field <span class="cn">value</span> will be updated when the <span class="cn">keyup</span>
     event is triggered on the input. Notice that if you have a Callback named keyup, the code will listen to the
     keyup Callback instead of the keyup event.</p>
 
-<h2>Select the child field to bind with</h2>
+<h2 id="select-the-child-field-to-bind-with">Select the child field to bind with</h2>
 <p>If you need to define which field the code must synchronize instead of <span class="cn">value</span>, you can write your binding like below.
 </p>
 <av-doc-wc-binding-editor-3></av-doc-wc-binding-editor-3>
@@ -37,6 +37,6 @@
 <p>In this example, the parent field <span class="cn">value</span> will be synchronized with the child field <span
         class="cn">val</span></p>
 
-<h2>Full custom binding</h2>
+<h2 id="full-custom-binding">Full custom binding</h2>
 <p>You can mix the two previous cases to fully customize your binding.</p>
 <av-doc-wc-binding-editor-4></av-doc-wc-binding-editor-4>

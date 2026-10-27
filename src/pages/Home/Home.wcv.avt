@@ -65,7 +65,7 @@
         <div class="separator"></div>
 
         <div class="why">
-            <h2>The Aventus mindset</h2>
+            <h2 id="the-aventus-mindset">The Aventus mindset</h2>
             <p>AventusJs strives to streamline web development by harnessing modern native technologies, with web
                 components serving as a prime illustration of this approach. In today's landscape, developers can
                 construct robust applications without the need for an extensive array of libraries obtained via npm and

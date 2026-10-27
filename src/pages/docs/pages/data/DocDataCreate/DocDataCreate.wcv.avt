@@ -1,11 +1,11 @@
 <h1>Data</h1>
 <p>In this section you are going to learn what is a data and how you can create it inside Aventus.</p>
 
-<h2>Definition</h2>
+<h2 id="definition">Definition</h2>
 <p>A data is a class that define an object structure. This class reflects what the application will contain. This is the
     backbone of your application and most of the times, all data structures will be a copy from your backend object.</p>
 
-<h2>Inside Aventus</h2>
+<h2 id="inside-aventus">Inside Aventus</h2>
 <p>Inside Aventus you can create a new Data class by right clicking on the explorer part inside vscode, choose
     <i>Aventus
         : Create...</i> and choose <i>Data</i>. Inside the input you can enter the name for the class. This will create

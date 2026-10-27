@@ -18,7 +18,7 @@
 <p>By default, this will search inside the store. If you need to import other package you can define an object to have
     more options.</p>
 
-<h2>Properties</h2>
+<h2 id="properties">Properties</h2>
 <div class="table">
     <av-row class="header">
         <av-col size="4" center>Name</av-col>
@@ -71,7 +71,7 @@
     </av-row>
 </div>
 
-<h2>Libraries name</h2>
+<h2 id="libraries-name">Libraries name</h2>
 <p>You can use a few name kinds to load a library. If you use a predefined name you don't need version. There are 5 libs
     with predefined uri:</p>
 <ul>
@@ -92,12 +92,12 @@
     </pre>
 </av-code>
 
-<h2>Store</h2>
+<h2 id="store">Store</h2>
 <p>You can search packages inside the aventus store. This is the recommanded way to load package.</p>
 <p><a href="https://store.aventusjs.com/packages" target="_blank"><av-button>Open the store</av-button></a></p>
 
 
-<h2>File uri</h2>
+<h2 id="file-uri">File uri</h2>
 <p>You can add directly an uri that resolve a <span class="cn">.package.avt</span> file to import it.</p>
 <av-code language="json" filename="aventus.conf.avt">
     <pre>
@@ -113,7 +113,7 @@
         }
     </pre>
 </av-code>
-<h2>File via http</h2>
+<h2 id="file-via-http">File via http</h2>
 <p>You can resolve a dependency via HTTP. The package is stored inside <span class="cn">storage&gt;packages&gt;http</span>. In this
     folder, you must find
     a list

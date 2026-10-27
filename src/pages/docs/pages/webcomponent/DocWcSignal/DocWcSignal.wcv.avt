@@ -4,7 +4,7 @@
     objects, @Signal() does <span class="cn">not observe nested or child properties</span>. This makes it lightweight and ideal for scenarios
     where you only need to track changes to a property's immediate value.</p>
 
-<h2>Using Signal</h2>
+<h2 id="using-signal">Using Signal</h2>
 <p>To declare a signal variable, you must add the decorator <span class="cn">@Signal</span>.</p>
 <av-code language="typescript" filename="Example.wcl.avt">
     <pre>

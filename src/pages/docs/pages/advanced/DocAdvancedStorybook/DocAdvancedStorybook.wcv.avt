@@ -4,7 +4,7 @@
     code. Storybook provides an interactive environment for developing, testing, and showcasing components in isolation,
     making it an invaluable tool for both development and collaboration.</p>
 
-<h2>Setup for the example</h2>
+<h2 id="setup-for-the-example">Setup for the example</h2>
 
 <p>First of all you need to create a new empty project <span class="cn">test</span> with a component named <span
         class="cn">Button</span></p>
@@ -50,7 +50,7 @@
     documentation you can add to improve your story content.</p>
 
 
-<h2>Document slots</h2>
+<h2 id="document-slots">Document slots</h2>
 
 <p>To document slots, you can add a comment over you component class with the tag <span class="cn">@slot (slotName)? -
         description</span>. The default value for slotName is <span class="cn">default</span>.</p>
@@ -71,7 +71,7 @@
 <p>As you can see, the component has now a description and the slot default has also a description.</p>
 
 
-<h2>Style variables</h2>
+<h2 id="style-variables">Style variables</h2>
 
 <p>To add documentation to your style variables, you can add a comment over the variable. Two tags are available to extends your documentation</p>
 
@@ -114,7 +114,7 @@
 
 
 
-<h2>Customize storybook</h2>
+<h2 id="customize-storybook">Customize storybook</h2>
 
 <p>To customize export you can add the decorator <span class="cn">@Storybook</span> or edit <span class="cn">aventus.conf.avt</span>.</p>
 
@@ -299,7 +299,7 @@
 </av-code>
 
 
-<h2>Write custom documentation pages</h2>
+<h2 id="write-custom-documentation-pages">Write custom documentation pages</h2>
 
 <p>If you want to write custom document page, you can create a <span class="cn">.mdx file</span>. Most of the time, you will need diagram to explain how things are working togther. By default, the tag <span class="cn">av-diagram</span> is available to create mermaid diagram. You can read the mermaid documentation <a href="https://mermaid.js.org/intro/getting-started.html" target="_blank">here</a>.</p>
 

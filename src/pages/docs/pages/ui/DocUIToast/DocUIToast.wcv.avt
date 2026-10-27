@@ -12,10 +12,10 @@
     indefinitely.</p>
 
 
-<h2>Example</h2>
+<h2 id="example">Example</h2>
 <av-doc-u-i-toast-editor-1></av-doc-u-i-toast-editor-1>
 
-<h2>ToastElement Class</h2>
+<h2 id="toastelement-class">ToastElement Class</h2>
 <p>ToastElement&lt;T extends ToastOptions = ToastOptions&gt; is the base class used to define how individual toast
     notifications behave and appear.
     It handles visibility, automatic hiding after a timeout, and transitions.</p>
@@ -43,7 +43,7 @@
 </div>
 
 
-<h2>ToastManager Class</h2>
+<h2 id="toastmanager-class">ToastManager Class</h2>
 <p><span class="cn">ToastManager</span> handles displaying, positioning, and stacking toasts on the screen.
     It ensures that multiple notifications do not overlap and automatically manages their lifecycle.</p>
 
@@ -101,7 +101,7 @@
     </av-row>
 </div>
 
-<h2>Behavior</h2>
+<h2 id="behavior">Behavior</h2>
 
 <ul>
     <li>The toast slides in at the specified position.</li>

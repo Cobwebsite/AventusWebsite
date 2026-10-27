@@ -5,7 +5,7 @@
 </p>
 
 
-<h2>Using the Store - Package</h2>
+<h2 id="using-the-store-package">Using the Store - Package</h2>
 <p>The AventusJS Store is available at <a href="https://store.aventusjs.com" target="_blank"><span
             class="cn">store.aventusjs.com</span></a>. From there, you can browse and search for available packages
     created by the community.</p>
@@ -54,7 +54,7 @@
 <p>After saving the configuration, Aventus will fetch the new version and replace the old one in your project.</p>
 
 
-<h2>Using the Store - Template</h2>
+<h2 id="using-the-store-template">Using the Store - Template</h2>
 
 <p>Templates in AventusJS allow you to quickly generate files and boilerplate code for your projects. They are
     especially useful when you want to maintain consistency across components or projects. Full documentation for
@@ -77,7 +77,7 @@
 <p>These commands ensure that your workspace stays clean and that old templates do not interfere with new ones.</p>
 
 
-<h2>Publishing to the Store - Package</h2>
+<h2 id="publishing-to-the-store-package">Publishing to the Store - Package</h2>
 <p>Publishing a package to the AventusJS Store allows you to share reusable pieces of code with the community while
     keeping your code modular and easy to integrate.</p>
 
@@ -130,7 +130,7 @@
 <p>You can edit the README content directly from the store website.</p>
 <p>If needed, you can delete a package from the store if you are the owner.</p>
 
-<h2>Publishing to the Store - Template</h2>
+<h2 id="publishing-to-the-store-template">Publishing to the Store - Template</h2>
 <p>Publishing a template to the AventusJS Store allows you to share reusable project or component templates with the
     community, making it easier for others to create consistent and modular code.</p>
 

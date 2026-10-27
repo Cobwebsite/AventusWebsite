@@ -1,7 +1,7 @@
 <h1>Webcomponent - Style</h1>
 <p>In this section you are going to learn how to apply a style to your component.</p>
 
-<h2>Definition</h2>
+<h2 id="definition">Definition</h2>
 <p>Because Aventus is build on the top of webcomponent, the style is scoped. It means that the style from Component 1
     won't affect the style from Component 2. If you want more information about scoped style inside webcomponent you
     can read <a href="https://web.dev/shadowdom-v1/#component-defined-styles" target="_blank">this</a>. It's great but
@@ -10,20 +10,20 @@
         href="https://web.dev/constructable-stylesheets/" target="_blank">Constructable Stylesheets</a> to
     improve reusability.</p>
 
-<h2>Local style</h2>
+<h2 id="local-style">Local style</h2>
 <p>To edit the style of your component, you must open the file <span class="cn">*.wcs.avt</span> and add the style you
     want written in SCSS. The only special selector inside webcomponent style is the <span class="cn">:host</span> that
     will target the current custom element.</p>
 
 <av-doc-wc-style-editor-1></av-doc-wc-style-editor-1>
-<h2>Inherit style</h2>
+<h2 id="inherit-style">Inherit style</h2>
 <p>If a webcomponent is inheriting another webcomponent, their styles will be merged. Parent style will be written
     before Child style so that you can override parent style without problem.</p>
 
 <av-doc-wc-style-editor-2></av-doc-wc-style-editor-2>
 <p>The child title will be blue instead of orange.</p>
 
-<h2>External style</h2>
+<h2 id="external-style">External style</h2>
 <p>If you want to create some utility classes for components, you can create file named <span
         class="cn">@*.wcs.avt</span> for Global WebComponent Style, then you can include this file inside component.
     This file is also a SCSS file.</p>
@@ -83,7 +83,7 @@
     <li>@utility</li>
 </ol>
 
-<h2>Edit style from outside</h2>
+<h2 id="edit-style-from-outside">Edit style from outside</h2>
 <p>When you create component for a library, you should provide some style parameter that the user can edit. What if the
     library user want to change the backgroud-color. The style is scoped so he won't be able to edit it from outside.
     This is why you can define <span class="cn">custom property</span> inside your component. Declaring a custom
@@ -122,7 +122,7 @@
 <p>You can also quick create a variable by pressing <span class="cn">Ctrl + k Ctrl + numpad1</span> and provide the name
     for what the variable is for.</p>
 
-<h2>Creating theme</h2>
+<h2 id="creating-theme">Creating theme</h2>
 <p>A good pratice when you developing application is to create theme file where you can declare globals properties for
     the project. Inside Aventus you can achieve it by creating a new file named <span class="cn">*.gs.avt</span> for
     Global Style. This file must be set inside a <span class="cn"><av-link to="/docs/config/static">static</av-link></span> part of your project. This allows you to have

@@ -6,7 +6,7 @@
             href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy"
             target="_blank">Proxy</a></span>.</p>
 
-<h2>Create a watch</h2>
+<h2 id="create-a-watch">Create a watch</h2>
 <p>To declare a watch variable, you must add the decorator <span class="cn">@Watch</span>.</p>
 <av-code language="typescript" filename="Example.wcl.avt">
     <pre>
@@ -55,7 +55,7 @@
 
 <av-doc-wc-watch-editor-1></av-doc-wc-watch-editor-1>
 
-<h2>Debug a watch</h2>
+<h2 id="debug-a-watch">Debug a watch</h2>
 <p>Because when you are building big application a lot of actions can modify your watch variable, we add a debug feature
     to easly understand what change my value. Over the webcomponent class you must add the decorator <span
         class="cn">@Debugger</span> with the option <span class="cn">enableWatchHistory</span> to true.</p>
@@ -83,7 +83,7 @@
     available inside your DevTools Console.</p>
 <av-img src="/img/doc/wc/watch/debug.png"></av-img>
 
-<h2>Using watch outisde component</h2>
+<h2 id="using-watch-outisde-component">Using watch outisde component</h2>
 <p>You can watch what occur on an object everywhere on your code. To achieve that, you must use the <span
         class="cn">Aventus.Watcher.get</span> and work only with the result of the function. <av-link
         class="font-sm" to="/docs/lib/watcher">More

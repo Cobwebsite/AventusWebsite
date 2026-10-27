@@ -17,7 +17,7 @@
 <p>In the code above, the string <span class="cn">"test"</span> will be flagged as an error because no translation exists yet.</p>
 <p>If there is an error, autocompletion is available. Once everything is set up, you can easily find translation keys using autocompletion.</p>
 
-<h2>Global file</h2>
+<h2 id="global-file">Global file</h2>
 <p>To register global translations, create a file anywhere Aventus is watching. The file name must start with <span class="cn">@</span> and end with <span class="cn">.i18n.avt</span>.</p>
 <p>When you open the file, Aventus will display a custom I18n editor. This editor allows you to:</p>
 <ul>
@@ -49,11 +49,11 @@
     </pre>
 </av-code>
 
-<h2>WebComponent File</h2>
+<h2 id="webcomponent-file">WebComponent File</h2>
 <p>To add translations for a specific component, create a file with the same name as the component, ending with <span class="cn">.i18n.avt</span>. For example, for the component <span class="cn">Test.wcl.avt</span>, create a file named <span class="cn">Test.i18n.avt</span>.</p>
 <p>Translations from this file can be accessed inside the component using the function <span class="cn">this.t()</span>. Do not use <span class="cn">t()</span> here, as it will refer to the global translations.</p>
 
-<h2>Change locale</h2>
+<h2 id="change-locale">Change locale</h2>
 <p>To change the locale during runtime, call the following function:</p>
 <av-code language="typescript">
     <pre>

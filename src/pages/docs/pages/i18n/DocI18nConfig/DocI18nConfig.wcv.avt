@@ -41,7 +41,7 @@
         class="cn">en-gb.json</span> and <span class="cn">fr-fr.json</span>. Thoses files contains all transalations you
     need for your application.</p>
 
-<h2>General configuration</h2>
+<h2 id="general-configuration">General configuration</h2>
 <div class="table">
     <av-row class="header">
         <av-col size="4" center>Name</av-col>
@@ -63,7 +63,7 @@
     </av-row>
 </div>
 
-<h2>Compilation configuration</h2>
+<h2 id="compilation-configuration">Compilation configuration</h2>
 <p>You can customize how Aventus handles your i18n files.</p>
 
 <av-code language="json" filename="aventus.conf.avt">

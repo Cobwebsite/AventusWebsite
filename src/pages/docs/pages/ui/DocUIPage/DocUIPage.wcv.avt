@@ -2,7 +2,7 @@
 <p>The <span class="cn">Page</span> class is the foundational building block for every navigable screen in an Aventus application.
 Each route in your app corresponds to a Page component, which defines its content, metadata, and lifecycle behavior.</p>
 
-<h2>Overview</h2>
+<h2 id="overview">Overview</h2>
 <p>A <span class="cn">Page</span> is automatically managed by the <span class="cn">Router</span> component:</p>
 <ul>
     <li>When a route is activated, its associated <span class="cn">Page</span> is shown.</li>
@@ -45,7 +45,7 @@ export class HomePage extends Page {
 </av-code>
 
 
-<h2>Properties</h2>
+<h2 id="properties">Properties</h2>
 <div class="table">
     <av-row class="header">
         <av-col size="3" center>Property</av-col>
@@ -77,7 +77,7 @@ export class HomePage extends Page {
 <p>Calling <span class="cn">show()</span> on a page that is already visible still calls <span class="cn">onShow()</span>,
     which allows route data to be refreshed without hiding the page first.</p>
 
-<h2>Lifecycle Methods</h2>
+<h2 id="lifecycle-methods">Lifecycle Methods</h2>
 <div class="table">
     <av-row class="header">
         <av-col size="6" center>Method</av-col>
@@ -113,7 +113,7 @@ export class HomePage extends Page {
     </av-row>
 </div>
 
-<h2>Access Control Example</h2>
+<h2 id="access-control-example">Access Control Example</h2>
 <p>You can control page visibility by overriding <span class="cn">isAllowed</span>:</p>
 <av-code language="ts">
     <pre>
@@ -136,7 +136,7 @@ public override async isAllowed(state: State, pattern: string, router: Router) {
     <li>string or State → The router redirects to the given route or state.</li>
 </ul>
 
-<h2>Loading Data Example</h2>
+<h2 id="loading-data-example">Loading Data Example</h2>
 <p>You can load data for the page by overriding <span class="cn">loadData</span>:</p>
 <av-code language="ts">
     <pre>
@@ -160,7 +160,7 @@ public override async loadData(state: State) {
 </ul>
 
 
-<h2>Page Configuration</h2>
+<h2 id="page-configuration">Page Configuration</h2>
 <p>Each page defines its configuration via the <span class="cn">configure()</span> method.</p>
 <av-code language="ts">
     <pre>

@@ -2,12 +2,12 @@
 <p>The <span class="cn">Router</span> component provides the core navigation system for Aventus-based applications.
 It defines, registers, and manages application routes, dynamically loads and displays pages, and keeps browser navigation in sync with the active state.</p>
 
-<h2>Overview</h2>
+<h2 id="overview">Overview</h2>
 <p>The Router acts as a central route controller, coordinating between the app's state manager and the rendered pages.</p>
 <p>It supports both synchronous and asynchronous route loading, custom 404 handling, URL synchronization, and smooth transitions between pages.</p>
 <p>It must be extended to define your own route structure and optionally override its behavior.</p>
 
-<h2>Example</h2>
+<h2 id="example">Example</h2>
 
 <av-code language="ts">
     <pre>
@@ -40,7 +40,7 @@ export class AppRouter extends Router {
     </pre>
 </av-code>
 
-<h2>Template</h2>
+<h2 id="template">Template</h2>
 <av-code language="html">
     <pre>
 &lt;slot name="before"&gt;&lt;/slot&gt;
@@ -50,7 +50,7 @@ export class AppRouter extends Router {
 </av-code>
 <p>This structure allows you to insert additional UI before or after the router content, such as headers, sidebars, or footers.</p>
 
-<h2>Configuration</h2>
+<h2 id="configuration">Configuration</h2>
 <p>You can globally configure the Router's default behavior:</p>
 <av-code language="ts">
     <pre>
@@ -61,7 +61,7 @@ Router.configure({
     </pre>
 </av-code>
 
-<h2>Defining Routes</h2>
+<h2 id="defining-routes">Defining Routes</h2>
 <p>Routes are defined in the abstract <span class="cn">defineRoutes()</span> method. It may be asynchronous; the router
     waits for it before registering routes and activating the initial URL.</p>
 
@@ -78,7 +78,7 @@ Router.configure({
 
 <p>Async routes are useful for lazy-loading parts of your application.</p>
 
-<h2>Page Lifecycle</h2>
+<h2 id="page-lifecycle">Page Lifecycle</h2>
 <p>Each page is a component extending <span class="cn">Page</span>.
 When a route becomes active, the Router:</p>
 
@@ -95,7 +95,7 @@ When a route becomes active, the Router:</p>
     navigation are complete, making it suitable for an initial loading state.</p>
 
 
-<h2>404 Handling</h2>
+<h2 id="404-handling">404 Handling</h2>
 <p>If no route matches the current state, the Router:</p>
 <ul>
     <li>Instantiates the <span class="cn">page404</span> page (default or overridden)</li>
@@ -113,7 +113,7 @@ protected override error404(): new () => Page {
 </av-code>
 
 
-<h2>Navigation Control</h2>
+<h2 id="navigation-control">Navigation Control</h2>
 <h3>Programmatic Navigation</h3>
 <p>You can navigate to a new route manually:</p>
 <av-code language="ts">
@@ -148,7 +148,7 @@ protected override onNewPage(oldUrl: string, oldPage: Page | undefined, newUrl: 
     </pre>
 </av-code>
 
-<h2>URL Binding</h2>
+<h2 id="url-binding">URL Binding</h2>
 <p>By default, the Router binds to the browser URL:</p>
 <ul>
     <li>Keeps window.location in sync.</li>
@@ -174,7 +174,7 @@ protected override defaultUrl(): string {
     </pre>
 </av-code>
 
-<h2>Methods</h2>
+<h2 id="methods">Methods</h2>
 <div class="table">
     <av-row class="header">
         <av-col size="6" center>Method</av-col>

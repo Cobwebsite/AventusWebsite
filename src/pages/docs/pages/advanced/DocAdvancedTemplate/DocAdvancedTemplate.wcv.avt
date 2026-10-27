@@ -2,13 +2,13 @@
 <p>Because you will create some amazing components or patterns with Aventus, the framework includes a way to generate
     files based on templates. For example, when you create a project with Tailwind, all your webcomponents must inherit
     from a base component that contains the Tailwind style. This will be the example for this section.</p>
-<h2>Setup for the example</h2>
+<h2 id="setup-for-the-example">Setup for the example</h2>
 <p>First of all you need to create a new empty project with a component named Tailwind. This component will be the root
     for all others components.</p>
 
 <av-doc-advanced-template-editor-1></av-doc-advanced-template-editor-1>
 
-<h2>Creating a template</h2>
+<h2 id="creating-a-template">Creating a template</h2>
 <p>You can create the following folder inside your workspace <span class="cn">/.aventus/templates/</span>. This is where
     all your
     templates will be stored. This folder must be at your workspace root, otherwise it will not work.</p>
@@ -29,7 +29,7 @@
 
 <p>Every &#36;&#123;&#123;componentName&#125;&#125; will be replaced by the user answer.</p>
 
-<h2>Using the template</h2>
+<h2 id="using-the-template">Using the template</h2>
 <p>Now if you right click on the <span class="cn">/src</span> folder and click on <span class="cn">Aventus :
         Create...</span>. Inside the next dropdown, the option <span class="cn">Tailwind Template</span> must
     be available.
@@ -41,7 +41,7 @@
 <av-doc-advanced-template-editor-4></av-doc-advanced-template-editor-4>
 
 
-<h2>Meta</h2>
+<h2 id="meta">Meta</h2>
 <p>You can configure meta data to configure your template.</p>
 <div class="table">
     <av-row class="header">
@@ -101,7 +101,7 @@
     </av-row>
 </div>
 
-<h2>Available Methods</h2>
+<h2 id="available-methods">Available Methods</h2>
 <p>The template contains action to help you during creation process.</p>
 <div class="table">
     <av-row class="header">
@@ -239,7 +239,7 @@
     </av-row>
 </div>
 
-<h2>Expose the template globally</h2>
+<h2 id="expose-the-template-globally">Expose the template globally</h2>
 <p>
     A global template is available during creation independently of the current project. Set
     <span class="cn">isGlobal: true</span> in its metadata and install it in the <span class="cn">global</span> folder
@@ -249,13 +249,13 @@
 <p>Workspace-specific global templates can also be placed in <span class="cn">.aventus/global</span>. They are merged
     with configured global templates and are available to quick creation.</p>
 
-<h2>Publish to the store</h2>
+<h2 id="publish-to-the-store">Publish to the store</h2>
 <p>
     You can publish your template to the store by <span class="cn">right clicking</span> on the <span
         class="cn">template.avt.ts</span> and press <span class="cn">Aventus: Publish template to the store</span>
 </p>
 
-<h2>Download from the store</h2>
+<h2 id="download-from-the-store">Download from the store</h2>
 <p>
     You can download amazing templates directly from the store just by clicking on the download button on a package
     details page.
@@ -264,7 +264,7 @@
     <a href="https://store.aventusjs.com/templates" target="_blank"><av-button>Open the store</av-button></a>
 </p>
 
-<h2>Project</h2>
+<h2 id="project">Project</h2>
 <p>
     In the previous section, you open the Aventus storage folder, you may have noticed that a <span
         class="cn">projects</span> exists. Inside this folder, you can find templates that will be used when you <span
@@ -274,7 +274,7 @@
     files, etc. You can also name the file <span class="cn">!aventus.conf.avt</span> to avoid error.
 </p>
 
-<h2>Quick template</h2>
+<h2 id="quick-template">Quick template</h2>
 <p>
     If a template supports quick creation via a meta tag, you can register it to run without right-clicking on a folder.
 </p>

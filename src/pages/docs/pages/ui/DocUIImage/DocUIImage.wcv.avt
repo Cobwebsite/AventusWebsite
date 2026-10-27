@@ -4,7 +4,7 @@
 <p>It replaces the standard <span class="cn">&lt;img&gt;</span> tag when you need consistent, reactive sizing or when
     you want to embed and colorize SVGs directly.</p>
 
-<h2>Concept</h2>
+<h2 id="concept">Concept</h2>
 <p><span class="cn">av-img</span> manages the rendering and scaling of images inside flexible containers. It
     automatically adjusts its internal image or SVG to match the container's size and the selected display mode.</p>
 <p>It supports:</p>
@@ -21,7 +21,7 @@
     </pre>
 </av-code>
 
-<h2>Attributes</h2>
+<h2 id="attributes">Attributes</h2>
 <div class="table">
     <av-row class="header">
         <av-col size="4" center>Attribute</av-col>
@@ -46,7 +46,7 @@
     </av-row>
 </div>
 
-<h2>Modes</h2>
+<h2 id="modes">Modes</h2>
 <div class="table">
     <av-row class="header">
         <av-col size="4" center>Mode</av-col>
@@ -76,7 +76,7 @@
     </pre>
 </av-code>
 
-<h2>SVG Support</h2>
+<h2 id="svg-support">SVG Support</h2>
 <p>If the src ends with .svg, the file is loaded inline, allowing you to style or animate it using CSS variables.</p>
 <av-code language="html">
     <pre>
@@ -114,7 +114,7 @@
 
 <p>This allows theme-based or hover-driven color changes for inline SVGs.</p>
 
-<h2>Caching</h2>
+<h2 id="caching">Caching</h2>
 <p>If the cache attribute is set, <span class="cn">av-img</span> uses the <span class="cn">Aventus ResourceLoader</span>
     to load and convert the image into a Base64 string.</p>
 <p>This is useful for:</p>

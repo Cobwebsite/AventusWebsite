@@ -14,7 +14,7 @@
 <p>In summary, leveraging states within your application
     architecture contributes to a more organized, maintainable, and predictable development process.</p>
 
-<h2>Code it</h2>
+<h2 id="code-it">Code it</h2>
 
 <p>First of all we need a to create a new state named <span class="cn">TodoDisplay</span> : </p>
 <ul>

@@ -1,5 +1,5 @@
 <h1>RAM - Listen changes</h1>
-<h2>Item scoped functions</h2>
+<h2 id="item-scoped-functions">Item scoped functions</h2>
 <p>Because your component must be refreshed when your RAM item changed, the item coming from a RAM has 4 new functions.
 </p>
 <ul>
@@ -11,7 +11,7 @@
 <av-doc-ram-listen-changes-editor-1></av-doc-ram-listen-changes-editor-1>
 <p>You must care of the function scope. When you provide a function as parameter sometimes the scope of the function isn't right. To avoid scope error your can use <span class="cn">@BindThis()</span>.</p>
 <av-doc-ram-listen-changes-editor-2></av-doc-ram-listen-changes-editor-2>
-<h2>RAM scoped functions</h2>
+<h2 id="ram-scoped-functions">RAM scoped functions</h2>
 <p>To listen what is happening inside your RAM. You can subscribe to 3 listeners:</p>
 <ul>
     <li><span class="cn">onCreated</span> : trigger when a new data is created</li>

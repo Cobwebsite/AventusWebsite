@@ -16,7 +16,7 @@
                 </div>
                 <div class="body">
                     <div class="tab active" name="map">
-                        <h2>AventusJs Roadmap</h2>
+                        <h2 id="aventusjs-roadmap">AventusJs Roadmap</h2>
                         <p>The road map will depend of the community feedbacks, but the team has already agreed on the
                             following points.</p>
                         <div class="road-map">
@@ -32,7 +32,7 @@
                         </div>
                     </div>
                     <div class="tab" name="team">
-                        <h2>Team</h2>
+                        <h2 id="team">Team</h2>
                         <p class="help-us">Aventus is a product develop by Cobwebsite company. We are looking for
                             support to
                             ensure that this project lasts. If you would like to help us directly with the project,
@@ -71,7 +71,7 @@
                         </div>
                     </div>
                     <div class="tab" name="sponsor">
-                        <h2>Sponsor</h2>
+                        <h2 id="sponsor">Sponsor</h2>
                         <h3>Become a Sponsor of Aventus</h3>
                         <p>Join us in our mission to advance web development by becoming a sponsor of Aventus. Your
                             support plays a vital role in our ability to enhance Aventus, expand its capabilities, and

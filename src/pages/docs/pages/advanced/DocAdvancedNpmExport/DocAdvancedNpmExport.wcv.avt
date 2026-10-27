@@ -2,7 +2,7 @@
 
 <p>Exporting your AventusJs code to npm (Node Package Manager) is a powerful way to share and reuse your code across multiple projects. By publishing your code as an npm package, you can easily integrate it into any JavaScript project, streamline updates, and collaborate with others.</p>
 
-<h2>Setup for the example</h2>
+<h2 id="setup-for-the-example">Setup for the example</h2>
 
 <p>First of all you need to create a new empty project <span class="cn">test</span> with a component named <span class="cn">Button</span></p>
 
