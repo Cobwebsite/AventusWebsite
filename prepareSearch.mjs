@@ -30,7 +30,7 @@ try {
         if (new URL(url).origin !== new URL(origin).origin) continue;
         console.log(`Indexing ${url}`);
         await page.goto(url, { waitUntil: 'networkidle2' });
-        const record = await page.evaluate(() => {
+        const html = await page.evaluate(() => {
             const app = document.querySelector('av-app');
             const docPage = app?.shadowRoot?.querySelector('av-doc-page');
             const docApp = docPage?.shadowRoot?.querySelector('av-doc-app');
@@ -38,40 +38,39 @@ try {
             const pageContent = content?.shadowRoot?.querySelector('.page-content');
             if (!pageContent) return null;
 
-            const parts = [];
-            const headings = [];
+            // Pagefind needs real heading elements and IDs to produce section links.
+            // Flatten the documentation's shadow roots into an index-only HTML tree.
+            const main = document.createElement('main');
+            main.setAttribute('data-pagefind-body', '');
             const walk = node => {
                 if (node.nodeType === Node.TEXT_NODE) {
-                    const value = node.textContent.replace(/\s+/g, ' ').trim();
-                    if (value) parts.push(value);
-                    return;
+                    return node.cloneNode();
                 }
-                if (node.nodeType !== Node.ELEMENT_NODE) return;
+                if (node.nodeType !== Node.ELEMENT_NODE) return null;
                 const tag = node.tagName.toLowerCase();
-                if (['script', 'style', 'button', 'svg'].includes(tag) || node.hidden) return;
-                if (/^h[1-6]$/.test(tag)) headings.push(node.textContent.trim());
+                if (['script', 'style', 'button', 'svg'].includes(tag) || node.hidden) return null;
+                const copy = node.cloneNode(false);
                 // Code editors keep their actual code in a nested av-code shadow root.
-                if (node.shadowRoot) {
-                    for (const child of node.shadowRoot.childNodes) walk(child);
-                } else {
-                    for (const child of node.childNodes) walk(child);
+                for (const child of (node.shadowRoot ?? node).childNodes) {
+                    const cloned = walk(child);
+                    if (cloned) copy.appendChild(cloned);
                 }
+                return copy;
             };
-            walk(pageContent);
-            return {
-                title: headings.find(Boolean) ?? document.title,
-                content: parts.join(' '),
-            };
+            for (const child of pageContent.childNodes) {
+                const cloned = walk(child);
+                if (cloned) main.appendChild(cloned);
+            }
+            if (!main.textContent.trim()) return null;
+            return `<html lang="en"><body>${main.outerHTML}</body></html>`;
         });
-        if (!record?.content) {
+        if (!html) {
             console.warn(`Skipping empty page: ${url}`);
             continue;
         }
-        const { errors } = await index.addCustomRecord({
+        const { errors } = await index.addHTMLFile({
             url: new URL(url).pathname,
-            content: record.content,
-            language: 'en',
-            meta: { title: record.title },
+            content: html,
         });
         if (errors?.length) throw new Error(`Failed to index ${url}: ${errors.join(', ')}`);
         count++;
