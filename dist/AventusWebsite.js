@@ -11580,113 +11580,6 @@ Result.Tag=`av-result`;
 __as1(_, 'Result', Result);
 if(!window.customElements.get('av-result')){window.customElements.define('av-result', Result);Aventus.WebComponentInstance.registerDefinition(Result);}
 
-const SearchModal = class SearchModal extends Aventus.Modal.ModalElement {
-    get 'is_focus'() { return this.getBoolAttr('is_focus') }
-    set 'is_focus'(val) { this.setBoolAttr('is_focus', val) }
-    pagefind;
-    timeoutSearch;
-    static __style = `:host{align-items:flex-start;backdrop-filter:blur(4px);padding:6rem 3rem}:host .modal{background-color:var(--primary-color);border:1px solid color-mix(in oklab, black 5%, var(--primary-color));border-radius:8px;box-shadow:var(--elevation-10);padding:2rem 3rem;width:800px}:host .modal .header .input{align-items:center;background-color:var(--light-primary-color);border-radius:8px;color:var(--aventus-font-color);display:flex;gap:6px;padding:4px 14px;position:relative}:host .modal .header .input .border{border:1px solid color-mix(in oklab, black 20%, var(--text-color));border-radius:8px;inset:-1px;pointer-events:none;position:absolute;transition:border .1s linear}:host .modal .header .input mi-icon{font-size:16px}:host .modal .header .input input{background-color:rgba(0,0,0,0);border:none !important;color:var(--aventus-font-color);height:28px;min-width:0;outline:none !important}:host .modal .header .input:hover .border{border:2px solid #bdbdbd}:host .modal .body{padding:16px}:host([is_focus]) .modal .header .input .border{border:2px solid #bdbdbd}`;
-    __getStatic() {
-        return SearchModal;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(SearchModal.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<div class="header">
-    <div class="input">
-        <div class="border"></div>
-        <mi-icon icon="search"></mi-icon>
-        <input type="text" placeholder="Search" _id="searchmodal_0" />
-    </div>
-</div><div class="body">
-    <div class="result"></div>
-</div>` }
-    });
-}
-    __registerTemplateAction() { super.__registerTemplateAction();
-this.__getStatic().__template.setActions({
-  "elements": [
-    {
-      "name": "inputEl",
-      "ids": [
-        "searchmodal_0"
-      ]
-    }
-  ],
-  "events": [
-    {
-      "eventName": "focus",
-      "id": "searchmodal_0",
-      "fct": (e, c) => c.comp.onFocus(e)
-    },
-    {
-      "eventName": "blur",
-      "id": "searchmodal_0",
-      "fct": (e, c) => c.comp.onBlur(e)
-    },
-    {
-      "eventName": "input",
-      "id": "searchmodal_0",
-      "fct": (e, c) => c.comp.onInputChanged(e)
-    }
-  ]
-});
- }
-    getClassName() {
-        return "SearchModal";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('is_focus')) { this.attributeChangedCallback('is_focus', false, false); }
- }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('is_focus');
- }
-    __listBoolProps() { return ["is_focus"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-    configure() {
-        return {};
-    }
-    onFocus() {
-        this.is_focus = true;
-    }
-    onBlur() {
-        this.is_focus = false;
-    }
-    async onInputChanged() {
-        this.searchDelay();
-    }
-    searchDelay() {
-        if (this.timeoutSearch != undefined)
-            clearTimeout(this.timeoutSearch);
-        this.timeoutSearch = setTimeout(() => {
-            this.timeoutSearch = undefined;
-            this.search();
-        }, 300);
-    }
-    async search() {
-        if (!this.pagefind)
-            return;
-        const search = this.inputEl.value;
-        const results = await this.pagefind.search(search);
-        const pages = await Promise.all(results.results.map((result) => result.data()));
-        console.log(pages);
-    }
-    postCreation() {
-        super.postCreation();
-        const uri = '/pagefind/pagefind.js';
-        import(uri).then(async (pagefind) => {
-            this.pagefind = pagefind;
-        });
-        this.inputEl.focus();
-    }
-}
-SearchModal.Namespace=`AventusWebsite`;
-SearchModal.Tag=`av-search-modal`;
-__as1(_, 'SearchModal', SearchModal);
-if(!window.customElements.get('av-search-modal')){window.customElements.define('av-search-modal', SearchModal);Aventus.WebComponentInstance.registerDefinition(SearchModal);}
-
 const TutorialFooter = class TutorialFooter extends Aventus.WebComponent {
     get 'hide_previous'() { return this.getBoolAttr('hide_previous') }
     set 'hide_previous'(val) { this.setBoolAttr('hide_previous', val) }
@@ -43591,6 +43484,311 @@ TutorialPage.Tag=`av-tutorial-page`;
 __as1(_, 'TutorialPage', TutorialPage);
 if(!window.customElements.get('av-tutorial-page')){window.customElements.define('av-tutorial-page', TutorialPage);Aventus.WebComponentInstance.registerDefinition(TutorialPage);}
 
+const SearchModal = class SearchModal extends Aventus.Modal.ModalElement {
+    get 'is_focus'() { return this.getBoolAttr('is_focus') }
+    set 'is_focus'(val) { this.setBoolAttr('is_focus', val) }
+    get 'results'() {
+						return this.__signals["results"].value;
+					}
+					set 'results'(val) {
+						this.__signals["results"].value = val;
+					}
+get 'status'() {
+						return this.__signals["status"].value;
+					}
+					set 'status'(val) {
+						this.__signals["status"].value = val;
+					}
+    static searchState = "";
+    pagefind;
+    timeoutSearch;
+    searchVersion = 0;
+    __registerSignalsActions() { this.__signals["results"] = null;
+this.__signals["status"] = null;
+ super.__registerSignalsActions();  }
+    static __style = `:host{align-items:flex-start;backdrop-filter:blur(4px);padding:6rem 3rem}:host .modal{background-color:var(--primary-color);border:1px solid color-mix(in oklab, black 5%, var(--primary-color));border-radius:8px;box-shadow:var(--elevation-10);display:flex;flex-direction:column;max-height:min(85vh,800px);max-width:100%;padding:16px 0;width:800px}:host .modal .header{flex-shrink:0;padding:0 16px}:host .modal .header .input{align-items:center;background-color:var(--light-primary-color);border-radius:8px;color:var(--aventus-font-color);display:flex;gap:6px;padding:4px 14px;position:relative}:host .modal .header .input .border{border:1px solid color-mix(in oklab, black 20%, var(--text-color));border-radius:8px;inset:-1px;pointer-events:none;position:absolute;transition:border .1s linear}:host .modal .header .input mi-icon{font-size:16px}:host .modal .header .input input{background-color:rgba(0,0,0,0);border:none !important;color:var(--aventus-font-color);flex:1;height:28px;min-width:0;outline:none !important}:host .modal .header .input:hover .border{border:2px solid #bdbdbd}:host .modal .body{flex-grow:1;flex-shrink:1;font-size:16px;min-height:0;padding:16px 8px}:host .modal .body .status{margin:0;opacity:.7;padding:0 24px}:host .modal .body .results{padding:0 24px}:host .modal .body .results .result{border-top:1px solid color-mix(in oklab, var(--aventus-font-color) 15%, transparent);padding:14px 0}:host .modal .body .results .result av-link{color:var(--aventus-font-color);display:block;font-weight:600}:host .modal .body .results .result av-link:hover{text-decoration:underline}:host .modal .body .results .result .excerpt{font-size:.8em;line-height:1.4;margin:6px 0 0;opacity:.75}:host .modal .body .results .result .sections{list-style:none;margin:10px 0 0;padding:0 0 0 16px}:host .modal .body .results .result .sections li{margin-top:10px}:host .modal .body .results .result .sections:not(:has(li)){display:none}@media(max-width: 700px){:host{padding:2rem 1rem}:host .modal{padding:1.5rem;width:100%}}:host([is_focus]) .modal .header .input .border{border:2px solid #bdbdbd}`;
+    constructor() {
+        super();
+        this.onFocus = this.onFocus.bind(this);
+        this.onBlur = this.onBlur.bind(this);
+        this.onInputChanged = this.onInputChanged.bind(this);
+        this.onResultSelected = this.onResultSelected.bind(this);
+    }
+    __getStatic() {
+        return SearchModal;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(SearchModal.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<div class="header">
+    <div class="input">
+        <div class="border"></div>
+        <mi-icon icon="search"></mi-icon>
+        <input type="search" placeholder="Search documentation" aria-label="Search documentation" _id="searchmodal_0" />
+    </div>
+</div><av-scrollable class="body" floating_scroll flex>
+    <template _id="searchmodal_1"></template>
+    <div class="results">
+        <template _id="searchmodal_3"></template>
+    </div>
+</av-scrollable>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "inputEl",
+      "ids": [
+        "searchmodal_0"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "eventName": "focus",
+      "id": "searchmodal_0",
+      "fct": (e, c) => c.comp.onFocus(e)
+    },
+    {
+      "eventName": "blur",
+      "id": "searchmodal_0",
+      "fct": (e, c) => c.comp.onBlur(e)
+    },
+    {
+      "eventName": "input",
+      "id": "searchmodal_0",
+      "fct": (e, c) => c.comp.onInputChanged(e)
+    }
+  ]
+});
+const templ1 = new Aventus.Template(this);
+templ1.setTemplate(` 
+            <div class="result">
+                <av-link _id="searchmodal_4">
+                    <span class="result-title" _id="searchmodal_5"></span>
+                </av-link>
+                <p class="excerpt" _id="searchmodal_6"></p>
+                <ul class="sections">
+                    <template _id="searchmodal_7"></template>
+                </ul>
+            </div>
+        `);
+templ1.setActions({
+  "content": {
+    "searchmodal_4°to": {
+      "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method4(c.data.result))}`,
+      "once": true
+    },
+    "searchmodal_5°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method5(c.data.result))}`,
+      "once": true
+    },
+    "searchmodal_6°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method6(c.data.result))}`,
+      "once": true
+    }
+  },
+  "events": [
+    {
+      "eventName": "click",
+      "id": "searchmodal_4",
+      "fct": (e, c) => c.comp.onResultSelected(e)
+    }
+  ]
+});
+this.__getStatic().__template.addLoop({
+                    anchorId: 'searchmodal_3',
+                    template: templ1,
+                simple:{data: `this.results`,item:`result`}
+});
+const templ2 = new Aventus.Template(this);
+templ2.setTemplate(` 
+                        <li>
+                            <av-link _id="searchmodal_8"></av-link>
+                            <p class="excerpt" _id="searchmodal_9"></p>
+                        </li>
+                    `);
+templ2.setActions({
+  "content": {
+    "searchmodal_8°to": {
+      "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method7(c.data.section))}`,
+      "once": true
+    },
+    "searchmodal_8°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method8(c.data.section))}`,
+      "once": true
+    },
+    "searchmodal_9°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method9(c.data.section))}`,
+      "once": true
+    }
+  },
+  "events": [
+    {
+      "eventName": "click",
+      "id": "searchmodal_8",
+      "fct": (e, c) => c.comp.onResultSelected(e)
+    }
+  ]
+});
+templ1.addLoop({
+                    anchorId: 'searchmodal_7',
+                    template: templ2,
+                simple:{data: `result.sections`,item:`section`}
+});
+const templ0 = new Aventus.Template(this);
+templ0.setTemplate(`
+        <p class="status" _id="searchmodal_2"></p>
+    `);
+templ0.setActions({
+  "content": {
+    "searchmodal_2°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method3())}`,
+      "once": true
+    }
+  }
+});
+this.__getStatic().__template.addIf({
+                    anchorId: 'searchmodal_1',
+                    parts: [{once: true,
+                    condition: (c) => c.comp.__838905669b135e8412e195a5774494f6method0(),
+                    template: templ0
+                }]
+            });
+ }
+    getClassName() {
+        return "SearchModal";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('is_focus')) { this.attributeChangedCallback('is_focus', false, false); }
+ }
+    __defaultValuesSignal(s) { super.__defaultValuesSignal(s); s["results"] = [];
+s["status"] = "Type to search the documentation.";
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('is_focus');
+this.__correctGetter('results');
+this.__correctGetter('status');
+ }
+    __listBoolProps() { return ["is_focus"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    configure() {
+        return {};
+    }
+    onFocus() {
+        this.is_focus = true;
+    }
+    onBlur() {
+        this.is_focus = false;
+    }
+    onInputChanged() {
+        this.searchVersion++;
+        if (this.timeoutSearch !== undefined) {
+            clearTimeout(this.timeoutSearch);
+        }
+        if (!this.inputEl.value.trim()) {
+            this.status = "Type to search the documentation.";
+            this.results = [];
+            return;
+        }
+        this.status = "Searching…";
+        this.timeoutSearch = setTimeout(() => {
+            this.timeoutSearch = undefined;
+            this.search();
+        }, 300);
+    }
+    async search() {
+        const query = this.inputEl.value.trim();
+        const version = this.searchVersion;
+        SearchModal.searchState = query;
+        if (!query || !this.pagefind) {
+            return;
+        }
+        try {
+            const matches = await this.pagefind.search(query);
+            const pages = await Promise.all(matches.results.slice(0, 10).map(result => result.data()));
+            if (version !== this.searchVersion) {
+                return;
+            }
+            this.results = pages.map(page => ({
+                title: page.meta.title ?? page.url,
+                url: page.url,
+                excerpt: page.plain_excerpt ?? "",
+                sections: (page.sub_results ?? [])
+                    .filter(section => section.anchor && section.excerpt?.includes("<mark>"))
+                    .slice(0, 4)
+                    .map(section => ({
+                    title: section.title,
+                    url: section.url,
+                    excerpt: section.plain_excerpt ?? "",
+                })),
+            }));
+            this.status = this.results.length ? "" : "No results found.";
+        }
+        catch {
+            if (version === this.searchVersion) {
+                this.results = [];
+                this.status = "Search is unavailable. Please try again.";
+            }
+        }
+    }
+    onResultSelected() {
+        setTimeout(() => this.resolve(), 0);
+    }
+    postCreation() {
+        super.postCreation();
+        this.inputEl.value = SearchModal.searchState;
+        const uri = '/pagefind/pagefind.js';
+        import(uri).then((pagefind) => {
+            this.pagefind = pagefind;
+            if (this.inputEl.value.trim()) {
+                this.search();
+            }
+        }).catch(() => {
+            this.status = "Search is unavailable. Please try again.";
+        });
+        this.inputEl.focus();
+    }
+    postDestruction() {
+        this.searchVersion++;
+        if (this.timeoutSearch !== undefined) {
+            clearTimeout(this.timeoutSearch);
+        }
+        super.postDestruction();
+    }
+    __838905669b135e8412e195a5774494f6method3() {
+        return this.status;
+    }
+    __838905669b135e8412e195a5774494f6method4(result) {
+        return result.url;
+    }
+    __838905669b135e8412e195a5774494f6method5(result) {
+        return result.title;
+    }
+    __838905669b135e8412e195a5774494f6method6(result) {
+        return result.excerpt;
+    }
+    __838905669b135e8412e195a5774494f6method7(section) {
+        return section.url;
+    }
+    __838905669b135e8412e195a5774494f6method8(section) {
+        return section.title;
+    }
+    __838905669b135e8412e195a5774494f6method9(section) {
+        return section.excerpt;
+    }
+    __838905669b135e8412e195a5774494f6method0() {
+        return this.status;
+    }
+}
+SearchModal.Namespace=`AventusWebsite`;
+SearchModal.Tag=`av-search-modal`;
+__as1(_, 'SearchModal', SearchModal);
+if(!window.customElements.get('av-search-modal')){window.customElements.define('av-search-modal', SearchModal);Aventus.WebComponentInstance.registerDefinition(SearchModal);}
+
 const Navbar = class Navbar extends Aventus.WebComponent {
     get 'open'() { return this.getBoolAttr('open') }
     set 'open'(val) { this.setBoolAttr('open', val) }
@@ -43600,11 +43798,11 @@ get 'is_dark'() { return this.getBoolAttr('is_dark') }
     static __style = `:host{background-color:var(--primary-color);height:50px;padding:0 30px;width:100%}:host av-link{display:inline-block}:host .container{display:flex;height:100%;justify-content:space-between;margin:auto}:host .container .left{align-items:center;display:flex;height:100%;justify-self:start}:host .container .left .input{align-items:center;background-color:var(--light-primary-color);border-radius:8px;color:var(--aventus-font-color);display:flex;gap:6px;margin-left:280px;padding:4px 14px;position:relative}:host .container .left .input .border{border:1px solid #323232;border-radius:8px;inset:-1px;pointer-events:none;position:absolute;transition:border .1s linear}:host .container .left .input mi-icon{font-size:16px;width:16px}:host .container .left .input input{background-color:rgba(0,0,0,0);border:none !important;color:var(--aventus-font-color);min-width:0;outline:none !important;pointer-events:none}:host .container .left .input .shortcut{background-color:var(--primary-color);border-radius:4px;font-size:.7em;padding:4px 8px}:host .container .left .input:hover .border{border:2px solid #bdbdbd}:host .container .left av-link{display:inline-block;height:100%;user-select:none}:host .container .left av-link av-img{--img-color: var(--aventus-color);cursor:pointer;height:100%;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right{align-items:center;color:var(--primary-font-color);display:flex;justify-self:end}:host .container .right .menu{border-radius:5px;color:var(--primary-font-color);cursor:pointer;margin:0 5px;padding:5px 10px;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0);text-decoration:none;transition:color .5s var(--bezier-curve),background-color .5s var(--bezier-curve);user-select:none}:host .container .right .menu:not(.drop):hover{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu.active{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu-title{color:var(--aventus-color);display:none;font-size:2.4rem;margin:16px 0;text-align:center;width:100%}:host .container .right .menu-close-icon{display:none}:host .container .right .menu.drop:hover .drop-content{display:flex}:host .container .right .drop-content{background-color:var(--primary-color);display:none;flex-direction:column;gap:5px;padding:15px 10px;padding-top:10px;position:absolute;right:0;top:29px;z-index:99}:host .container .right .drop-content .drop-item{align-items:center;border-radius:5px;color:var(--primary-font-color);cursor:pointer;display:flex;gap:10px;margin:0 5px;padding:5px 10px;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0);text-decoration:none;transition:color .5s var(--bezier-curve),background-color .5s var(--bezier-curve);user-select:none}:host .container .right .drop-content .drop-item a{color:inherit;display:contents;text-decoration:none}:host .container .right .drop-content .drop-item .drop-icon{align-items:center;display:flex;height:30px;justify-content:center;width:30px}:host .container .right .drop-content .drop-item .drop-icon mi-icon{font-size:20px}:host .container .right .drop-content .drop-item .drop-icon av-img{height:30px;width:30px}:host .container .right .drop-content .drop-item:hover{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .icon-links{display:flex;gap:10px;margin-left:30px}:host .container .right .icon-links a{height:18px;width:18px}:host .container .right .icon-links a svg{fill:var(--primary-font-color);height:100%;transition:fill .5s var(--bezier-curve);width:100%}:host .container .right .icon-links a .reddit-logo{height:28px;margin-left:-5px;margin-top:-5px;width:28px}:host .container .right .icon-links a:hover svg{fill:var(--aventus-color)}:host .container .right .mode{align-items:center;cursor:pointer;display:flex;margin-left:30px;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right .mode mi-icon{font-size:1em}:host .container .right .mode .slider{align-items:center;background-color:var(--secondary-color);border:1px solid var(--primary-font-color);border-radius:15px;display:flex;height:15px;margin:0 10px;transition:background-color .5s;user-select:none;width:30px}:host .container .right .mode .slider .button{background-color:var(--text-color);border-radius:13px;height:9px;margin-left:2px;transition:inherit;transition:margin-left .2s linear;width:9px}:host .container .icon{align-items:center;color:var(--aventus-color);display:none;font-size:22px;height:100%;margin-right:16px}:host .container .hider{display:none}@media screen and (max-width: 1100px){:host .container .right{align-items:self-start;background-color:var(--primary-color);box-shadow:0 -10px 5px var(--aventus-color);color:var(--primary-font-color);flex-direction:column;height:100%;position:fixed;right:-300px;top:0px;transition:.4s right var(--bezier-curve);width:250px;z-index:90}:host .container .right .menu-title{display:block}:host .container .right .menu{margin:5px 0;margin-left:24px;order:1}:host .container .right .menu-close-icon{color:var(--aventus-color);display:block;font-size:21px;left:16px;position:absolute;top:13px}:host .container .right .drop-title{display:none}:host .container .right .drop-content{display:flex;padding:0;position:relative;right:auto;top:auto}:host .container .right .drop-content .drop-item{margin:0;padding-left:0}:host .container .right .icon-links{gap:20px;justify-content:center;margin:20px 0;margin-top:40px;order:3;width:100%}:host .container .right .icon-links a{height:24px;width:24px}:host .container .right .icon-links a .reddit-logo{height:34px;margin-left:-8px;margin-top:-6px;width:34px}:host .container .right .mode{justify-content:center;margin:0;margin-top:20px;order:2;width:100%}:host .container .icon{display:flex}:host .container .hider{background-color:rgba(0,0,0,0);display:none;height:100%;left:0;position:fixed;top:0;width:100%;z-index:9}:host([open]) .container .right{right:0}:host([open]) .container .hider{display:block}}:host([is_dark]) .container .right .mode .slider .button{margin-left:calc(100% - 11px)}`;
     constructor() {
         super();
-        let mode = localStorage.getItem("mode");
-        if (mode == 'dark') {
-            document.querySelector("html")?.classList.add("dark");
-            this.is_dark = true;
-        }
+        // let mode = localStorage.getItem("mode");
+        // if(mode == 'dark') {
+        document.querySelector("html")?.classList.add("dark");
+        this.is_dark = true;
+        // }
         this.openModal = this.openModal.bind(this);
     }
     __getStatic() {
@@ -43691,16 +43889,9 @@ get 'is_dark'() { return this.getBoolAttr('is_dark') }
                 </svg>
             </a>
         </div>
-        <div class="mode" _id="navbar_2">
-            <mi-icon icon="light_mode"></mi-icon>
-            <div class="slider">
-                <div class="button"></div>
-            </div>
-            <mi-icon icon="dark_mode"></mi-icon>
-        </div>
     </div>
-    <av-icon icon="navicon" class="icon" _id="navbar_3"></av-icon>
-    <div class="hider" _id="navbar_4"></div>
+    <av-icon icon="navicon" class="icon" _id="navbar_2"></av-icon>
+    <div class="hider" _id="navbar_3"></div>
 </div>` }
     });
 }
@@ -43720,14 +43911,10 @@ this.__getStatic().__template.setActions({
     },
     {
       "id": "navbar_2",
-      "onPress": (e, pressInstance, c) => { c.comp.toggleMode(e, pressInstance); }
-    },
-    {
-      "id": "navbar_3",
       "onPress": (e, pressInstance, c) => { c.comp.openMenu(e, pressInstance); }
     },
     {
-      "id": "navbar_4",
+      "id": "navbar_3",
       "onPress": (e, pressInstance, c) => { c.comp.closeMenu(e, pressInstance); }
     }
   ]

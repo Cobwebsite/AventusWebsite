@@ -1,85 +1,154 @@
 import { ModalElement } from "Aventus@UI:Aventus.Modal.package.avt";
 
+type SearchSection = { title: string; url: string; excerpt: string; };
+type SearchResult = { title: string; url: string; excerpt: string; sections: SearchSection[]; };
+type PagefindResult = {
+    url: string;
+    meta: { title?: string; };
+    plain_excerpt?: string;
+    sub_results?: Array<{ title: string; url: string; excerpt?: string; plain_excerpt?: string; anchor?: { id: string; }; }>;
+};
+type PagefindModule = {
+    search(query: string): Promise<{ results: Array<{ data(): Promise<PagefindResult>; }>; }>;
+};
+
 export class SearchModal extends ModalElement<void> implements Aventus.DefaultComponent {
-
     //#region static
-
+    private static searchState: string = "";
     //#endregion
-
 
     //#region props
+    /** Indique que le champ de recherche a le focus. */
     @Attribute()
-    public is_focus!: boolean;
+    public is_focus: boolean = false;
     //#endregion
 
-
     //#region variables
+    /** Champ dans lequel l'utilisateur saisit sa recherche. */
     @ViewElement()
     protected inputEl!: HTMLInputElement;
 
-    private pagefind: any;
+    /** Pages et sections correspondant à la recherche. */
+    @Signal()
+    protected results: SearchResult[] = [];
+
+    /** Message affiché pendant le chargement ou lorsqu'il n'y a aucun résultat. */
+    @Signal()
+    protected status: string = "Type to search the documentation.";
+
+    private pagefind?: PagefindModule;
     private timeoutSearch?: number;
+    private searchVersion: number = 0;
     //#endregion
 
+    //#region events
+    //#endregion
 
     //#region constructor
-
     //#endregion
 
-
     //#region methods
-    /**
-     * @inheritdoc
-     */
+    /** Définit le comportement de fermeture de la modale. */
     public override configure(): Aventus.Modal.ModalOptions<void> {
         return {};
     }
 
-    /**
-     * 
-     */
-    protected onFocus() {
+    /** Met à jour l'apparence du champ actif. */
+    @BindThis()
+    protected onFocus(): void {
         this.is_focus = true;
     }
-    /**
-    * 
-    */
-    protected onBlur() {
+
+    /** Met à jour l'apparence du champ inactif. */
+    @BindThis()
+    protected onBlur(): void {
         this.is_focus = false;
     }
-    /**
-    * 
-    */
-    protected async onInputChanged() {
-        this.searchDelay();
-    }
 
-    protected searchDelay() {
-        if(this.timeoutSearch != undefined) clearTimeout(this.timeoutSearch);
-
+    /** Planifie une recherche après la saisie. */
+    @BindThis()
+    protected onInputChanged(): void {
+        this.searchVersion++;
+        if(this.timeoutSearch !== undefined) {
+            clearTimeout(this.timeoutSearch);
+        }
+        if(!this.inputEl.value.trim()) {
+            this.status = "Type to search the documentation.";
+            this.results = [];
+            return;
+        }
+        this.status = "Searching…";
         this.timeoutSearch = setTimeout(() => {
             this.timeoutSearch = undefined;
             this.search();
         }, 300);
     }
-    protected async search() {
-        if(!this.pagefind) return;
-        const search = this.inputEl.value;
-        const results = await this.pagefind.search(search);
-        const pages = await Promise.all(results.results.map((result: any) => result.data()));
-        console.log(pages);
+
+    /** Recherche les pages et conserve les sections trouvées par Pagefind. */
+    private async search(): Promise<void> {
+        const query = this.inputEl.value.trim();
+        const version = this.searchVersion;
+        SearchModal.searchState = query;
+        if(!query || !this.pagefind) {
+            return;
+        }
+        try {
+            const matches = await this.pagefind.search(query);
+            const pages = await Promise.all(matches.results.slice(0, 10).map(result => result.data()));
+            if(version !== this.searchVersion) {
+                return;
+            }
+            this.results = pages.map(page => ({
+                title: page.meta.title ?? page.url,
+                url: page.url,
+                excerpt: page.plain_excerpt ?? "",
+                sections: (page.sub_results ?? [])
+                    .filter(section => section.anchor && section.excerpt?.includes("<mark>"))
+                    .slice(0, 4)
+                    .map(section => ({
+                        title: section.title,
+                        url: section.url,
+                        excerpt: section.plain_excerpt ?? "",
+                    })),
+            }));
+            this.status = this.results.length ? "" : "No results found.";
+        } catch {
+            if(version === this.searchVersion) {
+                this.results = [];
+                this.status = "Search is unavailable. Please try again.";
+            }
+        }
     }
 
+    /** Ferme la modale après activation d'un lien de résultat. */
+    @BindThis()
+    protected onResultSelected(): void {
+        setTimeout(() => this.resolve(), 0);
+    }
 
+    /** Charge Pagefind lorsque la modale est créée. */
     protected override postCreation(): void {
         super.postCreation();
+        this.inputEl.value = SearchModal.searchState;
         const uri = '/pagefind/pagefind.js';
-        import(uri).then(async pagefind => {
+        import(uri).then((pagefind: PagefindModule) => {
             this.pagefind = pagefind;
+            if(this.inputEl.value.trim()) {
+                this.search();
+            }
+        }).catch(() => {
+            this.status = "Search is unavailable. Please try again.";
         });
         this.inputEl.focus();
     }
 
+    /** Annule les recherches différées à la fermeture. */
+    protected override postDestruction(): void {
+        this.searchVersion++;
+        if(this.timeoutSearch !== undefined) {
+            clearTimeout(this.timeoutSearch);
+        }
+        super.postDestruction();
+    }
     //#endregion
-
 }

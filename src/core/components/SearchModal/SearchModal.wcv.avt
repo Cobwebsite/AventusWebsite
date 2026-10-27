@@ -2,9 +2,31 @@
     <div class="input">
         <div class="border"></div>
         <mi-icon icon="search"></mi-icon>
-        <input type="text" placeholder="Search" @element="inputEl" @focus="onFocus" @blur="onBlur" @input="onInputChanged"/>
+        <input type="search" placeholder="Search documentation" aria-label="Search documentation" @element="inputEl"
+            @focus="onFocus" @blur="onBlur" @input="onInputChanged" />
     </div>
 </div>
-<div class="body">
-    <div class="result"></div>
-</div>
+<av-scrollable class="body" floating_scroll flex>
+    if(this.status) {
+        <p class="status">{{ this.status }}</p>
+    }
+    <div class="results">
+        for(let result of this.results) { 
+            <div class="result">
+                <av-link to="{{ result.url }}" @click="onResultSelected">
+                    <span class="result-title">{{ result.title }}</span>
+                </av-link>
+                <p class="excerpt">{{ result.excerpt }}</p>
+                <ul class="sections">
+                    for(let section of result.sections) { 
+                        <li>
+                            <av-link to="{{ section.url }}"
+                                @click="onResultSelected">{{ section.title }}</av-link>
+                            <p class="excerpt">{{ section.excerpt }}</p>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+</av-scrollable>
