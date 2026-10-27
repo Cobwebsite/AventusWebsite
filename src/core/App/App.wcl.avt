@@ -1,0 +1,39 @@
+
+import { TutorialPage } from "../../pages/tutorial/TutorialPage/TutorialPage.wcl.avt";
+import { About } from "../../pages/About/About.wcl.avt";
+import { DocPage } from "../../pages/docs/DocPage/DocPage.wcl.avt";
+import { Home } from "../../pages/Home/Home.wcl.avt";
+import { Page404 } from "../../pages/Page404/Page404.wcl.avt";
+import { ShortcutManager, SpecialTouch } from "Aventus@UI:Aventus.Lib.package.avt";
+
+export class App extends Aventus.Navigation.Router implements Aventus.DefaultComponent {
+    public constructor() {
+        super();
+        MaterialIcon.Icon.configure({
+            type: "outlined"
+        });
+
+        ShortcutManager.setAutoPrevents([
+            [SpecialTouch.Control, "s"],
+            [SpecialTouch.Control, "p"],
+            [SpecialTouch.Control, "l"],
+            [SpecialTouch.Control, "k"],
+            [SpecialTouch.Control, "j"],
+            [SpecialTouch.Control, "h"],
+            [SpecialTouch.Control, "g"],
+            [SpecialTouch.Control, "d"],
+            [SpecialTouch.Control, "o"],
+            [SpecialTouch.Control, "u"],
+            [SpecialTouch.Control, "e"],
+        ]);
+    }
+    protected defineRoutes(): void {
+        this.addRoute("/", Home);
+        this.addRoute("/about", About);
+        this.addRoute("^/docs/.*$", DocPage);
+        this.addRoute("^/tutorial/.*$", TutorialPage);
+    }
+    protected override error404(state: Aventus.State): new () => Aventus.Navigation.Page {
+        return Page404;
+    }
+}

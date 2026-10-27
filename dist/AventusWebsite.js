@@ -7473,10 +7473,10 @@ let Layout = {};
 _.Layout = Aventus.Layout ?? {};
 Layout.Tabs = {};
 _.Layout.Tabs = Aventus.Layout?.Tabs ?? {};
-let Lib = {};
-_.Lib = Aventus.Lib ?? {};
 let Form = {};
 _.Form = Aventus.Form ?? {};
+let Lib = {};
+_.Lib = Aventus.Lib ?? {};
 let Navigation = {};
 _.Navigation = Aventus.Navigation ?? {};
 let Toast = {};
@@ -7548,28 +7548,6 @@ this.__upgradeProperty('active');
 }
 Layout.Tabs.TabHeader.Namespace=`Aventus.Layout.Tabs`;
 __as1(_.Layout.Tabs, 'TabHeader', Layout.Tabs.TabHeader);
-
-(function (SpecialTouch) {
-    SpecialTouch[SpecialTouch["Backspace"] = 0] = "Backspace";
-    SpecialTouch[SpecialTouch["Insert"] = 1] = "Insert";
-    SpecialTouch[SpecialTouch["End"] = 2] = "End";
-    SpecialTouch[SpecialTouch["PageDown"] = 3] = "PageDown";
-    SpecialTouch[SpecialTouch["PageUp"] = 4] = "PageUp";
-    SpecialTouch[SpecialTouch["Escape"] = 5] = "Escape";
-    SpecialTouch[SpecialTouch["AltGraph"] = 6] = "AltGraph";
-    SpecialTouch[SpecialTouch["Control"] = 7] = "Control";
-    SpecialTouch[SpecialTouch["Alt"] = 8] = "Alt";
-    SpecialTouch[SpecialTouch["Shift"] = 9] = "Shift";
-    SpecialTouch[SpecialTouch["CapsLock"] = 10] = "CapsLock";
-    SpecialTouch[SpecialTouch["Tab"] = 11] = "Tab";
-    SpecialTouch[SpecialTouch["Delete"] = 12] = "Delete";
-    SpecialTouch[SpecialTouch["ArrowRight"] = 13] = "ArrowRight";
-    SpecialTouch[SpecialTouch["ArrowLeft"] = 14] = "ArrowLeft";
-    SpecialTouch[SpecialTouch["ArrowUp"] = 15] = "ArrowUp";
-    SpecialTouch[SpecialTouch["ArrowDown"] = 16] = "ArrowDown";
-    SpecialTouch[SpecialTouch["Enter"] = 17] = "Enter";
-})(Lib.SpecialTouch || (Lib.SpecialTouch = {}));
-__as1(_.Lib, 'SpecialTouch', Lib.SpecialTouch);
 
 Layout.GridGuideHelper = class GridGuideHelper extends Aventus.WebComponent {
     get 'direction'() { return this.getStringAttr('direction') }
@@ -8026,6 +8004,8 @@ get 'no_user_select'() { return this.getBoolAttr('no_user_select') }
     set 'no_user_select'(val) { this.setBoolAttr('no_user_select', val) }
 get 'mouse_drag'() { return this.getBoolAttr('mouse_drag') }
     set 'mouse_drag'(val) { this.setBoolAttr('mouse_drag', val) }
+get 'flex'() { return this.getBoolAttr('flex') }
+    set 'flex'(val) { this.setBoolAttr('flex', val) }
     get 'zoom'() { return this.getNumberProp('zoom') }
     set 'zoom'(val) { this.setNumberAttr('zoom', val) }
     get 'allowResizeObserver'() {
@@ -8194,6 +8174,7 @@ if(!this.hasAttribute('auto_hide')) { this.attributeChangedCallback('auto_hide',
 if(!this.hasAttribute('disable')) { this.attributeChangedCallback('disable', false, false); }
 if(!this.hasAttribute('no_user_select')) { this.attributeChangedCallback('no_user_select', false, false); }
 if(!this.hasAttribute('mouse_drag')) { this.attributeChangedCallback('mouse_drag', false, false); }
+if(!this.hasAttribute('flex')) { this.attributeChangedCallback('flex', false, false); }
 if(!this.hasAttribute('zoom')){ this['zoom'] = 1; }
  }
     __defaultValuesSignal(s) { super.__defaultValuesSignal(s); s["allowResizeObserver"] = true;
@@ -8211,10 +8192,11 @@ this.__upgradeProperty('auto_hide');
 this.__upgradeProperty('disable');
 this.__upgradeProperty('no_user_select');
 this.__upgradeProperty('mouse_drag');
+this.__upgradeProperty('flex');
 this.__upgradeProperty('zoom');
 this.__correctGetter('allowResizeObserver');
  }
-    __listBoolProps() { return ["y_scroll_visible","x_scroll_visible","floating_scroll","x_scroll","y_scroll","auto_hide","disable","no_user_select","mouse_drag"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    __listBoolProps() { return ["y_scroll_visible","x_scroll_visible","floating_scroll","x_scroll","y_scroll","auto_hide","disable","no_user_select","mouse_drag","flex"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
     calculateRealSize() {
         if (!this.contentZoom || !this.mainContainer || !this.contentWrapper) {
             return false;
@@ -8547,12 +8529,25 @@ this.__correctGetter('allowResizeObserver');
             }
         }
     }
+    addHashWatch() {
+        window.addEventListener("hashchange", () => {
+            if (this.offsetHeight > 0 && this.offsetWidth > 0) {
+                this.focusElementByAnchor();
+            }
+        });
+        this.addEventListener("hashcheck", () => {
+            if (this.offsetHeight > 0 && this.offsetWidth > 0) {
+                this.focusElementByAnchor();
+            }
+        });
+    }
     postCreation() {
         this.dimensionRefreshed();
         this.addResizeObserver();
         this.applyAutoHide();
         this.addAction();
         this.focusElementByAnchor();
+        this.addHashWatch();
     }
 }
 Layout.Scrollable.Namespace=`Aventus.Layout`;
@@ -8560,7 +8555,43 @@ Layout.Scrollable.Tag=`av-scrollable`;
 __as1(_.Layout, 'Scrollable', Layout.Scrollable);
 if(!window.customElements.get('av-scrollable')){window.customElements.define('av-scrollable', Layout.Scrollable);Aventus.WebComponentInstance.registerDefinition(Layout.Scrollable);}
 
+(function (SpecialTouch) {
+    SpecialTouch[SpecialTouch["Backspace"] = 0] = "Backspace";
+    SpecialTouch[SpecialTouch["Insert"] = 1] = "Insert";
+    SpecialTouch[SpecialTouch["End"] = 2] = "End";
+    SpecialTouch[SpecialTouch["PageDown"] = 3] = "PageDown";
+    SpecialTouch[SpecialTouch["PageUp"] = 4] = "PageUp";
+    SpecialTouch[SpecialTouch["Escape"] = 5] = "Escape";
+    SpecialTouch[SpecialTouch["AltGraph"] = 6] = "AltGraph";
+    SpecialTouch[SpecialTouch["Control"] = 7] = "Control";
+    SpecialTouch[SpecialTouch["Alt"] = 8] = "Alt";
+    SpecialTouch[SpecialTouch["Shift"] = 9] = "Shift";
+    SpecialTouch[SpecialTouch["CapsLock"] = 10] = "CapsLock";
+    SpecialTouch[SpecialTouch["Tab"] = 11] = "Tab";
+    SpecialTouch[SpecialTouch["Delete"] = 12] = "Delete";
+    SpecialTouch[SpecialTouch["ArrowRight"] = 13] = "ArrowRight";
+    SpecialTouch[SpecialTouch["ArrowLeft"] = 14] = "ArrowLeft";
+    SpecialTouch[SpecialTouch["ArrowUp"] = 15] = "ArrowUp";
+    SpecialTouch[SpecialTouch["ArrowDown"] = 16] = "ArrowDown";
+    SpecialTouch[SpecialTouch["Enter"] = 17] = "Enter";
+})(Lib.SpecialTouch || (Lib.SpecialTouch = {}));
+__as1(_.Lib, 'SpecialTouch', Lib.SpecialTouch);
+
 let RouterStateManager=class RouterStateManager extends Aventus.StateManager {
+    hash = "";
+    getHash() {
+        return this.hash;
+    }
+    async setState(state) {
+        if (typeof state !== "string") {
+            const hashIndex = state.name.indexOf("#");
+            this.hash = hashIndex === -1 ? "" : state.name.substring(hashIndex);
+            return super.setState(state);
+        }
+        const hashIndex = state.indexOf("#");
+        this.hash = hashIndex === -1 ? "" : state.substring(hashIndex);
+        return super.setState(hashIndex === -1 ? state : state.substring(0, hashIndex));
+    }
     /**
      * Retrieves the singleton instance of the RouterStateManager.
      */
@@ -8927,13 +8958,22 @@ this.__upgradeProperty('initializing');
                         }
                         meta.setAttribute("content", description);
                     }
-                    if (this.bindToUrl() && window.location.pathname != currentState.name) {
-                        let newUrl = window.location.origin + currentState.name;
+                    let newPath = currentState.name + this.stateManager.getHash();
+                    if (this.bindToUrl() && window.location.pathname + window.location.hash != newPath) {
+                        const oldLocation = window.location.href;
+                        const hashOnlyChange = window.location.pathname === currentState.name;
+                        let newUrl = window.location.origin + newPath;
                         if (this.isReplace) {
                             window.history.replaceState({}, title ?? "", newUrl);
                         }
                         else {
                             window.history.pushState({}, title ?? "", newUrl);
+                        }
+                        if (hashOnlyChange && oldLocation !== window.location.href) {
+                            window.dispatchEvent(new HashChangeEvent("hashchange", {
+                                oldURL: oldLocation,
+                                newURL: window.location.href
+                            }));
                         }
                     }
                     this.onNewPage(oldUrl, oldPage, path, element);
@@ -8958,13 +8998,21 @@ this.__upgradeProperty('initializing');
                 }
                 if (this.bindToUrl()) {
                     const currentState = this.stateManager.getState();
-                    if (currentState && window.location.pathname != currentState.name) {
-                        let newUrl = window.location.origin + currentState.name;
+                    if (currentState && window.location.pathname + window.location.hash != currentState.name + this.stateManager.getHash()) {
+                        const oldLocation = window.location.href;
+                        const hashOnlyChange = window.location.pathname === currentState.name;
+                        let newUrl = window.location.origin + currentState.name + this.stateManager.getHash();
                         if (this.isReplace) {
                             window.history.replaceState({}, "Not found", newUrl);
                         }
                         else {
                             window.history.pushState({}, "Not found", newUrl);
+                        }
+                        if (hashOnlyChange && oldLocation !== window.location.href) {
+                            window.dispatchEvent(new HashChangeEvent("hashchange", {
+                                oldURL: oldLocation,
+                                newURL: window.location.href
+                            }));
                         }
                     }
                 }
@@ -9012,7 +9060,7 @@ this.__upgradeProperty('initializing');
             window.localStorage.removeItem("navigation_url");
         }
         else if (this.bindToUrl()) {
-            Aventus.State.activate(window.location.pathname, this.stateManager);
+            Aventus.State.activate(window.location.pathname + window.location.hash, this.stateManager);
         }
         else {
             let defaultUrl = this.defaultUrl();
@@ -9027,7 +9075,7 @@ this.__upgradeProperty('initializing');
         if (this.bindToUrl()) {
             window.onpopstate = (e) => {
                 if (window.location.pathname != this.stateManager.getState()?.name) {
-                    Aventus.State.activate(window.location.pathname, this.stateManager);
+                    Aventus.State.activate(window.location.pathname + window.location.hash, this.stateManager);
                 }
             };
         }
@@ -9045,6 +9093,242 @@ this.__upgradeProperty('initializing');
 }
 Navigation.Router.Namespace=`Aventus.Navigation`;
 __as1(_.Navigation, 'Router', Navigation.Router);
+
+Lib.ShortcutManager=class ShortcutManager {
+    /**
+     * Stores registered shortcut callbacks.
+     */
+    static memory = {};
+    /**
+     * List of shortcut key combinations that should automatically prevent default browser behavior.
+     */
+    static autoPrevents = [];
+    /**
+     * Indicates if the ShortcutManager has been initialized.
+     */
+    static isInit = false;
+    /**
+     * Currently pressed keys.
+     */
+    static arrayKeys = [];
+    /**
+     * Stores options for each registered shortcut callback.
+     */
+    static options = new Map();
+    /**
+     * Stores temporarily replaced shortcut callbacks.
+     */
+    static replacingMemory = {};
+    /**
+     * Checks if a given key is a printable character or a space.
+     */
+    static isTxt(touch) {
+        return touch.match(/[a-zA-Z0-9_\+\-]/g) || touch == " ";
+    }
+    /**
+     * Converts a key combination into a standardized string representation.
+     */
+    static getText(combinaison) {
+        let allTouches = [];
+        for (let touch of combinaison) {
+            let realTouch = "";
+            if (typeof touch == "number" && Lib.SpecialTouch[touch] !== undefined) {
+                realTouch = Lib.SpecialTouch[touch];
+            }
+            else if (this.isTxt(touch)) {
+                realTouch = touch;
+            }
+            else {
+                throw "I can't use " + touch + " to add a shortcut";
+            }
+            allTouches.push(realTouch);
+        }
+        allTouches.sort();
+        return allTouches.join("+");
+    }
+    /**
+     * Subscribes a callback function to a specific keyboard shortcut combination.
+     */
+    static subscribe(combinaison, cb, options) {
+        if (!Array.isArray(combinaison)) {
+            combinaison = [combinaison];
+        }
+        let key = this.getText(combinaison);
+        if (options?.replaceTemp) {
+            if (Lib.ShortcutManager.memory[key]) {
+                if (!this.replacingMemory[key]) {
+                    this.replacingMemory[key] = [];
+                }
+                this.replacingMemory[key].push(Lib.ShortcutManager.memory[key]);
+                delete Lib.ShortcutManager.memory[key];
+            }
+        }
+        if (!Lib.ShortcutManager.memory[key]) {
+            Lib.ShortcutManager.memory[key] = [];
+        }
+        if (!Lib.ShortcutManager.memory[key].includes(cb)) {
+            Lib.ShortcutManager.memory[key].push(cb);
+            if (options) {
+                this.options.set(cb, options);
+            }
+        }
+        if (!Lib.ShortcutManager.isInit) {
+            Lib.ShortcutManager.init();
+        }
+    }
+    /**
+     * Unsubscribes a callback function from a keyboard shortcut combination.
+     */
+    static unsubscribe(combinaison, cb) {
+        if (!Array.isArray(combinaison)) {
+            combinaison = [combinaison];
+        }
+        let key = this.getText(combinaison);
+        if (Lib.ShortcutManager.memory[key]) {
+            let index = Lib.ShortcutManager.memory[key].indexOf(cb);
+            if (index != -1) {
+                Lib.ShortcutManager.memory[key].splice(index, 1);
+                let options = this.options.get(cb);
+                if (options) {
+                    this.options.delete(cb);
+                }
+                if (Lib.ShortcutManager.memory[key].length == 0) {
+                    delete Lib.ShortcutManager.memory[key];
+                    if (options?.replaceTemp) {
+                        if (this.replacingMemory[key]) {
+                            if (this.replacingMemory[key].length > 0) {
+                                Lib.ShortcutManager.memory[key] = this.replacingMemory[key].pop();
+                                if (this.replacingMemory[key].length == 0) {
+                                    delete this.replacingMemory[key];
+                                }
+                            }
+                            else {
+                                delete this.replacingMemory[key];
+                            }
+                        }
+                    }
+                }
+                if (Object.keys(Lib.ShortcutManager.memory).length == 0 && Lib.ShortcutManager.isInit) {
+                    //ShortcutManager.uninit();
+                }
+            }
+        }
+    }
+    /**
+     * Handles keydown events, processing registered shortcuts and preventing default behavior.
+     */
+    static async onKeyDown(e) {
+        if (e.ctrlKey) {
+            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Control];
+            if (!this.arrayKeys.includes(txt)) {
+                this.arrayKeys.push(txt);
+            }
+        }
+        if (e.altKey) {
+            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Alt];
+            if (!this.arrayKeys.includes(txt)) {
+                this.arrayKeys.push(txt);
+            }
+        }
+        if (e.shiftKey) {
+            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Shift];
+            if (!this.arrayKeys.includes(txt)) {
+                this.arrayKeys.push(txt);
+            }
+        }
+        if (this.isTxt(e.key) && !this.arrayKeys.includes(e.key)) {
+            this.arrayKeys.push(e.key);
+        }
+        else if (Lib.SpecialTouch[e.key] !== undefined && !this.arrayKeys.includes(e.key)) {
+            this.arrayKeys.push(e.key);
+        }
+        this.arrayKeys.sort();
+        let key = this.arrayKeys.join("+");
+        if (Lib.ShortcutManager.memory[key]) {
+            let preventDefault = true;
+            for (let cb of Lib.ShortcutManager.memory[key]) {
+                let options = this.options.get(cb);
+                if (options && options.preventDefault === false) {
+                    preventDefault = false;
+                }
+            }
+            this.arrayKeys = [];
+            for (let cb of Lib.ShortcutManager.memory[key]) {
+                const result = await cb();
+                if (result === false) {
+                    preventDefault = result;
+                }
+            }
+            if (preventDefault) {
+                e.preventDefault();
+            }
+        }
+        else if (Lib.ShortcutManager.autoPrevents.includes(key)) {
+            e.preventDefault();
+        }
+    }
+    /**
+     * Handles keyup events, removing the released key from the currently pressed keys.
+     */
+    static onKeyUp(e) {
+        let index = this.arrayKeys.indexOf(e.key);
+        if (index != -1) {
+            this.arrayKeys.splice(index, 1);
+        }
+    }
+    /**
+     * Initializes the ShortcutManager, setting up global event listeners.
+     */
+    static init() {
+        if (Lib.ShortcutManager.isInit)
+            return;
+        Lib.ShortcutManager.isInit = true;
+        this.onKeyDown = this.onKeyDown.bind(this);
+        this.onKeyUp = this.onKeyUp.bind(this);
+        Lib.ShortcutManager.autoPrevents = [
+            this.getText([Lib.SpecialTouch.Control, "s"]),
+            this.getText([Lib.SpecialTouch.Control, "p"]),
+            this.getText([Lib.SpecialTouch.Control, "l"]),
+            this.getText([Lib.SpecialTouch.Control, "k"]),
+            this.getText([Lib.SpecialTouch.Control, "j"]),
+            this.getText([Lib.SpecialTouch.Control, "h"]),
+            this.getText([Lib.SpecialTouch.Control, "g"]),
+            this.getText([Lib.SpecialTouch.Control, "f"]),
+            this.getText([Lib.SpecialTouch.Control, "d"]),
+            this.getText([Lib.SpecialTouch.Control, "o"]),
+            this.getText([Lib.SpecialTouch.Control, "u"]),
+            this.getText([Lib.SpecialTouch.Control, "e"]),
+        ];
+        window.addEventListener("blur", () => {
+            this.arrayKeys = [];
+        });
+        document.body.addEventListener("keydown", this.onKeyDown);
+        document.body.addEventListener("keyup", this.onKeyUp);
+    }
+    /**
+     * Sets key combinations that should automatically prevent default browser behavior.
+     */
+    static setAutoPrevents(combinaisons) {
+        if (!Lib.ShortcutManager.isInit) {
+            this.init();
+        }
+        Lib.ShortcutManager.autoPrevents = [];
+        for (let combinaison of combinaisons) {
+            Lib.ShortcutManager.autoPrevents.push(this.getText(combinaison));
+        }
+    }
+    /**
+     * Deinitializes the ShortcutManager, removing global event listeners.
+     */
+    static uninit() {
+        document.body.removeEventListener("keydown", this.onKeyDown);
+        document.body.removeEventListener("keyup", this.onKeyUp);
+        this.arrayKeys = [];
+        Lib.ShortcutManager.isInit = false;
+    }
+}
+Lib.ShortcutManager.Namespace=`Aventus.Lib`;
+__as1(_.Lib, 'ShortcutManager', Lib.ShortcutManager);
 
 Layout.Col = class Col extends Aventus.WebComponent {
     get 'use_container'() { return this.getBoolAttr('use_container') }
@@ -10047,242 +10331,6 @@ this.__correctGetter('errors');
 }
 Form.FormElement.Namespace=`Aventus.Form`;
 __as1(_.Form, 'FormElement', Form.FormElement);
-
-Lib.ShortcutManager=class ShortcutManager {
-    /**
-     * Stores registered shortcut callbacks.
-     */
-    static memory = {};
-    /**
-     * List of shortcut key combinations that should automatically prevent default browser behavior.
-     */
-    static autoPrevents = [];
-    /**
-     * Indicates if the ShortcutManager has been initialized.
-     */
-    static isInit = false;
-    /**
-     * Currently pressed keys.
-     */
-    static arrayKeys = [];
-    /**
-     * Stores options for each registered shortcut callback.
-     */
-    static options = new Map();
-    /**
-     * Stores temporarily replaced shortcut callbacks.
-     */
-    static replacingMemory = {};
-    /**
-     * Checks if a given key is a printable character or a space.
-     */
-    static isTxt(touch) {
-        return touch.match(/[a-zA-Z0-9_\+\-]/g) || touch == " ";
-    }
-    /**
-     * Converts a key combination into a standardized string representation.
-     */
-    static getText(combinaison) {
-        let allTouches = [];
-        for (let touch of combinaison) {
-            let realTouch = "";
-            if (typeof touch == "number" && Lib.SpecialTouch[touch] !== undefined) {
-                realTouch = Lib.SpecialTouch[touch];
-            }
-            else if (this.isTxt(touch)) {
-                realTouch = touch;
-            }
-            else {
-                throw "I can't use " + touch + " to add a shortcut";
-            }
-            allTouches.push(realTouch);
-        }
-        allTouches.sort();
-        return allTouches.join("+");
-    }
-    /**
-     * Subscribes a callback function to a specific keyboard shortcut combination.
-     */
-    static subscribe(combinaison, cb, options) {
-        if (!Array.isArray(combinaison)) {
-            combinaison = [combinaison];
-        }
-        let key = this.getText(combinaison);
-        if (options?.replaceTemp) {
-            if (Lib.ShortcutManager.memory[key]) {
-                if (!this.replacingMemory[key]) {
-                    this.replacingMemory[key] = [];
-                }
-                this.replacingMemory[key].push(Lib.ShortcutManager.memory[key]);
-                delete Lib.ShortcutManager.memory[key];
-            }
-        }
-        if (!Lib.ShortcutManager.memory[key]) {
-            Lib.ShortcutManager.memory[key] = [];
-        }
-        if (!Lib.ShortcutManager.memory[key].includes(cb)) {
-            Lib.ShortcutManager.memory[key].push(cb);
-            if (options) {
-                this.options.set(cb, options);
-            }
-        }
-        if (!Lib.ShortcutManager.isInit) {
-            Lib.ShortcutManager.init();
-        }
-    }
-    /**
-     * Unsubscribes a callback function from a keyboard shortcut combination.
-     */
-    static unsubscribe(combinaison, cb) {
-        if (!Array.isArray(combinaison)) {
-            combinaison = [combinaison];
-        }
-        let key = this.getText(combinaison);
-        if (Lib.ShortcutManager.memory[key]) {
-            let index = Lib.ShortcutManager.memory[key].indexOf(cb);
-            if (index != -1) {
-                Lib.ShortcutManager.memory[key].splice(index, 1);
-                let options = this.options.get(cb);
-                if (options) {
-                    this.options.delete(cb);
-                }
-                if (Lib.ShortcutManager.memory[key].length == 0) {
-                    delete Lib.ShortcutManager.memory[key];
-                    if (options?.replaceTemp) {
-                        if (this.replacingMemory[key]) {
-                            if (this.replacingMemory[key].length > 0) {
-                                Lib.ShortcutManager.memory[key] = this.replacingMemory[key].pop();
-                                if (this.replacingMemory[key].length == 0) {
-                                    delete this.replacingMemory[key];
-                                }
-                            }
-                            else {
-                                delete this.replacingMemory[key];
-                            }
-                        }
-                    }
-                }
-                if (Object.keys(Lib.ShortcutManager.memory).length == 0 && Lib.ShortcutManager.isInit) {
-                    //ShortcutManager.uninit();
-                }
-            }
-        }
-    }
-    /**
-     * Handles keydown events, processing registered shortcuts and preventing default behavior.
-     */
-    static async onKeyDown(e) {
-        if (e.ctrlKey) {
-            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Control];
-            if (!this.arrayKeys.includes(txt)) {
-                this.arrayKeys.push(txt);
-            }
-        }
-        if (e.altKey) {
-            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Alt];
-            if (!this.arrayKeys.includes(txt)) {
-                this.arrayKeys.push(txt);
-            }
-        }
-        if (e.shiftKey) {
-            let txt = Lib.SpecialTouch[Lib.SpecialTouch.Shift];
-            if (!this.arrayKeys.includes(txt)) {
-                this.arrayKeys.push(txt);
-            }
-        }
-        if (this.isTxt(e.key) && !this.arrayKeys.includes(e.key)) {
-            this.arrayKeys.push(e.key);
-        }
-        else if (Lib.SpecialTouch[e.key] !== undefined && !this.arrayKeys.includes(e.key)) {
-            this.arrayKeys.push(e.key);
-        }
-        this.arrayKeys.sort();
-        let key = this.arrayKeys.join("+");
-        if (Lib.ShortcutManager.memory[key]) {
-            let preventDefault = true;
-            for (let cb of Lib.ShortcutManager.memory[key]) {
-                let options = this.options.get(cb);
-                if (options && options.preventDefault === false) {
-                    preventDefault = false;
-                }
-            }
-            this.arrayKeys = [];
-            for (let cb of Lib.ShortcutManager.memory[key]) {
-                const result = await cb();
-                if (result === false) {
-                    preventDefault = result;
-                }
-            }
-            if (preventDefault) {
-                e.preventDefault();
-            }
-        }
-        else if (Lib.ShortcutManager.autoPrevents.includes(key)) {
-            e.preventDefault();
-        }
-    }
-    /**
-     * Handles keyup events, removing the released key from the currently pressed keys.
-     */
-    static onKeyUp(e) {
-        let index = this.arrayKeys.indexOf(e.key);
-        if (index != -1) {
-            this.arrayKeys.splice(index, 1);
-        }
-    }
-    /**
-     * Initializes the ShortcutManager, setting up global event listeners.
-     */
-    static init() {
-        if (Lib.ShortcutManager.isInit)
-            return;
-        Lib.ShortcutManager.isInit = true;
-        this.onKeyDown = this.onKeyDown.bind(this);
-        this.onKeyUp = this.onKeyUp.bind(this);
-        Lib.ShortcutManager.autoPrevents = [
-            this.getText([Lib.SpecialTouch.Control, "s"]),
-            this.getText([Lib.SpecialTouch.Control, "p"]),
-            this.getText([Lib.SpecialTouch.Control, "l"]),
-            this.getText([Lib.SpecialTouch.Control, "k"]),
-            this.getText([Lib.SpecialTouch.Control, "j"]),
-            this.getText([Lib.SpecialTouch.Control, "h"]),
-            this.getText([Lib.SpecialTouch.Control, "g"]),
-            this.getText([Lib.SpecialTouch.Control, "f"]),
-            this.getText([Lib.SpecialTouch.Control, "d"]),
-            this.getText([Lib.SpecialTouch.Control, "o"]),
-            this.getText([Lib.SpecialTouch.Control, "u"]),
-            this.getText([Lib.SpecialTouch.Control, "e"]),
-        ];
-        window.addEventListener("blur", () => {
-            this.arrayKeys = [];
-        });
-        document.body.addEventListener("keydown", this.onKeyDown);
-        document.body.addEventListener("keyup", this.onKeyUp);
-    }
-    /**
-     * Sets key combinations that should automatically prevent default browser behavior.
-     */
-    static setAutoPrevents(combinaisons) {
-        if (!Lib.ShortcutManager.isInit) {
-            this.init();
-        }
-        Lib.ShortcutManager.autoPrevents = [];
-        for (let combinaison of combinaisons) {
-            Lib.ShortcutManager.autoPrevents.push(this.getText(combinaison));
-        }
-    }
-    /**
-     * Deinitializes the ShortcutManager, removing global event listeners.
-     */
-    static uninit() {
-        document.body.removeEventListener("keydown", this.onKeyDown);
-        document.body.removeEventListener("keyup", this.onKeyUp);
-        this.arrayKeys = [];
-        Lib.ShortcutManager.isInit = false;
-    }
-}
-Lib.ShortcutManager.Namespace=`Aventus.Lib`;
-__as1(_.Lib, 'ShortcutManager', Lib.ShortcutManager);
 
 Layout.GridHelper = class GridHelper extends Aventus.WebComponent {
     static get observedAttributes() {return ["unit", "nb_col", "nb_row", "col_width", "row_height", "ruler_size", "step", "step_big", "magnetic"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
@@ -18081,7 +18129,7 @@ if(!window.customElements.get('av-doc-sidenav')){window.customElements.define('a
 const DocGenericPage = class DocGenericPage extends Page {
     get 'fade'() { return this.getBoolAttr('fade') }
     set 'fade'(val) { this.setBoolAttr('fade', val) }
-    static __style = `:host{color:var(--text-color);opacity:0;transition:visibility .3s ease-in,opacity .3s ease-in;visibility:hidden}:host .container{max-width:none;width:100%}:host .container img{border-radius:5px}:host .container av-scrollable{--scroller-right: 10px}:host .container .page-content{font-size:1.6rem;margin:auto;padding:0 50px}:host .icon-menu{color:var(--text-color);cursor:pointer;display:none;font-size:25px;left:16px;position:absolute;-webkit-tap-highlight-color:rgba(0,0,0,0);top:28px;z-index:9999}:host h1{color:var(--title-color);font-size:3.2rem;margin:2.3rem 0;text-align:center}:host a{color:var(--link-color);text-decoration:none}:host p{line-height:1.7;text-align:justify}:host av-link,:host av-link{color:var(--link-color);cursor:pointer;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host av-img,:host av-docu-img{max-height:300px;width:100%}:host ul li,:host ol li{margin:5px 0}:host .table{margin:15px 0}:host .table .header{font-size:20px;font-weight:700;letter-spacing:1px;padding:0px}:host .table .header av-col{text-align:center}:host .table .header::after{background:linear-gradient(90deg, transparent 0%, var(--text-color) 50%, transparent 100%);content:"";height:1px;margin:5px auto;width:100%}:host .table av-row{align-items:center;padding:10px}:host .table av-row av-col{padding:0 15px;text-align:center}:host .table av-row av-col.left{text-align:left}:host .cn{background-color:#cfd1d4;background-color:var(--light-primary-color);border-radius:5px;color:var(--aventus-color);font-size:14px;padding:2px 8px}:host .img-cont{align-items:center;display:flex;justify-content:center}:host .img-cont av-img{max-width:500px}:host([fade]){opacity:1;visibility:visible}@media screen and (max-width: 1100px){:host .container av-scrollable{--scroller-right: 3px}:host .container .page-content{padding:0px 16px}:host h1{padding:0 32px}:host .icon-menu{display:block}}`;
+    static __style = `:host{color:var(--text-color);opacity:0;transition:visibility .3s ease-in,opacity .3s ease-in;visibility:hidden}:host .container{max-width:none;width:100%}:host .container img{border-radius:5px}:host .container av-scrollable{--scroller-right: 10px}:host .container .page-content{font-size:1.6rem;margin:auto;padding:0 50px}:host .icon-menu{color:var(--text-color);cursor:pointer;display:none;font-size:25px;left:16px;position:absolute;-webkit-tap-highlight-color:rgba(0,0,0,0);top:28px;z-index:9999}:host h1{color:var(--title-color);font-size:3.2rem;margin:2.3rem 0;text-align:center}:host h2{scroll-margin-top:40px}:host a{color:var(--link-color);text-decoration:none}:host p{line-height:1.7;text-align:justify}:host av-link,:host av-link{color:var(--link-color);cursor:pointer;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host av-img,:host av-docu-img{max-height:300px;width:100%}:host ul li,:host ol li{margin:5px 0}:host .table{margin:15px 0}:host .table .header{font-size:20px;font-weight:700;letter-spacing:1px;padding:0px}:host .table .header av-col{text-align:center}:host .table .header::after{background:linear-gradient(90deg, transparent 0%, var(--text-color) 50%, transparent 100%);content:"";height:1px;margin:5px auto;width:100%}:host .table av-row{align-items:center;padding:10px}:host .table av-row av-col{padding:0 15px;text-align:center}:host .table av-row av-col.left{text-align:left}:host .cn{background-color:#cfd1d4;background-color:var(--light-primary-color);border-radius:5px;color:var(--aventus-color);font-size:14px;padding:2px 8px}:host .img-cont{align-items:center;display:flex;justify-content:center}:host .img-cont av-img{max-width:500px}:host([fade]){opacity:1;visibility:visible}@media screen and (max-width: 1100px){:host .container av-scrollable{--scroller-right: 3px}:host .container .page-content{padding:0px 16px}:host h1{padding:0 32px}:host .icon-menu{display:block}}`;
     constructor() {
         super();
         if (this.constructor == DocGenericPage) {
@@ -18135,6 +18183,7 @@ this.__getStatic().__template.setActions({
         await Aventus.sleep(100);
         this.fade = true;
         await Aventus.sleep(350);
+        this.shadowRoot.querySelector("av-scrollable")?.dispatchEvent(new CustomEvent("hashcheck", { bubbles: true, composed: true }));
     }
     async hide() {
         this.fade = false;
@@ -43487,6 +43536,8 @@ if(!window.customElements.get('av-tutorial-page')){window.customElements.define(
 const SearchModal = class SearchModal extends Aventus.Modal.ModalElement {
     get 'is_focus'() { return this.getBoolAttr('is_focus') }
     set 'is_focus'(val) { this.setBoolAttr('is_focus', val) }
+get 'visible'() { return this.getBoolAttr('visible') }
+    set 'visible'(val) { this.setBoolAttr('visible', val) }
     get 'results'() {
 						return this.__signals["results"].value;
 					}
@@ -43500,13 +43551,27 @@ get 'status'() {
 						this.__signals["status"].value = val;
 					}
     static searchState = "";
+    static categoryIcons = {
+        install: { label: "Install", icon: "download" },
+        config: { label: "Configuration", icon: "settings" },
+        data: { label: "Data", icon: "data_object" },
+        error: { label: "Error", icon: "error" },
+        http: { label: "HTTP", icon: "language" },
+        ram: { label: "RAM", icon: "memory" },
+        state: { label: "State", icon: "sync_alt" },
+        wc: { label: "Webcomponent", icon: "widgets" },
+        lib: { label: "Lib", icon: "code" },
+        i18n: { label: "I18n", icon: "translate" },
+        ui: { label: "UI", icon: "dashboard" },
+        advanced: { label: "Advanced", icon: "workspace_premium" },
+    };
     pagefind;
     timeoutSearch;
     searchVersion = 0;
     __registerSignalsActions() { this.__signals["results"] = null;
 this.__signals["status"] = null;
  super.__registerSignalsActions();  }
-    static __style = `:host{align-items:flex-start;backdrop-filter:blur(4px);padding:6rem 3rem}:host .modal{background-color:var(--primary-color);border:1px solid color-mix(in oklab, black 5%, var(--primary-color));border-radius:8px;box-shadow:var(--elevation-10);display:flex;flex-direction:column;max-height:min(85vh,800px);max-width:100%;padding:16px 0;width:800px}:host .modal .header{flex-shrink:0;padding:0 16px}:host .modal .header .input{align-items:center;background-color:var(--light-primary-color);border-radius:8px;color:var(--aventus-font-color);display:flex;gap:6px;padding:4px 14px;position:relative}:host .modal .header .input .border{border:1px solid color-mix(in oklab, black 20%, var(--text-color));border-radius:8px;inset:-1px;pointer-events:none;position:absolute;transition:border .1s linear}:host .modal .header .input mi-icon{font-size:16px}:host .modal .header .input input{background-color:rgba(0,0,0,0);border:none !important;color:var(--aventus-font-color);flex:1;height:28px;min-width:0;outline:none !important}:host .modal .header .input:hover .border{border:2px solid #bdbdbd}:host .modal .body{flex-grow:1;flex-shrink:1;font-size:16px;min-height:0;padding:16px 8px}:host .modal .body .status{margin:0;opacity:.7;padding:0 24px}:host .modal .body .results{padding:0 24px}:host .modal .body .results .result{border-top:1px solid color-mix(in oklab, var(--aventus-font-color) 15%, transparent);padding:14px 0}:host .modal .body .results .result av-link{color:var(--aventus-font-color);display:block;font-weight:600}:host .modal .body .results .result av-link:hover{text-decoration:underline}:host .modal .body .results .result .excerpt{font-size:.8em;line-height:1.4;margin:6px 0 0;opacity:.75}:host .modal .body .results .result .sections{list-style:none;margin:10px 0 0;padding:0 0 0 16px}:host .modal .body .results .result .sections li{margin-top:10px}:host .modal .body .results .result .sections:not(:has(li)){display:none}@media(max-width: 700px){:host{padding:2rem 1rem}:host .modal{padding:1.5rem;width:100%}}:host([is_focus]) .modal .header .input .border{border:2px solid #bdbdbd}`;
+    static __style = `:host{align-items:flex-start;backdrop-filter:blur(0px);opacity:0;padding:6rem 3rem;transition-duration:.3s;transition-property:backdrop-filter,opacity;transition-timing-function:var(--bezier-curve)}:host .modal{background-color:var(--primary-color);border:1px solid color-mix(in oklab, black 5%, var(--primary-color));border-radius:8px;box-shadow:var(--elevation-10);display:flex;flex-direction:column;max-height:min(100vh - 48px,800px);max-width:100%;padding:16px 0;width:800px}:host .modal .header{flex-shrink:0;padding:0 16px}:host .modal .header .input{align-items:center;background-color:var(--light-primary-color);border-radius:8px;color:var(--aventus-font-color);display:flex;gap:6px;padding:4px 14px;position:relative}:host .modal .header .input .border{border:1px solid color-mix(in oklab, black 20%, var(--text-color));border-radius:8px;inset:-1px;pointer-events:none;position:absolute;transition:border .1s linear}:host .modal .header .input mi-icon{font-size:16px}:host .modal .header .input input{background-color:rgba(0,0,0,0);border:none !important;color:var(--aventus-font-color);flex:1;height:28px;min-width:0;outline:none !important}:host .modal .header .input:hover .border{border:2px solid #bdbdbd}:host .modal .body{flex-grow:1;flex-shrink:1;font-size:16px;min-height:0;padding:16px 8px}:host .modal .body .status{margin:0;opacity:.7;padding:0 24px}:host .modal .body .results{padding:0 24px}:host .modal .body .results .result{border-top:1px solid color-mix(in oklab, var(--aventus-font-color) 15%, transparent);padding:14px 0}:host .modal .body .results .result av-link{border-radius:4px;display:block;padding:8px 16px}:host .modal .body .results .result av-link .title{align-items:center;color:var(--aventus-font-color);display:flex;font-weight:600;gap:10px}:host .modal .body .results .result av-link .title mi-icon{color:var(--aventus-color);flex:0 0 auto;font-size:20px}:host .modal .body .results .result av-link .excerpt{font-size:.8em;line-height:1.4;margin:6px 0 0;opacity:.75}:host .modal .body .results .result av-link:hover{background-color:var(--light-primary-color)}:host .modal .body .results .result .sections{list-style:none;margin:0;padding:0}:host .modal .body .results .result .sections av-link{padding-left:32px}:host .modal .body .results .result .sections:not(:has(li)){display:none}:host([is_focus]) .modal .header .input .border{border:2px solid #bdbdbd}:host([visible]){backdrop-filter:blur(4px);opacity:1}@media(max-width: 700px){:host{padding:2rem 1rem}:host .modal{padding:1.5rem;width:100%}}`;
     constructor() {
         super();
         this.onFocus = this.onFocus.bind(this);
@@ -43571,11 +43636,14 @@ const templ1 = new Aventus.Template(this);
 templ1.setTemplate(` 
             <div class="result">
                 <av-link _id="searchmodal_4">
-                    <span class="result-title" _id="searchmodal_5"></span>
+                    <div class="title">
+                        <mi-icon aria-hidden="true" _id="searchmodal_5"></mi-icon>
+                        <span class="result-title" _id="searchmodal_6"></span>
+                    </div>
+                    <p class="excerpt" _id="searchmodal_7"></p>
                 </av-link>
-                <p class="excerpt" _id="searchmodal_6"></p>
                 <ul class="sections">
-                    <template _id="searchmodal_7"></template>
+                    <template _id="searchmodal_8"></template>
                 </ul>
             </div>
         `);
@@ -43585,12 +43653,20 @@ templ1.setActions({
       "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method4(c.data.result))}`,
       "once": true
     },
-    "searchmodal_5°@HTML": {
+    "searchmodal_5°icon": {
       "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method5(c.data.result))}`,
       "once": true
     },
-    "searchmodal_6°@HTML": {
+    "searchmodal_5°title": {
       "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method6(c.data.result))}`,
+      "once": true
+    },
+    "searchmodal_6°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method7(c.data.result))}`,
+      "once": true
+    },
+    "searchmodal_7°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method8(c.data.result))}`,
       "once": true
     }
   },
@@ -43610,35 +43686,39 @@ this.__getStatic().__template.addLoop({
 const templ2 = new Aventus.Template(this);
 templ2.setTemplate(` 
                         <li>
-                            <av-link _id="searchmodal_8"></av-link>
-                            <p class="excerpt" _id="searchmodal_9"></p>
+                            <av-link _id="searchmodal_9">
+                                <div class="title">
+                                    <span _id="searchmodal_10"></span>
+                                </div>
+                                <p class="excerpt" _id="searchmodal_11"></p>
+                            </av-link>
                         </li>
                     `);
 templ2.setActions({
   "content": {
-    "searchmodal_8°to": {
-      "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method7(c.data.section))}`,
-      "once": true
-    },
-    "searchmodal_8°@HTML": {
-      "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method8(c.data.section))}`,
-      "once": true
-    },
-    "searchmodal_9°@HTML": {
+    "searchmodal_9°to": {
       "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method9(c.data.section))}`,
+      "once": true
+    },
+    "searchmodal_10°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method10(c.data.section))}`,
+      "once": true
+    },
+    "searchmodal_11°@HTML": {
+      "fct": (c) => `${c.print(c.comp.__838905669b135e8412e195a5774494f6method11(c.data.section))}`,
       "once": true
     }
   },
   "events": [
     {
       "eventName": "click",
-      "id": "searchmodal_8",
+      "id": "searchmodal_9",
       "fct": (e, c) => c.comp.onResultSelected(e)
     }
   ]
 });
 templ1.addLoop({
-                    anchorId: 'searchmodal_7',
+                    anchorId: 'searchmodal_8',
                     template: templ2,
                 simple:{data: `result.sections`,item:`section`}
 });
@@ -43666,15 +43746,17 @@ this.__getStatic().__template.addIf({
         return "SearchModal";
     }
     __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('is_focus')) { this.attributeChangedCallback('is_focus', false, false); }
+if(!this.hasAttribute('visible')) { this.attributeChangedCallback('visible', false, false); }
  }
     __defaultValuesSignal(s) { super.__defaultValuesSignal(s); s["results"] = [];
 s["status"] = "Type to search the documentation.";
  }
     __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('is_focus');
+this.__upgradeProperty('visible');
 this.__correctGetter('results');
 this.__correctGetter('status');
  }
-    __listBoolProps() { return ["is_focus"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    __listBoolProps() { return ["is_focus","visible"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
     configure() {
         return {};
     }
@@ -43713,19 +43795,24 @@ this.__correctGetter('status');
             if (version !== this.searchVersion) {
                 return;
             }
-            this.results = pages.map(page => ({
-                title: page.meta.title ?? page.url,
-                url: page.url,
-                excerpt: page.plain_excerpt ?? "",
-                sections: (page.sub_results ?? [])
-                    .filter(section => section.anchor && section.excerpt?.includes("<mark>"))
-                    .slice(0, 4)
-                    .map(section => ({
-                    title: section.title,
-                    url: section.url,
-                    excerpt: section.plain_excerpt ?? "",
-                })),
-            }));
+            this.results = pages.map(page => {
+                const category = this.getCategory(page.url);
+                return {
+                    title: page.meta.title ?? page.url,
+                    url: page.url,
+                    excerpt: page.plain_excerpt ?? "",
+                    icon: category.icon,
+                    category: category.label,
+                    sections: (page.sub_results ?? [])
+                        .filter(section => section.anchor && section.excerpt?.includes("<mark>"))
+                        .slice(0, 4)
+                        .map(section => ({
+                        title: section.title,
+                        url: section.url,
+                        excerpt: section.plain_excerpt ?? "",
+                    })),
+                };
+            });
             this.status = this.results.length ? "" : "No results found.";
         }
         catch {
@@ -43734,6 +43821,14 @@ this.__correctGetter('status');
                 this.status = "Search is unavailable. Please try again.";
             }
         }
+    }
+    getCategory(url) {
+        const path = url.split("#")[0];
+        const group = path.split("/")[2];
+        if (["introduction", "installation", "experience", "first_app"].includes(group)) {
+            return SearchModal.categoryIcons.install;
+        }
+        return SearchModal.categoryIcons[group] ?? { label: "Docs", icon: "menu_book" };
     }
     onResultSelected() {
         setTimeout(() => this.resolve(), 0);
@@ -43751,6 +43846,7 @@ this.__correctGetter('status');
             this.status = "Search is unavailable. Please try again.";
         });
         this.inputEl.focus();
+        this.visible = true;
     }
     postDestruction() {
         this.searchVersion++;
@@ -43766,18 +43862,24 @@ this.__correctGetter('status');
         return result.url;
     }
     __838905669b135e8412e195a5774494f6method5(result) {
-        return result.title;
+        return result.icon;
     }
     __838905669b135e8412e195a5774494f6method6(result) {
+        return result.category;
+    }
+    __838905669b135e8412e195a5774494f6method7(result) {
+        return result.title;
+    }
+    __838905669b135e8412e195a5774494f6method8(result) {
         return result.excerpt;
     }
-    __838905669b135e8412e195a5774494f6method7(section) {
+    __838905669b135e8412e195a5774494f6method9(section) {
         return section.url;
     }
-    __838905669b135e8412e195a5774494f6method8(section) {
+    __838905669b135e8412e195a5774494f6method10(section) {
         return section.title;
     }
-    __838905669b135e8412e195a5774494f6method9(section) {
+    __838905669b135e8412e195a5774494f6method11(section) {
         return section.excerpt;
     }
     __838905669b135e8412e195a5774494f6method0() {
@@ -43795,7 +43897,7 @@ const Navbar = class Navbar extends Aventus.WebComponent {
 get 'is_dark'() { return this.getBoolAttr('is_dark') }
     set 'is_dark'(val) { this.setBoolAttr('is_dark', val) }
     modalOpen = false;
-    static __style = `:host{background-color:var(--primary-color);height:50px;padding:0 30px;width:100%}:host av-link{display:inline-block}:host .container{display:flex;height:100%;justify-content:space-between;margin:auto}:host .container .left{align-items:center;display:flex;height:100%;justify-self:start}:host .container .left .input{align-items:center;background-color:var(--light-primary-color);border-radius:8px;color:var(--aventus-font-color);display:flex;gap:6px;margin-left:280px;padding:4px 14px;position:relative}:host .container .left .input .border{border:1px solid #323232;border-radius:8px;inset:-1px;pointer-events:none;position:absolute;transition:border .1s linear}:host .container .left .input mi-icon{font-size:16px;width:16px}:host .container .left .input input{background-color:rgba(0,0,0,0);border:none !important;color:var(--aventus-font-color);min-width:0;outline:none !important;pointer-events:none}:host .container .left .input .shortcut{background-color:var(--primary-color);border-radius:4px;font-size:.7em;padding:4px 8px}:host .container .left .input:hover .border{border:2px solid #bdbdbd}:host .container .left av-link{display:inline-block;height:100%;user-select:none}:host .container .left av-link av-img{--img-color: var(--aventus-color);cursor:pointer;height:100%;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right{align-items:center;color:var(--primary-font-color);display:flex;justify-self:end}:host .container .right .menu{border-radius:5px;color:var(--primary-font-color);cursor:pointer;margin:0 5px;padding:5px 10px;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0);text-decoration:none;transition:color .5s var(--bezier-curve),background-color .5s var(--bezier-curve);user-select:none}:host .container .right .menu:not(.drop):hover{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu.active{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu-title{color:var(--aventus-color);display:none;font-size:2.4rem;margin:16px 0;text-align:center;width:100%}:host .container .right .menu-close-icon{display:none}:host .container .right .menu.drop:hover .drop-content{display:flex}:host .container .right .drop-content{background-color:var(--primary-color);display:none;flex-direction:column;gap:5px;padding:15px 10px;padding-top:10px;position:absolute;right:0;top:29px;z-index:99}:host .container .right .drop-content .drop-item{align-items:center;border-radius:5px;color:var(--primary-font-color);cursor:pointer;display:flex;gap:10px;margin:0 5px;padding:5px 10px;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0);text-decoration:none;transition:color .5s var(--bezier-curve),background-color .5s var(--bezier-curve);user-select:none}:host .container .right .drop-content .drop-item a{color:inherit;display:contents;text-decoration:none}:host .container .right .drop-content .drop-item .drop-icon{align-items:center;display:flex;height:30px;justify-content:center;width:30px}:host .container .right .drop-content .drop-item .drop-icon mi-icon{font-size:20px}:host .container .right .drop-content .drop-item .drop-icon av-img{height:30px;width:30px}:host .container .right .drop-content .drop-item:hover{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .icon-links{display:flex;gap:10px;margin-left:30px}:host .container .right .icon-links a{height:18px;width:18px}:host .container .right .icon-links a svg{fill:var(--primary-font-color);height:100%;transition:fill .5s var(--bezier-curve);width:100%}:host .container .right .icon-links a .reddit-logo{height:28px;margin-left:-5px;margin-top:-5px;width:28px}:host .container .right .icon-links a:hover svg{fill:var(--aventus-color)}:host .container .right .mode{align-items:center;cursor:pointer;display:flex;margin-left:30px;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right .mode mi-icon{font-size:1em}:host .container .right .mode .slider{align-items:center;background-color:var(--secondary-color);border:1px solid var(--primary-font-color);border-radius:15px;display:flex;height:15px;margin:0 10px;transition:background-color .5s;user-select:none;width:30px}:host .container .right .mode .slider .button{background-color:var(--text-color);border-radius:13px;height:9px;margin-left:2px;transition:inherit;transition:margin-left .2s linear;width:9px}:host .container .icon{align-items:center;color:var(--aventus-color);display:none;font-size:22px;height:100%;margin-right:16px}:host .container .hider{display:none}@media screen and (max-width: 1100px){:host .container .right{align-items:self-start;background-color:var(--primary-color);box-shadow:0 -10px 5px var(--aventus-color);color:var(--primary-font-color);flex-direction:column;height:100%;position:fixed;right:-300px;top:0px;transition:.4s right var(--bezier-curve);width:250px;z-index:90}:host .container .right .menu-title{display:block}:host .container .right .menu{margin:5px 0;margin-left:24px;order:1}:host .container .right .menu-close-icon{color:var(--aventus-color);display:block;font-size:21px;left:16px;position:absolute;top:13px}:host .container .right .drop-title{display:none}:host .container .right .drop-content{display:flex;padding:0;position:relative;right:auto;top:auto}:host .container .right .drop-content .drop-item{margin:0;padding-left:0}:host .container .right .icon-links{gap:20px;justify-content:center;margin:20px 0;margin-top:40px;order:3;width:100%}:host .container .right .icon-links a{height:24px;width:24px}:host .container .right .icon-links a .reddit-logo{height:34px;margin-left:-8px;margin-top:-6px;width:34px}:host .container .right .mode{justify-content:center;margin:0;margin-top:20px;order:2;width:100%}:host .container .icon{display:flex}:host .container .hider{background-color:rgba(0,0,0,0);display:none;height:100%;left:0;position:fixed;top:0;width:100%;z-index:9}:host([open]) .container .right{right:0}:host([open]) .container .hider{display:block}}:host([is_dark]) .container .right .mode .slider .button{margin-left:calc(100% - 11px)}`;
+    static __style = `:host{background-color:var(--primary-color);height:50px;padding:0 30px;width:100%}:host av-link{display:inline-block}:host .container{display:flex;height:100%;justify-content:space-between;margin:auto}:host .container .left{align-items:center;display:flex;height:100%;justify-self:start}:host .container .left .input{align-items:center;background-color:var(--light-primary-color);border-radius:8px;color:var(--aventus-font-color);display:flex;gap:6px;margin-left:280px;padding:4px 14px;position:relative}:host .container .left .input .border{border:1px solid #323232;border-radius:8px;inset:-1px;pointer-events:none;position:absolute;transition:border .1s linear}:host .container .left .input mi-icon{font-size:16px;width:16px}:host .container .left .input input{background-color:rgba(0,0,0,0);border:none !important;color:var(--aventus-font-color);min-width:0;outline:none !important;pointer-events:none}:host .container .left .input .shortcut{background-color:var(--primary-color);border-radius:4px;font-size:.7em;padding:4px 8px}:host .container .left .input:hover .border{border:2px solid #bdbdbd}:host .container .left av-link{display:inline-block;height:100%;user-select:none}:host .container .left av-link av-img{--img-color: var(--aventus-color);cursor:pointer;height:100%;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right{align-items:center;color:var(--primary-font-color);display:flex;justify-self:end}:host .container .right .menu{border-radius:5px;color:var(--primary-font-color);cursor:pointer;margin:0 5px;padding:5px 10px;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0);text-decoration:none;transition:color .5s var(--bezier-curve),background-color .5s var(--bezier-curve);user-select:none}:host .container .right .menu:not(.drop):hover{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu.active{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .menu-title{color:var(--aventus-color);display:none;font-size:2.4rem;margin:16px 0;text-align:center;width:100%}:host .container .right .menu-close-icon{display:none}:host .container .right .menu.drop:hover .drop-content{display:flex}:host .container .right .drop-content{background-color:var(--primary-color);display:none;flex-direction:column;gap:5px;padding:15px 10px;padding-top:10px;position:absolute;right:0;top:29px;z-index:99}:host .container .right .drop-content .drop-item{align-items:center;border-radius:5px;color:var(--primary-font-color);cursor:pointer;display:flex;gap:10px;margin:0 5px;padding:5px 10px;position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0);text-decoration:none;transition:color .5s var(--bezier-curve),background-color .5s var(--bezier-curve);user-select:none}:host .container .right .drop-content .drop-item a{color:inherit;display:contents;text-decoration:none}:host .container .right .drop-content .drop-item .drop-icon{align-items:center;display:flex;height:30px;justify-content:center;width:30px}:host .container .right .drop-content .drop-item .drop-icon mi-icon{font-size:20px}:host .container .right .drop-content .drop-item .drop-icon av-img{height:30px;width:30px}:host .container .right .drop-content .drop-item:hover{background-color:var(--light-primary-color);color:var(--aventus-color)}:host .container .right .icon-links{display:flex;gap:10px;margin-left:30px}:host .container .right .icon-links a{height:18px;width:18px}:host .container .right .icon-links a svg{fill:var(--primary-font-color);height:100%;transition:fill .5s var(--bezier-curve);width:100%}:host .container .right .icon-links a .reddit-logo{height:28px;margin-left:-5px;margin-top:-5px;width:28px}:host .container .right .icon-links a:hover svg{fill:var(--aventus-color)}:host .container .right .mode{align-items:center;cursor:pointer;display:flex;margin-left:30px;-webkit-tap-highlight-color:rgba(0,0,0,0)}:host .container .right .mode mi-icon{font-size:1em}:host .container .right .mode .slider{align-items:center;background-color:var(--secondary-color);border:1px solid var(--primary-font-color);border-radius:15px;display:flex;height:15px;margin:0 10px;transition:background-color .5s;user-select:none;width:30px}:host .container .right .mode .slider .button{background-color:var(--text-color);border-radius:13px;height:9px;margin-left:2px;transition:inherit;transition:margin-left .2s linear;width:9px}:host .container .icon{align-items:center;color:var(--aventus-color);display:none;font-size:22px;height:100%;margin-right:16px}:host .container .hider{display:none}@media screen and (max-width: 1230px){:host .container .left{flex-grow:1;justify-content:space-between}:host .container .left .input{margin-left:auto;margin-right:auto}}@media screen and (max-width: 1100px){:host .container .right{align-items:self-start;background-color:var(--primary-color);box-shadow:0 -10px 5px var(--aventus-color);color:var(--primary-font-color);flex-direction:column;height:100%;position:fixed;right:-300px;top:0px;transition:.4s right var(--bezier-curve);width:250px;z-index:90}:host .container .right .menu-title{display:block}:host .container .right .menu{margin:5px 0;margin-left:24px;order:1}:host .container .right .menu-close-icon{color:var(--aventus-color);display:block;font-size:21px;left:16px;position:absolute;top:13px}:host .container .right .drop-title{display:none}:host .container .right .drop-content{display:flex;padding:0;position:relative;right:auto;top:auto}:host .container .right .drop-content .drop-item{margin:0;padding-left:0}:host .container .right .icon-links{gap:20px;justify-content:center;margin:20px 0;margin-top:40px;order:3;width:100%}:host .container .right .icon-links a{height:24px;width:24px}:host .container .right .icon-links a .reddit-logo{height:34px;margin-left:-8px;margin-top:-6px;width:34px}:host .container .right .mode{justify-content:center;margin:0;margin-top:20px;order:2;width:100%}:host .container .icon{display:flex}:host .container .hider{background-color:rgba(0,0,0,0);display:none;height:100%;left:0;position:fixed;top:0;width:100%;z-index:9}:host([open]) .container .right{right:0}:host([open]) .container .hider{display:block}}@media screen and (max-width: 450px){:host .container .left .input{margin-right:16px;background-color:rgba(0,0,0,0)}:host .container .left .input .border{display:none}:host .container .left .input input{display:none}:host .container .left .input .shortcut{display:none}:host .container .left .input mi-icon{color:var(--aventus-color);font-size:22px}}:host([is_dark]) .container .right .mode .slider .button{margin-left:calc(100% - 11px)}`;
     constructor() {
         super();
         // let mode = localStorage.getItem("mode");
@@ -43974,6 +44076,19 @@ const App = class App extends Aventus.Navigation.Router {
         MaterialIcon.Icon.configure({
             type: "outlined"
         });
+        Aventus.Lib.ShortcutManager.setAutoPrevents([
+            [Aventus.Lib.SpecialTouch.Control, "s"],
+            [Aventus.Lib.SpecialTouch.Control, "p"],
+            [Aventus.Lib.SpecialTouch.Control, "l"],
+            [Aventus.Lib.SpecialTouch.Control, "k"],
+            [Aventus.Lib.SpecialTouch.Control, "j"],
+            [Aventus.Lib.SpecialTouch.Control, "h"],
+            [Aventus.Lib.SpecialTouch.Control, "g"],
+            [Aventus.Lib.SpecialTouch.Control, "d"],
+            [Aventus.Lib.SpecialTouch.Control, "o"],
+            [Aventus.Lib.SpecialTouch.Control, "u"],
+            [Aventus.Lib.SpecialTouch.Control, "e"],
+        ]);
     }
     __getStatic() {
         return App;
@@ -43987,8 +44102,8 @@ const App = class App extends Aventus.Navigation.Router {
 super.__getHtml();
     this.__getStatic().__template.setHTML({
         blocks: { 'before':`
-		<av-navbar></av-navbar>
-	` }
+	<av-navbar></av-navbar>
+` }
     });
 }
     getClassName() {

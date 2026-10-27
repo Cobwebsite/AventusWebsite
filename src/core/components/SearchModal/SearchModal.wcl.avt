@@ -1,7 +1,8 @@
 import { ModalElement } from "Aventus@UI:Aventus.Modal.package.avt";
+import type { IconType } from "MaterialIcon:MaterialIcon.package.avt";
 
 type SearchSection = { title: string; url: string; excerpt: string; };
-type SearchResult = { title: string; url: string; excerpt: string; sections: SearchSection[]; };
+type SearchResult = { title: string; url: string; excerpt: string; icon: IconType; category: string; sections: SearchSection[]; };
 type PagefindResult = {
     url: string;
     meta: { title?: string; };
@@ -15,12 +16,29 @@ type PagefindModule = {
 export class SearchModal extends ModalElement<void> implements Aventus.DefaultComponent {
     //#region static
     private static searchState: string = "";
+    private static readonly categoryIcons: Record<string, { label: string; icon: IconType; }> = {
+        install: { label: "Install", icon: "download" },
+        config: { label: "Configuration", icon: "settings" },
+        data: { label: "Data", icon: "data_object" },
+        error: { label: "Error", icon: "error" },
+        http: { label: "HTTP", icon: "language" },
+        ram: { label: "RAM", icon: "memory" },
+        state: { label: "State", icon: "sync_alt" },
+        wc: { label: "Webcomponent", icon: "widgets" },
+        lib: { label: "Lib", icon: "code" },
+        i18n: { label: "I18n", icon: "translate" },
+        ui: { label: "UI", icon: "dashboard" },
+        advanced: { label: "Advanced", icon: "workspace_premium" },
+    };
     //#endregion
 
     //#region props
     /** Indique que le champ de recherche a le focus. */
     @Attribute()
     public is_focus: boolean = false;
+
+    @Attribute()
+    public visible!: boolean;
     //#endregion
 
     //#region variables
@@ -98,19 +116,24 @@ export class SearchModal extends ModalElement<void> implements Aventus.DefaultCo
             if(version !== this.searchVersion) {
                 return;
             }
-            this.results = pages.map(page => ({
-                title: page.meta.title ?? page.url,
-                url: page.url,
-                excerpt: page.plain_excerpt ?? "",
-                sections: (page.sub_results ?? [])
-                    .filter(section => section.anchor && section.excerpt?.includes("<mark>"))
-                    .slice(0, 4)
-                    .map(section => ({
-                        title: section.title,
-                        url: section.url,
-                        excerpt: section.plain_excerpt ?? "",
-                    })),
-            }));
+            this.results = pages.map(page => {
+                const category = this.getCategory(page.url);
+                return {
+                    title: page.meta.title ?? page.url,
+                    url: page.url,
+                    excerpt: page.plain_excerpt ?? "",
+                    icon: category.icon,
+                    category: category.label,
+                    sections: (page.sub_results ?? [])
+                        .filter(section => section.anchor && section.excerpt?.includes("<mark>"))
+                        .slice(0, 4)
+                        .map(section => ({
+                            title: section.title,
+                            url: section.url,
+                            excerpt: section.plain_excerpt ?? "",
+                        })),
+                };
+            });
             this.status = this.results.length ? "" : "No results found.";
         } catch {
             if(version === this.searchVersion) {
@@ -118,6 +141,16 @@ export class SearchModal extends ModalElement<void> implements Aventus.DefaultCo
                 this.status = "Search is unavailable. Please try again.";
             }
         }
+    }
+
+    /** Associe une page au groupe affiché dans la navigation de la documentation. */
+    private getCategory(url: string): { label: string; icon: IconType; } {
+        const path = url.split("#")[0];
+        const group = path.split("/")[2];
+        if(["introduction", "installation", "experience", "first_app"].includes(group)) {
+            return SearchModal.categoryIcons.install;
+        }
+        return SearchModal.categoryIcons[group] ?? { label: "Docs", icon: "menu_book" };
     }
 
     /** Ferme la modale après activation d'un lien de résultat. */
@@ -140,6 +173,8 @@ export class SearchModal extends ModalElement<void> implements Aventus.DefaultCo
             this.status = "Search is unavailable. Please try again.";
         });
         this.inputEl.focus();
+
+        this.visible = true;
     }
 
     /** Annule les recherches différées à la fermeture. */
