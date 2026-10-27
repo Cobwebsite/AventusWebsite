@@ -2,7 +2,7 @@
 <p>The UI layer of Aventus is designed around one simple philosophy: <span class="cn">Provide all the logic you need for
         building powerful interfaces without enforcing any visual style.</span></p>
 
-<h2>Philosophy</h2>
+<h2 id="philosophy">Philosophy</h2>
 
 <p>Modern UI frameworks often mix logic and style, forcing developers to adapt their design to predefined components.
     Aventus takes the opposite approach.
@@ -18,7 +18,7 @@
         already managed.</li>
 </ul>
 
-<h2>Example: The Modal System</h2>
+<h2 id="example-the-modal-system">Example: The Modal System</h2>
 
 <p>The ModalElement class is a perfect example of this philosophy.</p>
 <p>It provides all the necessary behavior to manage modal dialogs (open, close, resolve, reject, keyboard shortcuts, and
@@ -58,7 +58,7 @@ namespace Modal {
 </ul>
 
 
-<h2>Key Benefits</h2>
+<h2 id="key-benefits">Key Benefits</h2>
 
 <ul>
     <li>
@@ -75,7 +75,7 @@ namespace Modal {
     </li>
 </ul>
 
-<h2>Vision</h2>
+<h2 id="vision">Vision</h2>
 
 <p>Aventus UI aims to be a neutral, behavior-oriented foundation for building user interfaces.
 Instead of dictating design, it empowers you to:</p>

@@ -1,5 +1,5 @@
 <h1>Create data</h1>
-<h2>Why ?</h2>
+<h2 id="why">Why ?</h2>
 <p>Using a data class in Aventus for managing data logic is particularly advantageous because it serves as a clear
     representation of your data structure. It's important to note that this class primarily focuses on defining the
     shape and behavior of data within your application and doesn't necessarily include business logic.</p>
@@ -8,7 +8,7 @@
     class. By mirroring this structure in your frontend code, you maintain consistency across
     your application stack.</p>
 
-<h2>Code it</h2>
+<h2 id="code-it">Code it</h2>
 
 <p>For this example, you are going to write the data class manually. You need 2 classes : <span class="cn">Todo</span>
     and <span class="cn">Task</span>.</p>

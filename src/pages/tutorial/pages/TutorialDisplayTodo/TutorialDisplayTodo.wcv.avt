@@ -15,7 +15,7 @@
     user interface that enhances the overall user experience. We'll also explore how to bind the data from our TodoRAM
     instance to the component.</p>
 
-<h2>Code it</h2>
+<h2 id="code-it">Code it</h2>
 
 <p>First of all we need a to create a new component named <span class="cn">TodoDisplay : </span></p>
 <ul>

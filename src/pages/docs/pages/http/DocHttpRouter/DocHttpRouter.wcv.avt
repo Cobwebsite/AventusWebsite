@@ -3,7 +3,7 @@
     framework.
     It acts as the root router used by all requests to determine the base URL and to perform RESTful operations.</p>
 
-<h2>Overview</h2>
+<h2 id="overview">Overview</h2>
 <p>A HttpRouter instance is responsible for:</p>
 <ul>
     <li>Defining the base URL (via its options).</li>
@@ -22,7 +22,7 @@
     </pre>
 </av-code>
 
-<h2>Example</h2>
+<h2 id="example">Example</h2>
 <av-code language="ts">
     <pre>
 export class PersonRouter extends Aventus.HttpRouter {

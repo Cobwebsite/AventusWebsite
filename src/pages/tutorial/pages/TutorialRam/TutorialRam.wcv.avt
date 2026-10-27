@@ -1,6 +1,6 @@
 <h1>RAM</h1>
 
-<h2>Why ?</h2>
+<h2 id="why">Why ?</h2>
 <p>
     A RAM (Resource Access Manager) is a class designed to manage resources or data within an application. In the
     context of software development, a RAM typically represents a collection of records or entities (<span
@@ -26,7 +26,7 @@
     efficient way to interact with and manipulate data records.</p>
 
 
-<h2>Code it</h2>
+<h2 id="code-it">Code it</h2>
 <p>For this example, you are going to write the RAM class for your todo class.</p>
 
 <ul>
@@ -67,7 +67,7 @@
 <p>To correct this, you can set your cursor over an error and press on <span class="cn">ctrl + .</span>. This will open
     the actions available to correct the error. Select the first option to auto import the data Todo class.</p>
 
-<h2>Save data to local storage</h2>
+<h2 id="save-data-to-local-storage">Save data to local storage</h2>
 <p>Firstly, manual ID management is required because we lack a backend system generating unique identifiers for new
     records. To ensure each <span class="cn">Todo</span> item has a distinct identifier, we've incorporated logic to
     increment the <span class="cn">maxId</span>

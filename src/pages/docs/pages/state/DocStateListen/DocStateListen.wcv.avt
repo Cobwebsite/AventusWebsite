@@ -7,7 +7,7 @@
     <li><span class="cn">askChange</span>: a way to define if the state change can be done or not.</li>
 </ul>
 
-<h2>Callback on the StateManager</h2>
+<h2 id="callback-on-the-statemanager">Callback on the StateManager</h2>
 <p>For the example, we are going to listen a state to display a user.</p>
 <av-doc-state-listen-editor-1></av-doc-state-listen-editor-1>
 <p>We subscribe to the state <span class="cn">/user/{id:number}</span> what means that the manager will trigger active
@@ -29,11 +29,11 @@
         class="cn">getState</span> to obtain the current state object instance. Furthermore, you can use operator <span
         class="cn">instanceof</span> to obtain more information and share some data between subscribers.</p>
 <av-doc-state-listen-editor-3></av-doc-state-listen-editor-3>
-<h2>Callback on the State</h2>
+<h2 id="callback-on-the-state">Callback on the State</h2>
 <p>You can also override the three methods directly inside a <span class="cn">State</span> class.</p>
 <av-doc-state-listen-editor-4></av-doc-state-listen-editor-4>
 
-<h2>Manager helpers</h2>
+<h2 id="manager-helpers">Manager helpers</h2>
 <ul>
     <li><span class="cn">subscribe(pattern, callbacks, autoActiveState)</span> immediately calls the active callback by default when the current state already matches.</li>
     <li><span class="cn">activateAfterSubscribe()</span> performs that activation explicitly when automatic activation was disabled.</li>

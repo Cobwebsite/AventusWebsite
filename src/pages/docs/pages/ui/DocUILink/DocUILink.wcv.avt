@@ -3,7 +3,7 @@
     It integrates with the Aventus Router System, automatically handling navigation, activation state, and style updates
     for active routes.</p>
 
-<h2>Overview</h2>
+<h2 id="overview">Overview</h2>
 <p>The <span class="cn">Link</span> component acts similarly to a standard HTML <span class="cn">&lt;a&gt;</span>
     element, but instead of performing a full page reload, it uses Aventus internal router to activate the target route.
 </p>
@@ -21,7 +21,7 @@
 
 <p>When the current route matches <span class="cn">settings*</span>, the Settings link automatically gets the <span class="cn">active</span> class.</p>
 
-<h2>Navigation</h2>
+<h2 id="navigation">Navigation</h2>
 
 <p>When the user clicks or presses the link:</p>
 
@@ -32,7 +32,7 @@
     <li>It then activates the target state using: <span class="cn">Aventus.State.activate(to, Aventus.Instance.get(RouterStateManager));</span></li>
 </ul>
 
-<h2>Active State Handling</h2>
+<h2 id="active-state-handling">Active State Handling</h2>
 <p>The link automatically subscribes to route changes through <span class="cn">RouterStateManager</span>.
 When the current state matches its <span class="cn">to</span> value or <span class="cn">active_pattern</span>, the component:</p>
 

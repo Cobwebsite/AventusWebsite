@@ -15,7 +15,7 @@
     efficient solution for integrating icons, empowering us to create visually appealing and user-friendly applications
     without the hassle of manual setup.</p>
 
-<h2>Code it</h2>
+<h2 id="code-it">Code it</h2>
 <h3>Logic</h3>
 
 <p>First of all we need a to create a new component named <span class="cn">Icon : </span></p>

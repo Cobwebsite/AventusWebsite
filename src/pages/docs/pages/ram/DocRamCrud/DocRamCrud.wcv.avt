@@ -7,7 +7,7 @@
     <li>Delete - To delete data from your RAM</li>
 </ul>
 
-<h2>Basic operations</h2>
+<h2 id="basic-operations">Basic operations</h2>
 <p>Inside Aventus RAM, each function to perfom operation can be written in two format. The first format is the normal.
     You call the function and get the result.</p>
 <p>The second format is the detailed. You call the function with <span class="cn">WithError</span> at the end to obtain more

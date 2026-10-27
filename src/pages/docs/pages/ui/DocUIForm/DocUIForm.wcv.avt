@@ -4,7 +4,7 @@
 <p>Just like the rest of Aventus UI, it focuses on behavior over presentation. You bring the HTML and CSS; Aventus
     brings the logic, validation, and lifecycle.</p>
 
-<h2>Overview</h2>
+<h2 id="overview">Overview</h2>
 <p>The <span class="cn">Form</span> module allows you to define, validate, and handle complex forms in a structured and
     reusable way.</p>
 <p>It separates form logic from UI rendering, giving you a system that can handle:</p>
@@ -20,7 +20,7 @@
 
 <p>Aventus forms can be used both declaratively (via Web Components) and programmatically (via the FormHandler API).</p>
 
-<h2>Core Architecture</h2>
+<h2 id="core-architecture">Core Architecture</h2>
 <h3>Form</h3>
 <p>The <span class="cn">Form</span> class represents a logical container for form elements and submit buttons. It
     coordinates validation and submission by connecting to a <span class="cn">FormHandler</span>.</p>
@@ -73,7 +73,7 @@
     </pre>
 </av-code>
 
-<h2>How It Works</h2>
+<h2 id="how-it-works">How It Works</h2>
 <h3>1. Schema Definition</h3>
 <p>A schema defines each field in the form and its validation rules:</p>
 <av-code language="typescript">
@@ -165,7 +165,7 @@ server errors use <span class="cn">onServerFallback</span>.</p>
 <span class="cn">HttpRoute</span> method. Use the overload with a method name when the controller exposes more than one
 route, and the sub-form helpers when the submitted body is nested below a property.</p>
 
-<h2>Validators</h2>
+<h2 id="validators">Validators</h2>
 <p>Validators in Aventus are simple classes that implement a single method: validate().</p>
 
 <h3>Example: Required</h3>
@@ -193,7 +193,7 @@ const schema = {
     </pre>
 </av-code>
 
-<h2>Key Features</h2>
+<h2 id="key-features">Key Features</h2>
 <div class="table">
     <av-row class="header">
         <av-col size="4" center>Feature</av-col>
@@ -225,10 +225,10 @@ const schema = {
     </av-row>
 </div>
 
-<h2>Example: Complete Login Form</h2>
+<h2 id="example-complete-login-form">Example: Complete Login Form</h2>
 
 
-<h2>Summary</h2>
+<h2 id="summary">Summary</h2>
 <p>Aventus Forms provide a logic-first, design-free approach to handling forms:</p>
 <ul>
     <li>Smart: automatic validation, submission, and state tracking</li>

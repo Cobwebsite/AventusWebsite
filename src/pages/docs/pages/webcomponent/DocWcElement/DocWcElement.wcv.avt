@@ -1,7 +1,7 @@
 <h1>Webcomponent - Select element</h1>
 <p>In this section you are going to learn how to select a element from your shadowroot to use it inside your logical
     part.</p>
-<h2>Normal case</h2>
+<h2 id="normal-case">Normal case</h2>
 <p>Inside the <span class="cn">*.wcv.avt</span> file you can add an attribute <span class="cn">@element</span> to tag
     your element.</p>
 <av-code language="html" filename="Img.wcv.avt">
@@ -47,7 +47,7 @@
     &nbsp;
     }
 </av-code>
-<h2>Multiple selection</h2>
+<h2 id="multiple-selection">Multiple selection</h2>
 <p>In addition, you can use the same element name for different tags. It will select all the tags marked by the element
     name.</p>
 <av-code language="html" filename="List.wcv.avt">
@@ -84,7 +84,7 @@
     }
 </av-code>
 
-<h2>Expert use only</h2>
+<h2 id="expert-use-only">Expert use only</h2>
 <p>If you change your <span class="cn">shadowroot</span> by cloning node or something else, you can add a
     useLive option inside the decorator <span class="cn">@ViewElement</span> to do a <span
         class="cn">querySelector</span> instead of using saved values.</p>

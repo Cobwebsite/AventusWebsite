@@ -3,7 +3,7 @@
 <p>In this section you are going to learn how you can create complex component based on inheritance. This is useful when
     you want to create a simple design for a component and then add some complexity.</p>
 
-<h2>Delegate Function</h2>
+<h2 id="delegate-function">Delegate Function</h2>
 <p>We start the inheritance with a simple example. We need a component <span class="cn">fillable</span> to implement
     <span class="cn">input[type="text"]</span> and <span class="cn">input[type="checkbox"]</span>. First of all we
     create an abstract generic component with a label
@@ -15,7 +15,7 @@
 <p>As you can see, we can easly implement logic for child when main logic part of the component is coded inside the
     parent.</p>
 
-<h2>Replace slot</h2>
+<h2 id="replace-slot">Replace slot</h2>
 <p>We override the function but we don't have any input inside the view. Inside the view, we can use the pattern called
     <span class="cn">View composition</span>. If you write some HTML code inside child view file, Aventus will replace
     the parent
@@ -38,7 +38,7 @@
 <av-doc-wc-inheritance-editor-3></av-doc-wc-inheritance-editor-3>
 <p>Right now, no error is displayed inside the editor if you missspelled your block name. It ll be added soon.</p>
 
-<h2>Replace the parent view</h2>
+<h2 id="replace-the-parent-view">Replace the parent view</h2>
 <p>If you want to keep the parent logic but change the child view, you can use the decorator <span
         class="cn">@OverrideView</span>. For
     example, the input[type="checkbox"] don't need a label so we can remove it from parent.</p>

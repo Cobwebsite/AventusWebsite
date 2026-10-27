@@ -5,7 +5,7 @@
 <p>It’s inspired by modern grid frameworks like Bootstrap or Tailwind but designed to be framework-agnostic,
     flexbox-based, and natively responsive thanks to container queries.</p>
 
-<h2>Core Concept</h2>
+<h2 id="core-concept">Core Concept</h2>
 <p>The grid layout is composed of:</p>
 <ul>
     <li>&lt;av-row&gt;: defines a row container (a flex context with container sizing).</li>
@@ -22,7 +22,7 @@
 </av-code>
 <p>Each column will automatically wrap to the next line when there’s not enough horizontal space.</p>
 
-<h2>Col Component</h2>
+<h2 id="col-component">Col Component</h2>
 <div class="table">
     <av-row class="header">
         <av-col size="4" center>Attribute</av-col>
@@ -210,7 +210,7 @@ Layout.Col.configure({
     </av-row>
 </div>
 
-<h2>Row component</h2>
+<h2 id="row-component">Row component</h2>
 <p>The &lt;av-row&gt; component:</p>
 <ul>
     <li>Creates the grid container (display: flex; flex-wrap: wrap;)</li>

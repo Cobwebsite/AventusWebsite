@@ -2,13 +2,13 @@
 <p>In this section you are going to learn what is a RAM and how you can create it inside Aventus.</p>
 
 
-<h2>Definition</h2>
+<h2 id="definition">Definition</h2>
 <p>A RAM is a class that store all your <av-link to="/data/create">data instances</av-link>. This class
     is most of the time a singleton because we want only one storage by type. This piece of code is in charge of all
     CRUD (Create / Read / Update / Delete) operations.</p>
 
 
-<h2>Inside Aventus</h2>
+<h2 id="inside-aventus">Inside Aventus</h2>
 <p>Inside Aventus you can create RAM by right clicking on the explorer part inside vscode, choose <i>Aventus
         : Create...</i> and choose <i>RAM</i>. Inside the input you can enter the name of the class for which you create
     a store (ex: Person will create a PersonRAM class). This will create a basic RAM class:</p>

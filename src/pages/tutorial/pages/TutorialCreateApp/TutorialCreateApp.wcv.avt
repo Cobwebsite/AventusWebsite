@@ -1,6 +1,6 @@
 <h1>Create app</h1>
 
-<h2>MainApp</h2>
+<h2 id="mainapp">MainApp</h2>
 
 <p>In web development, particularly in modern single-page applications (SPAs), structuring your codebase efficiently is
     crucial for maintainability and scalability. One common practice is to designate a central file to serve as the main
@@ -48,7 +48,7 @@
 </p>
 <av-tutorial-create-app-editor-3></av-tutorial-create-app-editor-3>
 
-<h2>Pages</h2>
+<h2 id="pages">Pages</h2>
 
 <p>Now you have a router defined but without route and page. You can create a new folder <span class="cn">pages</span>
     and two new components <span class="cn">TodoListPage</span> and <span class="cn">TodoCreatePage</span>. To use the
@@ -106,7 +106,7 @@
 <p>The current result is the following :</p>
 <av-tutorial-create-app-editor-4></av-tutorial-create-app-editor-4>
 
-<h2>Navigation</h2>
+<h2 id="navigation">Navigation</h2>
 <p>Now, you can add navigation menu so that you will be able to navigate between creation and list.</p>
 <p>Inside the <span class="cn">MainApp.wcv.avt</span> you can write the code below the add nav item and style it :</p>
 <av-code language="html" filename="Demo/src/apps/MainApp/MainApp.wcv.avt">
@@ -165,7 +165,7 @@
 
 <av-tutorial-create-app-editor-5></av-tutorial-create-app-editor-5>
 
-<h2>Inheritance</h2>
+<h2 id="inheritance">Inheritance</h2>
 <p>Because all of the pages will have a title, you can create a generic component named
     <span class="cn">GenericPage</span>. This component can't be displayed so you must write your class as
     <span class="cn">abstract</span>.

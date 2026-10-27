@@ -2,7 +2,7 @@
 <p>In this section you are going to learn how you can define property for your component and add a callback when the
     attribute change.</p>
 
-<h2>Simple property</h2>
+<h2 id="simple-property">Simple property</h2>
 <p>A property is defined by two things:</p>
 <ul>
     <li>An attribute on your tag</li>
@@ -65,7 +65,7 @@
 
 <av-doc-wc-property-editor-1></av-doc-wc-property-editor-1>
 
-<h2>Quick use</h2>
+<h2 id="quick-use">Quick use</h2>
 <p>When you are editing a <span class="cn">*.wcl.avt</span>, you can right click where you want to create an attribute
     and select the option <i>Aventus: create attribute</i>. You must follow the instruction to get an attribute working.</p>
 <p>You can also use the shortcut <span class="cn">Ctrl + k Ctrl + numpad2</span>.</p>

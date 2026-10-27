@@ -1,7 +1,7 @@
 <h1>Webcomponent - Injection</h1>
 <p>In this section you are going to learn how you can inject data from parent into the child.</p>
 
-<h2>Add injection</h2>
+<h2 id="add-injection">Add injection</h2>
 <p>To bind add an injection on a child inside the shadowroot, you can use the following syntax : <span
         class="cn">:fieldOnChild=""</span></p>
 <p>With the code below, the input value will be incremented each second</p>

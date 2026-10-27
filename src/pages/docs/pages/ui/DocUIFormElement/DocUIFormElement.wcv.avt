@@ -6,7 +6,7 @@
 <p>Just like the rest of the Aventus UI framework, it is completely design-agnostic: you define how your input looks and
     behaves. Aventus handles the logic, validation, and data synchronization.</p>
 
-<h2>Philosophy</h2>
+<h2 id="philosophy">Philosophy</h2>
 <p>Traditional form systems often couple validation, layout, and styling.
     Aventus takes a different route: logic and UI are separate, but synchronized.</p>
 <p>Each <span class="cn">FormElement</span>:</p>
@@ -22,7 +22,7 @@
 <p>This design allows developers to create fully custom input components, from simple text fields to rich custom
     widgets, without rewriting boilerplate logic.</p>
 
-<h2>Overview</h2>
+<h2 id="overview">Overview</h2>
 <p><span class="cn">FormElement&lt;T&gt;</span> is an abstract class that provides:</p>
 <ul>
     <li>Automatic registration inside a Form</li>
@@ -35,7 +35,7 @@
 
 <av-doc-u-i-form-element-editor-1></av-doc-u-i-form-element-editor-1>
 
-<h2>Core Behavior</h2>
+<h2 id="core-behavior">Core Behavior</h2>
 <h3>Automatic Registration</h3>
 <p>When a <span class="cn">FormElement</span> is created, it automatically registers itself with its nearest parent
     <span class="cn">Form</span>. This ensures that the form knows about all inputs and can include them in validation
@@ -91,7 +91,7 @@ protected async validation(): Promise&lt;string[]&gt; {
     logic.</p>
 
 
-<h2>Lifecycle Hooks</h2>
+<h2 id="lifecycle-hooks">Lifecycle Hooks</h2>
 <div class="table">
     <av-row class="header">
         <av-col size="4" center>Feature</av-col>
@@ -127,7 +127,7 @@ protected async validation(): Promise&lt;string[]&gt; {
     </av-row>
 </div>
 
-<h2>Key Features</h2>
+<h2 id="key-features">Key Features</h2>
 
 <ul>
     <li>Two-way data binding between the UI and the FormHandler</li>
@@ -138,7 +138,7 @@ protected async validation(): Promise&lt;string[]&gt; {
     <li>Design freedom: full control over rendering and layout</li>
 </ul>
 
-<h2>Example Integration</h2>
+<h2 id="example-integration">Example Integration</h2>
 <av-code language="ts">
     <pre>
 const loginForm = Form.Form.create({
@@ -156,7 +156,7 @@ const loginForm = Form.Form.create({
 </av-code>
 <p>Each text-input updates and validates through the shared handler. No glue code required.</p>
 
-<h2>Injectable form part (manual wiring)</h2>
+<h2 id="injectable-form-part-manual-wiring">Injectable form part (manual wiring)</h2>
 <p>If your input is used outside of the <span class="cn">Form</span> web component, you can still connect it to a <span class="cn">FormHandler</span> by injecting the form part directly. FormElement exposes an <span class="cn">form property</span> of type <span class="cn">InternalFormPart&lt;T&gt;</span> that you can set to link the element with the <span class="cn">FormHandler's</span> field.</p>
 <p>When a <span class="cn">form</span> is injected:</p>
 <ul>
@@ -198,7 +198,7 @@ const loginForm = Aventus.Form.Form.create({
 </ul>
 
 
-<h2>Summary</h2>
+<h2 id="summary">Summary</h2>
 <p><span class="cn">FormElement</span> is the bridge between visual components and logical form management. It encapsulates:</p>
 
 <ul>
