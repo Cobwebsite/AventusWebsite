@@ -14,15 +14,22 @@
         for(let result of this.results) { 
             <div class="result">
                 <av-link to="{{ result.url }}" @click="onResultSelected">
-                    <span class="result-title">{{ result.title }}</span>
+                    <div class="title">
+                        <mi-icon icon="{{ result.icon }}" title="{{ result.category }}"
+                            aria-hidden="true"></mi-icon>
+                        <span class="result-title">{{ result.title }}</span>
+                    </div>
+                    <p class="excerpt">{{ result.excerpt }}</p>
                 </av-link>
-                <p class="excerpt">{{ result.excerpt }}</p>
                 <ul class="sections">
                     for(let section of result.sections) { 
                         <li>
-                            <av-link to="{{ section.url }}"
-                                @click="onResultSelected">{{ section.title }}</av-link>
-                            <p class="excerpt">{{ section.excerpt }}</p>
+                            <av-link to="{{ section.url }}" @click="onResultSelected">
+                                <div class="title">
+                                    <span>{{ section.title }}</span>
+                                </div>
+                                <p class="excerpt">{{ section.excerpt }}</p>
+                            </av-link>
                         </li>
                     }
                 </ul>

@@ -43,6 +43,10 @@
 		text-align: center;
 	}
 
+	h2 {
+		scroll-margin-top: 40px;
+	}
+
 	a {
 		color: var(--link-color);
 		text-decoration: none;
@@ -51,8 +55,6 @@
 	p {
 		line-height: 1.7;
 		text-align: justify;
-
-
 	}
 
 	av-link,

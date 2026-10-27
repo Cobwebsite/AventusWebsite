@@ -17,6 +17,7 @@ export abstract class DocGenericPage extends Page implements Aventus.DefaultComp
         await Aventus.sleep(100);
         this.fade = true;
         await Aventus.sleep(350);
+        this.shadowRoot.querySelector("av-scrollable")?.dispatchEvent(new CustomEvent("hashcheck", { bubbles: true, composed: true }));
     }
     public override async hide() {
         this.fade = false;
