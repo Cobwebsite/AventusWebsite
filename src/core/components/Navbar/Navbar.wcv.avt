@@ -83,13 +83,13 @@
                 </svg>
             </a>
         </div>
-        <div class="mode" @press="toggleMode">
+        <!-- <div class="mode" @press="toggleMode">
             <mi-icon icon="light_mode"></mi-icon>
             <div class="slider">
                 <div class="button"></div>
             </div>
             <mi-icon icon="dark_mode"></mi-icon>
-        </div>
+        </div> -->
     </div>
     <av-icon icon="navicon" class="icon" @press="openMenu"></av-icon>
     <div class="hider" @press="closeMenu"></div>

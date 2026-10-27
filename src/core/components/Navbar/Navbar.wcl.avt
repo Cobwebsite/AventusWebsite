@@ -31,11 +31,11 @@ export class Navbar extends Aventus.WebComponent implements Aventus.DefaultCompo
     //#region constructor
     constructor() {
         super();
-        let mode = localStorage.getItem("mode");
-        if(mode == 'dark') {
+        // let mode = localStorage.getItem("mode");
+        // if(mode == 'dark') {
             document.querySelector("html")?.classList.add("dark");
             this.is_dark = true;
-        }
+        // }
     }
     //#endregion
 
