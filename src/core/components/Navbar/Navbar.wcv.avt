@@ -1,7 +1,7 @@
 <div class="container">
     <div class="left">
         <av-link to="/"><av-img src="/img/icon.png"></av-img></av-link>
-        <div class="input">
+        <div class="input" @click="openModal">
             <div class="border"></div>
             <mi-icon icon="search"></mi-icon>
             <input type="text" class="search" placeholder="Search" />
