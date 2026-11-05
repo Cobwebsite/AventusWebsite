@@ -79,6 +79,7 @@
 					--img-color: var(--aventus-color);
 					cursor: pointer;
 					height: 100%;
+					width: 40px;
 					-webkit-tap-highlight-color: transparent;
 				}
 			}
