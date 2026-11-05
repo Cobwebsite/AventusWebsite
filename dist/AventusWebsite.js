@@ -27050,6 +27050,26 @@ super.__getHtml();
             // this will be implemented later
             throw new Error("Method not implemented.");
         }
+        protected override async transformCreateRequestToItem(item: PersonExtended): Promise&lt;Aventus.ResultWithError&lt;Person&gt;&gt; {
+            const result = new Aventus.ResultWithError&lt;Person&gt;();
+            result.result = item;
+            return result;
+        }
+        &nbsp;
+        protected override async transformCreateRequestListToItem(items: PersonExtended[]): Promise&lt;Aventus.ResultWithError&lt;Person[]&gt;&gt; {
+            const result = new Aventus.ResultWithError&lt;Person[]&gt;();
+            result.result = items;
+            return result;
+        }
+        &nbsp;
+        protected override async transformUpdateRequestToItem(item: PersonExtended): Promise&lt;Aventus.ResultWithError&lt;Person&gt;&gt; {
+            return this.transformCreateRequestToItem(item);
+        }
+        &nbsp;
+        protected override async transformUpdateRequestListToItem(items: PersonExtended[]): Promise&lt;Aventus.ResultWithError&lt;Person[]&gt;&gt; {
+            return this.transformCreateRequestListToItem(items);
+        }
+        &nbsp;
     }
 </av-code></av-code><slot></slot>` }
     });
@@ -27107,6 +27127,26 @@ super.__getHtml();
             // this will be implemented later
             throw new Error("Method not implemented.");
         }
+        protected override async transformCreateRequestToItem(item: PersonExtended): Promise&lt;Aventus.ResultWithError&lt;Person&gt;&gt; {
+            const result = new Aventus.ResultWithError&lt;Person&gt;();
+            result.result = item;
+            return result;
+        }
+        &nbsp;
+        protected override async transformCreateRequestListToItem(items: PersonExtended[]): Promise&lt;Aventus.ResultWithError&lt;Person[]&gt;&gt; {
+            const result = new Aventus.ResultWithError&lt;Person[]&gt;();
+            result.result = items;
+            return result;
+        }
+        &nbsp;
+        protected override async transformUpdateRequestToItem(item: PersonExtended): Promise&lt;Aventus.ResultWithError&lt;Person&gt;&gt; {
+            return this.transformCreateRequestToItem(item);
+        }
+        &nbsp;
+        protected override async transformUpdateRequestListToItem(items: PersonExtended[]): Promise&lt;Aventus.ResultWithError&lt;Person[]&gt;&gt; {
+            return this.transformCreateRequestListToItem(items);
+        }
+        &nbsp;
         /**
          * Mixin pattern to add methods
          */
@@ -27181,6 +27221,26 @@ super.__getHtml();
         protected override getTypeForData(objJson: Person | Aventus.KeysObject&lt;Person&gt;): new () => PersonExtended {
             return this.addPersonMethod(Person);
         }
+        protected override async transformCreateRequestToItem(item: PersonExtended): Promise&lt;Aventus.ResultWithError&lt;Person&gt;&gt; {
+            const result = new Aventus.ResultWithError&lt;Person&gt;();
+            result.result = item;
+            return result;
+        }
+        &nbsp;
+        protected override async transformCreateRequestListToItem(items: PersonExtended[]): Promise&lt;Aventus.ResultWithError&lt;Person[]&gt;&gt; {
+            const result = new Aventus.ResultWithError&lt;Person[]&gt;();
+            result.result = items;
+            return result;
+        }
+        &nbsp;
+        protected override async transformUpdateRequestToItem(item: PersonExtended): Promise&lt;Aventus.ResultWithError&lt;Person&gt;&gt; {
+            return this.transformCreateRequestToItem(item);
+        }
+        &nbsp;
+        protected override async transformUpdateRequestListToItem(items: PersonExtended[]): Promise&lt;Aventus.ResultWithError&lt;Person[]&gt;&gt; {
+            return this.transformCreateRequestListToItem(items);
+        }
+        &nbsp;
         /**
          * Mixin pattern to add methods
          */
@@ -27316,6 +27376,26 @@ super.__getHtml();
                 protected override getTypeForData(objJson: Aventus.KeysObject&lt;Person&gt; | Person): new () => Person {
                     return Person;
                 }
+                protected override async transformCreateRequestToItem(item: Person): Promise&lt;Aventus.ResultWithError&lt;Person&gt;&gt; {
+                    const result = new Aventus.ResultWithError&lt;Person&gt;();
+                    result.result = item;
+                    return result;
+                }
+                &nbsp;
+                protected override async transformCreateRequestListToItem(items: Person[]): Promise&lt;Aventus.ResultWithError&lt;Person[]&gt;&gt; {
+                    const result = new Aventus.ResultWithError&lt;Person[]&gt;();
+                    result.result = items;
+                    return result;
+                }
+                &nbsp;
+                protected override async transformUpdateRequestToItem(item: Person): Promise&lt;Aventus.ResultWithError&lt;Person&gt;&gt; {
+                    return this.transformCreateRequestToItem(item);
+                }
+                &nbsp;
+                protected override async transformUpdateRequestListToItem(items: Person[]): Promise&lt;Aventus.ResultWithError&lt;Person[]&gt;&gt; {
+                    return this.transformCreateRequestListToItem(items);
+                }
+                &nbsp;
                 &nbsp;
             }
         </pre>
@@ -27600,6 +27680,26 @@ super.__getHtml();
                 protected override getTypeForData(objJson: Aventus.KeysObject&lt;Person&gt; | Person): new () => Person {
                     return Person;
                 }
+                protected override async transformCreateRequestToItem(item: Person): Promise&lt;Aventus.ResultWithError&lt;Person&gt;&gt; {
+                    const result = new Aventus.ResultWithError&lt;Person&gt;();
+                    result.result = item;
+                    return result;
+                }
+                &nbsp;
+                protected override async transformCreateRequestListToItem(items: Person[]): Promise&lt;Aventus.ResultWithError&lt;Person[]&gt;&gt; {
+                    const result = new Aventus.ResultWithError&lt;Person[]&gt;();
+                    result.result = items;
+                    return result;
+                }
+                &nbsp;
+                protected override async transformUpdateRequestToItem(item: Person): Promise&lt;Aventus.ResultWithError&lt;Person&gt;&gt; {
+                    return this.transformCreateRequestToItem(item);
+                }
+                &nbsp;
+                protected override async transformUpdateRequestListToItem(items: Person[]): Promise&lt;Aventus.ResultWithError&lt;Person[]&gt;&gt; {
+                    return this.transformCreateRequestListToItem(items);
+                }
+                &nbsp;
                 &nbsp;
             }
         </pre>
@@ -27898,6 +27998,26 @@ super.__getHtml();
                     &nbsp;
                     throw 'Impossible'
                 }
+                protected override async transformCreateRequestToItem(item: Shape): Promise&lt;Aventus.ResultWithError&lt;Shape&gt;&gt; {
+                    const result = new Aventus.ResultWithError&lt;Shape&gt;();
+                    result.result = item;
+                    return result;
+                }
+                &nbsp;
+                protected override async transformCreateRequestListToItem(items: Shape[]): Promise&lt;Aventus.ResultWithError&lt;Shape[]&gt;&gt; {
+                    const result = new Aventus.ResultWithError&lt;Shape[]&gt;();
+                    result.result = items;
+                    return result;
+                }
+                &nbsp;
+                protected override async transformUpdateRequestToItem(item: Shape): Promise&lt;Aventus.ResultWithError&lt;Shape&gt;&gt; {
+                    return this.transformCreateRequestToItem(item);
+                }
+                &nbsp;
+                protected override async transformUpdateRequestListToItem(items: Shape[]): Promise&lt;Aventus.ResultWithError&lt;Shape[]&gt;&gt; {
+                    return this.transformCreateRequestListToItem(items);
+                }
+                &nbsp;
                 &nbsp;
             }
         </pre>
@@ -27983,6 +28103,26 @@ super.__getHtml();
                 protected override getTypeForData(objJson: Aventus.KeysObject&lt;Person&gt; | Person): new () => Person {
                     return Person;
                 }
+                protected override async transformCreateRequestToItem(item: Person): Promise&lt;Aventus.ResultWithError&lt;Person&gt;&gt; {
+                    const result = new Aventus.ResultWithError&lt;Person&gt;();
+                    result.result = item;
+                    return result;
+                }
+                &nbsp;
+                protected override async transformCreateRequestListToItem(items: Person[]): Promise&lt;Aventus.ResultWithError&lt;Person[]&gt;&gt; {
+                    const result = new Aventus.ResultWithError&lt;Person[]&gt;();
+                    result.result = items;
+                    return result;
+                }
+                &nbsp;
+                protected override async transformUpdateRequestToItem(item: Person): Promise&lt;Aventus.ResultWithError&lt;Person&gt;&gt; {
+                    return this.transformCreateRequestToItem(item);
+                }
+                &nbsp;
+                protected override async transformUpdateRequestListToItem(items: Person[]): Promise&lt;Aventus.ResultWithError&lt;Person[]&gt;&gt; {
+                    return this.transformCreateRequestListToItem(items);
+                }
+                &nbsp;
                 &nbsp;
             }
         </pre>
@@ -28044,6 +28184,26 @@ super.__getHtml();
             protected override getTypeForData(objJson: Aventus.KeysObject&lt;Person> | Person): new () => Person {
                 return Person;
             }
+            protected override async transformCreateRequestToItem(item: Person): Promise&lt;Aventus.ResultWithError&lt;Person&gt;&gt; {
+                const result = new Aventus.ResultWithError&lt;Person&gt;();
+                result.result = item;
+                return result;
+            }
+            &nbsp;
+            protected override async transformCreateRequestListToItem(items: Person[]): Promise&lt;Aventus.ResultWithError&lt;Person[]&gt;&gt; {
+                const result = new Aventus.ResultWithError&lt;Person[]&gt;();
+                result.result = items;
+                return result;
+            }
+            &nbsp;
+            protected override async transformUpdateRequestToItem(item: Person): Promise&lt;Aventus.ResultWithError&lt;Person&gt;&gt; {
+                return this.transformCreateRequestToItem(item);
+            }
+            &nbsp;
+            protected override async transformUpdateRequestListToItem(items: Person[]): Promise&lt;Aventus.ResultWithError&lt;Person[]&gt;&gt; {
+                return this.transformCreateRequestListToItem(items);
+            }
+            &nbsp;
             &nbsp;
         }
     </pre>

@@ -25,6 +25,26 @@
             protected override getTypeForData(objJson: Aventus.KeysObject&lt;Person> | Person): new () => Person {
                 return Person;
             }
+            protected override async transformCreateRequestToItem(item: Person): Promise&lt;Aventus.ResultWithError&lt;Person&gt;&gt; {
+                const result = new Aventus.ResultWithError&lt;Person&gt;();
+                result.result = item;
+                return result;
+            }
+            &nbsp;
+            protected override async transformCreateRequestListToItem(items: Person[]): Promise&lt;Aventus.ResultWithError&lt;Person[]&gt;&gt; {
+                const result = new Aventus.ResultWithError&lt;Person[]&gt;();
+                result.result = items;
+                return result;
+            }
+            &nbsp;
+            protected override async transformUpdateRequestToItem(item: Person): Promise&lt;Aventus.ResultWithError&lt;Person&gt;&gt; {
+                return this.transformCreateRequestToItem(item);
+            }
+            &nbsp;
+            protected override async transformUpdateRequestListToItem(items: Person[]): Promise&lt;Aventus.ResultWithError&lt;Person[]&gt;&gt; {
+                return this.transformCreateRequestListToItem(items);
+            }
+            &nbsp;
             &nbsp;
         }
     </pre>
