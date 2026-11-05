@@ -43,11 +43,6 @@ const _ = {};
 
 
 let _n;
-let sleep=function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-__as1(_, 'sleep', sleep);
-
 let isClass=function isClass(v) {
     return typeof v === 'function' && /^\s*class\s+/.test(v.toString());
 }
@@ -69,6 +64,11 @@ var HttpMethod;
     HttpMethod["OPTION"] = "OPTION";
 })(HttpMethod || (HttpMethod = {}));
 __as1(_, 'HttpMethod', HttpMethod);
+
+let sleep=function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+__as1(_, 'sleep', sleep);
 
 let DragElementXYType= [SVGGElement, SVGRectElement, SVGEllipseElement, SVGTextElement];
 __as1(_, 'DragElementXYType', DragElementXYType);
@@ -5434,6 +5434,194 @@ let WebComponentInstance=class WebComponentInstance {
 WebComponentInstance.Namespace=`Aventus`;
 __as1(_, 'WebComponentInstance', WebComponentInstance);
 
+let ResourceLoader=class ResourceLoader {
+    static headerLoaded = {};
+    static headerWaiting = {};
+    /**
+     * Load the resource inside the head tag
+     */
+    static async loadInHead(options) {
+        const _options = this.prepareOptions(options);
+        if (this.headerLoaded[_options.url]) {
+            return true;
+        }
+        else if (this.headerWaiting.hasOwnProperty(_options.url)) {
+            return await this.awaitFctHead(_options.url);
+        }
+        else {
+            let tagEl;
+            if (_options.type == "js") {
+                tagEl = document.createElement("SCRIPT");
+                const el = document.querySelector(`script[src="${_options.url}"]`);
+                if (el) {
+                    this.headerLoaded[_options.url] = true;
+                    return true;
+                }
+            }
+            else if (_options.type == "css") {
+                tagEl = document.createElement("LINK");
+                tagEl.setAttribute("rel", "stylesheet");
+                const el = document.querySelector(`link[rel="stylesheet"][href="${_options.url}"]`);
+                if (el) {
+                    this.headerLoaded[_options.url] = true;
+                    return true;
+                }
+            }
+            else {
+                throw "unknow type " + _options.type + " to append into head";
+            }
+            this.headerWaiting[_options.url] = [];
+            if (_options.nonce) {
+                tagEl.setAttribute("nonce", _options.nonce);
+            }
+            document.head.appendChild(tagEl);
+            let result = await this.loadTag(tagEl, _options.url);
+            if (result) {
+                this.headerLoaded[_options.url] = true;
+            }
+            else {
+                tagEl.remove();
+            }
+            this.releaseAwaitFctHead(_options.url, result);
+            return result;
+        }
+    }
+    static loadTag(tagEl, url) {
+        return new Promise((resolve, reject) => {
+            tagEl.addEventListener("load", (e) => {
+                resolve(true);
+            });
+            tagEl.addEventListener("error", (e) => {
+                resolve(false);
+            });
+            if (tagEl instanceof HTMLLinkElement) {
+                tagEl.setAttribute("href", url);
+            }
+            else {
+                tagEl.setAttribute('src', url);
+            }
+        });
+    }
+    static releaseAwaitFctHead(url, result) {
+        if (this.headerWaiting[url]) {
+            for (let i = 0; i < this.headerWaiting[url].length; i++) {
+                this.headerWaiting[url][i](result);
+            }
+            delete this.headerWaiting[url];
+        }
+    }
+    static awaitFctHead(url) {
+        return new Promise((resolve) => {
+            this.headerWaiting[url].push((result) => {
+                resolve(result);
+            });
+        });
+    }
+    static requestLoaded = {};
+    static requestWaiting = {};
+    /**
+     *
+    */
+    static async load(options) {
+        options = this.prepareOptions(options);
+        if (this.requestLoaded[options.url]) {
+            return this.requestLoaded[options.url];
+        }
+        else if (this.requestWaiting.hasOwnProperty(options.url)) {
+            await this.awaitFct(options.url);
+            return this.requestLoaded[options.url];
+        }
+        else {
+            this.requestWaiting[options.url] = [];
+            let blob = false;
+            if (options.type == "img") {
+                blob = true;
+            }
+            let content = await this.fetching(options.url, blob);
+            if (options.type == "img" && content.startsWith("data:text/html;")) {
+                console.error("Can't load img " + options.url);
+                content = "";
+            }
+            this.requestLoaded[options.url] = content;
+            this.releaseAwaitFct(options.url);
+            return content;
+        }
+    }
+    static releaseAwaitFct(url) {
+        if (this.requestWaiting[url]) {
+            for (let i = 0; i < this.requestWaiting[url].length; i++) {
+                this.requestWaiting[url][i]();
+            }
+            delete this.requestWaiting[url];
+        }
+    }
+    static awaitFct(url) {
+        return new Promise((resolve) => {
+            this.requestWaiting[url].push(() => {
+                resolve('');
+            });
+        });
+    }
+    static async fetching(url, useBlob = false) {
+        if (useBlob) {
+            let result = await fetch(url, {
+                headers: {
+                    responseType: 'blob'
+                }
+            });
+            let blob = await result.blob();
+            return await this.readFile(blob);
+        }
+        else {
+            let result = await fetch(url);
+            return await result.text();
+        }
+    }
+    static readFile(blob) {
+        return new Promise((resolve) => {
+            var reader = new FileReader();
+            reader.onloadend = function () {
+                resolve(reader.result);
+            };
+            reader.readAsDataURL(blob);
+        });
+    }
+    static imgExtensions = ["png", "jpg", "jpeg", "gif"];
+    static prepareOptions(options) {
+        let result;
+        if (typeof options === 'string' || options instanceof String) {
+            result = {
+                url: options,
+                type: 'js'
+            };
+            let splittedURI = result.url.split('.');
+            let extension = splittedURI[splittedURI.length - 1];
+            extension = extension.split("?")[0];
+            if (extension == "svg") {
+                result.type = 'svg';
+            }
+            else if (extension == "js") {
+                result.type = 'js';
+            }
+            else if (extension == "css") {
+                result.type = 'css';
+            }
+            else if (this.imgExtensions.indexOf(extension) != -1) {
+                result.type = 'img';
+            }
+            else {
+                delete result.type;
+            }
+        }
+        else {
+            result = options;
+        }
+        return result;
+    }
+}
+ResourceLoader.Namespace=`Aventus`;
+__as1(_, 'ResourceLoader', ResourceLoader);
+
 let ResizeObserver=class ResizeObserver {
     callback;
     targets;
@@ -6143,194 +6331,6 @@ let DragAndDrop=class DragAndDrop {
 }
 DragAndDrop.Namespace=`Aventus`;
 __as1(_, 'DragAndDrop', DragAndDrop);
-
-let ResourceLoader=class ResourceLoader {
-    static headerLoaded = {};
-    static headerWaiting = {};
-    /**
-     * Load the resource inside the head tag
-     */
-    static async loadInHead(options) {
-        const _options = this.prepareOptions(options);
-        if (this.headerLoaded[_options.url]) {
-            return true;
-        }
-        else if (this.headerWaiting.hasOwnProperty(_options.url)) {
-            return await this.awaitFctHead(_options.url);
-        }
-        else {
-            let tagEl;
-            if (_options.type == "js") {
-                tagEl = document.createElement("SCRIPT");
-                const el = document.querySelector(`script[src="${_options.url}"]`);
-                if (el) {
-                    this.headerLoaded[_options.url] = true;
-                    return true;
-                }
-            }
-            else if (_options.type == "css") {
-                tagEl = document.createElement("LINK");
-                tagEl.setAttribute("rel", "stylesheet");
-                const el = document.querySelector(`link[rel="stylesheet"][href="${_options.url}"]`);
-                if (el) {
-                    this.headerLoaded[_options.url] = true;
-                    return true;
-                }
-            }
-            else {
-                throw "unknow type " + _options.type + " to append into head";
-            }
-            this.headerWaiting[_options.url] = [];
-            if (_options.nonce) {
-                tagEl.setAttribute("nonce", _options.nonce);
-            }
-            document.head.appendChild(tagEl);
-            let result = await this.loadTag(tagEl, _options.url);
-            if (result) {
-                this.headerLoaded[_options.url] = true;
-            }
-            else {
-                tagEl.remove();
-            }
-            this.releaseAwaitFctHead(_options.url, result);
-            return result;
-        }
-    }
-    static loadTag(tagEl, url) {
-        return new Promise((resolve, reject) => {
-            tagEl.addEventListener("load", (e) => {
-                resolve(true);
-            });
-            tagEl.addEventListener("error", (e) => {
-                resolve(false);
-            });
-            if (tagEl instanceof HTMLLinkElement) {
-                tagEl.setAttribute("href", url);
-            }
-            else {
-                tagEl.setAttribute('src', url);
-            }
-        });
-    }
-    static releaseAwaitFctHead(url, result) {
-        if (this.headerWaiting[url]) {
-            for (let i = 0; i < this.headerWaiting[url].length; i++) {
-                this.headerWaiting[url][i](result);
-            }
-            delete this.headerWaiting[url];
-        }
-    }
-    static awaitFctHead(url) {
-        return new Promise((resolve) => {
-            this.headerWaiting[url].push((result) => {
-                resolve(result);
-            });
-        });
-    }
-    static requestLoaded = {};
-    static requestWaiting = {};
-    /**
-     *
-    */
-    static async load(options) {
-        options = this.prepareOptions(options);
-        if (this.requestLoaded[options.url]) {
-            return this.requestLoaded[options.url];
-        }
-        else if (this.requestWaiting.hasOwnProperty(options.url)) {
-            await this.awaitFct(options.url);
-            return this.requestLoaded[options.url];
-        }
-        else {
-            this.requestWaiting[options.url] = [];
-            let blob = false;
-            if (options.type == "img") {
-                blob = true;
-            }
-            let content = await this.fetching(options.url, blob);
-            if (options.type == "img" && content.startsWith("data:text/html;")) {
-                console.error("Can't load img " + options.url);
-                content = "";
-            }
-            this.requestLoaded[options.url] = content;
-            this.releaseAwaitFct(options.url);
-            return content;
-        }
-    }
-    static releaseAwaitFct(url) {
-        if (this.requestWaiting[url]) {
-            for (let i = 0; i < this.requestWaiting[url].length; i++) {
-                this.requestWaiting[url][i]();
-            }
-            delete this.requestWaiting[url];
-        }
-    }
-    static awaitFct(url) {
-        return new Promise((resolve) => {
-            this.requestWaiting[url].push(() => {
-                resolve('');
-            });
-        });
-    }
-    static async fetching(url, useBlob = false) {
-        if (useBlob) {
-            let result = await fetch(url, {
-                headers: {
-                    responseType: 'blob'
-                }
-            });
-            let blob = await result.blob();
-            return await this.readFile(blob);
-        }
-        else {
-            let result = await fetch(url);
-            return await result.text();
-        }
-    }
-    static readFile(blob) {
-        return new Promise((resolve) => {
-            var reader = new FileReader();
-            reader.onloadend = function () {
-                resolve(reader.result);
-            };
-            reader.readAsDataURL(blob);
-        });
-    }
-    static imgExtensions = ["png", "jpg", "jpeg", "gif"];
-    static prepareOptions(options) {
-        let result;
-        if (typeof options === 'string' || options instanceof String) {
-            result = {
-                url: options,
-                type: 'js'
-            };
-            let splittedURI = result.url.split('.');
-            let extension = splittedURI[splittedURI.length - 1];
-            extension = extension.split("?")[0];
-            if (extension == "svg") {
-                result.type = 'svg';
-            }
-            else if (extension == "js") {
-                result.type = 'js';
-            }
-            else if (extension == "css") {
-                result.type = 'css';
-            }
-            else if (this.imgExtensions.indexOf(extension) != -1) {
-                result.type = 'img';
-            }
-            else {
-                delete result.type;
-            }
-        }
-        else {
-            result = options;
-        }
-        return result;
-    }
-}
-ResourceLoader.Namespace=`Aventus`;
-__as1(_, 'ResourceLoader', ResourceLoader);
 
 let Json=class Json {
     /**
@@ -7705,6 +7705,73 @@ this.__upgradeProperty('active');
 Layout.Tabs.TabHeader.Namespace=`Aventus.Layout.Tabs`;
 __as1(_.Layout.Tabs, 'TabHeader', Layout.Tabs.TabHeader);
 
+let Tracker=class Tracker {
+    /**
+     * Multiplier for velocity calculations based on device pixel ratio.
+     */
+    velocityMultiplier = window.devicePixelRatio;
+    /**
+     * Timestamp of the last update.
+     */
+    updateTime = performance.now();
+    /**
+     * Change in position since the last update.
+     */
+    delta = { x: 0, y: 0 };
+    /**
+     * Current velocity of the tracker.
+     */
+    velocity = { x: 0, y: 0 };
+    /**
+     * Last recorded position.
+     */
+    lastPosition = { x: 0, y: 0 };
+    /**
+     * Initializes a new Tracker instance.
+     */
+    constructor(touch) {
+        this.lastPosition = this.getPosition(touch);
+    }
+    /**
+     * Updates the tracker's position, delta, and velocity.
+     */
+    update(touch) {
+        const { velocity, updateTime, lastPosition, } = this;
+        const now = performance.now();
+        const position = this.getPosition(touch);
+        const delta = {
+            x: -(position.x - lastPosition.x),
+            y: -(position.y - lastPosition.y),
+        };
+        const duration = (now - updateTime) || 16.7;
+        const vx = delta.x / duration * 16.7;
+        const vy = delta.y / duration * 16.7;
+        velocity.x = vx * this.velocityMultiplier;
+        velocity.y = vy * this.velocityMultiplier;
+        this.delta = delta;
+        this.updateTime = now;
+        this.lastPosition = position;
+    }
+    /**
+     * Extracts pointer data from a given event.
+     */
+    getPointerData(evt) {
+        return evt.touches ? evt.touches[evt.touches.length - 1] : evt;
+    }
+    /**
+     * Retrieves the client coordinates from a pointer event.
+     */
+    getPosition(evt) {
+        const data = this.getPointerData(evt);
+        return {
+            x: data.clientX,
+            y: data.clientY,
+        };
+    }
+}
+Tracker.Namespace=`Aventus`;
+__as1(_, 'Tracker', Tracker);
+
 Layout.GridGuideHelper = class GridGuideHelper extends Aventus.WebComponent {
     get 'direction'() { return this.getStringAttr('direction') }
     set 'direction'(val) { this.setStringAttr('direction', val) }
@@ -8626,20 +8693,23 @@ this.__correctGetter('allowResizeObserver');
                 posX = e.pageX;
                 posY = e.pageY;
                 this.no_user_select = true;
-            });
-            this.addEventListener("pointermove", (e) => {
-                if (this.x_scroll_visible) {
-                    this.contentHidder.scrollLeft = startScrollX + (posX - e.pageX);
-                }
-                if (this.y_scroll_visible) {
-                    this.contentHidder.scrollTop = startScrollY + (posY - e.pageY);
-                }
-            });
-            this.addEventListener("pointerup", (e) => {
-                this.no_user_select = false;
-            });
-            this.addEventListener("pointercancel", (e) => {
-                this.no_user_select = false;
+                const move = (e) => {
+                    if (this.x_scroll_visible) {
+                        this.contentHidder.scrollLeft = startScrollX + (posX - e.pageX);
+                    }
+                    if (this.y_scroll_visible) {
+                        this.contentHidder.scrollTop = startScrollY + (posY - e.pageY);
+                    }
+                };
+                const stop = (e) => {
+                    this.no_user_select = false;
+                    document.removeEventListener("pointermove", move);
+                    document.removeEventListener("pointerup", stop);
+                    document.removeEventListener("pointercancel", stop);
+                };
+                document.addEventListener("pointermove", move);
+                document.addEventListener("pointerup", stop);
+                document.addEventListener("pointercancel", stop);
             });
             // new PressManager({
             //     element: this,
@@ -11009,6 +11079,1155 @@ Layout.GridHelper.Tag=`av-grid-helper`;
 __as1(_.Layout, 'GridHelper', Layout.GridHelper);
 if(!window.customElements.get('av-grid-helper')){window.customElements.define('av-grid-helper', Layout.GridHelper);Aventus.WebComponentInstance.registerDefinition(Layout.GridHelper);}
 
+let TouchRecord=class TouchRecord {
+    /**
+     * The identifier of the currently active touch/pointer.
+     */
+    _activeTouchID;
+    /**
+     * A map of active touch/pointer IDs to their respective Trackers.
+     */
+    _touchList = {};
+    /**
+     * Returns a primitive zero-value coordinate object.
+     */
+    get _primitiveValue() {
+        return { x: 0, y: 0 };
+    }
+    /**
+     * Checks if there is an active touch/pointer event.
+     */
+    isActive() {
+        return this._activeTouchID !== undefined;
+    }
+    /**
+     * Retrieves the delta movement of the active tracker.
+     */
+    getDelta() {
+        const tracker = this._getActiveTracker();
+        if (!tracker) {
+            return this._primitiveValue;
+        }
+        return { ...tracker.delta };
+    }
+    /**
+     * Retrieves the velocity of the active tracker.
+     */
+    getVelocity() {
+        const tracker = this._getActiveTracker();
+        if (!tracker) {
+            return this._primitiveValue;
+        }
+        return { ...tracker.velocity };
+    }
+    /**
+     * Returns the number of active touch/pointer events.
+     */
+    getNbOfTouches() {
+        return Object.values(this._touchList).length;
+    }
+    /**
+     * Returns an array of active Tracker instances.
+     */
+    getTouches() {
+        return Object.values(this._touchList);
+    }
+    /**
+     * Calculates the easing distance based on current velocity and damping.
+     */
+    getEasingDistance(damping) {
+        const deAcceleration = 1 - damping;
+        let distance = {
+            x: 0,
+            y: 0,
+        };
+        const vel = this.getVelocity();
+        Object.keys(vel).forEach((_dir) => {
+            const dir = _dir;
+            let v = Math.abs(vel[dir]) <= 10 ? 0 : vel[dir];
+            while (v !== 0) {
+                distance[dir] += v;
+                v = (v * deAcceleration) | 0;
+            }
+        });
+        return distance;
+    }
+    /**
+     * Starts tracking new touch/pointer events.
+     */
+    track(evt) {
+        if ('TouchEvent' in window && evt instanceof TouchEvent) {
+            const { targetTouches, } = evt;
+            Array.from(targetTouches).forEach(touch => {
+                this._add(touch);
+            });
+        }
+        else {
+            this._add(evt);
+        }
+        return this._touchList;
+    }
+    /**
+     * Updates existing tracked touch/pointer events.
+     */
+    update(evt) {
+        if ('TouchEvent' in window && evt instanceof TouchEvent) {
+            const { touches, changedTouches, } = evt;
+            Array.from(touches).forEach(touch => {
+                this._renew(touch);
+            });
+            this._setActiveID(changedTouches);
+        }
+        else if (evt instanceof PointerEvent) {
+            this._renew(evt);
+            this._setActiveID(evt);
+        }
+        return this._touchList;
+    }
+    /**
+     * Releases tracking for ended touch/pointer events.
+     */
+    release(evt) {
+        if ('TouchEvent' in window && evt instanceof TouchEvent) {
+            Array.from(evt.changedTouches).forEach(touch => {
+                this._delete(touch);
+            });
+        }
+        else {
+            this._delete(evt);
+        }
+    }
+    /**
+     * Retrieves a unique identifier for a touch or pointer event.
+     */
+    _getIdentifier(touch) {
+        if ('Touch' in window && touch instanceof Touch)
+            return touch.identifier;
+        if (touch instanceof PointerEvent)
+            return touch.pointerId;
+        return touch.button;
+    }
+    /**
+     * Adds a new touch/pointer event to the tracker list.
+     */
+    _add(touch) {
+        if (this._has(touch)) {
+            this._delete(touch);
+        }
+        const tracker = new Tracker(touch);
+        const identifier = this._getIdentifier(touch);
+        this._touchList[identifier] = tracker;
+    }
+    /**
+     * Renews an existing touch/pointer event in the tracker list.
+     */
+    _renew(touch) {
+        if (!this._has(touch)) {
+            return;
+        }
+        const identifier = this._getIdentifier(touch);
+        const tracker = this._touchList[identifier];
+        tracker.update(touch);
+    }
+    /**
+     * Deletes a touch/pointer event from the tracker list.
+     */
+    _delete(touch) {
+        const identifier = this._getIdentifier(touch);
+        delete this._touchList[identifier];
+        if (this._activeTouchID == identifier) {
+            this._activeTouchID = undefined;
+        }
+    }
+    /**
+     * Checks if a touch/pointer event is being tracked.
+     */
+    _has(touch) {
+        const identifier = this._getIdentifier(touch);
+        return this._touchList.hasOwnProperty(identifier);
+    }
+    /**
+     * Sets the identifier of the currently active touch/pointer event.
+     */
+    _setActiveID(touches) {
+        if (touches instanceof PointerEvent || touches instanceof MouseEvent) {
+            this._activeTouchID = this._getIdentifier(touches);
+        }
+        else {
+            this._activeTouchID = touches[touches.length - 1].identifier;
+        }
+    }
+    /**
+     * Retrieves the currently active Tracker instance.
+     */
+    _getActiveTracker() {
+        const { _touchList, _activeTouchID, } = this;
+        if (_activeTouchID !== undefined) {
+            return _touchList[_activeTouchID];
+        }
+        return undefined;
+    }
+}
+TouchRecord.Namespace=`Aventus`;
+__as1(_, 'TouchRecord', TouchRecord);
+
+Layout.AdvancedScrollable = class AdvancedScrollable extends Aventus.WebComponent {
+    static get observedAttributes() {return ["zoom"].concat(super.observedAttributes).filter((v, i, a) => a.indexOf(v) === i);}
+    get 'min_zoom'() { return this.getNumberAttr('min_zoom') }
+    set 'min_zoom'(val) { this.setNumberAttr('min_zoom', val) }
+get 'max_zoom'() { return this.getNumberAttr('max_zoom') }
+    set 'max_zoom'(val) { this.setNumberAttr('max_zoom', val) }
+get 'y_scroll_visible'() { return this.getBoolAttr('y_scroll_visible') }
+    set 'y_scroll_visible'(val) { this.setBoolAttr('y_scroll_visible', val) }
+get 'x_scroll_visible'() { return this.getBoolAttr('x_scroll_visible') }
+    set 'x_scroll_visible'(val) { this.setBoolAttr('x_scroll_visible', val) }
+get 'floating_scroll'() { return this.getBoolAttr('floating_scroll') }
+    set 'floating_scroll'(val) { this.setBoolAttr('floating_scroll', val) }
+get 'x_scroll'() { return this.getBoolAttr('x_scroll') }
+    set 'x_scroll'(val) { this.setBoolAttr('x_scroll', val) }
+get 'y_scroll'() { return this.getBoolAttr('y_scroll') }
+    set 'y_scroll'(val) { this.setBoolAttr('y_scroll', val) }
+get 'auto_hide'() { return this.getBoolAttr('auto_hide') }
+    set 'auto_hide'(val) { this.setBoolAttr('auto_hide', val) }
+get 'break'() { return this.getNumberAttr('break') }
+    set 'break'(val) { this.setNumberAttr('break', val) }
+get 'disable'() { return this.getBoolAttr('disable') }
+    set 'disable'(val) { this.setBoolAttr('disable', val) }
+get 'no_user_select'() { return this.getBoolAttr('no_user_select') }
+    set 'no_user_select'(val) { this.setBoolAttr('no_user_select', val) }
+get 'mouse_drag'() { return this.getBoolAttr('mouse_drag') }
+    set 'mouse_drag'(val) { this.setBoolAttr('mouse_drag', val) }
+get 'pinch'() { return this.getBoolAttr('pinch') }
+    set 'pinch'(val) { this.setBoolAttr('pinch', val) }
+get 'flex'() { return this.getBoolAttr('flex') }
+    set 'flex'(val) { this.setBoolAttr('flex', val) }
+    get 'zoom'() { return this.getNumberProp('zoom') }
+    set 'zoom'(val) { this.setNumberAttr('zoom', val) }
+    observer;
+    display = { x: 0, y: 0 };
+    max = {
+        x: 0,
+        y: 0
+    };
+    margin = {
+        x: 0,
+        y: 0
+    };
+    position = {
+        x: 0,
+        y: 0
+    };
+    momentum = { x: 0, y: 0 };
+    contentWrapperSize = { x: 0, y: 0 };
+    scroller = {
+        x: () => {
+            if (!this.horizontalScroller) {
+                throw 'can\'t find the horizontalScroller';
+            }
+            return this.horizontalScroller;
+        },
+        y: () => {
+            if (!this.verticalScroller) {
+                throw 'can\'t find the verticalScroller';
+            }
+            return this.verticalScroller;
+        }
+    };
+    scrollerContainer = {
+        x: () => {
+            if (!this.horizontalScrollerContainer) {
+                throw 'can\'t find the horizontalScrollerContainer';
+            }
+            return this.horizontalScrollerContainer;
+        },
+        y: () => {
+            if (!this.verticalScrollerContainer) {
+                throw 'can\'t find the verticalScrollerContainer';
+            }
+            return this.verticalScrollerContainer;
+        }
+    };
+    hideDelay = { x: 0, y: 0 };
+    touchRecord;
+    pointerCount = 0;
+    loadedOnce = false;
+    savedPercent;
+    isDragScroller = false;
+    cachedSvg;
+    previousMidPoint;
+    previousDistance;
+    startTranslate = { x: 0, y: 0 };
+    get x() {
+        return this.position.x;
+    }
+    get y() {
+        return this.position.y;
+    }
+    get xMax() {
+        return this.max.x;
+    }
+    get yMax() {
+        return this.max.y;
+    }
+    onScrollChange = new Aventus.Callback();
+    onZoomChange = new Aventus.Callback();
+    renderAnimation;
+    autoScrollInterval = {
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    };
+    autoScrollSpeed = {
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    };
+    pressManager;
+    __registerPropertiesActions() { super.__registerPropertiesActions(); this.__addPropertyActions("zoom", ((target) => {
+    target.changeZoom();
+}));
+ }
+    static __style = `:host{--_scrollbar-container-color: var(--scrollbar-container-color, transparent);--_scrollbar-color: var(--scrollbar-color, #757575);--_scrollbar-active-color: var(--scrollbar-active-color, #858585);--_scroller-width: var(--scroller-width, 6px);--_scroller-top: var(--scroller-top, 3px);--_scroller-bottom: var(--scroller-bottom, 3px);--_scroller-right: var(--scroller-right, 3px);--_scroller-left: var(--scroller-left, 3px);--_scrollbar-content-padding: var(--scrollbar-content-padding, 0);--_scrollbar-container-display: var(--scrollbar-container-display, inline-block)}:host{display:block;height:100%;min-height:inherit;min-width:inherit;overflow:clip;position:relative;-webkit-user-drag:none;-khtml-user-drag:none;-moz-user-drag:none;-o-user-drag:none;width:100%}:host .scroll-main-container{display:block;height:100%;min-height:inherit;min-width:inherit;position:relative;width:100%}:host .scroll-main-container .content-zoom{display:block;height:100%;min-height:inherit;min-width:inherit;position:relative;transform-origin:0 0;width:100%;z-index:4}:host .scroll-main-container .content-zoom .content-hidder{display:block;height:100%;min-height:inherit;min-width:inherit;overflow:auto;-webkit-overflow-scrolling:touch;-ms-overflow-style:none;position:relative;scrollbar-width:none;width:100%}:host .scroll-main-container .content-zoom .content-hidder::-webkit-scrollbar{display:none}:host .scroll-main-container .content-zoom .content-hidder .content-wrapper{display:var(--_scrollbar-container-display);height:100%;min-height:inherit;min-width:inherit;padding:var(--_scrollbar-content-padding);position:relative;width:100%}:host .scroll-main-container .scroller-wrapper .container-scroller{display:none;overflow:hidden;position:absolute;transition:transform .2s linear;z-index:5}:host .scroll-main-container .scroller-wrapper .container-scroller .shadow-scroller{background-color:var(--_scrollbar-container-color);border-radius:5px}:host .scroll-main-container .scroller-wrapper .container-scroller .shadow-scroller .scroller{background-color:var(--_scrollbar-color);border-radius:5px;cursor:pointer;position:absolute;-webkit-tap-highlight-color:rgba(0,0,0,0);touch-action:none;z-index:5}:host .scroll-main-container .scroller-wrapper .container-scroller .scroller.active{background-color:var(--_scrollbar-active-color)}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical{height:calc(100% - var(--_scroller-bottom)*2 - var(--_scroller-width));padding-left:var(--_scroller-left);right:var(--_scroller-right);top:var(--_scroller-bottom);transform:0;width:calc(var(--_scroller-width) + var(--_scroller-left))}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical.hide{transform:translateX(calc(var(--_scroller-width) + var(--_scroller-left)))}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical .shadow-scroller{height:100%}:host .scroll-main-container .scroller-wrapper .container-scroller.vertical .shadow-scroller .scroller{width:calc(100% - var(--_scroller-left))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal{bottom:var(--_scroller-bottom);height:calc(var(--_scroller-width) + var(--_scroller-top));left:var(--_scroller-right);padding-top:var(--_scroller-top);transform:0;width:calc(100% - var(--_scroller-right)*2 - var(--_scroller-width))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal.hide{transform:translateY(calc(var(--_scroller-width) + var(--_scroller-top)))}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal .shadow-scroller{height:100%}:host .scroll-main-container .scroller-wrapper .container-scroller.horizontal .shadow-scroller .scroller{height:calc(100% - var(--_scroller-top))}:host([y_scroll]) .scroll-main-container .content-zoom .content-hidder .content-wrapper{height:auto}:host([x_scroll]) .scroll-main-container .content-zoom .content-hidder .content-wrapper{width:auto}:host([y_scroll_visible]) .scroll-main-container .scroller-wrapper .container-scroller.vertical{display:block}:host([x_scroll_visible]) .scroll-main-container .scroller-wrapper .container-scroller.horizontal{display:block}:host([no_user_select]) .content-wrapper *{user-select:none}:host([no_user_select]) ::slotted{user-select:none}:host([flex]){display:flex;flex-direction:column;min-height:0}:host([flex]) .scroll-main-container{display:flex;flex-direction:column}:host([flex]) .scroll-main-container .content-zoom{display:flex;flex-direction:column}:host([disable]) .scroll-main-container .content-zoom .content-hidder{overflow:hidden}:host([disable]) .scroll-main-container .scroller-wrapper{display:none}:host([is_scrolling]) .content-wrapper{pointer-events:none}`;
+    constructor() {
+        super();
+        this.renderAnimation = this.createAnimation();
+        this.onWheel = this.onWheel.bind(this);
+        this.onTouchStart = this.onTouchStart.bind(this);
+        this.onTouchMovePointer = this.onTouchMovePointer.bind(this);
+        this.onTouchMove = this.onTouchMove.bind(this);
+        this.onTouchMovePointer = this.onTouchMovePointer.bind(this);
+        this.onTouchEnd = this.onTouchEnd.bind(this);
+        this.onTouchEndPointer = this.onTouchEndPointer.bind(this);
+        this.touchRecord = new TouchRecord();
+    }
+    __getStatic() {
+        return AdvancedScrollable;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(AdvancedScrollable.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<div class="scroll-main-container" _id="advancedscrollable_0">
+    <div class="content-zoom" _id="advancedscrollable_1">
+        <div class="content-hidder" _id="advancedscrollable_2">
+            <div class="content-wrapper" part="content-wrapper" _id="advancedscrollable_3">
+                <slot></slot>
+            </div>
+        </div>
+    </div>
+    <div class="scroller-wrapper">
+        <div class="container-scroller vertical" _id="advancedscrollable_4">
+            <div class="shadow-scroller">
+                <div class="scroller" _id="advancedscrollable_5"></div>
+            </div>
+        </div>
+        <div class="container-scroller horizontal" _id="advancedscrollable_6">
+            <div class="shadow-scroller">
+                <div class="scroller" _id="advancedscrollable_7"></div>
+            </div>
+        </div>
+    </div>
+</div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "mainContainer",
+      "ids": [
+        "advancedscrollable_0"
+      ]
+    },
+    {
+      "name": "contentZoom",
+      "ids": [
+        "advancedscrollable_1"
+      ]
+    },
+    {
+      "name": "contentHidder",
+      "ids": [
+        "advancedscrollable_2"
+      ]
+    },
+    {
+      "name": "contentWrapper",
+      "ids": [
+        "advancedscrollable_3"
+      ]
+    },
+    {
+      "name": "verticalScrollerContainer",
+      "ids": [
+        "advancedscrollable_4"
+      ]
+    },
+    {
+      "name": "verticalScroller",
+      "ids": [
+        "advancedscrollable_5"
+      ]
+    },
+    {
+      "name": "horizontalScrollerContainer",
+      "ids": [
+        "advancedscrollable_6"
+      ]
+    },
+    {
+      "name": "horizontalScroller",
+      "ids": [
+        "advancedscrollable_7"
+      ]
+    }
+  ]
+});
+ }
+    getClassName() {
+        return "AdvancedScrollable";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('min_zoom')){ this['min_zoom'] = 1; }
+if(!this.hasAttribute('max_zoom')){ this['max_zoom'] = undefined; }
+if(!this.hasAttribute('y_scroll_visible')) { this.attributeChangedCallback('y_scroll_visible', false, false); }
+if(!this.hasAttribute('x_scroll_visible')) { this.attributeChangedCallback('x_scroll_visible', false, false); }
+if(!this.hasAttribute('floating_scroll')) { this.attributeChangedCallback('floating_scroll', false, false); }
+if(!this.hasAttribute('x_scroll')) { this.attributeChangedCallback('x_scroll', false, false); }
+if(!this.hasAttribute('y_scroll')) {this.setAttribute('y_scroll' ,'true'); }
+if(!this.hasAttribute('auto_hide')) { this.attributeChangedCallback('auto_hide', false, false); }
+if(!this.hasAttribute('break')){ this['break'] = 0.1; }
+if(!this.hasAttribute('disable')) { this.attributeChangedCallback('disable', false, false); }
+if(!this.hasAttribute('no_user_select')) { this.attributeChangedCallback('no_user_select', false, false); }
+if(!this.hasAttribute('mouse_drag')) { this.attributeChangedCallback('mouse_drag', false, false); }
+if(!this.hasAttribute('pinch')) { this.attributeChangedCallback('pinch', false, false); }
+if(!this.hasAttribute('flex')) { this.attributeChangedCallback('flex', false, false); }
+if(!this.hasAttribute('zoom')){ this['zoom'] = 1; }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('x');
+this.__correctGetter('y');
+this.__correctGetter('xMax');
+this.__correctGetter('yMax');
+this.__upgradeProperty('min_zoom');
+this.__upgradeProperty('max_zoom');
+this.__upgradeProperty('y_scroll_visible');
+this.__upgradeProperty('x_scroll_visible');
+this.__upgradeProperty('floating_scroll');
+this.__upgradeProperty('x_scroll');
+this.__upgradeProperty('y_scroll');
+this.__upgradeProperty('auto_hide');
+this.__upgradeProperty('break');
+this.__upgradeProperty('disable');
+this.__upgradeProperty('no_user_select');
+this.__upgradeProperty('mouse_drag');
+this.__upgradeProperty('pinch');
+this.__upgradeProperty('flex');
+this.__upgradeProperty('zoom');
+ }
+    __listBoolProps() { return ["y_scroll_visible","x_scroll_visible","floating_scroll","x_scroll","y_scroll","auto_hide","disable","no_user_select","mouse_drag","pinch","flex"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    createAnimation() {
+        return new Aventus.Animation({
+            fps: 60,
+            animate: () => {
+                const nextX = this.nextPosition('x');
+                const nextY = this.nextPosition('y');
+                this.momentum.x = nextX.momentum;
+                this.momentum.y = nextY.momentum;
+                this.scrollDirection('x', nextX.position);
+                this.scrollDirection('y', nextY.position);
+                if (!this.momentum.x && !this.momentum.y) {
+                    this.renderAnimation.stop();
+                }
+            },
+            stopped: () => {
+                if (this.momentum.x || this.momentum.y) {
+                    this.renderAnimation.start();
+                }
+            }
+        });
+    }
+    nextPosition(direction) {
+        const current = this.position[direction];
+        const remain = this.momentum[direction];
+        let result = {
+            momentum: 0,
+            position: 0,
+        };
+        if (Math.abs(remain) <= 0.1) {
+            result.position = current + remain;
+        }
+        else {
+            const _break = this.pointerCount > 0 ? 0.5 : this.break;
+            let nextMomentum = remain * (1 - _break);
+            nextMomentum |= 0;
+            result.momentum = nextMomentum;
+            result.position = current + remain - nextMomentum;
+        }
+        let correctPosition = this.correctScrollValue(result.position, direction);
+        if (correctPosition != result.position) {
+            result.position = correctPosition;
+            result.momentum = 0;
+        }
+        return result;
+    }
+    scrollDirection(direction, value) {
+        const max = this.max[direction];
+        if (max != 0) {
+            this.position[direction] = this.correctScrollValue(value, direction);
+        }
+        else {
+            this.position[direction] = 0;
+        }
+        let container = this.scrollerContainer[direction]();
+        let scroller = this.scroller[direction]();
+        if (this.auto_hide) {
+            container.classList.remove("hide");
+            clearTimeout(this.hideDelay[direction]);
+            this.hideDelay[direction] = setTimeout(() => {
+                container.classList.add("hide");
+            }, 1000);
+        }
+        let containerSize = direction == 'y' ? container.offsetHeight : container.offsetWidth;
+        if (this.contentWrapperSize[direction] != 0) {
+            let scrollPosition = this.div(this.position[direction], this.contentWrapperSize[direction]) * containerSize;
+            scroller.style.transform = `translate${direction.toUpperCase()}(${scrollPosition}px)`;
+            this.contentWrapper.style.transform = `translate3d(${-1 * this.x}px, ${-1 * this.y}px, 0)`;
+        }
+        this.triggerScrollChange();
+    }
+    scrollDirectionPercent(direction, percent) {
+        const max = this.max[direction];
+        this.scrollDirection(direction, max * percent / 100);
+    }
+    correctScrollValue(value, direction) {
+        if (value < 0) {
+            value = 0;
+        }
+        else if (value > this.max[direction]) {
+            value = this.max[direction];
+        }
+        return value;
+    }
+    triggerScrollChange() {
+        this.onScrollChange.trigger(this.x, this.y);
+    }
+    scrollToPosition(x, y) {
+        this.scrollDirection('x', x);
+        this.scrollDirection('y', y);
+    }
+    scrollX(x) {
+        this.scrollDirection('x', x);
+    }
+    scrollXPercent(x) {
+        this.scrollDirectionPercent('x', x);
+    }
+    scrollY(y) {
+        this.scrollDirection('y', y);
+    }
+    scrollYPercent(y) {
+        this.scrollDirectionPercent('y', y);
+    }
+    startAutoScrollRight() {
+        if (!this.autoScrollInterval.right) {
+            this.stopAutoScrollLeft();
+            this.autoScrollInterval.right = setInterval(() => {
+                if (this.x == this.max.x) {
+                    this.stopAutoScrollRight();
+                    return;
+                }
+                this.addDelta({
+                    x: this.autoScrollSpeed.right,
+                    y: 0
+                });
+            }, 100);
+        }
+    }
+    autoScrollRight(percent = 50) {
+        let slow = this.max.x * 1 / 100;
+        let fast = this.max.x * 10 / 100;
+        this.autoScrollSpeed.right = (fast - slow) * (percent / 100) + slow;
+        this.startAutoScrollRight();
+    }
+    stopAutoScrollRight() {
+        if (this.autoScrollInterval.right) {
+            clearInterval(this.autoScrollInterval.right);
+            this.autoScrollInterval.right = 0;
+        }
+    }
+    startAutoScrollLeft() {
+        if (!this.autoScrollInterval.left) {
+            this.stopAutoScrollRight();
+            this.autoScrollInterval.left = setInterval(() => {
+                if (this.x == 0) {
+                    this.stopAutoScrollLeft();
+                    return;
+                }
+                this.addDelta({
+                    x: this.autoScrollSpeed.left * -1,
+                    y: 0
+                });
+            }, 100);
+        }
+    }
+    autoScrollLeft(percent = 50) {
+        let slow = this.max.x * 1 / 100;
+        let fast = this.max.x * 10 / 100;
+        this.autoScrollSpeed.left = (fast - slow) * (percent / 100) + slow;
+        this.startAutoScrollLeft();
+    }
+    stopAutoScrollLeft() {
+        if (this.autoScrollInterval.left) {
+            clearInterval(this.autoScrollInterval.left);
+            this.autoScrollInterval.left = 0;
+        }
+    }
+    startAutoScrollTop() {
+        if (!this.autoScrollInterval.top) {
+            this.stopAutoScrollBottom();
+            this.autoScrollInterval.top = setInterval(() => {
+                if (this.y == 0) {
+                    this.stopAutoScrollTop();
+                    return;
+                }
+                this.addDelta({
+                    x: 0,
+                    y: this.autoScrollSpeed.top * -1
+                });
+            }, 100);
+        }
+    }
+    autoScrollTop(percent = 50) {
+        let slow = this.max.y * 1 / 100;
+        let fast = this.max.y * 10 / 100;
+        this.autoScrollSpeed.top = (fast - slow) * (percent / 100) + slow;
+        this.startAutoScrollTop();
+    }
+    stopAutoScrollTop() {
+        if (this.autoScrollInterval.top) {
+            clearInterval(this.autoScrollInterval.top);
+            this.autoScrollInterval.top = 0;
+        }
+    }
+    startAutoScrollBottom() {
+        if (!this.autoScrollInterval.bottom) {
+            this.stopAutoScrollTop();
+            this.autoScrollInterval.bottom = setInterval(() => {
+                if (this.y == this.max.y) {
+                    this.stopAutoScrollBottom();
+                    return;
+                }
+                this.addDelta({
+                    x: 0,
+                    y: this.autoScrollSpeed.bottom
+                });
+            }, 100);
+        }
+    }
+    autoScrollBottom(percent = 50) {
+        let slow = this.max.y * 1 / 100;
+        let fast = this.max.y * 10 / 100;
+        this.autoScrollSpeed.bottom = (fast - slow) * (percent / 100) + slow;
+        this.startAutoScrollBottom();
+    }
+    stopAutoScrollBottom() {
+        if (this.autoScrollInterval.bottom) {
+            clearInterval(this.autoScrollInterval.bottom);
+            this.autoScrollInterval.bottom = 0;
+        }
+    }
+    createMatrix() {
+        if (!this.cachedSvg) {
+            this.cachedSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        }
+        return this.cachedSvg.createSVGMatrix();
+    }
+    getMidPoint(a, b) {
+        return {
+            x: (a.lastPosition.x + b.lastPosition.x) / 2,
+            y: (a.lastPosition.y + b.lastPosition.y) / 2,
+        };
+    }
+    getDistance(a, b) {
+        return Math.sqrt((b.lastPosition.x - a.lastPosition.x) ** 2 + (b.lastPosition.y - a.lastPosition.y) ** 2);
+    }
+    zoomOnPoint(clientX, clientY, newZoom) {
+        let targetCoordinates = this.getBoundingClientRect();
+        let mousePositionRelativeToTarget = {
+            x: targetCoordinates.x - clientX,
+            y: targetCoordinates.y - clientY
+        };
+        let oldScale = this.zoom;
+        let newScale;
+        if (this.max_zoom > 0) {
+            newScale = Math.max(this.min_zoom, Math.min(this.max_zoom, newZoom));
+        }
+        else {
+            newScale = Math.max(this.min_zoom, newZoom);
+        }
+        let scaleDiff = this.div(newScale, oldScale);
+        const matrix = this.createMatrix()
+            .translate(this.x, this.y)
+            .translate(mousePositionRelativeToTarget.x, mousePositionRelativeToTarget.y)
+            .scale(scaleDiff)
+            .translate(-mousePositionRelativeToTarget.x, -mousePositionRelativeToTarget.y)
+            .scale(this.zoom);
+        const newZoomFinal = matrix.a || 1;
+        const newX = matrix.e || 0;
+        const newY = matrix.f || 0;
+        this.zoom = newZoomFinal;
+        this.onZoomChange.trigger(newZoomFinal);
+        this.scrollDirection('x', newX);
+        this.scrollDirection('y', newY);
+    }
+    pinchAction() {
+        const touches = this.touchRecord.getTouches();
+        if (touches.length == 2) {
+            const newMidpoint = this.getMidPoint(touches[0], touches[1]);
+            const prevMidpoint = this.previousMidPoint ?? newMidpoint;
+            const positioningElRect = this.getBoundingClientRect();
+            const originX = (positioningElRect.left + this.x - this.startTranslate.x) - prevMidpoint.x;
+            const originY = (positioningElRect.top + this.y - this.startTranslate.y) - prevMidpoint.y;
+            const newDistance = this.getDistance(touches[0], touches[1]);
+            const prevDistance = this.previousDistance;
+            let scaleDiff = prevDistance ? this.div(newDistance, prevDistance) : 1;
+            const panX = prevMidpoint.x - newMidpoint.x;
+            const panY = prevMidpoint.y - newMidpoint.y;
+            let oldScale = this.zoom;
+            let newScale;
+            if (this.max_zoom > 0) {
+                newScale = Math.max(this.min_zoom, Math.min(this.max_zoom, oldScale * scaleDiff));
+            }
+            else {
+                newScale = Math.max(this.min_zoom, oldScale * scaleDiff);
+            }
+            scaleDiff = this.div(newScale, oldScale);
+            const matrix = this.createMatrix()
+                .translate(panX, panY)
+                .translate(originX, originY)
+                .translate(this.x, this.y)
+                .scale(scaleDiff)
+                .translate(-originX, -originY)
+                .scale(this.zoom);
+            const newZoom = matrix.a || 1;
+            const newX = matrix.e || 0;
+            const newY = matrix.f || 0;
+            this.zoom = newZoom;
+            this.onZoomChange.trigger(newZoom);
+            this.scrollDirection('x', newX);
+            this.scrollDirection('y', newY);
+            this.previousMidPoint = newMidpoint;
+            this.previousDistance = newDistance;
+        }
+        return null;
+    }
+    addAction() {
+        this.addEventListener("wheel", this.onWheel, { passive: false });
+        this.pressManager = new Aventus.PressManager({
+            element: this,
+            offsetDrag: 0,
+            onPressStart: (e) => {
+                this.touchRecord.track(e.event);
+                this.pointerCount = this.touchRecord.getNbOfTouches();
+            },
+            onPressEnd: (e) => {
+                this.touchRecord.release(e.event);
+                this.pointerCount = this.touchRecord.getNbOfTouches();
+            },
+            onDragStart: (e) => {
+                if (!this.pinch && !this.x_scroll_visible && !this.y_scroll_visible) {
+                    return false;
+                }
+                return this.onTouchStartPointer(e);
+            },
+            onDrag: (e) => {
+                this.onTouchMovePointer(e);
+            },
+            onDragEnd: (e) => {
+                this.onTouchEndPointer(e);
+            }
+        });
+        // this.addEventListener("touchstart", this.onTouchStart);
+        // this.addEventListener("trigger_pointer_pressstart", this.onTouchStartPointer);
+        if (this.mouse_drag) {
+            // this.addEventListener("mousedown", this.onTouchStart);
+        }
+        this.addScrollDrag('x');
+        this.addScrollDrag('y');
+    }
+    addActionMove() {
+        // document.body.addEventListener("touchmove", this.onTouchMove);
+        // document.body.addEventListener("trigger_pointer_pressmove", this.onTouchMovePointer);
+        // document.body.addEventListener("touchcancel", this.onTouchEnd);
+        // document.body.addEventListener("touchend", this.onTouchEnd);
+        // document.body.addEventListener("trigger_pointer_pressend", this.onTouchEndPointer);
+        if (this.mouse_drag) {
+            // document.body.addEventListener("mousemove", this.onTouchMove);
+            // document.body.addEventListener("mouseup", this.onTouchEnd);
+        }
+    }
+    removeActionMove() {
+        // document.body.removeEventListener("touchmove", this.onTouchMove);
+        // document.body.removeEventListener("trigger_pointer_pressmove", this.onTouchMovePointer);
+        // document.body.removeEventListener("touchcancel", this.onTouchEnd);
+        // document.body.removeEventListener("touchend", this.onTouchEnd);
+        // document.body.removeEventListener("trigger_pointer_pressend", this.onTouchEndPointer);
+        // document.body.removeEventListener("mousemove", this.onTouchMove);
+        // document.body.removeEventListener("mouseup", this.onTouchEnd);
+    }
+    addScrollDrag(direction) {
+        let scroller = this.scroller[direction]();
+        let startPosition = 0;
+        new Aventus.DragAndDrop({
+            element: scroller,
+            applyDrag: false,
+            usePercent: true,
+            offsetDrag: 0,
+            isDragEnable: () => !this.disable,
+            onStart: (e) => {
+                this.isDragScroller = true;
+                this.no_user_select = true;
+                scroller.classList.add("active");
+                startPosition = this.position[direction];
+            },
+            onMove: (e, position) => {
+                let delta = position[direction] / 100 * this.contentWrapperSize[direction];
+                let value = startPosition + delta;
+                this.scrollDirection(direction, value);
+            },
+            onStop: () => {
+                this.no_user_select = false;
+                scroller.classList.remove("active");
+                this.isDragScroller = false;
+            }
+        });
+    }
+    shouldStopPropagation(e, delta) {
+        if (!this.y_scroll && this.x_scroll) {
+            if ((delta.x > 0 && this.x != this.max.x) ||
+                (delta.x <= 0 && this.x != 0)) {
+                e.stopPropagation();
+            }
+        }
+        else {
+            if ((delta.y > 0 && this.y != this.max.y) ||
+                (delta.y <= 0 && this.y != 0)) {
+                e.stopPropagation();
+            }
+        }
+    }
+    addDelta(delta) {
+        if (this.disable) {
+            return;
+        }
+        this.momentum.x += delta.x;
+        this.momentum.y += delta.y;
+        this.renderAnimation?.start();
+    }
+    onWheel(e) {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (this.pinch) {
+                let factor = 0.9;
+                if (e.deltaY < 0) {
+                    factor = 1.1;
+                }
+                this.zoomOnPoint(e.clientX, e.clientY, this.zoom * factor);
+            }
+            return;
+        }
+        const DELTA_MODE = [1.0, 28.0, 500.0];
+        const mode = DELTA_MODE[e.deltaMode] || DELTA_MODE[0];
+        let newValue = {
+            x: 0,
+            y: e.deltaY * mode,
+        };
+        if (!this.y_scroll && this.x_scroll) {
+            newValue = {
+                x: e.deltaY * mode,
+                y: 0,
+            };
+        }
+        else if (this.x_scroll && e.altKey) {
+            newValue = {
+                x: e.deltaY * mode,
+                y: 0,
+            };
+        }
+        this.shouldStopPropagation(e, newValue);
+        this.addDelta(newValue);
+    }
+    onTouchStartPointer(e) {
+        const ev = e.event;
+        if ('TouchEvent' in window && ev instanceof TouchEvent) {
+            this.onTouchStart(ev);
+            return true;
+        }
+        else if (ev instanceof PointerEvent) {
+            if (this.mouse_drag || ev.pointerType == "touch") {
+                this.onTouchStart(ev);
+                return true;
+            }
+        }
+        return false;
+    }
+    onTouchStart(e) {
+        if (this.isDragScroller)
+            return;
+        this.touchRecord.track(e);
+        this.momentum = {
+            x: 0,
+            y: 0
+        };
+        if (this.pointerCount === 0) {
+            this.addActionMove();
+        }
+        this.pointerCount = this.touchRecord.getNbOfTouches();
+        if (this.pinch && this.pointerCount == 2) {
+            this.startTranslate = { x: this.x, y: this.y };
+        }
+    }
+    onTouchMovePointer(e) {
+        const ev = e.event;
+        if ('TouchEvent' in window && ev instanceof TouchEvent) {
+            this.onTouchMove(ev);
+        }
+        else if (ev instanceof PointerEvent) {
+            if (this.mouse_drag || ev.pointerType == "touch") {
+                this.onTouchMove(ev);
+            }
+        }
+    }
+    onTouchMove(e) {
+        if (this.isDragScroller)
+            return;
+        this.touchRecord.update(e);
+        if (this.pinch && this.pointerCount == 2) {
+            // zoom
+            e.stopPropagation();
+            this.renderAnimation?.stop();
+            this.pinchAction();
+        }
+        else {
+            const delta = this.touchRecord.getDelta();
+            this.shouldStopPropagation(e, delta);
+            this.addDelta(delta);
+        }
+    }
+    onTouchEndPointer(e) {
+        const ev = e.event;
+        if ('TouchEvent' in window && ev instanceof TouchEvent) {
+            this.onTouchEnd(ev);
+        }
+        else if (ev instanceof PointerEvent) {
+            if (this.mouse_drag || ev.pointerType == "touch") {
+                this.onTouchEnd(ev);
+            }
+        }
+    }
+    onTouchEnd(e) {
+        if (this.isDragScroller)
+            return;
+        const delta = this.touchRecord.getEasingDistance(this.break);
+        this.shouldStopPropagation(e, delta);
+        this.addDelta(delta);
+        this.touchRecord.release(e);
+        this.pointerCount = this.touchRecord.getNbOfTouches();
+        if (this.pointerCount === 0) {
+            this.removeActionMove();
+        }
+        if (this.pointerCount < 2) {
+            this.previousMidPoint = undefined;
+            this.previousDistance = undefined;
+        }
+    }
+    calculateRealSize() {
+        if (!this.contentZoom || !this.mainContainer || !this.contentWrapper) {
+            return false;
+        }
+        const currentOffsetWidth = this.contentZoom.offsetWidth;
+        const currentOffsetHeight = this.contentZoom.offsetHeight;
+        let hasChanged = false;
+        if (this.contentWrapper.offsetWidth != this.contentWrapperSize.x || this.contentWrapper.offsetHeight != this.contentWrapperSize.y)
+            hasChanged = true;
+        this.contentWrapperSize.x = this.contentWrapper.offsetWidth;
+        this.contentWrapperSize.y = this.contentWrapper.offsetHeight;
+        if (this.zoom < 1) {
+            // scale the container for zoom
+            this.contentZoom.style.width = this.div(this.mainContainer.offsetWidth, this.zoom) + 'px';
+            this.contentZoom.style.height = this.div(this.mainContainer.offsetHeight, this.zoom) + 'px';
+            this.contentZoom.style.maxHeight = this.div(this.mainContainer.offsetHeight, this.zoom) + 'px';
+            if (currentOffsetHeight != this.display.y || currentOffsetWidth != this.display.x)
+                hasChanged = true;
+            this.display.y = currentOffsetHeight;
+            this.display.x = currentOffsetWidth;
+        }
+        else {
+            const newX = this.div(currentOffsetWidth, this.zoom);
+            const newY = this.div(currentOffsetHeight, this.zoom);
+            if (newY != this.display.y || newX != this.display.x)
+                hasChanged = true;
+            this.display.y = newY;
+            this.display.x = newX;
+            this.contentZoom.style.width = '';
+            this.contentZoom.style.height = '';
+            this.contentZoom.style.maxHeight = '';
+        }
+        return hasChanged;
+    }
+    calculatePositionScrollerContainer(direction) {
+        if (direction == 'y') {
+            this.calculatePositionScrollerContainerY();
+        }
+        else {
+            this.calculatePositionScrollerContainerX();
+        }
+    }
+    calculatePositionScrollerContainerY() {
+        const leftMissing = this.mainContainer.offsetWidth - this.verticalScrollerContainer.offsetLeft;
+        if (leftMissing > 0 && this.y_scroll_visible && !this.floating_scroll) {
+            this.contentHidder.style.width = 'calc(100% - ' + leftMissing + 'px)';
+            this.contentHidder.style.marginRight = leftMissing + 'px';
+            this.margin.x = leftMissing;
+        }
+        else {
+            this.contentHidder.style.width = '';
+            this.contentHidder.style.marginRight = '';
+            this.margin.x = 0;
+        }
+    }
+    calculatePositionScrollerContainerX() {
+        const topMissing = this.mainContainer.offsetHeight - this.horizontalScrollerContainer.offsetTop;
+        if (topMissing > 0 && this.x_scroll_visible && !this.floating_scroll) {
+            this.contentHidder.style.height = 'calc(100% - ' + topMissing + 'px)';
+            this.contentHidder.style.marginBottom = topMissing + 'px';
+            this.margin.y = topMissing;
+        }
+        else {
+            this.contentHidder.style.height = '';
+            this.contentHidder.style.marginBottom = '';
+            this.margin.y = 0;
+        }
+    }
+    calculateSizeScroller(direction) {
+        const scrollerSize = (this.div((this.display[direction] - this.margin[direction]), this.contentWrapperSize[direction]) * 100);
+        if (direction == "y") {
+            this.scroller[direction]().style.height = scrollerSize + '%';
+        }
+        else {
+            this.scroller[direction]().style.width = scrollerSize + '%';
+        }
+        let maxScrollContent = this.contentWrapperSize[direction] - this.display[direction];
+        if (maxScrollContent < 0) {
+            maxScrollContent = 0;
+        }
+        this.max[direction] = maxScrollContent + this.margin[direction];
+    }
+    changeZoom() {
+        this.contentZoom.style.transform = 'scale(' + this.zoom + ')';
+        this.dimensionRefreshed(true);
+    }
+    dimensionRefreshed(force = false) {
+        if (this.contentWrapper.offsetHeight > 0 && this.contentWrapper.offsetWidth > 0) {
+            this.loadedOnce = true;
+            if (this.savedPercent) {
+                this.position.x = this.contentWrapper.offsetWidth * this.savedPercent.x;
+                this.position.y = this.contentWrapper.offsetHeight * this.savedPercent.y;
+                this.savedPercent = undefined;
+            }
+        }
+        else if (this.loadedOnce) {
+            this.savedPercent = {
+                x: this.div(this.position.x, this.contentWrapperSize.x),
+                y: this.div(this.position.y, this.contentWrapperSize.y)
+            };
+        }
+        if (!this.calculateRealSize() && !force) {
+            return;
+        }
+        if (this.contentWrapperSize.y - this.display.y > 0) {
+            if (!this.y_scroll_visible) {
+                this.y_scroll_visible = true;
+                this.calculatePositionScrollerContainer('y');
+            }
+            this.calculateSizeScroller('y');
+            this.scrollDirection('y', this.y);
+        }
+        else if (this.y_scroll_visible) {
+            this.y_scroll_visible = false;
+            this.calculatePositionScrollerContainer('y');
+            this.calculateSizeScroller('y');
+            this.scrollDirection('y', 0);
+        }
+        if (this.contentWrapperSize.x - this.display.x > 0) {
+            if (!this.x_scroll_visible) {
+                this.x_scroll_visible = true;
+                this.calculatePositionScrollerContainer('x');
+            }
+            this.calculateSizeScroller('x');
+            this.scrollDirection('x', this.x);
+        }
+        else if (this.x_scroll_visible) {
+            this.x_scroll_visible = false;
+            this.calculatePositionScrollerContainer('x');
+            this.calculateSizeScroller('x');
+            this.scrollDirection('x', 0);
+        }
+    }
+    createResizeObserver() {
+        let inProgress = false;
+        return new Aventus.ResizeObserver({
+            callback: entries => {
+                if (inProgress) {
+                    return;
+                }
+                inProgress = true;
+                this.dimensionRefreshed();
+                inProgress = false;
+            },
+            fps: 30
+        });
+    }
+    addResizeObserver() {
+        if (this.observer == undefined) {
+            this.observer = this.createResizeObserver();
+        }
+        this.observer.observe(this.contentWrapper);
+        this.observer.observe(this);
+    }
+    div(nb1, nb2) {
+        if (!nb2)
+            return nb1;
+        return nb1 / nb2;
+    }
+    postCreation() {
+        this.dimensionRefreshed();
+        this.addResizeObserver();
+        this.addAction();
+    }
+    static lock(element) {
+        const container = element.findParentByType(Layout.AdvancedScrollable);
+        if (container) {
+            container.disable = true;
+        }
+    }
+    static unlock(element) {
+        const container = element.findParentByType(Layout.AdvancedScrollable);
+        if (container) {
+            container.disable = false;
+        }
+    }
+}
+Layout.AdvancedScrollable.Namespace=`Aventus.Layout`;
+Layout.AdvancedScrollable.Tag=`av-advanced-scrollable`;
+__as1(_.Layout, 'AdvancedScrollable', Layout.AdvancedScrollable);
+if(!window.customElements.get('av-advanced-scrollable')){window.customElements.define('av-advanced-scrollable', Layout.AdvancedScrollable);Aventus.WebComponentInstance.registerDefinition(Layout.AdvancedScrollable);}
+
 Layout.Tabs.Tab = class Tab extends Aventus.WebComponent {
     get 'selected'() { return this.getBoolAttr('selected') }
     set 'selected'(val) { this.setBoolAttr('selected', val) }
@@ -11311,7 +12530,7 @@ this.__getStatic().__template.setActions({
             return false;
         }
         else if (typeof tabHeader == 'string') {
-            const header = this.tabs[tabHeader].tabHeader;
+            const header = this.tabs[tabHeader]?.tabHeader;
             if (header)
                 return this.setActive(header);
             return false;
@@ -11461,7 +12680,7 @@ this.__getStatic().__template.setActions({
             this.defaultCloseWithClick = options.closeWithClick;
         if (options.closeWithEsc !== undefined)
             this.defaultCloseWithEsc = options.closeWithEsc;
-        if (!Object.hasOwn(options, "rejectValue")) {
+        if (Object.hasOwn(options, "rejectValue")) {
             this.defaultRejectValue = options.rejectValue;
         }
     }
@@ -11960,6 +13179,37 @@ DocUITabsEditor1TabHeader.Namespace=`AventusWebsite`;
 DocUITabsEditor1TabHeader.Tag=`av-doc-u-i-tabs-editor-1-tab-header`;
 __as1(_, 'DocUITabsEditor1TabHeader', DocUITabsEditor1TabHeader);
 if(!window.customElements.get('av-doc-u-i-tabs-editor-1-tab-header')){window.customElements.define('av-doc-u-i-tabs-editor-1-tab-header', DocUITabsEditor1TabHeader);Aventus.WebComponentInstance.registerDefinition(DocUITabsEditor1TabHeader);}
+
+const DocUIAdvancedScrollableEditor1Compiled = class DocUIAdvancedScrollableEditor1Compiled extends Aventus.WebComponent {
+    static __style = `:host{height:200px;width:100%}:host av-advanced-scrollable{height:100%;width:100%}`;
+    __getStatic() {
+        return DocUIAdvancedScrollableEditor1Compiled;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIAdvancedScrollableEditor1Compiled.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<av-advanced-scrollable x_scroll y_scroll mouse_drag>
+  <div style="width: 2000px; 
+  height: 1500px; 
+  background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%); 
+  background-size: 10px 10px, 10px 10px;">
+    Large content here
+  </div>
+</av-advanced-scrollable>` }
+    });
+}
+    getClassName() {
+        return "DocUIAdvancedScrollableEditor1Compiled";
+    }
+}
+DocUIAdvancedScrollableEditor1Compiled.Namespace=`AventusWebsite`;
+DocUIAdvancedScrollableEditor1Compiled.Tag=`av-doc-u-i-advanced-scrollable-editor-1-compiled`;
+__as1(_, 'DocUIAdvancedScrollableEditor1Compiled', DocUIAdvancedScrollableEditor1Compiled);
+if(!window.customElements.get('av-doc-u-i-advanced-scrollable-editor-1-compiled')){window.customElements.define('av-doc-u-i-advanced-scrollable-editor-1-compiled', DocUIAdvancedScrollableEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIAdvancedScrollableEditor1Compiled);}
 
 const DocUIScrollableEditor1Compiled = class DocUIScrollableEditor1Compiled extends Aventus.WebComponent {
     static __style = `:host{height:200px;width:100%}:host av-scrollable{height:100%;width:100%}`;
@@ -18158,6 +19408,7 @@ const DocSidenav = class DocSidenav extends Aventus.WebComponent {
                         <li><av-link to="/docs/ui/grid_helper">Grid Helper</av-link></li>
                         <li><av-link to="/docs/ui/image">Image</av-link></li>
                         <li><av-link to="/docs/ui/scrollable">Scrollable</av-link></li>
+                        <li><av-link to="/docs/ui/advanced_scrollable">Advanced Scrollable</av-link></li>
                         <li><av-link to="/docs/ui/tabs">Tabs</av-link></li>
                     </ul>
                 </av-collapse>
@@ -35393,7 +36644,108 @@ const DocUIScrollable = class DocUIScrollable extends DocGenericPage {
     __getHtml() {
 super.__getHtml();
     this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI - Scrollable</h1><p>The <span class="cn">av-scrollable</span> component provides a custom, fully-featured scrollable container with
+        blocks: { 'default':`<h1>UI - Scrollable</h1><p><span class="cn">av-scrollable</span> provides horizontal and vertical scrolling with custom scrollbars. It supports floating and automatically hidden scrollbars, mouse dragging, a flex content layout, and a <span class="cn">zoom</span> property.</p><p>For momentum scrolling, pinch zoom, percent-based scrolling, and the <span class="cn">autoScroll*</span> methods, see <av-link to="/docs/ui/advanced_scrollable">Advanced Scrollable</av-link>.</p><h2 id="example">Example</h2><av-doc-u-i-scrollable-editor-1></av-doc-u-i-scrollable-editor-1><h2 id="attributes">Attributes and properties</h2><div class="table">
+    <av-row class="header"><av-col size="4">Name</av-col><av-col size="8">Behavior</av-col></av-row>
+    <av-row><av-col size="4">x_scroll</av-col><av-col size="8">Enable horizontal scrolling.</av-col></av-row>
+    <av-row><av-col size="4">y_scroll</av-col><av-col size="8">Enable vertical scrolling; enabled by default.</av-col></av-row>
+    <av-row><av-col size="4">floating_scroll</av-col><av-col size="8">Place scrollbars over the content.</av-col></av-row>
+    <av-row><av-col size="4">auto_hide</av-col><av-col size="8">Hide scrollbars when inactive.</av-col></av-row>
+    <av-row><av-col size="4">mouse_drag</av-col><av-col size="8">Allow dragging the content with the mouse.</av-col></av-row>
+    <av-row><av-col size="4">disable</av-col><av-col size="8">Disable scrolling interaction.</av-col></av-row>
+    <av-row><av-col size="4">flex</av-col><av-col size="8">Use a vertical flex layout for the content.</av-col></av-row>
+    <av-row><av-col size="4">zoom</av-col><av-col size="8">Scale the content; defaults to 1.</av-col></av-row>
+</div><h2 id="api">JavaScript API</h2><p>Read <span class="cn">x</span>, <span class="cn">y</span>, <span class="cn">xMax</span>, and <span class="cn">yMax</span> for the current position and bounds. Call <span class="cn">scrollX(x)</span> or <span class="cn">scrollY(y)</span> to scroll programmatically. Subscribe to <span class="cn">onScrollChange</span> and <span class="cn">onZoomChange</span> for updates.</p>` }
+    });
+}
+    getClassName() {
+        return "DocUIScrollable";
+    }
+    Title() {
+        return "How to Use the Scrollable Component in AventusJs";
+    }
+    Description() {
+        return "Learn how to use the styled Scrollable component in AventusJs to display scrollbars when needed. This guide covers both horizontal and vertical scrolling, automatic overflow handling, and integrating scrollable areas within your UI.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Scrollable",
+            "scrollbar component AventusJs",
+            "horizontal scroll AventusJs",
+            "vertical scroll AventusJs",
+            "Aventus UI components",
+            "styled scrollable area",
+            "overflow management",
+            "frontend scrolling AventusJs",
+            "scrollable container",
+            "Aventus scroll handling",
+        ];
+    }
+}
+DocUIScrollable.Namespace=`AventusWebsite`;
+DocUIScrollable.Tag=`av-doc-u-i-scrollable`;
+__as1(_, 'DocUIScrollable', DocUIScrollable);
+if(!window.customElements.get('av-doc-u-i-scrollable')){window.customElements.define('av-doc-u-i-scrollable', DocUIScrollable);Aventus.WebComponentInstance.registerDefinition(DocUIScrollable);}
+
+const DocUIAdvancedScrollableEditor1 = class DocUIAdvancedScrollableEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUIAdvancedScrollableEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIAdvancedScrollableEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Advanced Scrollable">
+    <av-code language="html" filename="index.html">
+        <pre>
+            &lt;av-advanced-scrollable x_scroll y_scroll mouse_drag&gt;
+                &lt;div style="width: 2000px; 
+                height: 1500px; 
+                background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%); 
+                background-size: 10px 10px, 10px 10px;"&gt;
+                    Large content here
+                &lt;/div&gt;
+            &lt;/av-advanced-scrollable&gt;
+        </pre>
+    </av-code></av-code>
+    <slot></slot>
+</av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUIAdvancedScrollableEditor1";
+    }
+    defineResult() {
+        const cont = document.createElement("DIV");
+        const ex1 = new DocUIAdvancedScrollableEditor1Compiled();
+        cont.appendChild(ex1);
+        return cont;
+    }
+}
+DocUIAdvancedScrollableEditor1.Namespace=`AventusWebsite`;
+DocUIAdvancedScrollableEditor1.Tag=`av-doc-u-i-advanced-scrollable-editor-1`;
+__as1(_, 'DocUIAdvancedScrollableEditor1', DocUIAdvancedScrollableEditor1);
+if(!window.customElements.get('av-doc-u-i-advanced-scrollable-editor-1')){window.customElements.define('av-doc-u-i-advanced-scrollable-editor-1', DocUIAdvancedScrollableEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIAdvancedScrollableEditor1);}
+
+const DocUIAdvancedScrollable = class DocUIAdvancedScrollable extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIAdvancedScrollable;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIAdvancedScrollable.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>UI - Advanced Scrollable</h1><p>The <span class="cn">av-advanced-scrollable</span> component provides a custom, fully-featured scrollable container with
     support for:</p><ul>
     <li>Horizontal and vertical scrolling</li>
     <li>Smooth momentum-based scrolling</li>
@@ -35404,8 +36756,8 @@ super.__getHtml();
     <li>Zooming on a point</li>
     <li>Programmatic scrolling</li>
 </ul><p>It's ideal for applications that need precise control over scroll behavior, including drag-to-scroll, zoomable
-    content, and custom scrollbars.</p><h2 id="concept">Concept</h2><p><span class="cn">av-scrollable</span> wraps content in a scrollable container with custom scrollbars. Unlike native
-    scroll elements, it supports momentum, pinch zoom, and dragging, with fully customizable styling.</p><p>Example:</p><av-doc-u-i-scrollable-editor-1></av-doc-u-i-scrollable-editor-1><h2 id="attributes">Attributes</h2><div class="table">
+    content, and custom scrollbars.</p><h2 id="concept">Concept</h2><p><span class="cn">av-advanced-scrollable</span> wraps content in a scrollable container with custom scrollbars. Unlike native
+    scroll elements, it supports momentum, pinch zoom, and dragging, with fully customizable styling.</p><p>Example:</p><av-doc-u-i-advanced-scrollable-editor-1></av-doc-u-i-advanced-scrollable-editor-1><h2 id="attributes">Attributes</h2><div class="table">
     <av-row class="header">
         <av-col size="4" center>Attribute</av-col>
         <av-col size="4" center>Type</av-col>
@@ -35471,7 +36823,7 @@ super.__getHtml();
         <av-col size="4" center>number</av-col>
         <av-col size="4" center>Easing factor for momentum. Default: 0.1. </av-col>
     </av-row>
-</div><h2 id="features">Features</h2><h3>1. Momentum-based scrolling</h3><p><span class="cn">av-scrollable</span> applies smooth momentum when dragging or using the mouse wheel. The break
+</div><h2 id="features">Features</h2><h3>1. Momentum-based scrolling</h3><p><span class="cn">av-advanced-scrollable</span> applies smooth momentum when dragging or using the mouse wheel. The break
     attribute controls easing.</p><h3>2. Custom scrollbars</h3><ul>
     <li>Scrollbars are separate DOM elements, styled with CSS variables.</li>
     <li>Floating scrollbars can auto-hide after inactivity.</li>
@@ -35624,17 +36976,17 @@ super.__getHtml();
     });
 }
     getClassName() {
-        return "DocUIScrollable";
+        return "DocUIAdvancedScrollable";
     }
     Title() {
-        return "How to Use the Scrollable Component in AventusJs";
+        return "How to Use the Advanced Scrollable Component in AventusJs";
     }
     Description() {
-        return "Learn how to use the styled Scrollable component in AventusJs to display scrollbars when needed. This guide covers both horizontal and vertical scrolling, automatic overflow handling, and integrating scrollable areas within your UI.";
+        return "Learn how to use the Advanced Scrollable component in AventusJs to display scrollbars when needed. This guide covers both horizontal and vertical scrolling, automatic overflow handling, and integrating scrollable areas within your UI.";
     }
     Keywords() {
         return [
-            "AventusJs Scrollable",
+            "AventusJs Advanced Scrollable",
             "scrollbar component AventusJs",
             "horizontal scroll AventusJs",
             "vertical scroll AventusJs",
@@ -35647,10 +36999,10 @@ super.__getHtml();
         ];
     }
 }
-DocUIScrollable.Namespace=`AventusWebsite`;
-DocUIScrollable.Tag=`av-doc-u-i-scrollable`;
-__as1(_, 'DocUIScrollable', DocUIScrollable);
-if(!window.customElements.get('av-doc-u-i-scrollable')){window.customElements.define('av-doc-u-i-scrollable', DocUIScrollable);Aventus.WebComponentInstance.registerDefinition(DocUIScrollable);}
+DocUIAdvancedScrollable.Namespace=`AventusWebsite`;
+DocUIAdvancedScrollable.Tag=`av-doc-u-i-advanced-scrollable`;
+__as1(_, 'DocUIAdvancedScrollable', DocUIAdvancedScrollable);
+if(!window.customElements.get('av-doc-u-i-advanced-scrollable')){window.customElements.define('av-doc-u-i-advanced-scrollable', DocUIAdvancedScrollable);Aventus.WebComponentInstance.registerDefinition(DocUIAdvancedScrollable);}
 
 const DocUITabsEditor1Tabs = class DocUITabsEditor1Tabs extends Aventus.Layout.Tabs.Tabs {
     static __style = `:host{width:100%}:host .header{border-bottom:1px solid var(--border);display:flex;gap:2rem;margin-top:2rem}:host .body{width:100%}`;
@@ -37552,6 +38904,7 @@ super.__getHtml();
         this.addRoute("/docs/ui/grid_helper", DocUIGridHelper);
         this.addRoute("/docs/ui/image", DocUIImage);
         this.addRoute("/docs/ui/scrollable", DocUIScrollable);
+        this.addRoute("/docs/ui/advanced_scrollable", DocUIAdvancedScrollable);
         this.addRoute("/docs/ui/tabs", DocUITabs);
         this.addRoute("/docs/ui/modal", DocUIModal);
         this.addRoute("/docs/ui/toast", DocUIToast);
