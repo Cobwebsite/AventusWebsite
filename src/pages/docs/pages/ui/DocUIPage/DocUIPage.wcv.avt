@@ -14,7 +14,7 @@ Each route in your app corresponds to a Page component, which defines its conten
 
 <av-code language="ts">
     <pre>
-import { Page } from "Aventus@Main:Aventus.package.avt";
+import { Page } from "Aventus@UI:Aventus.Navigation.package.avt";
 &nbsp;
 export class HomePage extends Page {
 	public override async configure() {

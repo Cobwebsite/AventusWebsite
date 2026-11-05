@@ -353,16 +353,6 @@
         <priority>0.5</priority>
     </url>
     <url>
-        <loc>https://aventusjs.com/docs/ui/page_form</loc>
-        <lastmod>2025-10-20</lastmod>
-        <priority>0.5</priority>
-    </url>
-    <url>
-        <loc>https://aventusjs.com/docs/ui/page_form_http</loc>
-        <lastmod>2025-10-20</lastmod>
-        <priority>0.5</priority>
-    </url>
-    <url>
         <loc>https://aventusjs.com/docs/ui/router</loc>
         <lastmod>2025-10-20</lastmod>
         <priority>0.5</priority>
@@ -442,4 +432,4 @@
         <lastmod>2023-06-16</lastmod>
         <priority>1</priority>
     </url>
-</urlset> 
+</urlset>

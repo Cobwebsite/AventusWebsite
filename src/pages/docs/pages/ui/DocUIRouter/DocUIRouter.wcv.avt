@@ -11,7 +11,7 @@ It defines, registers, and manages application routes, dynamically loads and dis
 
 <av-code language="ts">
     <pre>
-import { Router } from "Aventus@Main:Aventus.package.avt";
+import { Router } from "Aventus@UI:Aventus.Navigation.package.avt";
 import { HomePage } from "../pages/Home.page.avt";
 import { AboutPage } from "../pages/About.page.avt";
 import { NotFoundPage } from "../pages/NotFound.page.avt";

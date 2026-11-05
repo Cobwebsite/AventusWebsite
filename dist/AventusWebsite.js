@@ -18177,8 +18177,6 @@ const DocSidenav = class DocSidenav extends Aventus.WebComponent {
                     <ul>
                         <li><av-link to="/docs/ui/link">Link</av-link></li>
                         <li><av-link to="/docs/ui/page">Page</av-link></li>
-                        <li><av-link to="/docs/ui/page_form">Page Form</av-link></li>
-                        <li><av-link to="/docs/ui/page_form_http">Page Form Http</av-link></li>
                         <li><av-link to="/docs/ui/router">Router</av-link></li>
                     </ul>
                 </av-collapse>
@@ -18688,7 +18686,7 @@ super.__getHtml();
         blocks: { 'default':`<h1>UI - Router Component</h1><p>The <span class="cn">Router</span> component provides the core navigation system for Aventus-based applications.
 It defines, registers, and manages application routes, dynamically loads and displays pages, and keeps browser navigation in sync with the active state.</p><h2 id="overview">Overview</h2><p>The Router acts as a central route controller, coordinating between the app's state manager and the rendered pages.</p><p>It supports both synchronous and asynchronous route loading, custom 404 handling, URL synchronization, and smooth transitions between pages.</p><p>It must be extended to define your own route structure and optionally override its behavior.</p><h2 id="example">Example</h2><av-code language="ts">
     <pre>
-import { Router } from "Aventus@Main:Aventus.package.avt";
+import { Router } from "Aventus@UI:Aventus.Navigation.package.avt";
 import { HomePage } from "../pages/Home.page.avt";
 import { AboutPage } from "../pages/About.page.avt";
 import { NotFoundPage } from "../pages/NotFound.page.avt";
@@ -18870,7 +18868,7 @@ Each route in your app corresponds to a Page component, which defines its conten
     <li>The Router updates the browser's metadata (<span class="cn">title</span>, <span class="cn">description</span>, <span class="cn">keywords</span>) based on the page's configuration.</li>
 </ul><p>You can extend <span class="cn">Page</span> to create your own screens, and optionally override lifecycle methods like <span class="cn">onShow</span>, <span class="cn">onHide</span>, and <span class="cn">isAllowed</span>.</p><av-code language="ts">
     <pre>
-import { Page } from "Aventus@Main:Aventus.package.avt";
+import { Page } from "Aventus@UI:Aventus.Navigation.package.avt";
 &nbsp;
 export class HomePage extends Page {
 	public override async configure() {

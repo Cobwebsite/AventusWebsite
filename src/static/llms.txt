@@ -91,8 +91,6 @@
 - [Form](/docs/ui/form.md): `FormHandler` for form management, validation, and submission.
 - [Form Element](/docs/ui/form_element.md): Base class for inputs, two-way binding, and validation.
 - [Page](/docs/ui/page.md): Basic structure for a navigable page.
-- [Page Form](/docs/ui/page_form.md): Page extension for automatic form management.
-- [Page Form Http](/docs/ui/page_form_http.md): Automatic connection between PageForm and HttpRoute.
 - [Router Component](/docs/ui/router.md): Main routing component, route definition, and navigation.
 - [Link](/docs/ui/link.md): SPA navigation link component.
 - [Col & Row](/docs/ui/col_row.md): Flexible and responsive grid system.
