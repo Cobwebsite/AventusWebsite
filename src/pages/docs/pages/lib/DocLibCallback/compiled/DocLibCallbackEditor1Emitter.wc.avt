@@ -4,7 +4,7 @@
 			setInterval(() => {
 				this.dispatchEvent(new CustomEvent("myEvent", {
 					detail: {
-						time: Date.now()
+						time: Aventus.DateTime.now
 					}
 				}));
 			}, 1000);

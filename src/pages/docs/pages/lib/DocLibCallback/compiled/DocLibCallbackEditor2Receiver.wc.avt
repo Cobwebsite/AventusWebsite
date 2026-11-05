@@ -5,7 +5,7 @@
 		protected override postCreation(): void {
 			let emitter = this.parentNode?.querySelector<DocLibCallbackEditor2Emitter>("av-doc-lib-callback-editor-2-emitter");
 			if(emitter) {
-                emitter.myEvent.add((time: number) => {
+                emitter.myEvent.add((time: Aventus.DateTime) => {
                     this.shadowRoot.innerHTML = 'Time is ' + time;
                 });
 			}

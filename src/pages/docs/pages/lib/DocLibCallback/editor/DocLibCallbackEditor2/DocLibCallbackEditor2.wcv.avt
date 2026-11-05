@@ -40,7 +40,7 @@
             &nbsp;
             &nbsp;
                 //#region variables
-                public readonly myEvent: Aventus.Callback&lt;(time: number) =&gt; void&gt; = new Aventus.Callback();
+                public readonly myEvent: Aventus.Callback&lt;(time: Aventus.DateTime) =&gt; void&gt; = new Aventus.Callback();
                 //#endregion
             &nbsp;
             &nbsp;
@@ -52,7 +52,7 @@
                 //#region methods
                 private emitMyEvent() {
                     setInterval(() =&gt; {
-                        this.myEvent.trigger(Date.now());
+                        this.myEvent.trigger(Aventus.DateTime.now);
                     }, 1000);
                 }
                 protected override postCreation(): void {
@@ -106,7 +106,7 @@
                 protected override postCreation(): void {
                     let emitter = document.querySelector&lt;Emitter&gt;("av-emitter");
                     \if(emitter) {
-                        emitter.myEvent.add((time: number) =&gt; {
+                        emitter.myEvent.add((time: Aventus.DateTime) =&gt; {
                             this.shadowRoot.innerHTML = 'Time is ' + time;
                         });
                     }

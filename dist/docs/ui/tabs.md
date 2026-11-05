@@ -48,22 +48,25 @@ export class Example extends Aventus.WebComponent implements Aventus.DefaultComp
 ```
 
 ```html filename=/Example/Example.wcv.avt
-<av-tabs>
-    <av-tab label="Page1" icon="home">
+<example-tabs>
+    <example-tab label="Page1" icon="home">
         <p>Page 1</p>
-    </av-tab>
-    <av-tab label="Page2">
+    </example-tab>
+    <example-tab label="Page2">
         <p>Page 2</p>
-    </av-tab>
-    <av-tab label="Page3" count="3">
+    </example-tab>
+    <example-tab label="Page3" count="3">
         <p>Page 3</p>
-    </av-tab>
-</av-tabs>
+    </example-tab>
+</example-tabs>
 ```
+
+The three classes below use <mark>@TagName</mark> to register these exact tags, regardless of the project's component prefix. The tab header is created by <mark>Tabs</mark> and does not appear in the example markup.
 
 ```typescript filename=/Tab/Tab.wcl.avt
 import type { IconType } from "MaterialIcon:MaterialIcon.package.avt";
 
+@TagName("example-tab")
 export class Tab extends Aventus.Layout.Tabs.Tab implements Aventus.DefaultComponent {
 
     //#region static
@@ -117,6 +120,7 @@ export class Tab extends Aventus.Layout.Tabs.Tab implements Aventus.DefaultCompo
 ```typescript filename=/TabHeader/TabHeader.wcl.avt
 import type { Tab } from "../Tab/Tab.wcl.avt";
 
+@TagName("example-tab-header")
 export class TabHeader extends Aventus.Layout.Tabs.TabHeader<Tab> implements Aventus.DefaultComponent {
 
     //#region static
@@ -218,6 +222,7 @@ export class TabHeader extends Aventus.Layout.Tabs.TabHeader<Tab> implements Ave
 import type { Tab } from "../Tab/Tab.wcl.avt";
 import { TabHeader } from "../TabHeader/TabHeader.wcl.avt";
 
+@TagName("example-tabs")
 export class Tabs extends Aventus.Layout.Tabs.Tabs<Tab, TabHeader> implements Aventus.DefaultComponent {
 
     //#region static

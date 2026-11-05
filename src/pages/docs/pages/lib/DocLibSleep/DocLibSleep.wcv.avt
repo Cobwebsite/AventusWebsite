@@ -4,9 +4,9 @@
     export class Example {
     &nbsp;
     \tpublic async test() {
-    \t\tconsole.log(Date.now());
+    \t\tconsole.log(Aventus.DateTime.now);
     \t\tawait Aventus.sleep(5000);
-    \t\tconsole.log(Date.now());
+    \t\tconsole.log(Aventus.DateTime.now);
     \t}
     &nbsp;
     }

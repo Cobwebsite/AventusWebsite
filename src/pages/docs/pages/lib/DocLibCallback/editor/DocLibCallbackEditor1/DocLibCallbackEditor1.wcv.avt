@@ -54,7 +54,7 @@
                     setInterval(() =&gt; {
                         this.dispatchEvent(new CustomEvent("myEvent", {
                             detail: {
-                                time: Date.now()
+                                time: Aventus.DateTime.now
                             }
                         }));
                     }, 1000);
@@ -110,7 +110,8 @@
                 protected override postCreation(): void {
                     let emitter = document.querySelector&lt;Emitter&gt;("av-emitter");
                     \if(emitter) {
-                        emitter.addEventListener("myEvent", (e: CustomEvent) =&gt; {
+                        emitter.addEventListener("myEvent", (e: Event) =&gt; {
+                            const event = e as CustomEvent&lt;{ time: Aventus.DateTime }&gt;;
                             this.shadowRoot.innerHTML = 'Time is ' + e.detail.time;
                         });
                     }
