@@ -137,6 +137,7 @@
                         <li><av-link to="/docs/ui/grid_helper">Grid Helper</av-link></li>
                         <li><av-link to="/docs/ui/image">Image</av-link></li>
                         <li><av-link to="/docs/ui/scrollable">Scrollable</av-link></li>
+                        <li><av-link to="/docs/ui/advanced_scrollable">Advanced Scrollable</av-link></li>
                         <li><av-link to="/docs/ui/tabs">Tabs</av-link></li>
                     </ul>
                 </av-collapse>

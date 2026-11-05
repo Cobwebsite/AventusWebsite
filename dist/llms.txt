@@ -98,6 +98,7 @@
 - [Grid Helper](/docs/ui/grid_helper.md): Visual tool for alignment and grids.
 - [Image](/docs/ui/image.md): Advanced image component (inline SVG, cache, display modes).
 - [Scrollable](/docs/ui/scrollable.md): Custom scrollable container with virtual scrollbar.
+- [Advanced Scrollable](/docs/ui/advanced_scrollable.md): Scrollable container with momentum, pinch zoom, and programmatic scrolling.
 - [Tabs](/docs/ui/tabs.md): Tab management system.
 - [Modal](/docs/ui/modal.md): Promise-based modal window manager.
 - [Toast](/docs/ui/toast.md): Temporary notification system.
