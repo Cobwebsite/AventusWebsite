@@ -39,17 +39,17 @@
     </av-code>
     <av-code language="html" filename="Example/Example.wcv.avt">
         <pre>
-            &lt;av-tabs&gt;
-                &lt;av-tab label="Page1" icon="home"&gt;
+            &lt;example-tabs&gt;
+                &lt;example-tab label="Page1" icon="home"&gt;
                     &lt;p&gt;Page 1&lt;/p&gt;
-                &lt;/av-tab&gt;
-                &lt;av-tab label="Page2"&gt;
+                &lt;/example-tab&gt;
+                &lt;example-tab label="Page2"&gt;
                     &lt;p&gt;Page 2&lt;/p&gt;
-                &lt;/av-tab&gt;
-                &lt;av-tab label="Page3" count="3"&gt;
+                &lt;/example-tab&gt;
+                &lt;example-tab label="Page3" count="3"&gt;
                     &lt;p&gt;Page 3&lt;/p&gt;
-                &lt;/av-tab&gt;
-            &lt;/av-tabs&gt;
+                &lt;/example-tab&gt;
+            &lt;/example-tabs&gt;
         </pre>
     </av-code>
     <av-code language="typescript" filename="Tab/Tab.wcl.avt">

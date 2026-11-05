@@ -21,18 +21,20 @@
                     </div>
                     <p class="excerpt">{{ result.excerpt }}</p>
                 </av-link>
-                <ul class="sections">
-                    for(let section of result.sections) { 
-                        <li>
-                            <av-link to="{{ section.url }}" @click="onResultSelected">
-                                <div class="title">
-                                    <span>{{ section.title }}</span>
-                                </div>
-                                <p class="excerpt">{{ section.excerpt }}</p>
-                            </av-link>
-                        </li>
-                    }
-                </ul>
+                if(result.sections.length) {
+                    <ul class="sections">
+                        for(let section of result.sections) { 
+                            <li>
+                                <av-link to="{{ section.url }}" @click="onResultSelected">
+                                    <div class="title">
+                                        <span>{{ section.title }}</span>
+                                    </div>
+                                    <p class="excerpt">{{ section.excerpt }}</p>
+                                </av-link>
+                            </li>
+                        }
+                    </ul>
+                }
             </div>
         }
     </div>

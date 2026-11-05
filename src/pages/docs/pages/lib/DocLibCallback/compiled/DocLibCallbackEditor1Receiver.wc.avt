@@ -5,8 +5,9 @@
 		protected override postCreation(): void {
 			let emitter = this.parentNode?.querySelector<DocLibCallbackEditor1Emitter>("av-doc-lib-callback-editor-1-emitter");
 			if(emitter) {
-				emitter.addEventListener("myEvent", (e: CustomEvent) => {
-					this.shadowRoot.innerHTML = 'Time is ' + e.detail.time;
+				emitter.addEventListener("myEvent", (e: Event) => {
+					const event = e as CustomEvent<{ time: Aventus.DateTime }>;
+					this.shadowRoot.innerHTML = 'Time is ' + event.detail.time;
 				});
 			}
 		}
