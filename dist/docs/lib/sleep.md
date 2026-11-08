@@ -6,9 +6,9 @@ If you need to wait a specific time of ms you can use the <mark>Aventus.sleep</m
 export class Example {
 
 	public async test() {
-		console.log(Date.now());
+		console.log(Aventus.DateTime.now);
 		await Aventus.sleep(5000);
-		console.log(Date.now());
+		console.log(Aventus.DateTime.now);
 	}
 
 }

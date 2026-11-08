@@ -6,6 +6,9 @@ Inside a module, you can split you code into differents submodules. Inside Avent
     Aventus Package File (for a lib).
 
 
+Aventus 1.5 uses the TypeScript 6 compiler with the ES2025 and Temporal libraries. Decorators use the current
+    standard decorator model; Aventus decorators keep the same source syntax while receiving stricter type checking.
+
 |Name|Description|
 |---|---|
 |module|This will override the module value of the basic config.         &nbsp;|
@@ -23,7 +26,7 @@ Inside a module, you can split you code into differents submodules. Inside Avent
 |src|This is an array of string to define which folders Aventus will watch. For             example, if you set "./src/*", all files inside the folder "src" will be watched.         &nbsp;|
 |compile|This is an array to define how to compile your build.         &nbsp;|
 |&nbsp;&nbsp;&nbsp;&nbsp;input|This is string or an array to define the entries points of your program. If not             set, all the files matching the build.src will be compiled. Otherwise, only the needed file by your entries             points will be compiled         &nbsp;|
-|&nbsp;&nbsp;&nbsp;&nbsp;output|This is string to define where the compiled JavaScript file must be written.             &nbsp;Must satisfy: ^\S+\.js         &nbsp;|
+|&nbsp;&nbsp;&nbsp;&nbsp;output|This is a string, array or object defining the generated JavaScript outputs. An             object can select an output for each imported library and must contain <mark>@default</mark>.             Use <mark>@npm</mark> for npm exports. Each selected output can be a path or an object containing             &nbsp;<mark>path</mark> and <mark>compressed</mark>.         &nbsp;|
 |&nbsp;&nbsp;&nbsp;&nbsp;outputNpm|This is a string or an array to define where to export your project to npm             project. It can also be a object to customize settings.         &nbsp;|
 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;path|This is a string or an array to define where to export your project to npm             project         &nbsp;|
 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;packageJson|This is a boolean to define if you need a package.json when you are exporting         &nbsp;|
@@ -47,7 +50,7 @@ Inside a module, you can split you code into differents submodules. Inside Avent
 |namespaceStrategy|             &nbsp;This is a string to define how Aventus must deal with namespace.             &nbsp;                 &nbsp;manual: the developer will write the namespace by himself                 &nbsp;followFolders: the namespace will be set based on the current folder and the namespaceRoot property                 &nbsp;                 &nbsp;followFoldersCamelCase: same as followFolders but formatted in camel case                 &nbsp;                 &nbsp;rules: the namespace will be set based on the namespaceRules property             &nbsp;         &nbsp;|
 |namespaceRoot|             &nbsp;This is a string to define what is the namespace root folder (only for followFolders strategy)         &nbsp;|
 |namespaceRules|             &nbsp;This is an object to define the namespace based on the uri where the key is the namespace and the                 value is an array of string to match uri             &nbsp;         &nbsp;|
-|dependances|             &nbsp;This is an object of dependance options to                 use code and/or autocompletion inside your code.         &nbsp;|
+|dependencies|             &nbsp;This is an object of dependency options to                 use code and/or autocompletion inside your code.         &nbsp;|
 |nodeModulesDir|The path where the node_modules are installed. By default the value is             ./node_modules         &nbsp;|
 |avoidParsingInsideTags|This will override the avoidParsingInsideTags value of the basic config.         &nbsp;|
 |i18n|Configuration for i18n|

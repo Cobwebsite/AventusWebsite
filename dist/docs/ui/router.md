@@ -14,12 +14,12 @@ It must be extended to define your own route structure and optionally override i
 ## Example
 
 ```ts
-import { Router } from "Aventus@Main:Aventus.package.avt";
+import { Router } from "Aventus@UI:Aventus.Navigation.package.avt";
 import { HomePage } from "../pages/Home.page.avt";
 import { AboutPage } from "../pages/About.page.avt";
 import { NotFoundPage } from "../pages/NotFound.page.avt";
 export class AppRouter extends Router {
-	protected defineRoutes(): void {
+	protected async defineRoutes(): Promise<void> {
 		this.addRoute("/", HomePage);
 		this.addRoute("/about", AboutPage);
 		this.addRouteAsync({
@@ -42,7 +42,7 @@ export class AppRouter extends Router {
 
 ```html
 <slot name="before"></slot>
-<div class="content" @element="contentEl"></div>
+<main class="content" @element="contentEl"></main>
 <slot name="after"></slot>
 ```
 
@@ -61,7 +61,8 @@ Router.configure({
 
 ## Defining Routes
 
-Routes are defined in the abstract defineRoutes() method.
+Routes are defined in the abstract <mark>defineRoutes()</mark> method. It may be asynchronous; the router
+    waits for it before registering routes and activating the initial URL.
 
 ```ts
 this.addRoute("/home", HomePage);
@@ -81,11 +82,15 @@ When a route becomes active, the Router:
 
 - Instantiates or reuses the corresponding <mark>Page</mark> class.
 - Calls <mark>isAllowed()</mark> on the page to check access control.
+- Calls <mark>loadData(currentState, routePath)</mark> before displaying it.
 - Invokes <mark>show()</mark> on the new page and <mark>hide()</mark> on the previous one.
 - Updates document metadata (<mark>title</mark>, <mark>description</mark>, <mark>keywords</mark>).
 - Synchronizes the browser URL and navigation history.
 
 Inactive pages are either removed or kept in memory depending on <mark>destroyPage</mark>.
+
+The boolean <mark>initializing</mark> attribute remains true until route registration and initial
+    navigation are complete, making it suitable for an initial loading state.
 
 ## 404 Handling
 
@@ -168,6 +173,6 @@ protected override defaultUrl(): string {
 |addRoute(route: string, elementCtr: new () =&gt; Page)|Registers a synchronous route.|
 |addRouteAsync(options: RouteAsyncOption)|Registers a lazy-loaded route.|
 |navigate(state: string | Aventus.State, options?: { replace: boolean })|Navigates to a specific route.|
-|getSlugs()|Returns the parameters extracted from the current route (if any).|
+|getSlugs(path?: string)|Returns parameters for the supplied path, or for the current route when omitted.|
 |bindToUrl()|Determines whether navigation updates the browser URL.|
 |shouldDestroyFrame(page: Page)|Determines if a page should be destroyed when hidden.|

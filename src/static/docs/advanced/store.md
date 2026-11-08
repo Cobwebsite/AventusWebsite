@@ -164,6 +164,8 @@ Additionally, templates have unique fields:
         &nbsp;If there are conflicts with existing folders, the new installation will overwrite the old one.
     &nbsp;
 - <mark>isProject</mark>: Defines if the template need a <mark>aventus.conf.avt</mark>
+- <mark>isGlobal</mark>: Installs the template as a global creation template instead of a project or
+        component template.
 
 ### Managing Template
 

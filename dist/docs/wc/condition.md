@@ -14,6 +14,9 @@ Conditional rendering is seamlessly integrated into the template syntax. Develop
     developers to create dynamic and interactive user interfaces that cater to diverse user scenarios and requirements.
 
 
+Conditions narrow TypeScript types inside their block. After checking that an optional value is defined,
+    interpolations and injections use the narrowed type without a non-null assertion.
+
 ```typescript filename=/Conditional/src/Example/Example.wcl.avt
 export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
 

@@ -263,6 +263,9 @@ export class Todo extends Aventus.Data implements Aventus.IData {
 }
 ```
 
+<mark>@Context</mark> values keep their inferred TypeScript type in interpolations, injections and
+    nested conditions. Conditions inside a loop also narrow optional values for the guarded block.
+
 ## For...in
 
 The <mark>for...in</mark> loop in JavaScript iterates over the enumerable properties of an object, making it suitable for looping
@@ -378,6 +381,9 @@ export class Todo extends Aventus.Data implements Aventus.IData {
 	]
 }
 ```
+
+A <mark>for...in</mark> key is a string. Convert it with <mark>Number(index)</mark> when it
+    is used as an array index requiring a number.
 
 ## For...of
 

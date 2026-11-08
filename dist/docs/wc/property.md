@@ -21,7 +21,14 @@ A property has limited type:
 - <mark>boolean</mark>
 - <mark>date</mark>
 - <mark>datetime</mark>
+- <mark>time</mark>
 - <mark>literal</mark> (ex: 'value1'|'value2')
+
+The <mark>date</mark>, <mark>datetime</mark> and <mark>time</mark> types use
+    &nbsp;<mark>Aventus.Date</mark>, <mark>Aventus.DateTime</mark> and <mark>Aventus.Time</mark>.
+    These immutable types are based on Temporal and serialize to ISO strings.
+
+Add <mark>@NoType()</mark> when a public component field must stay out of generated component type metadata.
 
 In Aventus, you can declare a property by adding a <mark>decorator</mark> on a field.
 

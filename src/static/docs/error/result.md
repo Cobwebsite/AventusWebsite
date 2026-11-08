@@ -95,3 +95,7 @@ export class Test {
 	}]
 }
 ```
+
+<mark>ResultWithError</mark> inherits all composition helpers from
+    &nbsp;<mark>VoidWithError</mark>. Its <mark>run()</mark> and <mark>runAsync()</mark> methods
+    also copy the successful result returned by another <mark>ResultWithError</mark>.

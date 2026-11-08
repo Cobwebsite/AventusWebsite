@@ -63,6 +63,16 @@ export class Person extends Aventus.Data implements Aventus.IData {
 }
 ```
 
+## Date and time values
+
+The converter recognizes <mark>Aventus.Date</mark>, <mark>Aventus.DateTime</mark> and
+    &nbsp;<mark>Aventus.Time</mark> ISO values. These immutable Temporal-based types provide parsing, comparison,
+    arithmetic, localized formatting and conversion back to Temporal values.
+
+The native JavaScript <mark>Date</mark> global is intentionally unavailable in Aventus source code. The
+    language server reports it as an error and excludes it from completion; import and use
+    &nbsp;<mark>Aventus.Date</mark> or <mark>Aventus.DateTime</mark> instead.
+
 By default, <mark>Aventus.Data</mark> is convertible. You can also create custom convertible class by adding the decorator <mark>@Convertible</mark>. You must define an unique key so that the converter can transform your json into the object.
 
 ```typescript

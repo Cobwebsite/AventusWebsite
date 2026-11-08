@@ -32,6 +32,13 @@ ShortcutManager.unsubscribe([SpecialTouch.Control, "s"], overriding);
 
 The combination order doesn't matter. <mark>Ctrl+S</mark>, <mark>S+Ctrl</mark>, or <mark>s+Control</mark> are treated identically.
 
+Printable keys can be registered directly as strings. Use the literal <mark>" "</mark> to register the
+space bar:
+
+```ts
+ShortcutManager.subscribe(" ", () => console.log("Space pressed"));
+```
+
 Certain browser shortcuts (like <mark>Ctrl+P</mark> or <mark>Ctrl+S</mark>) are automatically prevented to avoid conflicts. This can be useful in single-page applications (SPAs) to prevent the browser from executing system actions like Print, Open File, or Save Page. You can customize this behavior with :
 
 ```ts

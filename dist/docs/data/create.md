@@ -92,11 +92,11 @@ export abstract class Data implements IData {
     /**
     * The class schema / This field is defined during compilation
     */
-    public static get $schema(): { [prop: string]: string; };
+    public static readonly $schema: { [prop: string]: string; };
     /**
     * The current namespace / This field is defined during compilation
     */
-    public static get Namespace(): string { return ""; }
+    public static readonly Namespace: string = "";
     /**
     * Get the unique type for the data. Define it as the namespace + class name
     */
@@ -123,6 +123,10 @@ export abstract class Data implements IData {
     * Get a JSON for the current object
     */
    public toJSON() {...}
+   /**
+   * Clone the instance through Aventus conversion metadata
+   */
+   public clone(): this {...}
 }
 ```
 
@@ -131,7 +135,7 @@ export abstract class Data implements IData {
     field you can create an unique type name that allows to clearly identify each data inside your application. Because
     Javascript is not typed, a <mark>$schema</mark> is created for each class to keep information about what
     the class must contain. In future version of Aventus, this will help the manager to synchronize data between each
-    instances.
+    instances and restore typed values when JSON is converted.
 
 
 The last thing to know is that every properties must have an initializer.

@@ -12,7 +12,11 @@ An attribute is a variable inside your webcomponent. An attribute has limited ty
 - <mark>boolean</mark>
 - <mark>date</mark>
 - <mark>datetime</mark>
+- <mark>time</mark>
 - <mark>literal</mark> (ex: 'value1'|'value2')
+
+Date-related attributes use the immutable <mark>Aventus.Date</mark>,
+    &nbsp;<mark>Aventus.DateTime</mark> and <mark>Aventus.Time</mark> types and serialize as ISO values.
 
 The source code to create an attribute is the following.
 

@@ -279,7 +279,7 @@ Creating a custom form element is simple: extend <mark>FormElement</mark> and im
 ## Example Integration
 
 ```ts
-const loginForm = Form.FormHandler.create({
+const loginForm = Form.Form.create({
     email: [Form.Validators.Required, Form.Validators.Email],
 });
 ```
@@ -306,8 +306,8 @@ When a <mark>form</mark> is injected:
 If your framework templating supports binding (example follows AventusJS syntax), you can bind the element directly to the FormHandler part:
 
 ```ts
-const loginForm = Avenuts.Form.FormHandler.create({
-  email: [Avenuts.Form.Validators.Required, Avenuts.Form.Validators.Email],
+const loginForm = Aventus.Form.Form.create({
+  email: [Aventus.Form.Validators.Required, Aventus.Form.Validators.Email],
 });
 ```
 

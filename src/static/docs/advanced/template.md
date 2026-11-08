@@ -545,14 +545,17 @@ The template contains action to help you during creation process.
 |openFile|             &nbsp;Open file. You must define the <mark>relative path</mark> from the template.avt.ts         &nbsp;|
 |sleep|             &nbsp;Helper to wait x ms         &nbsp;|
 
-## Expose the template globaly
+## Expose the template globally
 
 
-    To use a template across multiple project, you can expose your template globaly. To complete that, you must run the
-    command <mark>Aventus : Open storage</mark> and go inside the folder <mark>templates</mark>.
-    Then you can copy paste the previous template here. Notice: Aventus watch the global templates folder only during
-    starting process, so when you create a new global template, you must reload your Vscode instance.
+    A global template is available during creation independently of the current project. Set
+    &nbsp;<mark>isGlobal: true</mark> in its metadata and install it in the <mark>global</mark> folder
+    shown by <mark>Aventus : Open storage</mark>. Additional shared folders can be registered with the
+    &nbsp;<mark>aventus.globalPath</mark> VS Code setting.
 
+
+Workspace-specific global templates can also be placed in <mark>.aventus/global</mark>. They are merged
+    with configured global templates and are available to quick creation.
 
 ## Publish to the store
 

@@ -45,7 +45,7 @@ A <mark>FormHandler</mark> is typically created from a schema that describes the
     logic of your data:
 
 ```ts
-const form = Aventus.Form.FormHandler.create({
+const form = Aventus.Form.Form.create({
     email: Aventus.Form.Validators.Email,
     password: [Aventus.Form.Validators.Required],
 });
@@ -63,7 +63,7 @@ const form = new Aventus.Form.FormHandler({
 You can also specify a global configuration or default validation behavior using:
 
 ```ts
-Aventus.Form.FormHandler.configure({
+Aventus.Form.Form.configure({
     validateOnChange: true,
 });
 ```
@@ -122,7 +122,7 @@ const emailValid = await handler.validate("email"); // only one field
 If validation fails and there’s no registered UI element for a field, Aventus calls the handler’s error function:
 
 ```ts
-handleValidateNoInputError: (errors) => {
+onValidateFallback: (errors) => {
     console.warn("Unmapped validation errors:", errors);
 }
 ```
@@ -144,7 +144,15 @@ await handler.submit(async (body) => {
 - Calls your submission function
 - Handles and maps any backend errors
 
-If an input is associated with a field that produced an error, the handler pushes the error message into that element’s errors array automatically. Otherwise, the function <mark>handleExecuteNoInputError</mark> is called.
+If an input is associated with a field that produced an error, the handler pushes the message into that element’s
+errors array automatically. Validation errors without an input use <mark>onValidateFallback</mark>; unmapped
+server errors use <mark>onServerFallback</mark>.
+
+### Controller integration
+
+<mark>Form.createFromController()</mark> creates a typed handler directly from an
+<mark>HttpRoute</mark> method. Use the overload with a method name when the controller exposes more than one
+route, and the sub-form helpers when the submitted body is nested below a property.
 
 ## Validators
 

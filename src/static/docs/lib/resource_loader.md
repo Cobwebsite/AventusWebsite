@@ -6,7 +6,7 @@ To load content from uri, you can use the fetch API in mordern browser. The only
 - <mark>load</mark> that will return you the resource as a string (base64 for img resource).
 - <mark>loadInHead</mark> that will append a style or script tag in head.
 
-When a resource is loaded, the resource laoder will keep it in memory or prevent adding twice a tag in head.
+When a resource is loaded, the resource loader keeps it in memory or prevents adding the same tag to the head twice.
 
 ```typescript filename=Example.wcl.avt
 export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
@@ -24,7 +24,8 @@ export class Example extends Aventus.WebComponent implements Aventus.DefaultComp
 		const hasError = await Aventus.ResourceLoader.loadInHead("/style.css");
 		const hasError2 = await Aventus.ResourceLoader.loadInHead({
 			type: "css",
-			url: "/style.css"
+			url: "/style.css",
+			nonce: "content-security-policy-nonce"
 		});
 	}
 
@@ -32,3 +33,6 @@ export class Example extends Aventus.WebComponent implements Aventus.DefaultComp
 ```
 
 By default Aventus will try to determine the type you want by analyze the extension set inside the uri. If it fails, you can specify the type you need by adding the <mark>type</mark> parameter.
+
+The optional <mark>nonce</mark> is applied to script and style elements created by
+    &nbsp;<mark>loadInHead</mark>, allowing them to comply with a Content Security Policy.

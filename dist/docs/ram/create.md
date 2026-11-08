@@ -47,6 +47,26 @@ export class PersonRAM extends Aventus.Ram<Person> implements Aventus.IRam {
     protected override getTypeForData(objJson: Aventus.KeysObject<Person> | Person): new () => Person {
         return Person;
     }
+    protected override async transformCreateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        const result = new Aventus.ResultWithError<Person>();
+        result.result = item;
+        return result;
+    }
+
+    protected override async transformCreateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        const result = new Aventus.ResultWithError<Person[]>();
+        result.result = items;
+        return result;
+    }
+
+    protected override async transformUpdateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        return this.transformCreateRequestToItem(item);
+    }
+
+    protected override async transformUpdateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        return this.transformCreateRequestListToItem(items);
+    }
+
 
 }
 ```
@@ -106,6 +126,26 @@ export class PersonRAM extends Aventus.GenericRam<string, Person> implements Ave
     protected override getTypeForData(objJson: Aventus.KeysObject<Person> | Person): new () => Person {
         return Person;
     }
+    protected override async transformCreateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        const result = new Aventus.ResultWithError<Person>();
+        result.result = item;
+        return result;
+    }
+
+    protected override async transformCreateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        const result = new Aventus.ResultWithError<Person[]>();
+        result.result = items;
+        return result;
+    }
+
+    protected override async transformUpdateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        return this.transformCreateRequestToItem(item);
+    }
+
+    protected override async transformUpdateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        return this.transformCreateRequestListToItem(items);
+    }
+
 
 }
 ```
@@ -123,6 +163,17 @@ export class PersonRAM extends Aventus.GenericRam<string, Person> implements Ave
     ]
 }
 ```
+
+The current RAM types can distinguish the payload sent to the backend from the resources returned by it:
+
+```typescript
+GenericRam<Index, Item, Request, ResourceSimple, ResourceDetails>
+Ram<Item, Request, ResourceSimple, ResourceDetails>
+```
+
+<mark>Request</mark> is accepted by create, update and save operations. Stored values are
+    &nbsp;<mark>ResourceDetails</mark>; list responses may use <mark>ResourceSimple</mark>. The shorter
+    generic forms remain available when the same data type is used everywhere.
 
 The <mark>getTypeForData</mark> method allows you to define which object must be instanciated for a specific data. This
     isn't usefull when you work with concrete classes but if you have abstract classes or interfaces, you have to define
@@ -169,6 +220,26 @@ export class ShapeRAM extends Aventus.Ram<Shape> implements Aventus.IRam {
 
         throw 'Impossible'
     }
+    protected override async transformCreateRequestToItem(item: Shape): Promise<Aventus.ResultWithError<Shape>> {
+        const result = new Aventus.ResultWithError<Shape>();
+        result.result = item;
+        return result;
+    }
+
+    protected override async transformCreateRequestListToItem(items: Shape[]): Promise<Aventus.ResultWithError<Shape[]>> {
+        const result = new Aventus.ResultWithError<Shape[]>();
+        result.result = items;
+        return result;
+    }
+
+    protected override async transformUpdateRequestToItem(item: Shape): Promise<Aventus.ResultWithError<Shape>> {
+        return this.transformCreateRequestToItem(item);
+    }
+
+    protected override async transformUpdateRequestListToItem(items: Shape[]): Promise<Aventus.ResultWithError<Shape[]>> {
+        return this.transformCreateRequestListToItem(items);
+    }
+
 
 }
 ```

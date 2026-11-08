@@ -8,7 +8,7 @@ The easiest format is the following :
 
 ```json
 {
-    "dependances": {
+    "dependencies": {
         "MaterialIcon": "1.0.0",
     }
 }
@@ -25,7 +25,7 @@ By default, this will search inside the store. If you need to import other packa
 |version|             &nbsp;This is a string to define which version of the code is needed.                 &nbsp;Must satisfy: <mark>^[0-9]+\.[0-9]+\.[0-9]+$</mark>             &nbsp;         &nbsp;|
 |isLocal|             &nbsp;This will search a package matching the name inside your locals projects. You can find all these                 librairies by typing the command <mark>Aventus : Open aventus storage</mark> and then                 navigate inside your file explorer under the <mark>packages&gt;@locals</mark>. If you use a local package, you don't need to define a version.         &nbsp;|
 |include|             &nbsp;This is a string to define how the lib must be included inside output js file.             &nbsp;                 &nbsp;none: No need to include the lib inside the output file.                 &nbsp;need: Include only the needed code inside the output file. (This is the default value)                 &nbsp;full: Include all the code of the lib inside the ouput file.             &nbsp;         &nbsp;|
-|subDependancesInclude|             &nbsp;This is a object where the key is the sub library name and the value is the inclusion pattern. The                 will define how the library of the library must be included inside output js file.             &nbsp;                 &nbsp;none: No need to include the sub lib inside the output file.                 &nbsp;need: Include only the needed code inside the output file. (This is the default value)                 &nbsp;full: Include all the code of the sub lib inside the ouput file.             &nbsp;         &nbsp;|
+|subDependenciesInclude|             &nbsp;This is a object where the key is the sub library name and the value is the inclusion pattern. The                 will define how the library of the library must be included inside output js file.             &nbsp;                 &nbsp;none: No need to include the sub lib inside the output file.                 &nbsp;need: Include only the needed code inside the output file. (This is the default value)                 &nbsp;full: Include all the code of the sub lib inside the ouput file.             &nbsp;         &nbsp;|
 
 ## Libraries name
 
@@ -41,7 +41,7 @@ You can use a few name kinds to load a library. If you use a predefined name you
 
 ```json
 {
-    "dependances": {
+    "dependencies": {
         "Aventus@UI": {},
     }
 }
@@ -59,7 +59,7 @@ You can add directly an uri that resolve a <mark>.package.avt</mark> file to imp
 
 ```json filename=aventus.conf.avt
 {
-    dependances: {
+    dependencies: {
         "Lib1@Main": {
             "uri": "./myLibs/Lib1@Main.package.avt"
         },
@@ -72,7 +72,7 @@ You can add directly an uri that resolve a <mark>.package.avt</mark> file to imp
 
 ## File via http
 
-You can resolve dependance via http. Package will be stored inside the Aventus <mark>storage&gt;packages&gt;http</mark>. In this
+You can resolve a dependency via HTTP. The package is stored inside <mark>storage&gt;packages&gt;http</mark>. In this
     folder, you must find
     a list
     of subfolder where the name is the md5 value of the uri that you set as uri. The entry point is a json named

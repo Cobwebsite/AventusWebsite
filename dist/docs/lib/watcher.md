@@ -116,3 +116,8 @@ export function createComputed() {
     console.log(fullName.value); // write "Jane Doe"
 }
 ```
+
+<mark>Watcher.effect()</mark> returns an <mark>Effect</mark>. Call
+    &nbsp;<mark>destroy()</mark> when the effect is no longer needed. Use
+    &nbsp;<mark>Watcher.untrack(() =&gt; value)</mark> to read reactive values without registering them as
+    dependencies of the current effect.

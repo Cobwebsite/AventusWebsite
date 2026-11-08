@@ -60,6 +60,18 @@ request.setBody({
 // request.enableMethodSpoofing();
 ```
 
+## Request cache
+
+Enable the built-in cache for responses that can be reused.
+
+```typescript
+request.enableCache();
+const result = await request.queryJSON<User[]>();
+request.clearCache();
+```
+
+Use <mark>disableCache()</mark> to force the next query to reach the server.
+
 ## Body Serialization
 
 The <mark>HttpRequest</mark> class automatically detects how to encode the body:
@@ -73,12 +85,19 @@ All query methods return either a <mark>ResultWithError&lt;T&gt;</mark> or a <ma
 
 ### query
 
-Executes the request and returns the raw Response object, wrapped in a ResultWithError.
+Executes the request and returns an <mark>Aventus.HttpResponse</mark>, wrapped in a
+    &nbsp;<mark>ResultWithError</mark>. It exposes the native response metadata such as status, headers, URL and
+    redirect state.
 
 ```ts
 const result = await request.query();
 if (!result.success) return console.error(result.errors);
+const data = await result.result.json<User[]>();
 ```
+
+<mark>HttpResponse</mark> retains its parsed body, so <mark>json()</mark>,
+    &nbsp;<mark>text()</mark> or <mark>blob()</mark> can return the same cached content without consuming
+    the native response body again.
 
 ### queryJSON
 
@@ -121,7 +140,12 @@ if (!result.success) console.error(result.errors);
 You can optionally provide a <mark>HttpRouter</mark> instance to prefix relative URLs or manage base routes dynamically.
 
 ```ts
-const userRouter = new HttpRouter({ url: "/api/users" });
+class UserRouter extends HttpRouter {
+    protected override defineOptions(options: HttpRouterOptions): HttpRouterOptions {
+        return { ...options, url: "/api/users" };
+    }
+}
+const userRouter = new UserRouter();
 const req = new HttpRequest("/1", HttpMethod.GET);
 const result = await req.queryJSON<User>(userRouter);
 ```

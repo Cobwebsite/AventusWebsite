@@ -805,6 +805,191 @@ let DateSettings=class DateSettings {
 DateSettings.Namespace=`Aventus`;
 __as1(_, 'DateSettings', DateSettings);
 
+let Effect=class Effect {
+    callbacks = [];
+    isInit = false;
+    isDestroy = false;
+    __subscribes = [];
+    __allowChanged = [];
+    version = 0;
+    isRunning = false;
+    pendingChange;
+    seenNotifications = new WeakSet();
+    fct;
+    constructor(fct) {
+        this.fct = fct;
+        if (this.autoInit()) {
+            this.init();
+        }
+    }
+    autoInit() {
+        return true;
+    }
+    init() {
+        this.isInit = true;
+        this.run();
+    }
+    run() {
+        if (this.isRunning)
+            return;
+        let result;
+        let pendingNotification;
+        do {
+            this.pendingChange = undefined;
+            this.isRunning = true;
+            this.version++;
+            Watcher._registering.push(this);
+            try {
+                result = this.fct();
+            }
+            finally {
+                Watcher._registering.splice(Watcher._registering.length - 1, 1);
+                this.isRunning = false;
+            }
+            for (let i = 0; i < this.callbacks.length; i++) {
+                if (this.callbacks[i].version != this.version) {
+                    this.callbacks[i].receiver.unsubscribe(this.callbacks[i].cb);
+                    this.callbacks.splice(i, 1);
+                    i--;
+                }
+            }
+            if (pendingNotification) {
+                const notification = pendingNotification;
+                for (let fct of [...this.__subscribes]) {
+                    Watcher.isolate(() => {
+                        fct(notification.action, notification.changePath, notification.value, notification.dones);
+                    });
+                }
+            }
+            pendingNotification = this.pendingChange;
+        } while (pendingNotification && !this.isDestroy);
+        return result;
+    }
+    register(receiver, path, version, fullPath, presenceOnly = false, collectionSizeOnly = false, mapSizeKeyValue = false) {
+        for (let info of this.callbacks) {
+            if (info.receiver == receiver && info.path == path && receiver.__path == info.registerPath &&
+                info.presenceOnly == presenceOnly && info.collectionSizeOnly == collectionSizeOnly &&
+                info.mapSizeKeyValue == mapSizeKeyValue) {
+                info.version = version;
+                info.fullPath = fullPath;
+                return;
+            }
+        }
+        let cb;
+        if (collectionSizeOnly) {
+            let observedSize = Watcher.untrack(() => receiver.size);
+            cb = (action, changePath, value, dones) => {
+                const currentSize = Watcher.untrack(() => receiver.size);
+                if (currentSize != observedSize) {
+                    observedSize = currentSize;
+                    this.onChange(action, changePath, value, dones);
+                }
+            };
+        }
+        else if (mapSizeKeyValue) {
+            let observedValue = Watcher.untrack(() => Watcher.extract(receiver.get('size')));
+            cb = (action, changePath, value, dones) => {
+                if (changePath == path) {
+                    const currentValue = Watcher.untrack(() => Watcher.extract(receiver.get('size')));
+                    if (!Object.is(currentValue, observedValue)) {
+                        observedValue = currentValue;
+                        this.onChange(action, changePath, value, dones);
+                    }
+                }
+                else if (changePath.startsWith(path + '.') || changePath.startsWith(path + '[')) {
+                    this.onChange(action, changePath, value, dones);
+                }
+            };
+        }
+        else if (path == "*") {
+            cb = (action, changePath, value, dones) => { this.onChange(action, changePath, value, dones); };
+        }
+        else {
+            cb = (action, changePath, value, dones) => {
+                if (presenceOnly) {
+                    if (changePath == path && (action == WatchAction.CREATED || action == WatchAction.DELETED)) {
+                        this.onChange(action, changePath, value, dones);
+                    }
+                }
+                else if (changePath == path || changePath.startsWith(path + ".") || changePath.startsWith(path + "[")) {
+                    this.onChange(action, changePath, value, dones);
+                }
+            };
+        }
+        this.callbacks.push({
+            receiver,
+            path,
+            registerPath: receiver.__path,
+            cb,
+            version,
+            fullPath,
+            presenceOnly,
+            collectionSizeOnly,
+            mapSizeKeyValue
+        });
+        receiver.subscribe(cb);
+    }
+    canChange(fct) {
+        this.__allowChanged.push(fct);
+    }
+    checkCanChange(action, changePath, value, dones) {
+        if (this.isDestroy || this.isRunning || this.seenNotifications.has(dones)) {
+            return false;
+        }
+        for (let fct of this.__allowChanged) {
+            if (!fct(action, changePath, value, dones)) {
+                return false;
+            }
+        }
+        this.seenNotifications.add(dones);
+        return true;
+    }
+    onChange(action, changePath, value, dones) {
+        if (this.isRunning) {
+            if (!this.isDestroy && !this.seenNotifications.has(dones) &&
+                this.__allowChanged.every(fct => fct(action, changePath, value, dones))) {
+                this.seenNotifications.add(dones);
+                this.pendingChange = { action, changePath, value, dones };
+            }
+            return;
+        }
+        if (!this.checkCanChange(action, changePath, value, dones)) {
+            return;
+        }
+        this.run();
+        for (let fct of [...this.__subscribes]) {
+            Watcher.isolate(() => {
+                fct(action, changePath, value, dones);
+            });
+        }
+    }
+    destroy() {
+        this.isDestroy = true;
+        this.clearCallbacks();
+        this.isInit = false;
+    }
+    clearCallbacks() {
+        for (let pair of this.callbacks) {
+            pair.receiver.unsubscribe(pair.cb);
+        }
+        this.callbacks = [];
+    }
+    subscribe(fct) {
+        let index = this.__subscribes.indexOf(fct);
+        if (index == -1) {
+            this.__subscribes.push(fct);
+        }
+    }
+    unsubscribe(fct) {
+        let index = this.__subscribes.indexOf(fct);
+        if (index > -1) {
+            this.__subscribes.splice(index, 1);
+        }
+    }
+}
+Effect.Namespace=`Aventus`;
+__as1(_, 'Effect', Effect);
+
 let Time=class Time {
     static configure(options) { DateSettings.configure(options); }
     static get configuration() { return DateSettings.current; }
@@ -903,7 +1088,21 @@ let getValueFromObject=function getValueFromObject(path, obj) {
     }
     const val = (key) => {
         if (obj instanceof Map) {
-            return obj.get(key);
+            if (obj.has(key))
+                return obj.get(key);
+            for (const [mapKey, value] of obj) {
+                if (mapKey !== null && typeof mapKey === 'object' && mapKey.toString() === key) {
+                    return value;
+                }
+            }
+            return undefined;
+        }
+        if (obj instanceof Set) {
+            for (const value of obj) {
+                if (String(value) === key)
+                    return value;
+            }
+            return undefined;
         }
         return obj[key];
     };
@@ -930,133 +1129,6 @@ var WatchAction;
     WatchAction[WatchAction["DELETED"] = 2] = "DELETED";
 })(WatchAction || (WatchAction = {}));
 __as1(_, 'WatchAction', WatchAction);
-
-let Effect=class Effect {
-    callbacks = [];
-    isInit = false;
-    isDestroy = false;
-    __subscribes = [];
-    __allowChanged = [];
-    version = 0;
-    isRunning = false;
-    fct;
-    constructor(fct) {
-        this.fct = fct;
-        if (this.autoInit()) {
-            this.init();
-        }
-    }
-    autoInit() {
-        return true;
-    }
-    init() {
-        this.isInit = true;
-        this.run();
-    }
-    run() {
-        if (this.isRunning)
-            return;
-        this.isRunning = true;
-        this.version++;
-        Watcher._registering.push(this);
-        let result;
-        try {
-            result = this.fct();
-        }
-        finally {
-            Watcher._registering.splice(Watcher._registering.length - 1, 1);
-            this.isRunning = false;
-        }
-        for (let i = 0; i < this.callbacks.length; i++) {
-            if (this.callbacks[i].version != this.version) {
-                this.callbacks[i].receiver.unsubscribe(this.callbacks[i].cb);
-                this.callbacks.splice(i, 1);
-                i--;
-            }
-        }
-        return result;
-    }
-    register(receiver, path, version, fullPath) {
-        for (let info of this.callbacks) {
-            if (info.receiver == receiver && info.path == path && receiver.__path == info.registerPath) {
-                info.version = version;
-                info.fullPath = fullPath;
-                return;
-            }
-        }
-        let cb;
-        if (path == "*") {
-            cb = (action, changePath, value, dones) => { this.onChange(action, changePath, value, dones); };
-        }
-        else {
-            cb = (action, changePath, value, dones) => {
-                if (changePath == path || changePath.startsWith(path + ".") || changePath.startsWith(path + "[")) {
-                    // if(changePath == path) {
-                    this.onChange(action, changePath, value, dones);
-                }
-            };
-        }
-        this.callbacks.push({
-            receiver,
-            path,
-            registerPath: receiver.__path,
-            cb,
-            version,
-            fullPath
-        });
-        receiver.subscribe(cb);
-    }
-    canChange(fct) {
-        this.__allowChanged.push(fct);
-    }
-    checkCanChange(action, changePath, value, dones) {
-        if (this.isDestroy || this.isRunning) {
-            return false;
-        }
-        for (let fct of this.__allowChanged) {
-            if (!fct(action, changePath, value, dones)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    onChange(action, changePath, value, dones) {
-        if (!this.checkCanChange(action, changePath, value, dones)) {
-            return;
-        }
-        this.run();
-        for (let fct of [...this.__subscribes]) {
-            Watcher.isolate(() => {
-                fct(action, changePath, value, dones);
-            });
-        }
-    }
-    destroy() {
-        this.isDestroy = true;
-        this.clearCallbacks();
-        this.isInit = false;
-    }
-    clearCallbacks() {
-        for (let pair of this.callbacks) {
-            pair.receiver.unsubscribe(pair.cb);
-        }
-        this.callbacks = [];
-    }
-    subscribe(fct) {
-        let index = this.__subscribes.indexOf(fct);
-        if (index == -1) {
-            this.__subscribes.push(fct);
-        }
-    }
-    unsubscribe(fct) {
-        let index = this.__subscribes.indexOf(fct);
-        if (index > -1) {
-            this.__subscribes.splice(index, 1);
-        }
-    }
-}
-Effect.Namespace=`Aventus`;
-__as1(_, 'Effect', Effect);
 
 let Signal=class Signal {
     __subscribes = [];
@@ -1409,7 +1481,7 @@ let compareObjectValue=function compareObjectValue(obj1, obj2, tableOrder, activ
         }
         if (tableOrder) {
             for (let i = 0; i < obj1.length; i++) {
-                if (!compareObjectRecursive(obj1[i], obj2[i], true, active, proxyData1, proxyData2)) {
+                if (!compareObjectRecursive(obj1[i], obj2[i], tableOrder, active, proxyData1, proxyData2)) {
                     return false;
                 }
             }
@@ -1419,7 +1491,7 @@ let compareObjectValue=function compareObjectValue(obj1, obj2, tableOrder, activ
             for (let i = 0; i < obj1.length; i++) {
                 let foundElement = false;
                 for (let j = 0; j < obj2.length; j++) {
-                    if (compareObjectRecursive(obj1[i], obj2[j], true, active, proxyData1, proxyData2)) {
+                    if (compareObjectRecursive(obj1[i], obj2[j], tableOrder, active, proxyData1, proxyData2)) {
                         obj2.splice(j, 1);
                         foundElement = true;
                         break;
@@ -1464,7 +1536,7 @@ let compareObjectValue=function compareObjectValue(obj1, obj2, tableOrder, activ
                 if (!obj2.has(key)) {
                     return false;
                 }
-                if (!compareObjectRecursive(value, obj2.get(key), true, active, proxyData1, proxyData2)) {
+                if (!compareObjectRecursive(value, obj2.get(key), tableOrder, active, proxyData1, proxyData2)) {
                     return false;
                 }
             }
@@ -1480,7 +1552,7 @@ let compareObjectValue=function compareObjectValue(obj1, obj2, tableOrder, activ
                 if (!keys2.includes(key)) {
                     return false;
                 }
-                if (!compareObjectRecursive(obj1[key], obj2[key], true, active, proxyData1, proxyData2)) {
+                if (!compareObjectRecursive(obj1[key], obj2[key], tableOrder, active, proxyData1, proxyData2)) {
                     return false;
                 }
             }
@@ -1823,7 +1895,9 @@ let Watcher=class Watcher {
                     };
                 }
                 else if (prop == "clearHistory") {
-                    this.history = [];
+                    return () => {
+                        this.history = [];
+                    };
                 }
                 else if (prop == "enableHistory") {
                     return () => {
@@ -1891,6 +1965,12 @@ let Watcher=class Watcher {
             },
             get(target, prop, receiver) {
                 if (typeof prop == 'symbol') {
+                    if (prop == Symbol.iterator && target instanceof Map) {
+                        return () => receiver.entries();
+                    }
+                    if (prop == Symbol.iterator && target instanceof Set) {
+                        return () => receiver.values();
+                    }
                     return Watcher.isNative(target) ? Reflect.get(target, prop) : Reflect.get(target, prop, receiver);
                 }
                 if (reservedName[prop]) {
@@ -1937,15 +2017,17 @@ let Watcher=class Watcher {
                                 };
                             }
                             else {
-                                result = (index, nbRemove, ...insert) => {
-                                    let oldValues = [];
-                                    const extReceiver = Watcher.extract(receiver);
-                                    for (let i = index; i < index + nbRemove; i++) {
-                                        oldValues.push(extReceiver[i]);
-                                    }
-                                    let updateLength = nbRemove != insert.length;
+                                result = (...args) => {
+                                    const length = target.length;
+                                    const start = Number(args[0]);
+                                    const index = Number.isNaN(start) ? 0 : start < 0
+                                        ? Math.max(length + Math.trunc(start), 0)
+                                        : Math.min(Math.trunc(start), length);
+                                    const insert = args.slice(2);
+                                    const nbRemove = args.length === 0 ? 0 : args.length < 2 ? length - index
+                                        : Math.min(Math.max(Math.trunc(Number(args[1])) || 0, 0), length - index);
+                                    const oldValues = target.splice(index, nbRemove);
                                     for (let i = 0; i < oldValues.length; i++) {
-                                        target.splice((index + i), 1);
                                         trigger('DELETED', target, receiver, oldValues[i], "[" + index + "]");
                                     }
                                     for (let i = 0; i < insert.length; i++) {
@@ -1955,9 +2037,9 @@ let Watcher=class Watcher {
                                         target.splice((index + i), 0, value);
                                         trigger('CREATED', target, receiver, receiver[(index + i)], "[" + (index + i) + "]", dones);
                                     }
-                                    if (updateLength)
+                                    if (oldValues.length != insert.length)
                                         trigger('UPDATED', target, receiver, target.length, "length");
-                                    return target;
+                                    return oldValues;
                                 };
                             }
                         }
@@ -1970,8 +2052,10 @@ let Watcher=class Watcher {
                             }
                             else {
                                 result = () => {
+                                    if (target.length === 0)
+                                        return undefined;
                                     let index = target.length - 1;
-                                    let oldValue = receiver.length ? receiver[receiver.length] : undefined;
+                                    let oldValue = target[index];
                                     let res = target.pop();
                                     trigger('DELETED', target, receiver, oldValue, "[" + index + "]");
                                     trigger('UPDATED', target, receiver, target.length, "length");
@@ -1979,7 +2063,28 @@ let Watcher=class Watcher {
                                 };
                             }
                         }
-                        // else if(prop == 'find') {
+                        else if (['reverse', 'sort', 'shift', 'unshift', 'fill', 'copyWithin'].includes(prop)) {
+                            result = (...args) => {
+                                const value = element.apply(target, args);
+                                trigger('UPDATED', target, receiver, receiver, '');
+                                return value === target ? receiver : value;
+                            };
+                        }
+                        else if ([
+                            'find', 'findLast', 'findIndex', 'findLastIndex', 'some', 'every',
+                            'filter', 'map', 'flatMap', 'forEach', 'reduce', 'reduceRight',
+                            'at', 'values', 'entries'
+                        ].includes(prop)) {
+                            result = (...args) => element.apply(receiver, args);
+                        }
+                        else if (['indexOf', 'lastIndexOf', 'includes'].includes(prop)) {
+                            result = (...args) => {
+                                if (args[0] && Watcher.is(args[0])) {
+                                    args[0] = Watcher.extract(args[0]);
+                                }
+                                return element.apply(target, args);
+                            };
+                        }
                         else {
                             result = element.bind(target);
                         }
@@ -1987,7 +2092,43 @@ let Watcher=class Watcher {
                     }
                     else if (target instanceof Map) {
                         let result;
-                        if (prop == "set") {
+                        const registerIteration = () => {
+                            return Watcher._register?.register(receiver, '*', Watcher._register.version, receiver.__path ? receiver.__path + '.size' : 'size', false, true);
+                        };
+                        if (prop == "entries" || prop == "values") {
+                            result = function* () {
+                                registerIteration();
+                                for (const [key] of target.entries()) {
+                                    const value = receiver.get(key);
+                                    yield prop == "entries" ? [key, value] : value;
+                                }
+                            };
+                        }
+                        else if (prop == "forEach") {
+                            result = (callback, thisArg) => {
+                                if (typeof callback != 'function')
+                                    throw new TypeError('Map.forEach callback must be a function');
+                                registerIteration();
+                                target.forEach((_value, key) => callback.call(thisArg, receiver.get(key), key, receiver));
+                            };
+                        }
+                        else if (prop == "get") {
+                            result = (key) => {
+                                key = Watcher.extract(key);
+                                const path = key + '';
+                                Watcher._register?.register(receiver, path, Watcher._register.version, receiver.__path ? receiver.__path + '.' + path : path, false, false, key === 'size');
+                                return this.getProxyObject(target, target.get(key), path);
+                            };
+                        }
+                        else if (prop == "has") {
+                            result = (key) => {
+                                key = Watcher.extract(key);
+                                const path = String(key);
+                                Watcher._register?.register(receiver, path, Watcher._register.version, receiver.__path ? receiver.__path + '.' + path : path, true);
+                                return target.has(key);
+                            };
+                        }
+                        else if (prop == "set") {
                             if (target.__isProxy) {
                                 result = (key, value) => {
                                     return target.set(key, value);
@@ -1997,17 +2138,24 @@ let Watcher=class Watcher {
                                 result = (key, value) => {
                                     const out = {};
                                     let dones = [];
-                                    let dones2 = [];
                                     key = Watcher.extract(key);
+                                    const hadKey = target.has(key);
+                                    if (!hadKey && key !== null && typeof key === 'object' && key.toString() === '[object Object]') {
+                                        console.warn('Watcher Map: toString() must return a unique value for each object key; [object Object] is ambiguous.');
+                                    }
                                     value = replaceByAlias(target, value, key + '', receiver, false, out);
                                     if (out.otherRoot) {
                                         dones.push(out.otherRoot);
-                                        dones2.push(out.otherRoot);
                                     }
-                                    let result = target.set(key, value);
-                                    trigger('CREATED', target, receiver, receiver.get(key), key + '', dones);
-                                    trigger('UPDATED', target, receiver, target.size, "size", dones2);
-                                    return result;
+                                    target.set(key, value);
+                                    trigger(hadKey ? 'UPDATED' : 'CREATED', target, receiver, receiver.get(key), key + '', dones);
+                                    if (!hadKey) {
+                                        dones.length = 0;
+                                        if (out.otherRoot)
+                                            dones.push(out.otherRoot);
+                                        trigger('UPDATED', target, receiver, target.size, "size", dones);
+                                    }
+                                    return receiver;
                                 };
                             }
                         }
@@ -2019,13 +2167,17 @@ let Watcher=class Watcher {
                             }
                             else {
                                 result = () => {
-                                    let keys = target.keys();
-                                    for (let key of keys) {
-                                        let oldValue = receiver.get(key);
-                                        target.delete(key);
-                                        trigger('DELETED', target, receiver, oldValue, key);
-                                        trigger('UPDATED', target, receiver, target.size, "size");
+                                    if (target.size === 0)
+                                        return;
+                                    const entries = [...target.entries()];
+                                    const dones = [];
+                                    target.clear();
+                                    for (const [key, oldValue] of entries) {
+                                        dones.length = 0;
+                                        trigger('DELETED', target, receiver, oldValue, key + '', dones);
                                     }
+                                    dones.length = 0;
+                                    trigger('UPDATED', target, receiver, target.size, "size", dones);
                                 };
                             }
                         }
@@ -2038,13 +2190,119 @@ let Watcher=class Watcher {
                             else {
                                 result = (key) => {
                                     key = Watcher.extract(key);
+                                    if (!target.has(key))
+                                        return false;
                                     let oldValue = receiver.get(key);
                                     let res = target.delete(key);
-                                    trigger('DELETED', target, receiver, oldValue, key + '');
-                                    trigger('UPDATED', target, receiver, target.size, "size");
+                                    const dones = [];
+                                    trigger('DELETED', target, receiver, oldValue, key + '', dones);
+                                    dones.length = 0;
+                                    trigger('UPDATED', target, receiver, target.size, "size", dones);
                                     return res;
                                 };
                             }
+                        }
+                        else if (prop == 'keys') {
+                            result = () => {
+                                registerIteration();
+                                return target.keys();
+                            };
+                        }
+                        else {
+                            result = element.bind(target);
+                        }
+                        return result;
+                    }
+                    else if (target instanceof Set) {
+                        let result;
+                        const registerIteration = () => {
+                            return Watcher._register?.register(receiver, '*', Watcher._register.version, receiver.__path ? receiver.__path + '.size' : 'size', false, true);
+                        };
+                        const watchValue = (value) => this.getProxyObject(target, value, String(value));
+                        if (prop == 'values' || prop == 'keys') {
+                            result = function* () {
+                                registerIteration();
+                                for (const value of target)
+                                    yield watchValue(value);
+                            };
+                        }
+                        else if (prop == 'entries') {
+                            result = function* () {
+                                registerIteration();
+                                for (const value of target) {
+                                    const watched = watchValue(value);
+                                    yield [watched, watched];
+                                }
+                            };
+                        }
+                        else if (prop == 'forEach') {
+                            result = (callback, thisArg) => {
+                                if (typeof callback != 'function')
+                                    throw new TypeError('Set.forEach callback must be a function');
+                                registerIteration();
+                                target.forEach(value => {
+                                    const watched = watchValue(value);
+                                    callback.call(thisArg, watched, watched, receiver);
+                                });
+                            };
+                        }
+                        else if (prop == 'has') {
+                            result = (value) => {
+                                if (value && Watcher.is(value)) {
+                                    value = Watcher.extract(value);
+                                }
+                                const path = String(value);
+                                Watcher._register?.register(receiver, path, Watcher._register.version, receiver.__path ? receiver.__path + '.' + path : path, true);
+                                return target.has(value);
+                            };
+                        }
+                        else if (prop == 'add') {
+                            result = (value) => {
+                                if (value && Watcher.is(value)) {
+                                    value = Watcher.extract(value);
+                                }
+                                if (target.has(value))
+                                    return receiver;
+                                if (value !== null && typeof value === 'object' && value.toString() === '[object Object]') {
+                                    console.warn('Watcher Set: toString() must return a unique value for each object; [object Object] is ambiguous.');
+                                }
+                                target.add(value);
+                                const dones = [];
+                                trigger('CREATED', target, receiver, value, String(value), dones);
+                                dones.length = 0;
+                                trigger('UPDATED', target, receiver, target.size, 'size', dones);
+                                return receiver;
+                            };
+                        }
+                        else if (prop == 'delete') {
+                            result = (value) => {
+                                if (value && Watcher.is(value)) {
+                                    value = Watcher.extract(value);
+                                }
+                                if (!target.has(value))
+                                    return false;
+                                const deleted = target.delete(value);
+                                const dones = [];
+                                trigger('DELETED', target, receiver, value, String(value), dones);
+                                dones.length = 0;
+                                trigger('UPDATED', target, receiver, target.size, 'size', dones);
+                                return deleted;
+                            };
+                        }
+                        else if (prop == 'clear') {
+                            result = () => {
+                                if (target.size === 0)
+                                    return;
+                                const values = [...target];
+                                const dones = [];
+                                target.clear();
+                                for (const value of values) {
+                                    dones.length = 0;
+                                    trigger('DELETED', target, receiver, value, String(value), dones);
+                                }
+                                dones.length = 0;
+                                trigger('UPDATED', target, receiver, target.size, 'size', dones);
+                            };
                         }
                         else {
                             result = element.bind(target);
@@ -2057,23 +2315,29 @@ let Watcher=class Watcher {
                     return element.value;
                 }
                 if (Watcher._registering.length > 0) {
-                    let currentPath;
-                    let fullPath;
-                    let isArray = Array.isArray(receiver);
-                    if (isArray && /^[0-9]*$/g.exec(prop)) {
-                        fullPath = receiver.__path + "[" + prop + "]";
-                        currentPath = "[" + prop + "]";
+                    if (prop == 'size' && (target instanceof Map || target instanceof Set)) {
+                        Watcher._register?.register(receiver, '*', Watcher._register.version, receiver.__path ? receiver.__path + '.size' : 'size', false, true);
                     }
                     else {
-                        fullPath = receiver.__path ? receiver.__path + '.' + prop : prop;
-                        currentPath = prop;
+                        let currentPath;
+                        let fullPath;
+                        let isArray = Array.isArray(receiver);
+                        if (isArray && /^[0-9]*$/g.exec(prop)) {
+                            fullPath = receiver.__path + "[" + prop + "]";
+                            currentPath = "[" + prop + "]";
+                        }
+                        else {
+                            fullPath = receiver.__path ? receiver.__path + '.' + prop : prop;
+                            currentPath = prop;
+                        }
+                        Watcher._register?.register(receiver, currentPath, Watcher._register.version, fullPath);
                     }
-                    Watcher._register?.register(receiver, currentPath, Watcher._register.version, fullPath);
                 }
                 if (typeof (element) == 'object') {
                     return this.getProxyObject(target, element, prop);
                 }
-                return Watcher.isNative(target) ? Reflect.get(target, prop) : Reflect.get(target, prop, receiver);
+                return Watcher.isNative(target) || target instanceof Map || target instanceof Set
+                    ? Reflect.get(target, prop) : Reflect.get(target, prop, receiver);
             },
             set(target, prop, value, receiver) {
                 if (typeof prop == 'symbol') {
@@ -2211,7 +2475,7 @@ let Watcher=class Watcher {
         if (onDataChanged) {
             proxyData.callbacks[''] = [onDataChanged];
         }
-        const trigger = (type, target, receiver, value, prop, dones = []) => {
+        const trigger = (type, target, receiver, value, prop, dones = [], pathOverride) => {
             if (dones.includes(proxyData.baseData)) {
                 return;
             }
@@ -2219,11 +2483,20 @@ let Watcher=class Watcher {
                 return;
             }
             let rootPath;
-            if (receiver == null) {
+            if (pathOverride !== undefined) {
+                rootPath = pathOverride;
+            }
+            else if (receiver == null) {
                 rootPath = target.__path;
             }
             else {
                 rootPath = receiver.__path;
+                if (rootPath !== '') {
+                    const current = rootPath === undefined ? undefined : getValueFromObject(rootPath, proxyData.baseData);
+                    const currentTarget = Watcher.is(current) ? current.getTarget(false) : current;
+                    if (currentTarget !== target)
+                        return;
+                }
             }
             if (rootPath != "") {
                 if (Array.isArray(receiver)) {
@@ -2260,6 +2533,7 @@ let Watcher=class Watcher {
                     stacks.push(current);
                 }
             }
+            const initialDones = [...dones];
             dones.push(proxyData.baseData);
             let aliasesDone = [];
             const callbacks = { ...proxyData.callbacks };
@@ -2344,6 +2618,48 @@ let Watcher=class Watcher {
                     }
                 }
             }
+            if (pathOverride === undefined && receiver != null && target !== proxyData.baseData) {
+                const visited = new Set();
+                const notifyShared = (data, path) => {
+                    if (data === null || typeof data !== 'object')
+                        return;
+                    if (Watcher.is(data)) {
+                        data = data.getTarget(false);
+                    }
+                    if (data === target) {
+                        if (path !== receiver.__path) {
+                            trigger(type, target, receiver, value, prop, [...initialDones], path);
+                        }
+                        return;
+                    }
+                    if (data === null ||
+                        typeof data !== 'object' ||
+                        visited.has(data) ||
+                        data instanceof Map ||
+                        data instanceof Set ||
+                        Watcher.isNative(data)) {
+                        return;
+                    }
+                    visited.add(data);
+                    for (const key of Object.keys(data)) {
+                        if (reservedName[key])
+                            continue;
+                        let childPath;
+                        if (Array.isArray(data) && /^[0-9]+$/.test(key)) {
+                            childPath = path + '[' + key + ']';
+                        }
+                        else if (path) {
+                            childPath = path + '.' + key;
+                        }
+                        else {
+                            childPath = key;
+                        }
+                        notifyShared(data[key], childPath);
+                    }
+                    visited.delete(data);
+                };
+                notifyShared(proxyData.baseData, '');
+            }
         };
         var realProxy = new Proxy(obj, proxyData);
         proxyData.baseData = obj;
@@ -2351,7 +2667,7 @@ let Watcher=class Watcher {
         return realProxy;
     }
     static is(obj) {
-        return typeof obj == 'object' && obj.__isProxy;
+        return obj !== null && typeof obj == 'object' && obj.__isProxy;
     }
     static clearReservedNames(data) {
         if (data instanceof Object && !data.__isProxy) {
@@ -4947,13 +5263,8 @@ let WebComponent=class WebComponent extends HTMLElement {
             }
         }
         else {
-            if (this.hasAttribute(prop)) {
-                let value = this.getAttribute(prop);
-                delete t[prop];
-                t[prop] = value;
-            }
-            else if (Object.hasOwn(this, prop)) {
-                const value = t[prop];
+            if (Object.hasOwn(this, prop)) {
+                const value = this.hasAttribute(prop) ? this.getAttribute(prop) : t[prop];
                 delete t[prop];
                 t[prop] = value;
             }
@@ -7456,6 +7767,11 @@ __as1(_, 'HttpRoute', HttpRoute);
 
 for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
+(() => {
+const _ = globalThis;
+const __as1 = (o, k, c) => { if (o[k] !== undefined) for (let w in o[k]) { c[w] = o[k][w] } o[k] = c; };
+ 
+})();
 
 var MaterialIcon;
 (MaterialIcon||(MaterialIcon = {}));
@@ -7640,71 +7956,6 @@ _.Toast = Aventus.Toast ?? {};
 let Modal = {};
 _.Modal = Aventus.Modal ?? {};
 let _n;
-Layout.Tabs.TabHeader = class TabHeader extends Aventus.WebComponent {
-    get 'active'() { return this.getBoolAttr('active') }
-    set 'active'(val) { this.setBoolAttr('active', val) }
-    _tab;
-    get tab() {
-        return this._tab;
-    }
-    tabs;
-    static __style = ``;
-    constructor() {
-        super();
-        if (this.constructor == TabHeader) {
-            throw "can't instanciate an abstract class";
-        }
-    }
-    __getStatic() {
-        return TabHeader;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(TabHeader.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
-    });
-}
-    getClassName() {
-        return "TabHeader";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('active')) { this.attributeChangedCallback('active', false, false); }
- }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('tab');
-this.__upgradeProperty('active');
- }
-    __listBoolProps() { return ["active"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-    async init(tab, tabs) {
-        this.tabs = tabs;
-        this._tab = tab;
-        tab.tabHeader = this;
-        await this.render();
-    }
-    onPress() {
-        if (!this.active) {
-            this.tabs.setActive(this);
-        }
-    }
-    addPress() {
-        new Aventus.PressManager({
-            element: this,
-            onPress: () => {
-                this.onPress();
-            }
-        });
-    }
-    postCreation() {
-        super.postCreation();
-        this.addPress();
-    }
-}
-Layout.Tabs.TabHeader.Namespace=`Aventus.Layout.Tabs`;
-__as1(_.Layout.Tabs, 'TabHeader', Layout.Tabs.TabHeader);
-
 let Tracker=class Tracker {
     /**
      * Multiplier for velocity calculations based on device pixel ratio.
@@ -7771,6 +8022,71 @@ let Tracker=class Tracker {
 }
 Tracker.Namespace=`Aventus`;
 __as1(_, 'Tracker', Tracker);
+
+Layout.Tabs.TabHeader = class TabHeader extends Aventus.WebComponent {
+    get 'active'() { return this.getBoolAttr('active') }
+    set 'active'(val) { this.setBoolAttr('active', val) }
+    _tab;
+    get tab() {
+        return this._tab;
+    }
+    tabs;
+    static __style = ``;
+    constructor() {
+        super();
+        if (this.constructor == TabHeader) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return TabHeader;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TabHeader.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "TabHeader";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('active')) { this.attributeChangedCallback('active', false, false); }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('tab');
+this.__upgradeProperty('active');
+ }
+    __listBoolProps() { return ["active"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    async init(tab, tabs) {
+        this.tabs = tabs;
+        this._tab = tab;
+        tab.tabHeader = this;
+        await this.render();
+    }
+    onPress() {
+        if (!this.active) {
+            this.tabs.setActive(this);
+        }
+    }
+    addPress() {
+        new Aventus.PressManager({
+            element: this,
+            onPress: () => {
+                this.onPress();
+            }
+        });
+    }
+    postCreation() {
+        super.postCreation();
+        this.addPress();
+    }
+}
+Layout.Tabs.TabHeader.Namespace=`Aventus.Layout.Tabs`;
+__as1(_.Layout.Tabs, 'TabHeader', Layout.Tabs.TabHeader);
 
 Layout.GridGuideHelper = class GridGuideHelper extends Aventus.WebComponent {
     get 'direction'() { return this.getStringAttr('direction') }
@@ -8179,11 +8495,6 @@ if(!window.customElements.get('av-img')){window.customElements.define('av-img', 
 
 Layout.Row = class Row extends Aventus.WebComponent {
     static __style = `:host{--_col-gap: var(--col-gap, 0px);--_col-gap-y: var(--col-gap-y, var(--_col-gap));--_col-gap-x: var(--col-gap-x, var(--_col-gap))}:host{container-name:row;container-type:inline-size;display:flex;flex-direction:row;flex-wrap:wrap;gap:var(--_col-gap-y) var(--_col-gap-x);width:100%}`;
-    constructor() {
-        super();
-        this.style.containerName = "row";
-        this.style.containerType = "inline-size";
-    }
     __getStatic() {
         return Row;
     }
@@ -8200,6 +8511,11 @@ Layout.Row = class Row extends Aventus.WebComponent {
 }
     getClassName() {
         return "Row";
+    }
+    postCreation() {
+        super.postCreation();
+        this.style.containerName = "row";
+        this.style.containerType = "inline-size";
     }
 }
 Layout.Row.Namespace=`Aventus.Layout`;
@@ -9598,7 +9914,7 @@ get 'offset_right_xl'() { return this.getNumberAttr('offset_right_xl') }
 get 'center'() { return this.getBoolAttr('center') }
     set 'center'(val) { this.setBoolAttr('center', val) }
     static use_container = false;
-    static __style = `:host{--_col-padding: var(--col-padding, 8px)}:host{display:flex;padding:var(--_col-padding)}:host([center]){justify-content:center}:host([size="0"]){width:0}:host([offset="0"]){margin-left:0}:host([offset_right="0"]){margin-right:0}:host([size="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([offset="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([offset_right="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([size="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([offset="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([offset_right="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([size="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([offset="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([offset_right="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([size="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([offset="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([offset_right="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([size="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([offset="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([offset_right="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([size="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([offset="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([offset_right="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([size="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([offset="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([offset_right="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([size="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([offset="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([offset_right="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([size="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([offset="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([offset_right="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([size="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([offset="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([offset_right="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([size="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([offset="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([offset_right="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([size="12"]){width:100%}:host([offset="12"]){margin-left:100%}:host([offset_right="12"]){margin-right:100%}@container row (min-width: 300px){:host([use_container][size_xs="0"]){width:0}:host([use_container][offset_xs="0"]){margin-left:0}:host([use_container][offset_right_xs="0"]){margin-right:0}:host([use_container][size_xs="0"]){display:none}:host([use_container][size_xs="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_xs="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_right_xs="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][size_xs="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_xs="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_right_xs="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][size_xs="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_xs="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_right_xs="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][size_xs="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_xs="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_right_xs="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][size_xs="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_xs="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_right_xs="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][size_xs="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_xs="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_right_xs="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][size_xs="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_xs="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_right_xs="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][size_xs="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_xs="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_right_xs="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][size_xs="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_xs="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_right_xs="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][size_xs="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_xs="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_right_xs="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][size_xs="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_xs="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_right_xs="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][size_xs="12"]){width:100%}:host([use_container][offset_xs="12"]){margin-left:100%}:host([use_container][offset_right_xs="12"]){margin-right:100%}}@media screen and (min-width: 300px){:host(:not([use_container])[size_xs="0"]){width:0}:host(:not([use_container])[offset_xs="0"]){margin-left:0}:host(:not([use_container])[offset_right_xs="0"]){margin-right:0}:host(:not([use_container])[size_xs="0"]){display:none}:host(:not([use_container])[size_xs="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_xs="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_right_xs="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[size_xs="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_xs="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_right_xs="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[size_xs="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_xs="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_right_xs="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[size_xs="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_xs="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_right_xs="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[size_xs="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_xs="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_right_xs="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[size_xs="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_xs="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_right_xs="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[size_xs="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_xs="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_right_xs="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[size_xs="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_xs="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_right_xs="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[size_xs="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_xs="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_right_xs="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[size_xs="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_xs="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_right_xs="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[size_xs="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_xs="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_right_xs="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[size_xs="12"]){width:100%}:host(:not([use_container])[offset_xs="12"]){margin-left:100%}:host(:not([use_container])[offset_right_xs="12"]){margin-right:100%}}@container row (min-width: 540px){:host([use_container][size_sm="0"]){width:0}:host([use_container][offset_sm="0"]){margin-left:0}:host([use_container][offset_right_sm="0"]){margin-right:0}:host([use_container][size_sm="0"]){display:none}:host([use_container][size_sm="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_sm="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_right_sm="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][size_sm="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_sm="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_right_sm="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][size_sm="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_sm="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_right_sm="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][size_sm="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_sm="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_right_sm="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][size_sm="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_sm="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_right_sm="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][size_sm="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_sm="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_right_sm="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][size_sm="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_sm="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_right_sm="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][size_sm="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_sm="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_right_sm="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][size_sm="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_sm="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_right_sm="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][size_sm="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_sm="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_right_sm="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][size_sm="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_sm="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_right_sm="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][size_sm="12"]){width:100%}:host([use_container][offset_sm="12"]){margin-left:100%}:host([use_container][offset_right_sm="12"]){margin-right:100%}}@media screen and (min-width: 540px){:host(:not([use_container])[size_sm="0"]){width:0}:host(:not([use_container])[offset_sm="0"]){margin-left:0}:host(:not([use_container])[offset_right_sm="0"]){margin-right:0}:host(:not([use_container])[size_sm="0"]){display:none}:host(:not([use_container])[size_sm="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_sm="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_right_sm="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[size_sm="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_sm="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_right_sm="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[size_sm="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_sm="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_right_sm="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[size_sm="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_sm="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_right_sm="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[size_sm="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_sm="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_right_sm="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[size_sm="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_sm="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_right_sm="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[size_sm="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_sm="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_right_sm="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[size_sm="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_sm="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_right_sm="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[size_sm="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_sm="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_right_sm="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[size_sm="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_sm="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_right_sm="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[size_sm="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_sm="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_right_sm="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[size_sm="12"]){width:100%}:host(:not([use_container])[offset_sm="12"]){margin-left:100%}:host(:not([use_container])[offset_right_sm="12"]){margin-right:100%}}@container row (min-width: 720px){:host([use_container][size_md="0"]){width:0}:host([use_container][offset_md="0"]){margin-left:0}:host([use_container][offset_right_md="0"]){margin-right:0}:host([use_container][size_md="0"]){display:none}:host([use_container][size_md="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_md="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_right_md="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][size_md="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_md="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_right_md="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][size_md="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_md="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_right_md="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][size_md="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_md="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_right_md="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][size_md="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_md="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_right_md="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][size_md="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_md="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_right_md="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][size_md="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_md="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_right_md="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][size_md="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_md="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_right_md="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][size_md="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_md="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_right_md="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][size_md="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_md="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_right_md="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][size_md="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_md="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_right_md="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][size_md="12"]){width:100%}:host([use_container][offset_md="12"]){margin-left:100%}:host([use_container][offset_right_md="12"]){margin-right:100%}}@media screen and (min-width: 720px){:host(:not([use_container])[size_md="0"]){width:0}:host(:not([use_container])[offset_md="0"]){margin-left:0}:host(:not([use_container])[offset_right_md="0"]){margin-right:0}:host(:not([use_container])[size_md="0"]){display:none}:host(:not([use_container])[size_md="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_md="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_right_md="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[size_md="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_md="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_right_md="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[size_md="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_md="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_right_md="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[size_md="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_md="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_right_md="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[size_md="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_md="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_right_md="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[size_md="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_md="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_right_md="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[size_md="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_md="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_right_md="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[size_md="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_md="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_right_md="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[size_md="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_md="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_right_md="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[size_md="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_md="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_right_md="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[size_md="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_md="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_right_md="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[size_md="12"]){width:100%}:host(:not([use_container])[offset_md="12"]){margin-left:100%}:host(:not([use_container])[offset_right_md="12"]){margin-right:100%}}@container row (min-width: 960px){:host([use_container][size_lg="0"]){width:0}:host([use_container][offset_lg="0"]){margin-left:0}:host([use_container][offset_right_lg="0"]){margin-right:0}:host([use_container][size_lg="0"]){display:none}:host([use_container][size_lg="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_lg="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_right_lg="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][size_lg="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_lg="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_right_lg="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][size_lg="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_lg="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_right_lg="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][size_lg="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_lg="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_right_lg="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][size_lg="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_lg="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_right_lg="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][size_lg="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_lg="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_right_lg="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][size_lg="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_lg="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_right_lg="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][size_lg="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_lg="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_right_lg="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][size_lg="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_lg="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_right_lg="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][size_lg="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_lg="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_right_lg="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][size_lg="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_lg="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_right_lg="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][size_lg="12"]){width:100%}:host([use_container][offset_lg="12"]){margin-left:100%}:host([use_container][offset_right_lg="12"]){margin-right:100%}}@media screen and (min-width: 960px){:host(:not([use_container])[size_lg="0"]){width:0}:host(:not([use_container])[offset_lg="0"]){margin-left:0}:host(:not([use_container])[offset_right_lg="0"]){margin-right:0}:host(:not([use_container])[size_lg="0"]){display:none}:host(:not([use_container])[size_lg="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_lg="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_right_lg="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[size_lg="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_lg="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_right_lg="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[size_lg="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_lg="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_right_lg="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[size_lg="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_lg="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_right_lg="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[size_lg="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_lg="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_right_lg="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[size_lg="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_lg="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_right_lg="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[size_lg="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_lg="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_right_lg="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[size_lg="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_lg="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_right_lg="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[size_lg="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_lg="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_right_lg="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[size_lg="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_lg="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_right_lg="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[size_lg="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_lg="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_right_lg="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[size_lg="12"]){width:100%}:host(:not([use_container])[offset_lg="12"]){margin-left:100%}:host(:not([use_container])[offset_right_lg="12"]){margin-right:100%}}@container row (min-width: 1140px){:host([use_container][size_xl="0"]){width:0}:host([use_container][offset_xl="0"]){margin-left:0}:host([use_container][offset_right_xl="0"]){margin-right:0}:host([use_container][size_xl="0"]){display:none}:host([use_container][size_xl="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_xl="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_right_xl="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][size_xl="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_xl="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_right_xl="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][size_xl="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_xl="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_right_xl="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][size_xl="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_xl="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_right_xl="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][size_xl="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_xl="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_right_xl="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][size_xl="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_xl="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_right_xl="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][size_xl="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_xl="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_right_xl="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][size_xl="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_xl="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_right_xl="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][size_xl="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_xl="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_right_xl="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][size_xl="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_xl="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_right_xl="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][size_xl="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_xl="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_right_xl="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][size_xl="12"]){width:100%}:host([use_container][offset_xl="12"]){margin-left:100%}:host([use_container][offset_right_xl="12"]){margin-right:100%}}@media screen and (min-width: 1140px){:host(:not([use_container])[size_xl="0"]){width:0}:host(:not([use_container])[offset_xl="0"]){margin-left:0}:host(:not([use_container])[offset_right_xl="0"]){margin-right:0}:host(:not([use_container])[size_xl="0"]){display:none}:host(:not([use_container])[size_xl="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_xl="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_right_xl="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[size_xl="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_xl="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_right_xl="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[size_xl="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_xl="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_right_xl="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[size_xl="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_xl="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_right_xl="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[size_xl="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_xl="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_right_xl="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[size_xl="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_xl="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_right_xl="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[size_xl="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_xl="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_right_xl="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[size_xl="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_xl="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_right_xl="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[size_xl="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_xl="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_right_xl="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[size_xl="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_xl="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_right_xl="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[size_xl="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_xl="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_right_xl="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[size_xl="12"]){width:100%}:host(:not([use_container])[offset_xl="12"]){margin-left:100%}:host(:not([use_container])[offset_right_xl="12"]){margin-right:100%}}`;
+    static __style = `:host{--_col-padding: var(--col-padding, 8px)}:host{display:flex;padding:var(--_col-padding)}:host([center]){justify-content:center}:host([size="0"]){display:none}:host([size="0"]){width:0}:host([offset="0"]){margin-left:0}:host([offset_right="0"]){margin-right:0}:host([size="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([offset="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([offset_right="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([size="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([offset="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([offset_right="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([size="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([offset="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([offset_right="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([size="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([offset="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([offset_right="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([size="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([offset="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([offset_right="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([size="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([offset="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([offset_right="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([size="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([offset="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([offset_right="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([size="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([offset="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([offset_right="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([size="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([offset="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([offset_right="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([size="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([offset="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([offset_right="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([size="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([offset="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([offset_right="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([size="12"]){width:100%}:host([offset="12"]){margin-left:100%}:host([offset_right="12"]){margin-right:100%}@container row (min-width: 300px){:host([use_container][size_xs="0"]){width:0}:host([use_container][offset_xs="0"]){margin-left:0}:host([use_container][offset_right_xs="0"]){margin-right:0}:host([use_container][size_xs="0"]){display:none}:host([use_container][size_xs="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_xs="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_right_xs="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][size_xs="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_xs="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_right_xs="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][size_xs="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_xs="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_right_xs="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][size_xs="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_xs="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_right_xs="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][size_xs="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_xs="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_right_xs="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][size_xs="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_xs="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_right_xs="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][size_xs="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_xs="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_right_xs="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][size_xs="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_xs="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_right_xs="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][size_xs="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_xs="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_right_xs="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][size_xs="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_xs="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_right_xs="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][size_xs="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_xs="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_right_xs="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][size_xs="12"]){width:100%}:host([use_container][offset_xs="12"]){margin-left:100%}:host([use_container][offset_right_xs="12"]){margin-right:100%}}@media screen and (min-width: 300px){:host(:not([use_container])[size_xs="0"]){width:0}:host(:not([use_container])[offset_xs="0"]){margin-left:0}:host(:not([use_container])[offset_right_xs="0"]){margin-right:0}:host(:not([use_container])[size_xs="0"]){display:none}:host(:not([use_container])[size_xs="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_xs="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_right_xs="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[size_xs="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_xs="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_right_xs="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[size_xs="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_xs="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_right_xs="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[size_xs="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_xs="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_right_xs="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[size_xs="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_xs="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_right_xs="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[size_xs="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_xs="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_right_xs="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[size_xs="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_xs="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_right_xs="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[size_xs="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_xs="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_right_xs="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[size_xs="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_xs="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_right_xs="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[size_xs="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_xs="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_right_xs="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[size_xs="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_xs="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_right_xs="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[size_xs="12"]){width:100%}:host(:not([use_container])[offset_xs="12"]){margin-left:100%}:host(:not([use_container])[offset_right_xs="12"]){margin-right:100%}}@container row (min-width: 540px){:host([use_container][size_sm="0"]){width:0}:host([use_container][offset_sm="0"]){margin-left:0}:host([use_container][offset_right_sm="0"]){margin-right:0}:host([use_container][size_sm="0"]){display:none}:host([use_container][size_sm="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_sm="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_right_sm="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][size_sm="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_sm="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_right_sm="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][size_sm="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_sm="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_right_sm="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][size_sm="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_sm="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_right_sm="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][size_sm="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_sm="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_right_sm="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][size_sm="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_sm="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_right_sm="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][size_sm="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_sm="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_right_sm="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][size_sm="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_sm="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_right_sm="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][size_sm="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_sm="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_right_sm="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][size_sm="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_sm="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_right_sm="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][size_sm="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_sm="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_right_sm="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][size_sm="12"]){width:100%}:host([use_container][offset_sm="12"]){margin-left:100%}:host([use_container][offset_right_sm="12"]){margin-right:100%}}@media screen and (min-width: 540px){:host(:not([use_container])[size_sm="0"]){width:0}:host(:not([use_container])[offset_sm="0"]){margin-left:0}:host(:not([use_container])[offset_right_sm="0"]){margin-right:0}:host(:not([use_container])[size_sm="0"]){display:none}:host(:not([use_container])[size_sm="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_sm="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_right_sm="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[size_sm="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_sm="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_right_sm="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[size_sm="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_sm="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_right_sm="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[size_sm="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_sm="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_right_sm="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[size_sm="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_sm="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_right_sm="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[size_sm="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_sm="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_right_sm="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[size_sm="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_sm="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_right_sm="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[size_sm="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_sm="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_right_sm="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[size_sm="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_sm="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_right_sm="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[size_sm="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_sm="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_right_sm="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[size_sm="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_sm="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_right_sm="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[size_sm="12"]){width:100%}:host(:not([use_container])[offset_sm="12"]){margin-left:100%}:host(:not([use_container])[offset_right_sm="12"]){margin-right:100%}}@container row (min-width: 720px){:host([use_container][size_md="0"]){width:0}:host([use_container][offset_md="0"]){margin-left:0}:host([use_container][offset_right_md="0"]){margin-right:0}:host([use_container][size_md="0"]){display:none}:host([use_container][size_md="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_md="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_right_md="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][size_md="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_md="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_right_md="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][size_md="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_md="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_right_md="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][size_md="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_md="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_right_md="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][size_md="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_md="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_right_md="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][size_md="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_md="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_right_md="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][size_md="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_md="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_right_md="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][size_md="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_md="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_right_md="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][size_md="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_md="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_right_md="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][size_md="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_md="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_right_md="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][size_md="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_md="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_right_md="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][size_md="12"]){width:100%}:host([use_container][offset_md="12"]){margin-left:100%}:host([use_container][offset_right_md="12"]){margin-right:100%}}@media screen and (min-width: 720px){:host(:not([use_container])[size_md="0"]){width:0}:host(:not([use_container])[offset_md="0"]){margin-left:0}:host(:not([use_container])[offset_right_md="0"]){margin-right:0}:host(:not([use_container])[size_md="0"]){display:none}:host(:not([use_container])[size_md="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_md="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_right_md="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[size_md="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_md="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_right_md="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[size_md="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_md="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_right_md="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[size_md="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_md="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_right_md="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[size_md="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_md="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_right_md="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[size_md="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_md="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_right_md="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[size_md="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_md="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_right_md="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[size_md="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_md="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_right_md="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[size_md="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_md="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_right_md="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[size_md="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_md="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_right_md="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[size_md="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_md="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_right_md="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[size_md="12"]){width:100%}:host(:not([use_container])[offset_md="12"]){margin-left:100%}:host(:not([use_container])[offset_right_md="12"]){margin-right:100%}}@container row (min-width: 960px){:host([use_container][size_lg="0"]){width:0}:host([use_container][offset_lg="0"]){margin-left:0}:host([use_container][offset_right_lg="0"]){margin-right:0}:host([use_container][size_lg="0"]){display:none}:host([use_container][size_lg="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_lg="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_right_lg="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][size_lg="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_lg="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_right_lg="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][size_lg="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_lg="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_right_lg="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][size_lg="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_lg="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_right_lg="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][size_lg="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_lg="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_right_lg="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][size_lg="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_lg="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_right_lg="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][size_lg="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_lg="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_right_lg="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][size_lg="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_lg="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_right_lg="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][size_lg="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_lg="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_right_lg="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][size_lg="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_lg="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_right_lg="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][size_lg="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_lg="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_right_lg="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][size_lg="12"]){width:100%}:host([use_container][offset_lg="12"]){margin-left:100%}:host([use_container][offset_right_lg="12"]){margin-right:100%}}@media screen and (min-width: 960px){:host(:not([use_container])[size_lg="0"]){width:0}:host(:not([use_container])[offset_lg="0"]){margin-left:0}:host(:not([use_container])[offset_right_lg="0"]){margin-right:0}:host(:not([use_container])[size_lg="0"]){display:none}:host(:not([use_container])[size_lg="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_lg="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_right_lg="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[size_lg="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_lg="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_right_lg="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[size_lg="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_lg="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_right_lg="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[size_lg="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_lg="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_right_lg="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[size_lg="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_lg="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_right_lg="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[size_lg="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_lg="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_right_lg="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[size_lg="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_lg="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_right_lg="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[size_lg="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_lg="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_right_lg="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[size_lg="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_lg="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_right_lg="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[size_lg="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_lg="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_right_lg="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[size_lg="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_lg="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_right_lg="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[size_lg="12"]){width:100%}:host(:not([use_container])[offset_lg="12"]){margin-left:100%}:host(:not([use_container])[offset_right_lg="12"]){margin-right:100%}}@container row (min-width: 1140px){:host([use_container][size_xl="0"]){width:0}:host([use_container][offset_xl="0"]){margin-left:0}:host([use_container][offset_right_xl="0"]){margin-right:0}:host([use_container][size_xl="0"]){display:none}:host([use_container][size_xl="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_xl="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][offset_right_xl="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host([use_container][size_xl="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_xl="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][offset_right_xl="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host([use_container][size_xl="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_xl="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][offset_right_xl="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host([use_container][size_xl="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_xl="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][offset_right_xl="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host([use_container][size_xl="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_xl="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][offset_right_xl="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host([use_container][size_xl="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_xl="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][offset_right_xl="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host([use_container][size_xl="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_xl="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][offset_right_xl="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host([use_container][size_xl="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_xl="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][offset_right_xl="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host([use_container][size_xl="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_xl="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][offset_right_xl="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host([use_container][size_xl="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_xl="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][offset_right_xl="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host([use_container][size_xl="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_xl="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][offset_right_xl="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host([use_container][size_xl="12"]){width:100%}:host([use_container][offset_xl="12"]){margin-left:100%}:host([use_container][offset_right_xl="12"]){margin-right:100%}}@media screen and (min-width: 1140px){:host(:not([use_container])[size_xl="0"]){width:0}:host(:not([use_container])[offset_xl="0"]){margin-left:0}:host(:not([use_container])[offset_right_xl="0"]){margin-right:0}:host(:not([use_container])[size_xl="0"]){display:none}:host(:not([use_container])[size_xl="1"]){width:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_xl="1"]){margin-left:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[offset_right_xl="1"]){margin-right:calc(8.3333333333% - (var(--_col-gap-x, 0px) * 11 / 12))}:host(:not([use_container])[size_xl="2"]){width:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_xl="2"]){margin-left:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[offset_right_xl="2"]){margin-right:calc(16.6666666667% - (var(--_col-gap-x, 0px) * 5 / 6))}:host(:not([use_container])[size_xl="3"]){width:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_xl="3"]){margin-left:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[offset_right_xl="3"]){margin-right:calc(25% - (var(--_col-gap-x, 0px) * 3 / 4))}:host(:not([use_container])[size_xl="4"]){width:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_xl="4"]){margin-left:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[offset_right_xl="4"]){margin-right:calc(33.3333333333% - (var(--_col-gap-x, 0px) * 2 / 3))}:host(:not([use_container])[size_xl="5"]){width:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_xl="5"]){margin-left:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[offset_right_xl="5"]){margin-right:calc(41.6666666667% - (var(--_col-gap-x, 0px) * 1.4 / 2.4))}:host(:not([use_container])[size_xl="6"]){width:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_xl="6"]){margin-left:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[offset_right_xl="6"]){margin-right:calc(50% - (var(--_col-gap-x, 0px) * 1 / 2))}:host(:not([use_container])[size_xl="7"]){width:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_xl="7"]){margin-left:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[offset_right_xl="7"]){margin-right:calc(58.3333333333% - (var(--_col-gap-x, 0px) * 0.7142857143 / 1.7142857143))}:host(:not([use_container])[size_xl="8"]){width:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_xl="8"]){margin-left:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[offset_right_xl="8"]){margin-right:calc(66.6666666667% - (var(--_col-gap-x, 0px) * 0.5 / 1.5))}:host(:not([use_container])[size_xl="9"]){width:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_xl="9"]){margin-left:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[offset_right_xl="9"]){margin-right:calc(75% - (var(--_col-gap-x, 0px) * 0.3333333333 / 1.3333333333))}:host(:not([use_container])[size_xl="10"]){width:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_xl="10"]){margin-left:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[offset_right_xl="10"]){margin-right:calc(83.3333333333% - (var(--_col-gap-x, 0px) * 0.2 / 1.2))}:host(:not([use_container])[size_xl="11"]){width:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_xl="11"]){margin-left:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[offset_right_xl="11"]){margin-right:calc(91.6666666667% - (var(--_col-gap-x, 0px) * 0.0909090909 / 1.0909090909))}:host(:not([use_container])[size_xl="12"]){width:100%}:host(:not([use_container])[offset_xl="12"]){margin-left:100%}:host(:not([use_container])[offset_right_xl="12"]){margin-right:100%}}`;
     __getStatic() {
         return Col;
     }
@@ -9929,11 +10245,11 @@ Form.FormHandler=class FormHandler {
         this._extractor = config?.extractor ?? Form.FormHandler._globalConfig?.extractor ?? this.defaultExtractor;
         this._onSuccess = config?.onSuccess ?? Form.FormHandler._globalConfig?.onSuccess;
         this._submitFct = config?.submit;
-        this.defaultValues = config?.defaultValues ?? {};
+        this.defaultValues = structuredClone(config?.defaultValues ?? {});
         this.onWatcherChanged = this.onWatcherChanged.bind(this);
         this.__watcher = Aventus.Watcher.get({
             form: {},
-            item: this.defaultValues
+            item: structuredClone(this.defaultValues)
         }, this.onWatcherChanged);
         this.__watcher.form = this.transformForm(schema);
     }
@@ -10149,7 +10465,7 @@ Form.FormHandler=class FormHandler {
                     }
                     const proms = formPart.onValidation.trigger(errorsForm);
                     const errors2d = await Promise.all(proms);
-                    const errors = [];
+                    const errors = [...new Set(errorsForm)];
                     for (let errorsTemp of errors2d) {
                         for (let errorTemp of errorsTemp) {
                             if (!errors.includes(errorTemp)) {
@@ -10284,7 +10600,7 @@ Form.FormHandler=class FormHandler {
      * Reset form with default values
      */
     reset() {
-        this.item = this.defaultValues;
+        this.item = structuredClone(this.defaultValues);
     }
 }
 Form.FormHandler.Namespace=`Aventus.Form`;
@@ -11078,6 +11394,718 @@ Layout.GridHelper.Namespace=`Aventus.Layout`;
 Layout.GridHelper.Tag=`av-grid-helper`;
 __as1(_.Layout, 'GridHelper', Layout.GridHelper);
 if(!window.customElements.get('av-grid-helper')){window.customElements.define('av-grid-helper', Layout.GridHelper);Aventus.WebComponentInstance.registerDefinition(Layout.GridHelper);}
+
+Layout.Tabs.Tab = class Tab extends Aventus.WebComponent {
+    get 'selected'() { return this.getBoolAttr('selected') }
+    set 'selected'(val) { this.setBoolAttr('selected', val) }
+get 'loaded'() { return this.getBoolAttr('loaded') }
+    set 'loaded'(val) { this.setBoolAttr('loaded', val) }
+    tabHeader;
+    static __style = `:host(:not([loaded])){display:none}`;
+    constructor() {
+        super();
+        if (this.constructor == Tab) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return Tab;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Tab.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "Tab";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('selected')) { this.attributeChangedCallback('selected', false, false); }
+if(!this.hasAttribute('loaded')) { this.attributeChangedCallback('loaded', false, false); }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('selected');
+this.__upgradeProperty('loaded');
+ }
+    __listBoolProps() { return ["selected","loaded"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+}
+Layout.Tabs.Tab.Namespace=`Aventus.Layout.Tabs`;
+__as1(_.Layout.Tabs, 'Tab', Layout.Tabs.Tab);
+
+Toast.ToastElement = class ToastElement extends Aventus.WebComponent {
+    get 'position'() { return this.getStringAttr('position') }
+    set 'position'(val) { this.setStringAttr('position', val) }
+get 'delay'() { return this.getNumberAttr('delay') }
+    set 'delay'(val) { this.setNumberAttr('delay', val) }
+get 'is_active'() { return this.getBoolAttr('is_active') }
+    set 'is_active'(val) { this.setBoolAttr('is_active', val) }
+    showAsked = false;
+    onHideCallback = () => { };
+    timeout = 0;
+    hasTransition = false;
+    waitTransitionCbs = [];
+    static __style = `:host{position:absolute}:host(:not([is_active])){opacity:0;visibility:hidden}:host([position="bottom left"]){bottom:0px;left:0px}:host([position="top left"]){left:0;top:0}:host([position="bottom right"]){bottom:0;right:0}:host([position="top right"]){right:0;top:0}:host([position=top]){left:50%;top:0;transform:translateX(-50%)}:host([position=bottom]){bottom:0;left:50%;transform:translateX(-50%)}`;
+    constructor() {
+        super();
+        this.addTransition();
+        if (this.constructor == ToastElement) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return ToastElement;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(ToastElement.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "ToastElement";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('position')){ this['position'] = _.Toast.ToastManager.defaultPosition; }
+if(!this.hasAttribute('delay')){ this['delay'] = _.Toast.ToastManager.defaultDelay; }
+if(!this.hasAttribute('is_active')) { this.attributeChangedCallback('is_active', false, false); }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('position');
+this.__upgradeProperty('delay');
+this.__upgradeProperty('is_active');
+ }
+    __listBoolProps() { return ["is_active"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    _setOptions(options) {
+        if (options.position !== undefined)
+            this.position = options.position;
+        if (options.delay !== undefined)
+            this.delay = options.delay;
+        return this.setOptions(options);
+    }
+    show(onHideCallback) {
+        this.onHideCallback = onHideCallback;
+        if (this.isReady) {
+            this.is_active = true;
+            this.startDelay();
+        }
+        else {
+            this.showAsked = true;
+        }
+    }
+    startDelay() {
+        if (this.delay > 0) {
+            this.timeout = setTimeout(() => {
+                this.close();
+            }, this.delay);
+        }
+    }
+    async close() {
+        if (this.onHideCallback) {
+            this.is_active = false;
+            this.onHideCallback(false);
+            this.remove();
+        }
+    }
+    addTransition() {
+        this.addEventListener("transitionstart", (e) => {
+            this.hasTransition = true;
+        });
+        this.addEventListener("transitionend", () => {
+            this.hasTransition = false;
+            let cbs = [...this.waitTransitionCbs];
+            this.waitTransitionCbs = [];
+            for (let cb of cbs) {
+                cb();
+            }
+        });
+    }
+    waitTransition() {
+        if (this.hasTransition) {
+            return new Promise((resolve) => {
+                this.waitTransitionCbs.push(resolve);
+            });
+        }
+        return new Promise((resolve) => {
+            resolve();
+        });
+    }
+    postCreation() {
+        if (this.showAsked) {
+            this.is_active = true;
+            this.startDelay();
+        }
+    }
+    static add(options) {
+        return _.Toast.ToastManager.add(options);
+    }
+}
+Toast.ToastElement.Namespace=`Aventus.Toast`;
+__as1(_.Toast, 'ToastElement', Toast.ToastElement);
+
+Layout.Tabs.Tabs = class Tabs extends Aventus.WebComponent {
+    activeHeader;
+    tabs = {};
+    static __style = ``;
+    constructor() {
+        super();
+        if (this.constructor == Tabs) {
+            throw "can't instanciate an abstract class";
+        }
+        this.reloadFromSlot = this.reloadFromSlot.bind(this);
+    }
+    __getStatic() {
+        return Tabs;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Tabs.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<div class="header" _id="tabs_0"></div><div class="body" _id="tabs_1">
+	<slot></slot>
+</div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "headerEl",
+      "ids": [
+        "tabs_0"
+      ]
+    },
+    {
+      "name": "bodyEl",
+      "ids": [
+        "tabs_1"
+      ]
+    }
+  ]
+});
+ }
+    getClassName() {
+        return "Tabs";
+    }
+    async loadTabs() {
+        // let elements = this.elements;
+        let elements = this.getElementsInSlot();
+        let first = null;
+        for (let element of elements) {
+            if (element instanceof _.Layout.Tabs.Tab) {
+                element.style.display = 'none';
+                this.tabs[element.identifier()] = element;
+                let header = new (this.defineTabHeader())();
+                this.headerEl.appendChild(header);
+                await header.init(element, this);
+                if (first == null) {
+                    first = header;
+                }
+                else if (!first.tab.selected && element.selected) {
+                    first = header;
+                }
+                element.loaded = true;
+            }
+        }
+        if (first) {
+            this.setActive(first);
+        }
+        this.shadowRoot.querySelector("slot")?.addEventListener("slotchange", this.reloadFromSlot);
+    }
+    async reloadFromSlot() {
+        let elements = this.getElementsInSlot();
+        let actualTabs = Object.keys(this.tabs);
+        let first = null;
+        let orders = [];
+        for (let element of elements) {
+            if (element instanceof _.Layout.Tabs.Tab) {
+                element.style.display = 'none';
+                const el = element;
+                const identifier = element.identifier();
+                const indexActual = actualTabs.indexOf(identifier);
+                orders.push(identifier);
+                if (indexActual == -1) {
+                    this.tabs[identifier] = el;
+                    let header = new (this.defineTabHeader())();
+                    this.headerEl.appendChild(header);
+                    await header.init(el, this);
+                    if (first == null) {
+                        first = header;
+                    }
+                }
+                else {
+                    actualTabs.splice(indexActual, 1);
+                    if (first == null) {
+                        first = this.tabs[identifier].tabHeader;
+                    }
+                }
+                element.loaded = true;
+            }
+        }
+        for (let missing of actualTabs) {
+            this.tabs[missing].tabHeader?.remove();
+            delete this.tabs[missing];
+        }
+        let hasSelected = false;
+        for (let identifier in this.tabs) {
+            if (this.tabs[identifier].selected) {
+                if (!hasSelected) {
+                    hasSelected = true;
+                    first = this.tabs[identifier].tabHeader;
+                }
+                else {
+                    this.tabs[identifier].selected = false;
+                    this.tabs[identifier].tabHeader.active = false;
+                    this.tabs[identifier].style.display = 'none';
+                    this.tabs[identifier].selected = false;
+                }
+            }
+        }
+        if (first != null) {
+            this.setActive(first);
+        }
+        for (let i = 0, j = 0; i < orders.length; i++, j++) {
+            const shouldBe = this.tabs[orders[i]].tabHeader;
+            if (!shouldBe)
+                continue;
+            while (j < this.headerEl.children.length && !(this.headerEl.children[j] instanceof _.Layout.Tabs.TabHeader)) {
+                j++;
+            }
+            if (shouldBe != this.headerEl.children[j]) {
+                this.headerEl.appendChild(shouldBe);
+            }
+        }
+    }
+    setActive(tabHeader) {
+        if (typeof tabHeader == 'number') {
+            if (this.headerEl.children.length > tabHeader) {
+                const header = this.headerEl.children[tabHeader];
+                if (header instanceof _.Layout.Tabs.TabHeader) {
+                    return this.setActive(header);
+                }
+            }
+            return false;
+        }
+        else if (typeof tabHeader == 'string') {
+            const header = this.tabs[tabHeader]?.tabHeader;
+            if (header)
+                return this.setActive(header);
+            return false;
+        }
+        if (this.activeHeader) {
+            this.activeHeader.active = false;
+            this.activeHeader.tab.selected = false;
+            this.activeHeader.tab.style.display = 'none';
+        }
+        this.activeHeader = tabHeader;
+        this.activeHeader.active = true;
+        this.activeHeader.tab.style.display = '';
+        this.activeHeader.tab.selected = true;
+        return true;
+    }
+    postCreation() {
+        super.postCreation();
+        this.loadTabs();
+    }
+}
+Layout.Tabs.Tabs.Namespace=`Aventus.Layout.Tabs`;
+__as1(_.Layout.Tabs, 'Tabs', Layout.Tabs.Tabs);
+
+Modal.ModalElement = class ModalElement extends Aventus.WebComponent {
+    get 'options'() {
+						return this.__watch["options"];
+					}
+					set 'options'(val) {
+						this.__watch["options"] = val;
+					}
+    static defaultCloseWithEsc = true;
+    static defaultCloseWithClick = true;
+    static defaultRejectValue = null;
+    cb;
+    pressManagerClickClose;
+    pressManagerPrevent;
+    __registerWatchesActions() {
+    this.__addWatchesActions("options", ((target, action, path, value) => {
+    target.onOptionsChanged();
+}));
+    super.__registerWatchesActions();
+}
+    static __style = `:host{--_modal-z-index: var(--modal-z-index, 60)}:host{align-items:center;display:flex;inset:0;justify-content:center;position:fixed;z-index:var(--_modal-z-index)}:host .modal{background-color:#fff;padding:1.5rem;position:relative}`;
+    constructor() {
+        super();
+        this.options = this.configure();
+        if (this.options.closeWithClick === undefined)
+            this.options.closeWithClick = Modal.ModalElement.defaultCloseWithClick;
+        if (this.options.closeWithEsc === undefined)
+            this.options.closeWithEsc = Modal.ModalElement.defaultCloseWithEsc;
+        if (!Object.hasOwn(this.options, "rejectValue")) {
+            this.options.rejectValue = Modal.ModalElement.defaultRejectValue;
+        }
+        if (this.constructor == ModalElement) {
+            throw "can't instanciate an abstract class";
+        }
+        this.close = this.close.bind(this);
+        this.reject = this.reject.bind(this);
+        this.resolve = this.resolve.bind(this);
+    }
+    __getStatic() {
+        return ModalElement;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(ModalElement.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<div class="modal" _id="modalelement_0">
+	<slot></slot>
+</div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "modalEl",
+      "ids": [
+        "modalelement_0"
+      ]
+    }
+  ]
+});
+ }
+    getClassName() {
+        return "ModalElement";
+    }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["options"] = undefined;
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('options');
+ }
+    onOptionsChanged() { }
+    init(cb) {
+        this.cb = cb;
+        if (this.options.closeWithEsc) {
+            Lib.ShortcutManager.subscribe(Lib.SpecialTouch.Escape, this.reject, { replaceTemp: true });
+        }
+        if (this.options.closeWithClick) {
+            this.pressManagerClickClose = new Aventus.PressManager({
+                element: this,
+                onPress: () => {
+                    this.reject();
+                }
+            });
+            this.pressManagerPrevent = new Aventus.PressManager({
+                element: this.modalEl,
+                onPress: () => { }
+            });
+        }
+    }
+    show(element) {
+        return Modal.ModalElement._show(this, element);
+    }
+    close() {
+        Lib.ShortcutManager.unsubscribe(Lib.SpecialTouch.Escape, this.reject);
+        this.pressManagerClickClose?.destroy();
+        this.pressManagerPrevent?.destroy();
+        this.remove();
+    }
+    reject(no_close) {
+        if (this.cb) {
+            this.cb(this.options.rejectValue ?? null);
+        }
+        if (no_close !== true) {
+            this.close();
+        }
+    }
+    resolve(response, no_close) {
+        if (this.cb) {
+            this.cb(response);
+        }
+        if (no_close !== true) {
+            this.close();
+        }
+    }
+    postCreation() {
+        super.postCreation();
+        this.modalEl.setAttribute("role", "dialog");
+        this.modalEl.setAttribute("aria-modal", "true");
+    }
+    static configure(options) {
+        if (options.closeWithClick !== undefined)
+            this.defaultCloseWithClick = options.closeWithClick;
+        if (options.closeWithEsc !== undefined)
+            this.defaultCloseWithEsc = options.closeWithEsc;
+        if (Object.hasOwn(options, "rejectValue")) {
+            this.defaultRejectValue = options.rejectValue;
+        }
+    }
+    static _show(modal, element) {
+        return new Promise((resolve) => {
+            modal.init((response) => {
+                resolve(response);
+            });
+            if (!element) {
+                element = document.body;
+            }
+            element.appendChild(modal);
+        });
+    }
+}
+Modal.ModalElement.Namespace=`Aventus.Modal`;
+__as1(_.Modal, 'ModalElement', Modal.ModalElement);
+
+Toast.ToastManager = class ToastManager extends Aventus.WebComponent {
+    get 'not_main'() { return this.getBoolAttr('not_main') }
+    set 'not_main'(val) { this.setBoolAttr('not_main', val) }
+    static defaultToast;
+    static defaultToastManager;
+    static defaultPosition = 'top right';
+    static defaultDelay = 5000;
+    static gap = 10;
+    static heightLimitPercent = 100;
+    static instance;
+    activeToasts = {
+        top: [],
+        'top left': [],
+        'bottom left': [],
+        bottom: [],
+        'bottom right': [],
+        'top right': [],
+    };
+    waitingToasts = {
+        top: [],
+        'top left': [],
+        'bottom left': [],
+        bottom: [],
+        'bottom right': [],
+        'top right': [],
+    };
+    get containerHeight() {
+        return this.offsetHeight;
+    }
+    get heightLimit() {
+        return this.containerHeight * Toast.ToastManager.heightLimitPercent / 100;
+    }
+    mutex = new Aventus.Mutex();
+    static __style = `:host{--_toast-space-bottom: var(--toast-space-bottom, 20px);--_toast-space-top: var(--toast-space-top, 20px);--_toast-space-right: var(--toast-space-right, 10px);--_toast-space-left: var(--toast-space-left, 10px);--_toast-z-index: var(--toast-z-index, 70)}:host{bottom:var(--_toast-space-bottom);left:var(--_toast-space-left);overflow:visible;pointer-events:none;position:fixed;right:var(--_toast-space-right);top:var(--_toast-space-top);z-index:var(--_toast-z-index)}:host ::slotted(*){pointer-events:auto}`;
+    __getStatic() {
+        return ToastManager;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(ToastManager.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "ToastManager";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('not_main')) { this.attributeChangedCallback('not_main', false, false); }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('containerHeight');
+this.__correctGetter('heightLimit');
+this.__upgradeProperty('not_main');
+ }
+    __listBoolProps() { return ["not_main"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    async add(toast) {
+        await this.mutex.waitOne();
+        let realToast;
+        if (toast instanceof _.Toast.ToastElement) {
+            realToast = toast;
+        }
+        else {
+            if (!Toast.ToastManager.defaultToast)
+                throw "No default toast. Try ToastManager.configure()";
+            realToast = new Toast.ToastManager.defaultToast();
+            await realToast._setOptions(toast);
+        }
+        this.appendChild(realToast);
+        if (realToast.position == "bottom") {
+            return this._notifyBottom(realToast, true);
+        }
+        else if (realToast.position == "bottom left") {
+            return this._notifyBottomLeft(realToast, true);
+        }
+        else if (realToast.position == "top left") {
+            return this._notifyTopLeft(realToast, true);
+        }
+        else if (realToast.position == "bottom right") {
+            return this._notifyBottomRight(realToast, true);
+        }
+        else if (realToast.position == "top right") {
+            return this._notifyTopRight(realToast, true);
+        }
+        else if (realToast.position == "top") {
+            return this._notifyTop(realToast, true);
+        }
+        return false;
+    }
+    _calculateBottom(toast, firstTime, position) {
+        return new Promise(async (resolve) => {
+            let height = toast.offsetHeight;
+            const _remove = (result) => {
+                let index = this.activeToasts[position].indexOf(toast);
+                if (index > -1) {
+                    this.activeToasts[position].splice(index, 1);
+                }
+                if (this.waitingToasts[position].length > 0) {
+                    let nextNotif = this.waitingToasts[position].splice(0, 1)[0];
+                    this._calculateBottom(nextNotif, false, position);
+                }
+                else {
+                    let bottom = 0;
+                    for (let i = 0; i < this.activeToasts[position].length; i++) {
+                        let notif = this.activeToasts[position][i];
+                        notif.style.bottom = bottom + 'px';
+                        bottom += notif.offsetHeight + Toast.ToastManager.gap;
+                    }
+                }
+                resolve(result);
+            };
+            let length = this.activeToasts[position].length;
+            if (length == 0) {
+                this.activeToasts[position].push(toast);
+                toast.show(_remove);
+            }
+            else {
+                let totHeight = 0;
+                for (let notif of this.activeToasts[position]) {
+                    await notif.waitTransition();
+                    totHeight += notif.offsetHeight + Toast.ToastManager.gap;
+                }
+                if (totHeight + height < this.heightLimit) {
+                    this.activeToasts[position].splice(0, 0, toast);
+                    let bottom = 0;
+                    for (let i = 0; i < this.activeToasts[position].length; i++) {
+                        let notif = this.activeToasts[position][i];
+                        notif.style.bottom = bottom + 'px';
+                        bottom += notif.offsetHeight + Toast.ToastManager.gap;
+                    }
+                    toast.show(_remove);
+                }
+                else if (firstTime) {
+                    this.waitingToasts[position].push(toast);
+                }
+            }
+            this.mutex.release();
+        });
+    }
+    _calculateTop(toast, firstTime, position) {
+        return new Promise(async (resolve) => {
+            let height = toast.offsetHeight;
+            const _remove = (result) => {
+                let index = this.activeToasts[position].indexOf(toast);
+                if (index > -1) {
+                    this.activeToasts[position].splice(index, 1);
+                }
+                if (this.waitingToasts[position].length > 0) {
+                    let nextNotif = this.waitingToasts[position].splice(0, 1)[0];
+                    this._calculateTop(nextNotif, false, position);
+                }
+                else {
+                    let top = 0;
+                    for (let i = 0; i < this.activeToasts[position].length; i++) {
+                        let notif = this.activeToasts[position][i];
+                        notif.style.top = top + 'px';
+                        top += notif.offsetHeight + Toast.ToastManager.gap;
+                    }
+                }
+                resolve(result);
+            };
+            let length = this.activeToasts[position].length;
+            if (length == 0) {
+                this.activeToasts[position].push(toast);
+                toast.show(_remove);
+            }
+            else {
+                let totHeight = 0;
+                for (let notif of this.activeToasts[position]) {
+                    await notif.waitTransition();
+                    totHeight += notif.offsetHeight + Toast.ToastManager.gap;
+                }
+                if (totHeight + height < this.heightLimit) {
+                    this.activeToasts[position].splice(0, 0, toast);
+                    let top = 0;
+                    for (let i = 0; i < this.activeToasts[position].length; i++) {
+                        let notif = this.activeToasts[position][i];
+                        notif.style.top = top + 'px';
+                        top += notif.offsetHeight + Toast.ToastManager.gap;
+                    }
+                    toast.show(_remove);
+                }
+                else if (firstTime) {
+                    this.waitingToasts[position].push(toast);
+                }
+            }
+            this.mutex.release();
+        });
+    }
+    async _notifyBottomRight(toast, firstTime) {
+        return await this._calculateBottom(toast, firstTime, "bottom right");
+    }
+    async _notifyTopRight(toast, firstTime) {
+        return await this._calculateTop(toast, firstTime, "top right");
+    }
+    async _notifyBottomLeft(toast, firstTime) {
+        return await this._calculateBottom(toast, firstTime, "bottom left");
+    }
+    async _notifyTopLeft(toast, firstTime) {
+        return await this._calculateTop(toast, firstTime, "top left");
+    }
+    async _notifyTop(toast, firstTime) {
+        return await this._calculateTop(toast, firstTime, "top");
+    }
+    async _notifyBottom(toast, firstTime) {
+        return await this._calculateBottom(toast, firstTime, "bottom");
+    }
+    postConnect() {
+        super.postConnect();
+        if (!Toast.ToastManager.instance && !this.not_main) {
+            Toast.ToastManager.instance = this;
+        }
+    }
+    postDisconnect() {
+        if (Toast.ToastManager.instance == this) {
+            Toast.ToastManager.instance = undefined;
+        }
+    }
+    static add(toast) {
+        if (!this.instance) {
+            this.instance = this.defaultToastManager ? new this.defaultToastManager() : new Toast.ToastManager();
+            document.body.appendChild(this.instance);
+        }
+        return this.instance.add(toast);
+    }
+    static configure(options) {
+        const opts = options;
+        const t = this;
+        for (let key in options) {
+            if (opts[key] !== undefined)
+                t[key] = opts[key];
+        }
+    }
+}
+Toast.ToastManager.Namespace=`Aventus.Toast`;
+Toast.ToastManager.Tag=`av-toast-manager`;
+__as1(_.Toast, 'ToastManager', Toast.ToastManager);
+if(!window.customElements.get('av-toast-manager')){window.customElements.define('av-toast-manager', Toast.ToastManager);Aventus.WebComponentInstance.registerDefinition(Toast.ToastManager);}
 
 let TouchRecord=class TouchRecord {
     /**
@@ -12228,721 +13256,11 @@ Layout.AdvancedScrollable.Tag=`av-advanced-scrollable`;
 __as1(_.Layout, 'AdvancedScrollable', Layout.AdvancedScrollable);
 if(!window.customElements.get('av-advanced-scrollable')){window.customElements.define('av-advanced-scrollable', Layout.AdvancedScrollable);Aventus.WebComponentInstance.registerDefinition(Layout.AdvancedScrollable);}
 
-Layout.Tabs.Tab = class Tab extends Aventus.WebComponent {
-    get 'selected'() { return this.getBoolAttr('selected') }
-    set 'selected'(val) { this.setBoolAttr('selected', val) }
-get 'loaded'() { return this.getBoolAttr('loaded') }
-    set 'loaded'(val) { this.setBoolAttr('loaded', val) }
-    tabHeader;
-    static __style = `:host(:not([loaded])){display:none}`;
-    constructor() {
-        super();
-        if (this.constructor == Tab) {
-            throw "can't instanciate an abstract class";
-        }
-    }
-    __getStatic() {
-        return Tab;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(Tab.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
-    });
-}
-    getClassName() {
-        return "Tab";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('selected')) { this.attributeChangedCallback('selected', false, false); }
-if(!this.hasAttribute('loaded')) { this.attributeChangedCallback('loaded', false, false); }
- }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('selected');
-this.__upgradeProperty('loaded');
- }
-    __listBoolProps() { return ["selected","loaded"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-}
-Layout.Tabs.Tab.Namespace=`Aventus.Layout.Tabs`;
-__as1(_.Layout.Tabs, 'Tab', Layout.Tabs.Tab);
-
-Toast.ToastElement = class ToastElement extends Aventus.WebComponent {
-    get 'position'() { return this.getStringAttr('position') }
-    set 'position'(val) { this.setStringAttr('position', val) }
-get 'delay'() { return this.getNumberAttr('delay') }
-    set 'delay'(val) { this.setNumberAttr('delay', val) }
-get 'is_active'() { return this.getBoolAttr('is_active') }
-    set 'is_active'(val) { this.setBoolAttr('is_active', val) }
-    showAsked = false;
-    onHideCallback = () => { };
-    timeout = 0;
-    hasTransition = false;
-    waitTransitionCbs = [];
-    static __style = `:host{position:absolute}:host(:not([is_active])){opacity:0;visibility:hidden}:host([position="bottom left"]){bottom:0px;left:0px}:host([position="top left"]){left:0;top:0}:host([position="bottom right"]){bottom:0;right:0}:host([position="top right"]){right:0;top:0}:host([position=top]){left:50%;top:0;transform:translateX(-50%)}:host([position=bottom]){bottom:0;left:50%;transform:translateX(-50%)}`;
-    constructor() {
-        super();
-        this.addTransition();
-        if (this.constructor == ToastElement) {
-            throw "can't instanciate an abstract class";
-        }
-    }
-    __getStatic() {
-        return ToastElement;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(ToastElement.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
-    });
-}
-    getClassName() {
-        return "ToastElement";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('position')){ this['position'] = _.Toast.ToastManager.defaultPosition; }
-if(!this.hasAttribute('delay')){ this['delay'] = _.Toast.ToastManager.defaultDelay; }
-if(!this.hasAttribute('is_active')) { this.attributeChangedCallback('is_active', false, false); }
- }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('position');
-this.__upgradeProperty('delay');
-this.__upgradeProperty('is_active');
- }
-    __listBoolProps() { return ["is_active"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-    _setOptions(options) {
-        if (options.position !== undefined)
-            this.position = options.position;
-        if (options.delay !== undefined)
-            this.delay = options.delay;
-        return this.setOptions(options);
-    }
-    show(onHideCallback) {
-        this.onHideCallback = onHideCallback;
-        if (this.isReady) {
-            this.is_active = true;
-            this.startDelay();
-        }
-        else {
-            this.showAsked = true;
-        }
-    }
-    startDelay() {
-        if (this.delay > 0) {
-            this.timeout = setTimeout(() => {
-                this.close();
-            }, this.delay);
-        }
-    }
-    async close() {
-        if (this.onHideCallback) {
-            this.is_active = false;
-            this.onHideCallback(false);
-            this.remove();
-        }
-    }
-    addTransition() {
-        this.addEventListener("transitionstart", (e) => {
-            this.hasTransition = true;
-        });
-        this.addEventListener("transitionend", () => {
-            this.hasTransition = false;
-            let cbs = [...this.waitTransitionCbs];
-            this.waitTransitionCbs = [];
-            for (let cb of cbs) {
-                cb();
-            }
-        });
-    }
-    waitTransition() {
-        if (this.hasTransition) {
-            return new Promise((resolve) => {
-                this.waitTransitionCbs.push(resolve);
-            });
-        }
-        return new Promise((resolve) => {
-            resolve();
-        });
-    }
-    postCreation() {
-        if (this.showAsked) {
-            this.is_active = true;
-            this.startDelay();
-        }
-    }
-    static add(options) {
-        return _.Toast.ToastManager.add(options);
-    }
-}
-Toast.ToastElement.Namespace=`Aventus.Toast`;
-__as1(_.Toast, 'ToastElement', Toast.ToastElement);
-
-Layout.Tabs.Tabs = class Tabs extends Aventus.WebComponent {
-    activeHeader;
-    tabs = {};
-    static __style = ``;
-    constructor() {
-        super();
-        if (this.constructor == Tabs) {
-            throw "can't instanciate an abstract class";
-        }
-        this.reloadFromSlot = this.reloadFromSlot.bind(this);
-    }
-    __getStatic() {
-        return Tabs;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(Tabs.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<div class="header" _id="tabs_0"></div><div class="body" _id="tabs_1">
-	<slot></slot>
-</div>` }
-    });
-}
-    __registerTemplateAction() { super.__registerTemplateAction();
-this.__getStatic().__template.setActions({
-  "elements": [
-    {
-      "name": "headerEl",
-      "ids": [
-        "tabs_0"
-      ]
-    },
-    {
-      "name": "bodyEl",
-      "ids": [
-        "tabs_1"
-      ]
-    }
-  ]
-});
- }
-    getClassName() {
-        return "Tabs";
-    }
-    async loadTabs() {
-        // let elements = this.elements;
-        let elements = this.getElementsInSlot();
-        let first = null;
-        for (let element of elements) {
-            if (element instanceof _.Layout.Tabs.Tab) {
-                element.style.display = 'none';
-                this.tabs[element.identifier()] = element;
-                let header = new (this.defineTabHeader())();
-                this.headerEl.appendChild(header);
-                await header.init(element, this);
-                if (first == null) {
-                    first = header;
-                }
-                else if (!first.tab.selected && element.selected) {
-                    first = header;
-                }
-                element.loaded = true;
-            }
-        }
-        if (first) {
-            this.setActive(first);
-        }
-        this.shadowRoot.querySelector("slot")?.addEventListener("slotchange", this.reloadFromSlot);
-    }
-    async reloadFromSlot() {
-        let elements = this.getElementsInSlot();
-        let actualTabs = Object.keys(this.tabs);
-        let first = null;
-        let orders = [];
-        for (let element of elements) {
-            if (element instanceof _.Layout.Tabs.Tab) {
-                element.style.display = 'none';
-                const el = element;
-                const identifier = element.identifier();
-                const indexActual = actualTabs.indexOf(identifier);
-                orders.push(identifier);
-                if (indexActual == -1) {
-                    this.tabs[identifier] = el;
-                    let header = new (this.defineTabHeader())();
-                    this.headerEl.appendChild(header);
-                    await header.init(el, this);
-                    if (first == null) {
-                        first = header;
-                    }
-                }
-                else {
-                    actualTabs.splice(indexActual, 1);
-                    if (first == null) {
-                        first = this.tabs[identifier].tabHeader;
-                    }
-                }
-                element.loaded = true;
-            }
-        }
-        for (let missing of actualTabs) {
-            this.tabs[missing].tabHeader?.remove();
-            delete this.tabs[missing];
-        }
-        let hasSelected = false;
-        for (let identifier in this.tabs) {
-            if (this.tabs[identifier].selected) {
-                if (!hasSelected) {
-                    hasSelected = true;
-                    first = this.tabs[identifier].tabHeader;
-                }
-                else {
-                    this.tabs[identifier].selected = false;
-                    this.tabs[identifier].tabHeader.active = false;
-                    this.tabs[identifier].style.display = 'none';
-                    this.tabs[identifier].selected = false;
-                }
-            }
-        }
-        if (first != null) {
-            this.setActive(first);
-        }
-        for (let i = 0, j = 0; i < orders.length; i++, j++) {
-            const shouldBe = this.tabs[orders[i]].tabHeader;
-            if (!shouldBe)
-                continue;
-            while (j < this.headerEl.children.length && !(this.headerEl.children[j] instanceof _.Layout.Tabs.TabHeader)) {
-                j++;
-            }
-            if (shouldBe != this.headerEl.children[j]) {
-                this.headerEl.appendChild(shouldBe);
-            }
-        }
-    }
-    setActive(tabHeader) {
-        if (typeof tabHeader == 'number') {
-            if (this.headerEl.children.length > tabHeader) {
-                const header = this.headerEl.children[tabHeader];
-                if (header instanceof _.Layout.Tabs.TabHeader) {
-                    return this.setActive(header);
-                }
-            }
-            return false;
-        }
-        else if (typeof tabHeader == 'string') {
-            const header = this.tabs[tabHeader]?.tabHeader;
-            if (header)
-                return this.setActive(header);
-            return false;
-        }
-        if (this.activeHeader) {
-            this.activeHeader.active = false;
-            this.activeHeader.tab.selected = false;
-            this.activeHeader.tab.style.display = 'none';
-        }
-        this.activeHeader = tabHeader;
-        this.activeHeader.active = true;
-        this.activeHeader.tab.style.display = '';
-        this.activeHeader.tab.selected = true;
-        return true;
-    }
-    postCreation() {
-        super.postCreation();
-        this.loadTabs();
-    }
-}
-Layout.Tabs.Tabs.Namespace=`Aventus.Layout.Tabs`;
-__as1(_.Layout.Tabs, 'Tabs', Layout.Tabs.Tabs);
-
-Modal.ModalElement = class ModalElement extends Aventus.WebComponent {
-    get 'options'() {
-						return this.__watch["options"];
-					}
-					set 'options'(val) {
-						this.__watch["options"] = val;
-					}
-    static defaultCloseWithEsc = true;
-    static defaultCloseWithClick = true;
-    static defaultRejectValue = null;
-    cb;
-    pressManagerClickClose;
-    pressManagerPrevent;
-    __registerWatchesActions() {
-    this.__addWatchesActions("options", ((target, action, path, value) => {
-    target.onOptionsChanged();
-}));
-    super.__registerWatchesActions();
-}
-    static __style = `:host{--_modal-z-index: var(--modal-z-index, 60)}:host{align-items:center;display:flex;inset:0;justify-content:center;position:fixed;z-index:var(--_modal-z-index)}:host .modal{background-color:#fff;padding:1.5rem;position:relative}`;
-    constructor() {
-        super();
-        this.options = this.configure();
-        if (this.options.closeWithClick === undefined)
-            this.options.closeWithClick = Modal.ModalElement.defaultCloseWithClick;
-        if (this.options.closeWithEsc === undefined)
-            this.options.closeWithEsc = Modal.ModalElement.defaultCloseWithEsc;
-        if (!Object.hasOwn(this.options, "rejectValue")) {
-            this.options.rejectValue = Modal.ModalElement.defaultRejectValue;
-        }
-        if (this.constructor == ModalElement) {
-            throw "can't instanciate an abstract class";
-        }
-        this.close = this.close.bind(this);
-        this.reject = this.reject.bind(this);
-        this.resolve = this.resolve.bind(this);
-    }
-    __getStatic() {
-        return ModalElement;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(ModalElement.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<div class="modal" _id="modalelement_0">
-	<slot></slot>
-</div>` }
-    });
-}
-    __registerTemplateAction() { super.__registerTemplateAction();
-this.__getStatic().__template.setActions({
-  "elements": [
-    {
-      "name": "modalEl",
-      "ids": [
-        "modalelement_0"
-      ]
-    }
-  ]
-});
- }
-    getClassName() {
-        return "ModalElement";
-    }
-    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["options"] = undefined;
- }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('options');
- }
-    onOptionsChanged() { }
-    init(cb) {
-        this.cb = cb;
-        if (this.options.closeWithEsc) {
-            Lib.ShortcutManager.subscribe(Lib.SpecialTouch.Escape, this.reject, { replaceTemp: true });
-        }
-        if (this.options.closeWithClick) {
-            this.pressManagerClickClose = new Aventus.PressManager({
-                element: this,
-                onPress: () => {
-                    this.reject();
-                }
-            });
-            this.pressManagerPrevent = new Aventus.PressManager({
-                element: this.modalEl,
-                onPress: () => { }
-            });
-        }
-    }
-    show(element) {
-        return Modal.ModalElement._show(this, element);
-    }
-    close() {
-        Lib.ShortcutManager.unsubscribe(Lib.SpecialTouch.Escape, this.reject);
-        this.pressManagerClickClose?.destroy();
-        this.pressManagerPrevent?.destroy();
-        this.remove();
-    }
-    reject(no_close) {
-        if (this.cb) {
-            this.cb(this.options.rejectValue ?? null);
-        }
-        if (no_close !== true) {
-            this.close();
-        }
-    }
-    resolve(response, no_close) {
-        if (this.cb) {
-            this.cb(response);
-        }
-        if (no_close !== true) {
-            this.close();
-        }
-    }
-    postCreation() {
-        super.postCreation();
-        this.modalEl.setAttribute("role", "dialog");
-        this.modalEl.setAttribute("aria-modal", "true");
-    }
-    static configure(options) {
-        if (options.closeWithClick !== undefined)
-            this.defaultCloseWithClick = options.closeWithClick;
-        if (options.closeWithEsc !== undefined)
-            this.defaultCloseWithEsc = options.closeWithEsc;
-        if (Object.hasOwn(options, "rejectValue")) {
-            this.defaultRejectValue = options.rejectValue;
-        }
-    }
-    static _show(modal, element) {
-        return new Promise((resolve) => {
-            modal.init((response) => {
-                resolve(response);
-            });
-            if (!element) {
-                element = document.body;
-            }
-            element.appendChild(modal);
-        });
-    }
-}
-Modal.ModalElement.Namespace=`Aventus.Modal`;
-__as1(_.Modal, 'ModalElement', Modal.ModalElement);
-
-Toast.ToastManager = class ToastManager extends Aventus.WebComponent {
-    get 'not_main'() { return this.getBoolAttr('not_main') }
-    set 'not_main'(val) { this.setBoolAttr('not_main', val) }
-    static defaultToast;
-    static defaultToastManager;
-    static defaultPosition = 'top right';
-    static defaultDelay = 5000;
-    static gap = 10;
-    static heightLimitPercent = 100;
-    static instance;
-    activeToasts = {
-        top: [],
-        'top left': [],
-        'bottom left': [],
-        bottom: [],
-        'bottom right': [],
-        'top right': [],
-    };
-    waitingToasts = {
-        top: [],
-        'top left': [],
-        'bottom left': [],
-        bottom: [],
-        'bottom right': [],
-        'top right': [],
-    };
-    get containerHeight() {
-        return this.offsetHeight;
-    }
-    get heightLimit() {
-        return this.containerHeight * Toast.ToastManager.heightLimitPercent / 100;
-    }
-    mutex = new Aventus.Mutex();
-    static __style = `:host{--_toast-space-bottom: var(--toast-space-bottom, 20px);--_toast-space-top: var(--toast-space-top, 20px);--_toast-space-right: var(--toast-space-right, 10px);--_toast-space-left: var(--toast-space-left, 10px);--_toast-z-index: var(--toast-z-index, 70)}:host{bottom:var(--_toast-space-bottom);left:var(--_toast-space-left);overflow:visible;pointer-events:none;position:fixed;right:var(--_toast-space-right);top:var(--_toast-space-top);z-index:var(--_toast-z-index)}:host ::slotted(*){pointer-events:auto}`;
-    __getStatic() {
-        return ToastManager;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(ToastManager.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
-    });
-}
-    getClassName() {
-        return "ToastManager";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('not_main')) { this.attributeChangedCallback('not_main', false, false); }
- }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('containerHeight');
-this.__correctGetter('heightLimit');
-this.__upgradeProperty('not_main');
- }
-    __listBoolProps() { return ["not_main"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-    async add(toast) {
-        await this.mutex.waitOne();
-        let realToast;
-        if (toast instanceof _.Toast.ToastElement) {
-            realToast = toast;
-        }
-        else {
-            if (!Toast.ToastManager.defaultToast)
-                throw "No default toast. Try ToastManager.configure()";
-            realToast = new Toast.ToastManager.defaultToast();
-            await realToast._setOptions(toast);
-        }
-        this.appendChild(realToast);
-        if (realToast.position == "bottom") {
-            return this._notifyBottom(realToast, true);
-        }
-        else if (realToast.position == "bottom left") {
-            return this._notifyBottomLeft(realToast, true);
-        }
-        else if (realToast.position == "top left") {
-            return this._notifyTopLeft(realToast, true);
-        }
-        else if (realToast.position == "bottom right") {
-            return this._notifyBottomRight(realToast, true);
-        }
-        else if (realToast.position == "top right") {
-            return this._notifyTopRight(realToast, true);
-        }
-        else if (realToast.position == "top") {
-            return this._notifyTop(realToast, true);
-        }
-        return false;
-    }
-    _calculateBottom(toast, firstTime, position) {
-        return new Promise(async (resolve) => {
-            let height = toast.offsetHeight;
-            const _remove = (result) => {
-                let index = this.activeToasts[position].indexOf(toast);
-                if (index > -1) {
-                    this.activeToasts[position].splice(index, 1);
-                }
-                if (this.waitingToasts[position].length > 0) {
-                    let nextNotif = this.waitingToasts[position].splice(0, 1)[0];
-                    this._calculateBottom(nextNotif, false, position);
-                }
-                else {
-                    let bottom = 0;
-                    for (let i = 0; i < this.activeToasts[position].length; i++) {
-                        let notif = this.activeToasts[position][i];
-                        notif.style.bottom = bottom + 'px';
-                        bottom += notif.offsetHeight + Toast.ToastManager.gap;
-                    }
-                }
-                resolve(result);
-            };
-            let length = this.activeToasts[position].length;
-            if (length == 0) {
-                this.activeToasts[position].push(toast);
-                toast.show(_remove);
-            }
-            else {
-                let totHeight = 0;
-                for (let notif of this.activeToasts[position]) {
-                    await notif.waitTransition();
-                    totHeight += notif.offsetHeight + Toast.ToastManager.gap;
-                }
-                if (totHeight + height < this.heightLimit) {
-                    this.activeToasts[position].splice(0, 0, toast);
-                    let bottom = 0;
-                    for (let i = 0; i < this.activeToasts[position].length; i++) {
-                        let notif = this.activeToasts[position][i];
-                        notif.style.bottom = bottom + 'px';
-                        bottom += notif.offsetHeight + Toast.ToastManager.gap;
-                    }
-                    toast.show(_remove);
-                }
-                else if (firstTime) {
-                    this.waitingToasts[position].push(toast);
-                }
-            }
-            this.mutex.release();
-        });
-    }
-    _calculateTop(toast, firstTime, position) {
-        return new Promise(async (resolve) => {
-            let height = toast.offsetHeight;
-            const _remove = (result) => {
-                let index = this.activeToasts[position].indexOf(toast);
-                if (index > -1) {
-                    this.activeToasts[position].splice(index, 1);
-                }
-                if (this.waitingToasts[position].length > 0) {
-                    let nextNotif = this.waitingToasts[position].splice(0, 1)[0];
-                    this._calculateTop(nextNotif, false, position);
-                }
-                else {
-                    let top = 0;
-                    for (let i = 0; i < this.activeToasts[position].length; i++) {
-                        let notif = this.activeToasts[position][i];
-                        notif.style.top = top + 'px';
-                        top += notif.offsetHeight + Toast.ToastManager.gap;
-                    }
-                }
-                resolve(result);
-            };
-            let length = this.activeToasts[position].length;
-            if (length == 0) {
-                this.activeToasts[position].push(toast);
-                toast.show(_remove);
-            }
-            else {
-                let totHeight = 0;
-                for (let notif of this.activeToasts[position]) {
-                    await notif.waitTransition();
-                    totHeight += notif.offsetHeight + Toast.ToastManager.gap;
-                }
-                if (totHeight + height < this.heightLimit) {
-                    this.activeToasts[position].splice(0, 0, toast);
-                    let top = 0;
-                    for (let i = 0; i < this.activeToasts[position].length; i++) {
-                        let notif = this.activeToasts[position][i];
-                        notif.style.top = top + 'px';
-                        top += notif.offsetHeight + Toast.ToastManager.gap;
-                    }
-                    toast.show(_remove);
-                }
-                else if (firstTime) {
-                    this.waitingToasts[position].push(toast);
-                }
-            }
-            this.mutex.release();
-        });
-    }
-    async _notifyBottomRight(toast, firstTime) {
-        return await this._calculateBottom(toast, firstTime, "bottom right");
-    }
-    async _notifyTopRight(toast, firstTime) {
-        return await this._calculateTop(toast, firstTime, "top right");
-    }
-    async _notifyBottomLeft(toast, firstTime) {
-        return await this._calculateBottom(toast, firstTime, "bottom left");
-    }
-    async _notifyTopLeft(toast, firstTime) {
-        return await this._calculateTop(toast, firstTime, "top left");
-    }
-    async _notifyTop(toast, firstTime) {
-        return await this._calculateTop(toast, firstTime, "top");
-    }
-    async _notifyBottom(toast, firstTime) {
-        return await this._calculateBottom(toast, firstTime, "bottom");
-    }
-    postConnect() {
-        super.postConnect();
-        if (!Toast.ToastManager.instance && !this.not_main) {
-            Toast.ToastManager.instance = this;
-        }
-    }
-    postDisconnect() {
-        if (Toast.ToastManager.instance == this) {
-            Toast.ToastManager.instance = undefined;
-        }
-    }
-    static add(toast) {
-        if (!this.instance) {
-            this.instance = this.defaultToastManager ? new this.defaultToastManager() : new Toast.ToastManager();
-            document.body.appendChild(this.instance);
-        }
-        return this.instance.add(toast);
-    }
-    static configure(options) {
-        const opts = options;
-        const t = this;
-        for (let key in options) {
-            if (opts[key] !== undefined)
-                t[key] = opts[key];
-        }
-    }
-}
-Toast.ToastManager.Namespace=`Aventus.Toast`;
-Toast.ToastManager.Tag=`av-toast-manager`;
-__as1(_.Toast, 'ToastManager', Toast.ToastManager);
-if(!window.customElements.get('av-toast-manager')){window.customElements.define('av-toast-manager', Toast.ToastManager);Aventus.WebComponentInstance.registerDefinition(Toast.ToastManager);}
-
 
 for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
+
+
 
 var AventusWebsite;
 (AventusWebsite||(AventusWebsite = {}));
@@ -12953,6 +13271,37 @@ const _ = {};
 
 
 let _n;
+const DocUIAdvancedScrollableEditor1Compiled = class DocUIAdvancedScrollableEditor1Compiled extends Aventus.WebComponent {
+    static __style = `:host{height:200px;width:100%}:host av-advanced-scrollable{height:100%;width:100%}`;
+    __getStatic() {
+        return DocUIAdvancedScrollableEditor1Compiled;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIAdvancedScrollableEditor1Compiled.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<av-advanced-scrollable x_scroll y_scroll mouse_drag>
+  <div style="width: 2000px; 
+  height: 1500px; 
+  background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%); 
+  background-size: 10px 10px, 10px 10px;">
+    Large content here
+  </div>
+</av-advanced-scrollable>` }
+    });
+}
+    getClassName() {
+        return "DocUIAdvancedScrollableEditor1Compiled";
+    }
+}
+DocUIAdvancedScrollableEditor1Compiled.Namespace=`AventusWebsite`;
+DocUIAdvancedScrollableEditor1Compiled.Tag=`av-doc-u-i-advanced-scrollable-editor-1-compiled`;
+__as1(_, 'DocUIAdvancedScrollableEditor1Compiled', DocUIAdvancedScrollableEditor1Compiled);
+if(!window.customElements.get('av-doc-u-i-advanced-scrollable-editor-1-compiled')){window.customElements.define('av-doc-u-i-advanced-scrollable-editor-1-compiled', DocUIAdvancedScrollableEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIAdvancedScrollableEditor1Compiled);}
+
 const Tabs = class Tabs extends Aventus.WebComponent {
     static __style = ``;
     __getStatic() {
@@ -13179,37 +13528,6 @@ DocUITabsEditor1TabHeader.Namespace=`AventusWebsite`;
 DocUITabsEditor1TabHeader.Tag=`av-doc-u-i-tabs-editor-1-tab-header`;
 __as1(_, 'DocUITabsEditor1TabHeader', DocUITabsEditor1TabHeader);
 if(!window.customElements.get('av-doc-u-i-tabs-editor-1-tab-header')){window.customElements.define('av-doc-u-i-tabs-editor-1-tab-header', DocUITabsEditor1TabHeader);Aventus.WebComponentInstance.registerDefinition(DocUITabsEditor1TabHeader);}
-
-const DocUIAdvancedScrollableEditor1Compiled = class DocUIAdvancedScrollableEditor1Compiled extends Aventus.WebComponent {
-    static __style = `:host{height:200px;width:100%}:host av-advanced-scrollable{height:100%;width:100%}`;
-    __getStatic() {
-        return DocUIAdvancedScrollableEditor1Compiled;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIAdvancedScrollableEditor1Compiled.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<av-advanced-scrollable x_scroll y_scroll mouse_drag>
-  <div style="width: 2000px; 
-  height: 1500px; 
-  background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%); 
-  background-size: 10px 10px, 10px 10px;">
-    Large content here
-  </div>
-</av-advanced-scrollable>` }
-    });
-}
-    getClassName() {
-        return "DocUIAdvancedScrollableEditor1Compiled";
-    }
-}
-DocUIAdvancedScrollableEditor1Compiled.Namespace=`AventusWebsite`;
-DocUIAdvancedScrollableEditor1Compiled.Tag=`av-doc-u-i-advanced-scrollable-editor-1-compiled`;
-__as1(_, 'DocUIAdvancedScrollableEditor1Compiled', DocUIAdvancedScrollableEditor1Compiled);
-if(!window.customElements.get('av-doc-u-i-advanced-scrollable-editor-1-compiled')){window.customElements.define('av-doc-u-i-advanced-scrollable-editor-1-compiled', DocUIAdvancedScrollableEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIAdvancedScrollableEditor1Compiled);}
 
 const DocUIScrollableEditor1Compiled = class DocUIScrollableEditor1Compiled extends Aventus.WebComponent {
     static __style = `:host{height:200px;width:100%}:host av-scrollable{height:100%;width:100%}`;
@@ -20345,6 +20663,278 @@ DocUILink.Tag=`av-doc-u-i-link`;
 __as1(_, 'DocUILink', DocUILink);
 if(!window.customElements.get('av-doc-u-i-link')){window.customElements.define('av-doc-u-i-link', DocUILink);Aventus.WebComponentInstance.registerDefinition(DocUILink);}
 
+const DocUIAdvancedScrollable = class DocUIAdvancedScrollable extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIAdvancedScrollable;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIAdvancedScrollable.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>UI - Advanced Scrollable</h1><p>The <span class="cn">av-advanced-scrollable</span> component provides a custom, fully-featured scrollable container with
+    support for:</p><ul>
+    <li>Horizontal and vertical scrolling</li>
+    <li>Smooth momentum-based scrolling</li>
+    <li>Floating or static scrollbars</li>
+    <li>Auto-hide scrollbars</li>
+    <li>Mouse dragging</li>
+    <li>Touch and pinch-zoom support</li>
+    <li>Zooming on a point</li>
+    <li>Programmatic scrolling</li>
+</ul><p>It's ideal for applications that need precise control over scroll behavior, including drag-to-scroll, zoomable
+    content, and custom scrollbars.</p><h2 id="concept">Concept</h2><p><span class="cn">av-advanced-scrollable</span> wraps content in a scrollable container with custom scrollbars. Unlike native
+    scroll elements, it supports momentum, pinch zoom, and dragging, with fully customizable styling.</p><p>Example:</p><av-doc-u-i-advanced-scrollable-editor-1></av-doc-u-i-advanced-scrollable-editor-1><h2 id="attributes">Attributes</h2><div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Attribute</av-col>
+        <av-col size="4" center>Type</av-col>
+        <av-col size="4" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>x_scroll</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Enable horizontal scrolling. Default: false.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>y_scroll</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Enable vertical scrolling. Default: true. </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>floating_scroll</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>If true, scrollbars float over content instead of pushing it. </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>auto_hide</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Scrollbars hide automatically when not in use.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>disable</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Disables all user interaction with scrolling.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>flex</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Uses a vertical flex layout internally so child content can fill the remaining height.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>mouse_drag</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Enables dragging content with a mouse.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>pinch</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Enables pinch-to-zoom on touch devices.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>zoom</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Current zoom level of the content. Default: 1. </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>min_zoom</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Minimum allowed zoom level. Default: 1. </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>max_zoom</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Maximum allowed zoom level. Default: unlimited. </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>break</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Easing factor for momentum. Default: 0.1. </av-col>
+    </av-row>
+</div><h2 id="features">Features</h2><h3>1. Momentum-based scrolling</h3><p><span class="cn">av-advanced-scrollable</span> applies smooth momentum when dragging or using the mouse wheel. The break
+    attribute controls easing.</p><h3>2. Custom scrollbars</h3><ul>
+    <li>Scrollbars are separate DOM elements, styled with CSS variables.</li>
+    <li>Floating scrollbars can auto-hide after inactivity.</li>
+    <li>Supports drag-to-scroll directly on the scrollbars.</li>
+</ul><h3>3. Pinch-to-zoom</h3><ul>
+    <li>Works on touch devices with two fingers.</li>
+    <li>Zoom is centered on a point for precise control.</li>
+    <li>Zoom boundaries respect min_zoom and max_zoom.</li>
+    <li>Triggers onZoomChange callback when zoom changes.</li>
+</ul><h3>4. Mouse dragging</h3><ul>
+    <li>Drag content with mouse if mouse_drag is enabled.</li>
+    <li>Momentum continues after release for a natural feel.</li>
+</ul><h2 id="callbacks">Callbacks</h2><div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Callback</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>onScrollChange</av-col>
+        <av-col size="8">Triggered whenever the scroll position changes. Returns (x: number, y: number).</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>onZoomChange</av-col>
+        <av-col size="8">Triggered when the zoom level changes. Returns the new zoom number.</av-col>
+    </av-row>
+</div><h2 id="methods">Methods</h2><div class="table">
+    <av-row class="header">
+        <av-col size="6" center>Method</av-col>
+        <av-col size="6" center>Description</av-col>
+        </av-row>
+    <av-row>
+        <av-col size="6" center>scrollToPosition(x, y)</av-col>
+        <av-col size="6">Scrolls to specific pixel positions.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>scrollX(x)</av-col>
+        <av-col size="6">Scroll horizontally to pixel position.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>scrollXPercent(percent)</av-col>
+        <av-col size="6">Scroll horizontally as a percentage of total width.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>scrollY(y)</av-col>
+        <av-col size="6">Scroll vertically to pixel position.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>scrollYPercent(percent)</av-col>
+        <av-col size="6">Scroll vertically as a percentage of total height.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>zoomOnPoint(clientX, clientY, newZoom)</av-col>
+        <av-col size="6">Zoom centered at a screen point (clientX, clientY) to a specific zoom value.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>autoScrollRight(percent)</av-col>
+        <av-col size="6">Automatically scrolls right at a speed relative to content size.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>stopAutoScrollRight()</av-col>
+        <av-col size="6">Stops auto-scroll right.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>autoScrollLeft(percent)</av-col>
+        <av-col size="6">Automatically scrolls left.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>stopAutoScrollLeft()</av-col>
+        <av-col size="6">Stops auto-scroll left.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>autoScrollTop(percent)</av-col>
+        <av-col size="6">Automatically scrolls up.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>stopAutoScrollTop()</av-col>
+        <av-col size="6">Stops auto-scroll up.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>autoScrollBottom(percent)</av-col>
+        <av-col size="6">Automatically scrolls down.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>stopAutoScrollBottom()</av-col>
+        <av-col size="6">Stops auto-scroll down.</av-col>
+    </av-row>
+</div><h2 id="css-variables">CSS Variables</h2><div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Variable</av-col>
+        <av-col size="4" center>Default</av-col>
+        <av-col size="4" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scrollbar-container-color</av-col>
+        <av-col size="4" center>transparent</av-col>
+        <av-col size="4" center>Background color of scrollbar container.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scrollbar-color</av-col>
+        <av-col size="4" center>#757575</av-col>
+        <av-col size="4" center>Scrollbar color.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scrollbar-active-color</av-col>
+        <av-col size="4" center>#858585</av-col>
+        <av-col size="4" center>Scrollbar color when active/dragged.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scroller-width</av-col>
+        <av-col size="4" center>6px</av-col>
+        <av-col size="4" center>Width of scrollbar.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scroller-top</av-col>
+        <av-col size="4" center>3px</av-col>
+        <av-col size="4" center>Top padding of horizontal scrollbar.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scroller-bottom</av-col>
+        <av-col size="4" center>3px</av-col>
+        <av-col size="4" center>Bottom padding of horizontal scrollbar.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scroller-left</av-col>
+        <av-col size="4" center>3px</av-col>
+        <av-col size="4" center>Left padding of vertical scrollbar.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scroller-right</av-col>
+        <av-col size="4" center>3px</av-col>
+        <av-col size="4" center>Right padding of vertical scrollbar.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scrollbar-content-padding</av-col>
+        <av-col size="4" center>0</av-col>
+        <av-col size="4" center>Padding inside content-wrapper.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scrollbar-container-display</av-col>
+        <av-col size="4" center>inline-block</av-col>
+        <av-col size="4" center>Display type of content-wrapper.</av-col>
+    </av-row>
+</div><h2 id="notes">Notes</h2><ul>
+    <li>Scrollbars are automatically shown or hidden based on content size.</li>
+    <li><span class="cn">disable</span> temporarily locks scrolling and zooming.</li>
+    <li>Pinch zoom uses DOMMatrix transformations for smooth and accurate scaling.</li>
+    <li>Supports both pixel-based and percent-based scrolling.</li>
+    <li>Works in combination with Aventus PressManager for unified pointer/touch handling.</li>
+</ul>` }
+    });
+}
+    getClassName() {
+        return "DocUIAdvancedScrollable";
+    }
+    Title() {
+        return "How to Use the Advanced Scrollable Component in AventusJs";
+    }
+    Description() {
+        return "Learn how to use the Advanced Scrollable component in AventusJs to display scrollbars when needed. This guide covers both horizontal and vertical scrolling, automatic overflow handling, and integrating scrollable areas within your UI.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Advanced Scrollable",
+            "scrollbar component AventusJs",
+            "horizontal scroll AventusJs",
+            "vertical scroll AventusJs",
+            "Aventus UI components",
+            "styled scrollable area",
+            "overflow management",
+            "frontend scrolling AventusJs",
+            "scrollable container",
+            "Aventus scroll handling",
+        ];
+    }
+}
+DocUIAdvancedScrollable.Namespace=`AventusWebsite`;
+DocUIAdvancedScrollable.Tag=`av-doc-u-i-advanced-scrollable`;
+__as1(_, 'DocUIAdvancedScrollable', DocUIAdvancedScrollable);
+if(!window.customElements.get('av-doc-u-i-advanced-scrollable')){window.customElements.define('av-doc-u-i-advanced-scrollable', DocUIAdvancedScrollable);Aventus.WebComponentInstance.registerDefinition(DocUIAdvancedScrollable);}
+
 const DocUIImage = class DocUIImage extends DocGenericPage {
     static __style = ``;
     __getStatic() {
@@ -23789,6 +24379,52 @@ BaseEditor.Namespace=`AventusWebsite`;
 BaseEditor.Tag=`av-base-editor`;
 __as1(_, 'BaseEditor', BaseEditor);
 if(!window.customElements.get('av-base-editor')){window.customElements.define('av-base-editor', BaseEditor);Aventus.WebComponentInstance.registerDefinition(BaseEditor);}
+
+const DocUIAdvancedScrollableEditor1 = class DocUIAdvancedScrollableEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUIAdvancedScrollableEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIAdvancedScrollableEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Advanced Scrollable">
+    <av-code language="html" filename="index.html">
+        <pre>
+            &lt;av-advanced-scrollable x_scroll y_scroll mouse_drag&gt;
+                &lt;div style="width: 2000px; 
+                height: 1500px; 
+                background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%); 
+                background-size: 10px 10px, 10px 10px;"&gt;
+                    Large content here
+                &lt;/div&gt;
+            &lt;/av-advanced-scrollable&gt;
+        </pre>
+    </av-code></av-code>
+    <slot></slot>
+</av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUIAdvancedScrollableEditor1";
+    }
+    defineResult() {
+        const cont = document.createElement("DIV");
+        const ex1 = new DocUIAdvancedScrollableEditor1Compiled();
+        cont.appendChild(ex1);
+        return cont;
+    }
+}
+DocUIAdvancedScrollableEditor1.Namespace=`AventusWebsite`;
+DocUIAdvancedScrollableEditor1.Tag=`av-doc-u-i-advanced-scrollable-editor-1`;
+__as1(_, 'DocUIAdvancedScrollableEditor1', DocUIAdvancedScrollableEditor1);
+if(!window.customElements.get('av-doc-u-i-advanced-scrollable-editor-1')){window.customElements.define('av-doc-u-i-advanced-scrollable-editor-1', DocUIAdvancedScrollableEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIAdvancedScrollableEditor1);}
 
 const TutorialGenericPageEditor1 = class TutorialGenericPageEditor1 extends BaseEditor {
     static __style = ``;
@@ -36847,324 +37483,6 @@ DocUIScrollable.Namespace=`AventusWebsite`;
 DocUIScrollable.Tag=`av-doc-u-i-scrollable`;
 __as1(_, 'DocUIScrollable', DocUIScrollable);
 if(!window.customElements.get('av-doc-u-i-scrollable')){window.customElements.define('av-doc-u-i-scrollable', DocUIScrollable);Aventus.WebComponentInstance.registerDefinition(DocUIScrollable);}
-
-const DocUIAdvancedScrollableEditor1 = class DocUIAdvancedScrollableEditor1 extends BaseEditor {
-    static __style = ``;
-    __getStatic() {
-        return DocUIAdvancedScrollableEditor1;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIAdvancedScrollableEditor1.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Advanced Scrollable">
-    <av-code language="html" filename="index.html">
-        <pre>
-            &lt;av-advanced-scrollable x_scroll y_scroll mouse_drag&gt;
-                &lt;div style="width: 2000px; 
-                height: 1500px; 
-                background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%); 
-                background-size: 10px 10px, 10px 10px;"&gt;
-                    Large content here
-                &lt;/div&gt;
-            &lt;/av-advanced-scrollable&gt;
-        </pre>
-    </av-code></av-code>
-    <slot></slot>
-</av-code-editor>` }
-    });
-}
-    getClassName() {
-        return "DocUIAdvancedScrollableEditor1";
-    }
-    defineResult() {
-        const cont = document.createElement("DIV");
-        const ex1 = new DocUIAdvancedScrollableEditor1Compiled();
-        cont.appendChild(ex1);
-        return cont;
-    }
-}
-DocUIAdvancedScrollableEditor1.Namespace=`AventusWebsite`;
-DocUIAdvancedScrollableEditor1.Tag=`av-doc-u-i-advanced-scrollable-editor-1`;
-__as1(_, 'DocUIAdvancedScrollableEditor1', DocUIAdvancedScrollableEditor1);
-if(!window.customElements.get('av-doc-u-i-advanced-scrollable-editor-1')){window.customElements.define('av-doc-u-i-advanced-scrollable-editor-1', DocUIAdvancedScrollableEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIAdvancedScrollableEditor1);}
-
-const DocUIAdvancedScrollable = class DocUIAdvancedScrollable extends DocGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return DocUIAdvancedScrollable;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIAdvancedScrollable.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI - Advanced Scrollable</h1><p>The <span class="cn">av-advanced-scrollable</span> component provides a custom, fully-featured scrollable container with
-    support for:</p><ul>
-    <li>Horizontal and vertical scrolling</li>
-    <li>Smooth momentum-based scrolling</li>
-    <li>Floating or static scrollbars</li>
-    <li>Auto-hide scrollbars</li>
-    <li>Mouse dragging</li>
-    <li>Touch and pinch-zoom support</li>
-    <li>Zooming on a point</li>
-    <li>Programmatic scrolling</li>
-</ul><p>It's ideal for applications that need precise control over scroll behavior, including drag-to-scroll, zoomable
-    content, and custom scrollbars.</p><h2 id="concept">Concept</h2><p><span class="cn">av-advanced-scrollable</span> wraps content in a scrollable container with custom scrollbars. Unlike native
-    scroll elements, it supports momentum, pinch zoom, and dragging, with fully customizable styling.</p><p>Example:</p><av-doc-u-i-advanced-scrollable-editor-1></av-doc-u-i-advanced-scrollable-editor-1><h2 id="attributes">Attributes</h2><div class="table">
-    <av-row class="header">
-        <av-col size="4" center>Attribute</av-col>
-        <av-col size="4" center>Type</av-col>
-        <av-col size="4" center>Description</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>x_scroll</av-col>
-        <av-col size="4" center>boolean</av-col>
-        <av-col size="4" center>Enable horizontal scrolling. Default: false.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>y_scroll</av-col>
-        <av-col size="4" center>boolean</av-col>
-        <av-col size="4" center>Enable vertical scrolling. Default: true. </av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>floating_scroll</av-col>
-        <av-col size="4" center>boolean</av-col>
-        <av-col size="4" center>If true, scrollbars float over content instead of pushing it. </av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>auto_hide</av-col>
-        <av-col size="4" center>boolean</av-col>
-        <av-col size="4" center>Scrollbars hide automatically when not in use.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>disable</av-col>
-        <av-col size="4" center>boolean</av-col>
-        <av-col size="4" center>Disables all user interaction with scrolling.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>flex</av-col>
-        <av-col size="4" center>boolean</av-col>
-        <av-col size="4" center>Uses a vertical flex layout internally so child content can fill the remaining height.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>mouse_drag</av-col>
-        <av-col size="4" center>boolean</av-col>
-        <av-col size="4" center>Enables dragging content with a mouse.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>pinch</av-col>
-        <av-col size="4" center>boolean</av-col>
-        <av-col size="4" center>Enables pinch-to-zoom on touch devices.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>zoom</av-col>
-        <av-col size="4" center>number</av-col>
-        <av-col size="4" center>Current zoom level of the content. Default: 1. </av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>min_zoom</av-col>
-        <av-col size="4" center>number</av-col>
-        <av-col size="4" center>Minimum allowed zoom level. Default: 1. </av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>max_zoom</av-col>
-        <av-col size="4" center>number</av-col>
-        <av-col size="4" center>Maximum allowed zoom level. Default: unlimited. </av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>break</av-col>
-        <av-col size="4" center>number</av-col>
-        <av-col size="4" center>Easing factor for momentum. Default: 0.1. </av-col>
-    </av-row>
-</div><h2 id="features">Features</h2><h3>1. Momentum-based scrolling</h3><p><span class="cn">av-advanced-scrollable</span> applies smooth momentum when dragging or using the mouse wheel. The break
-    attribute controls easing.</p><h3>2. Custom scrollbars</h3><ul>
-    <li>Scrollbars are separate DOM elements, styled with CSS variables.</li>
-    <li>Floating scrollbars can auto-hide after inactivity.</li>
-    <li>Supports drag-to-scroll directly on the scrollbars.</li>
-</ul><h3>3. Pinch-to-zoom</h3><ul>
-    <li>Works on touch devices with two fingers.</li>
-    <li>Zoom is centered on a point for precise control.</li>
-    <li>Zoom boundaries respect min_zoom and max_zoom.</li>
-    <li>Triggers onZoomChange callback when zoom changes.</li>
-</ul><h3>4. Mouse dragging</h3><ul>
-    <li>Drag content with mouse if mouse_drag is enabled.</li>
-    <li>Momentum continues after release for a natural feel.</li>
-</ul><h2 id="callbacks">Callbacks</h2><div class="table">
-    <av-row class="header">
-        <av-col size="4" center>Callback</av-col>
-        <av-col size="8" center>Description</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>onScrollChange</av-col>
-        <av-col size="8">Triggered whenever the scroll position changes. Returns (x: number, y: number).</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>onZoomChange</av-col>
-        <av-col size="8">Triggered when the zoom level changes. Returns the new zoom number.</av-col>
-    </av-row>
-</div><h2 id="methods">Methods</h2><div class="table">
-    <av-row class="header">
-        <av-col size="6" center>Method</av-col>
-        <av-col size="6" center>Description</av-col>
-        </av-row>
-    <av-row>
-        <av-col size="6" center>scrollToPosition(x, y)</av-col>
-        <av-col size="6">Scrolls to specific pixel positions.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>scrollX(x)</av-col>
-        <av-col size="6">Scroll horizontally to pixel position.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>scrollXPercent(percent)</av-col>
-        <av-col size="6">Scroll horizontally as a percentage of total width.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>scrollY(y)</av-col>
-        <av-col size="6">Scroll vertically to pixel position.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>scrollYPercent(percent)</av-col>
-        <av-col size="6">Scroll vertically as a percentage of total height.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>zoomOnPoint(clientX, clientY, newZoom)</av-col>
-        <av-col size="6">Zoom centered at a screen point (clientX, clientY) to a specific zoom value.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>autoScrollRight(percent)</av-col>
-        <av-col size="6">Automatically scrolls right at a speed relative to content size.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>stopAutoScrollRight()</av-col>
-        <av-col size="6">Stops auto-scroll right.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>autoScrollLeft(percent)</av-col>
-        <av-col size="6">Automatically scrolls left.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>stopAutoScrollLeft()</av-col>
-        <av-col size="6">Stops auto-scroll left.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>autoScrollTop(percent)</av-col>
-        <av-col size="6">Automatically scrolls up.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>stopAutoScrollTop()</av-col>
-        <av-col size="6">Stops auto-scroll up.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>autoScrollBottom(percent)</av-col>
-        <av-col size="6">Automatically scrolls down.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>stopAutoScrollBottom()</av-col>
-        <av-col size="6">Stops auto-scroll down.</av-col>
-    </av-row>
-</div><h2 id="css-variables">CSS Variables</h2><div class="table">
-    <av-row class="header">
-        <av-col size="4" center>Variable</av-col>
-        <av-col size="4" center>Default</av-col>
-        <av-col size="4" center>Description</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scrollbar-container-color</av-col>
-        <av-col size="4" center>transparent</av-col>
-        <av-col size="4" center>Background color of scrollbar container.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scrollbar-color</av-col>
-        <av-col size="4" center>#757575</av-col>
-        <av-col size="4" center>Scrollbar color.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scrollbar-active-color</av-col>
-        <av-col size="4" center>#858585</av-col>
-        <av-col size="4" center>Scrollbar color when active/dragged.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scroller-width</av-col>
-        <av-col size="4" center>6px</av-col>
-        <av-col size="4" center>Width of scrollbar.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scroller-top</av-col>
-        <av-col size="4" center>3px</av-col>
-        <av-col size="4" center>Top padding of horizontal scrollbar.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scroller-bottom</av-col>
-        <av-col size="4" center>3px</av-col>
-        <av-col size="4" center>Bottom padding of horizontal scrollbar.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scroller-left</av-col>
-        <av-col size="4" center>3px</av-col>
-        <av-col size="4" center>Left padding of vertical scrollbar.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scroller-right</av-col>
-        <av-col size="4" center>3px</av-col>
-        <av-col size="4" center>Right padding of vertical scrollbar.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scrollbar-content-padding</av-col>
-        <av-col size="4" center>0</av-col>
-        <av-col size="4" center>Padding inside content-wrapper.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scrollbar-container-display</av-col>
-        <av-col size="4" center>inline-block</av-col>
-        <av-col size="4" center>Display type of content-wrapper.</av-col>
-    </av-row>
-</div><h2 id="notes">Notes</h2><ul>
-    <li>Scrollbars are automatically shown or hidden based on content size.</li>
-    <li><span class="cn">disable</span> temporarily locks scrolling and zooming.</li>
-    <li>Pinch zoom uses DOMMatrix transformations for smooth and accurate scaling.</li>
-    <li>Supports both pixel-based and percent-based scrolling.</li>
-    <li>Works in combination with Aventus PressManager for unified pointer/touch handling.</li>
-</ul>` }
-    });
-}
-    getClassName() {
-        return "DocUIAdvancedScrollable";
-    }
-    Title() {
-        return "How to Use the Advanced Scrollable Component in AventusJs";
-    }
-    Description() {
-        return "Learn how to use the Advanced Scrollable component in AventusJs to display scrollbars when needed. This guide covers both horizontal and vertical scrolling, automatic overflow handling, and integrating scrollable areas within your UI.";
-    }
-    Keywords() {
-        return [
-            "AventusJs Advanced Scrollable",
-            "scrollbar component AventusJs",
-            "horizontal scroll AventusJs",
-            "vertical scroll AventusJs",
-            "Aventus UI components",
-            "styled scrollable area",
-            "overflow management",
-            "frontend scrolling AventusJs",
-            "scrollable container",
-            "Aventus scroll handling",
-        ];
-    }
-}
-DocUIAdvancedScrollable.Namespace=`AventusWebsite`;
-DocUIAdvancedScrollable.Tag=`av-doc-u-i-advanced-scrollable`;
-__as1(_, 'DocUIAdvancedScrollable', DocUIAdvancedScrollable);
-if(!window.customElements.get('av-doc-u-i-advanced-scrollable')){window.customElements.define('av-doc-u-i-advanced-scrollable', DocUIAdvancedScrollable);Aventus.WebComponentInstance.registerDefinition(DocUIAdvancedScrollable);}
 
 const DocUITabsEditor1Tabs = class DocUITabsEditor1Tabs extends Aventus.Layout.Tabs.Tabs {
     static __style = `:host{width:100%}:host .header{border-bottom:1px solid var(--border);display:flex;gap:2rem;margin-top:2rem}:host .body{width:100%}`;

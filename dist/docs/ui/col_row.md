@@ -118,7 +118,9 @@ You can customize spacing easily using CSS variables:
 |Variable|Description|Default|
 |---|---|---|
 |--col-padding|Internal padding of a column|8px|
-|--col-gap|Horizontal gap between columns|0px|
+|--col-gap|Default horizontal and vertical gap|0px|
+|--col-gap-x|Horizontal gap, overriding --col-gap|--col-gap|
+|--col-gap-y|Vertical gap, overriding --col-gap|--col-gap|
 
 ## Row component
 
@@ -126,7 +128,7 @@ The &lt;av-row&gt; component:
 
 - Creates the grid container (display: flex; flex-wrap: wrap;)
 - Defines a container context (container-name: row; container-type: inline-size;)
-- Manages horizontal gaps between columns.
+- Manages independent horizontal and vertical gaps between columns.
 
 ### Technical Details
 

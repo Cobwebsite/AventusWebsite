@@ -185,6 +185,10 @@ export class Example extends Aventus.WebComponent implements Aventus.DefaultComp
 
 To help the user find out which fields are injectable into your component, you can use the <mark>@Injectable</mark> decorator.
 
+The view compiler checks the injected expression against the child field type. Unknown injectable fields and
+    incompatible values are reported as diagnostics. Expressions inside <mark>if</mark> blocks use the
+    narrowed type established by the condition.
+
 ```typescript filename=/Injection/src/Btn/Btn.wcl.avt
 export class Btn extends Aventus.WebComponent implements Aventus.DefaultComponent {
 

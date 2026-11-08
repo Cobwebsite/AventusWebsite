@@ -48,6 +48,26 @@ export class PersonRAM extends Aventus.Ram<Person> implements Aventus.IRam {
     protected override getTypeForData(objJson: Aventus.KeysObject<Person> | Person): new () => Person {
         return Person;
     }
+    protected override async transformCreateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        const result = new Aventus.ResultWithError<Person>();
+        result.result = item;
+        return result;
+    }
+
+    protected override async transformCreateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        const result = new Aventus.ResultWithError<Person[]>();
+        result.result = items;
+        return result;
+    }
+
+    protected override async transformUpdateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        return this.transformCreateRequestToItem(item);
+    }
+
+    protected override async transformUpdateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        return this.transformCreateRequestListToItem(items);
+    }
+
 
 }
 ```
@@ -94,11 +114,17 @@ export async function queryWithError() {
 
 For the future explanations, only the functions in normal format will be explained
 
+CRUD inputs use the RAM's <mark>Request</mark> type, while returned and stored items use
+    &nbsp;<mark>RamItem&lt;ResourceDetails, Request&gt;</mark>. Consequently, an item's
+    &nbsp;<mark>update(request)</mark> method sends the request directly through the RAM and returns the unique
+    stored instance.
+
 ### Read
 
 |Function|Description|
 |---|---|
-|getAll|Return all items stored inside the RAM like {[index: Index] : T}         &nbsp;|
+|getAll|Return all items stored inside the RAM as an array.         &nbsp;|
+|getRecords|Return all items as a <mark>Map&lt;Index, RamItem&gt;</mark>.|
 |getList|Return all items stored inside the RAM like T[]         &nbsp;|
 |getById|Return the item where the index is egal to the parameter             provide|
 |get|Alias for <mark>getById</mark>|
@@ -137,6 +163,26 @@ export class PersonRAM extends Aventus.Ram<Person> implements Aventus.IRam {
     protected override getTypeForData(objJson: Aventus.KeysObject<Person> | Person): new () => Person {
         return Person;
     }
+    protected override async transformCreateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        const result = new Aventus.ResultWithError<Person>();
+        result.result = item;
+        return result;
+    }
+
+    protected override async transformCreateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        const result = new Aventus.ResultWithError<Person[]>();
+        result.result = items;
+        return result;
+    }
+
+    protected override async transformUpdateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        return this.transformCreateRequestToItem(item);
+    }
+
+    protected override async transformUpdateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        return this.transformCreateRequestListToItem(items);
+    }
+
 
 }
 ```
@@ -151,7 +197,8 @@ import { PersonRAM } from "./Person.ram.avt";
 export async function readFunction() {
     const person1: Aventus.RamItem<Person> | undefined = await PersonRAM.getInstance().get(1);
     const person2: Aventus.RamItem<Person> | undefined = await PersonRAM.getInstance().getById(1);
-    const people1: Map<number, Aventus.RamItem<Person>> = await PersonRAM.getInstance().getAll();
+    const people1: Aventus.RamItem<Person>[] = await PersonRAM.getInstance().getAll();
+    const records: Map<number, Aventus.RamItem<Person>> = await PersonRAM.getInstance().getRecords();
     const people2: Aventus.RamItem<Person>[] = await PersonRAM.getInstance().getList();
     const people3: Aventus.RamItem<Person>[] = await PersonRAM.getInstance().getByIds([1, 2]);
 }
@@ -211,6 +258,26 @@ export class PersonRAM extends Aventus.Ram<Person> implements Aventus.IRam {
     protected override getTypeForData(objJson: Aventus.KeysObject<Person> | Person): new () => Person {
         return Person;
     }
+    protected override async transformCreateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        const result = new Aventus.ResultWithError<Person>();
+        result.result = item;
+        return result;
+    }
+
+    protected override async transformCreateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        const result = new Aventus.ResultWithError<Person[]>();
+        result.result = items;
+        return result;
+    }
+
+    protected override async transformUpdateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        return this.transformCreateRequestToItem(item);
+    }
+
+    protected override async transformUpdateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        return this.transformCreateRequestListToItem(items);
+    }
+
 
 }
 ```
@@ -289,6 +356,26 @@ export class PersonRAM extends Aventus.Ram<Person> implements Aventus.IRam {
     protected override getTypeForData(objJson: Aventus.KeysObject<Person> | Person): new () => Person {
         return Person;
     }
+    protected override async transformCreateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        const result = new Aventus.ResultWithError<Person>();
+        result.result = item;
+        return result;
+    }
+
+    protected override async transformCreateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        const result = new Aventus.ResultWithError<Person[]>();
+        result.result = items;
+        return result;
+    }
+
+    protected override async transformUpdateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        return this.transformCreateRequestToItem(item);
+    }
+
+    protected override async transformUpdateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        return this.transformCreateRequestListToItem(items);
+    }
+
 
 }
 ```
@@ -367,6 +454,26 @@ export class PersonRAM extends Aventus.Ram<Person> implements Aventus.IRam {
     protected override getTypeForData(objJson: Aventus.KeysObject<Person> | Person): new () => Person {
         return Person;
     }
+    protected override async transformCreateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        const result = new Aventus.ResultWithError<Person>();
+        result.result = item;
+        return result;
+    }
+
+    protected override async transformCreateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        const result = new Aventus.ResultWithError<Person[]>();
+        result.result = items;
+        return result;
+    }
+
+    protected override async transformUpdateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        return this.transformCreateRequestToItem(item);
+    }
+
+    protected override async transformUpdateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        return this.transformCreateRequestListToItem(items);
+    }
+
 
 }
 ```
@@ -407,7 +514,8 @@ The last thing to know is that once an item a stored inside the ram, the item re
 
 ```typescript filename=Test.lib.avt
 export async function test() {
-	let person1: Person = await PersonRAM.getInstance().get(1);
+	let person1: Person | undefined = await PersonRAM.getInstance().get(1);
+	if(!person1) return;
 	person1.name = "John Doe 2";
 	const person: Person = await PersonRAM.getInstance().update(person1);
 	// person == person1 => true
