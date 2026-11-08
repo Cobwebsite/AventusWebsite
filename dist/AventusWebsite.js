@@ -7956,6 +7956,71 @@ _.Toast = Aventus.Toast ?? {};
 let Modal = {};
 _.Modal = Aventus.Modal ?? {};
 let _n;
+Layout.Tabs.TabHeader = class TabHeader extends Aventus.WebComponent {
+    get 'active'() { return this.getBoolAttr('active') }
+    set 'active'(val) { this.setBoolAttr('active', val) }
+    _tab;
+    get tab() {
+        return this._tab;
+    }
+    tabs;
+    static __style = ``;
+    constructor() {
+        super();
+        if (this.constructor == TabHeader) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return TabHeader;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(TabHeader.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "TabHeader";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('active')) { this.attributeChangedCallback('active', false, false); }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('tab');
+this.__upgradeProperty('active');
+ }
+    __listBoolProps() { return ["active"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    async init(tab, tabs) {
+        this.tabs = tabs;
+        this._tab = tab;
+        tab.tabHeader = this;
+        await this.render();
+    }
+    onPress() {
+        if (!this.active) {
+            this.tabs.setActive(this);
+        }
+    }
+    addPress() {
+        new Aventus.PressManager({
+            element: this,
+            onPress: () => {
+                this.onPress();
+            }
+        });
+    }
+    postCreation() {
+        super.postCreation();
+        this.addPress();
+    }
+}
+Layout.Tabs.TabHeader.Namespace=`Aventus.Layout.Tabs`;
+__as1(_.Layout.Tabs, 'TabHeader', Layout.Tabs.TabHeader);
+
 let Tracker=class Tracker {
     /**
      * Multiplier for velocity calculations based on device pixel ratio.
@@ -8022,71 +8087,6 @@ let Tracker=class Tracker {
 }
 Tracker.Namespace=`Aventus`;
 __as1(_, 'Tracker', Tracker);
-
-Layout.Tabs.TabHeader = class TabHeader extends Aventus.WebComponent {
-    get 'active'() { return this.getBoolAttr('active') }
-    set 'active'(val) { this.setBoolAttr('active', val) }
-    _tab;
-    get tab() {
-        return this._tab;
-    }
-    tabs;
-    static __style = ``;
-    constructor() {
-        super();
-        if (this.constructor == TabHeader) {
-            throw "can't instanciate an abstract class";
-        }
-    }
-    __getStatic() {
-        return TabHeader;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(TabHeader.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
-    });
-}
-    getClassName() {
-        return "TabHeader";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('active')) { this.attributeChangedCallback('active', false, false); }
- }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('tab');
-this.__upgradeProperty('active');
- }
-    __listBoolProps() { return ["active"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-    async init(tab, tabs) {
-        this.tabs = tabs;
-        this._tab = tab;
-        tab.tabHeader = this;
-        await this.render();
-    }
-    onPress() {
-        if (!this.active) {
-            this.tabs.setActive(this);
-        }
-    }
-    addPress() {
-        new Aventus.PressManager({
-            element: this,
-            onPress: () => {
-                this.onPress();
-            }
-        });
-    }
-    postCreation() {
-        super.postCreation();
-        this.addPress();
-    }
-}
-Layout.Tabs.TabHeader.Namespace=`Aventus.Layout.Tabs`;
-__as1(_.Layout.Tabs, 'TabHeader', Layout.Tabs.TabHeader);
 
 Layout.GridGuideHelper = class GridGuideHelper extends Aventus.WebComponent {
     get 'direction'() { return this.getStringAttr('direction') }
@@ -11395,718 +11395,6 @@ Layout.GridHelper.Tag=`av-grid-helper`;
 __as1(_.Layout, 'GridHelper', Layout.GridHelper);
 if(!window.customElements.get('av-grid-helper')){window.customElements.define('av-grid-helper', Layout.GridHelper);Aventus.WebComponentInstance.registerDefinition(Layout.GridHelper);}
 
-Layout.Tabs.Tab = class Tab extends Aventus.WebComponent {
-    get 'selected'() { return this.getBoolAttr('selected') }
-    set 'selected'(val) { this.setBoolAttr('selected', val) }
-get 'loaded'() { return this.getBoolAttr('loaded') }
-    set 'loaded'(val) { this.setBoolAttr('loaded', val) }
-    tabHeader;
-    static __style = `:host(:not([loaded])){display:none}`;
-    constructor() {
-        super();
-        if (this.constructor == Tab) {
-            throw "can't instanciate an abstract class";
-        }
-    }
-    __getStatic() {
-        return Tab;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(Tab.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
-    });
-}
-    getClassName() {
-        return "Tab";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('selected')) { this.attributeChangedCallback('selected', false, false); }
-if(!this.hasAttribute('loaded')) { this.attributeChangedCallback('loaded', false, false); }
- }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('selected');
-this.__upgradeProperty('loaded');
- }
-    __listBoolProps() { return ["selected","loaded"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-}
-Layout.Tabs.Tab.Namespace=`Aventus.Layout.Tabs`;
-__as1(_.Layout.Tabs, 'Tab', Layout.Tabs.Tab);
-
-Toast.ToastElement = class ToastElement extends Aventus.WebComponent {
-    get 'position'() { return this.getStringAttr('position') }
-    set 'position'(val) { this.setStringAttr('position', val) }
-get 'delay'() { return this.getNumberAttr('delay') }
-    set 'delay'(val) { this.setNumberAttr('delay', val) }
-get 'is_active'() { return this.getBoolAttr('is_active') }
-    set 'is_active'(val) { this.setBoolAttr('is_active', val) }
-    showAsked = false;
-    onHideCallback = () => { };
-    timeout = 0;
-    hasTransition = false;
-    waitTransitionCbs = [];
-    static __style = `:host{position:absolute}:host(:not([is_active])){opacity:0;visibility:hidden}:host([position="bottom left"]){bottom:0px;left:0px}:host([position="top left"]){left:0;top:0}:host([position="bottom right"]){bottom:0;right:0}:host([position="top right"]){right:0;top:0}:host([position=top]){left:50%;top:0;transform:translateX(-50%)}:host([position=bottom]){bottom:0;left:50%;transform:translateX(-50%)}`;
-    constructor() {
-        super();
-        this.addTransition();
-        if (this.constructor == ToastElement) {
-            throw "can't instanciate an abstract class";
-        }
-    }
-    __getStatic() {
-        return ToastElement;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(ToastElement.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
-    });
-}
-    getClassName() {
-        return "ToastElement";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('position')){ this['position'] = _.Toast.ToastManager.defaultPosition; }
-if(!this.hasAttribute('delay')){ this['delay'] = _.Toast.ToastManager.defaultDelay; }
-if(!this.hasAttribute('is_active')) { this.attributeChangedCallback('is_active', false, false); }
- }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('position');
-this.__upgradeProperty('delay');
-this.__upgradeProperty('is_active');
- }
-    __listBoolProps() { return ["is_active"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-    _setOptions(options) {
-        if (options.position !== undefined)
-            this.position = options.position;
-        if (options.delay !== undefined)
-            this.delay = options.delay;
-        return this.setOptions(options);
-    }
-    show(onHideCallback) {
-        this.onHideCallback = onHideCallback;
-        if (this.isReady) {
-            this.is_active = true;
-            this.startDelay();
-        }
-        else {
-            this.showAsked = true;
-        }
-    }
-    startDelay() {
-        if (this.delay > 0) {
-            this.timeout = setTimeout(() => {
-                this.close();
-            }, this.delay);
-        }
-    }
-    async close() {
-        if (this.onHideCallback) {
-            this.is_active = false;
-            this.onHideCallback(false);
-            this.remove();
-        }
-    }
-    addTransition() {
-        this.addEventListener("transitionstart", (e) => {
-            this.hasTransition = true;
-        });
-        this.addEventListener("transitionend", () => {
-            this.hasTransition = false;
-            let cbs = [...this.waitTransitionCbs];
-            this.waitTransitionCbs = [];
-            for (let cb of cbs) {
-                cb();
-            }
-        });
-    }
-    waitTransition() {
-        if (this.hasTransition) {
-            return new Promise((resolve) => {
-                this.waitTransitionCbs.push(resolve);
-            });
-        }
-        return new Promise((resolve) => {
-            resolve();
-        });
-    }
-    postCreation() {
-        if (this.showAsked) {
-            this.is_active = true;
-            this.startDelay();
-        }
-    }
-    static add(options) {
-        return _.Toast.ToastManager.add(options);
-    }
-}
-Toast.ToastElement.Namespace=`Aventus.Toast`;
-__as1(_.Toast, 'ToastElement', Toast.ToastElement);
-
-Layout.Tabs.Tabs = class Tabs extends Aventus.WebComponent {
-    activeHeader;
-    tabs = {};
-    static __style = ``;
-    constructor() {
-        super();
-        if (this.constructor == Tabs) {
-            throw "can't instanciate an abstract class";
-        }
-        this.reloadFromSlot = this.reloadFromSlot.bind(this);
-    }
-    __getStatic() {
-        return Tabs;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(Tabs.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<div class="header" _id="tabs_0"></div><div class="body" _id="tabs_1">
-	<slot></slot>
-</div>` }
-    });
-}
-    __registerTemplateAction() { super.__registerTemplateAction();
-this.__getStatic().__template.setActions({
-  "elements": [
-    {
-      "name": "headerEl",
-      "ids": [
-        "tabs_0"
-      ]
-    },
-    {
-      "name": "bodyEl",
-      "ids": [
-        "tabs_1"
-      ]
-    }
-  ]
-});
- }
-    getClassName() {
-        return "Tabs";
-    }
-    async loadTabs() {
-        // let elements = this.elements;
-        let elements = this.getElementsInSlot();
-        let first = null;
-        for (let element of elements) {
-            if (element instanceof _.Layout.Tabs.Tab) {
-                element.style.display = 'none';
-                this.tabs[element.identifier()] = element;
-                let header = new (this.defineTabHeader())();
-                this.headerEl.appendChild(header);
-                await header.init(element, this);
-                if (first == null) {
-                    first = header;
-                }
-                else if (!first.tab.selected && element.selected) {
-                    first = header;
-                }
-                element.loaded = true;
-            }
-        }
-        if (first) {
-            this.setActive(first);
-        }
-        this.shadowRoot.querySelector("slot")?.addEventListener("slotchange", this.reloadFromSlot);
-    }
-    async reloadFromSlot() {
-        let elements = this.getElementsInSlot();
-        let actualTabs = Object.keys(this.tabs);
-        let first = null;
-        let orders = [];
-        for (let element of elements) {
-            if (element instanceof _.Layout.Tabs.Tab) {
-                element.style.display = 'none';
-                const el = element;
-                const identifier = element.identifier();
-                const indexActual = actualTabs.indexOf(identifier);
-                orders.push(identifier);
-                if (indexActual == -1) {
-                    this.tabs[identifier] = el;
-                    let header = new (this.defineTabHeader())();
-                    this.headerEl.appendChild(header);
-                    await header.init(el, this);
-                    if (first == null) {
-                        first = header;
-                    }
-                }
-                else {
-                    actualTabs.splice(indexActual, 1);
-                    if (first == null) {
-                        first = this.tabs[identifier].tabHeader;
-                    }
-                }
-                element.loaded = true;
-            }
-        }
-        for (let missing of actualTabs) {
-            this.tabs[missing].tabHeader?.remove();
-            delete this.tabs[missing];
-        }
-        let hasSelected = false;
-        for (let identifier in this.tabs) {
-            if (this.tabs[identifier].selected) {
-                if (!hasSelected) {
-                    hasSelected = true;
-                    first = this.tabs[identifier].tabHeader;
-                }
-                else {
-                    this.tabs[identifier].selected = false;
-                    this.tabs[identifier].tabHeader.active = false;
-                    this.tabs[identifier].style.display = 'none';
-                    this.tabs[identifier].selected = false;
-                }
-            }
-        }
-        if (first != null) {
-            this.setActive(first);
-        }
-        for (let i = 0, j = 0; i < orders.length; i++, j++) {
-            const shouldBe = this.tabs[orders[i]].tabHeader;
-            if (!shouldBe)
-                continue;
-            while (j < this.headerEl.children.length && !(this.headerEl.children[j] instanceof _.Layout.Tabs.TabHeader)) {
-                j++;
-            }
-            if (shouldBe != this.headerEl.children[j]) {
-                this.headerEl.appendChild(shouldBe);
-            }
-        }
-    }
-    setActive(tabHeader) {
-        if (typeof tabHeader == 'number') {
-            if (this.headerEl.children.length > tabHeader) {
-                const header = this.headerEl.children[tabHeader];
-                if (header instanceof _.Layout.Tabs.TabHeader) {
-                    return this.setActive(header);
-                }
-            }
-            return false;
-        }
-        else if (typeof tabHeader == 'string') {
-            const header = this.tabs[tabHeader]?.tabHeader;
-            if (header)
-                return this.setActive(header);
-            return false;
-        }
-        if (this.activeHeader) {
-            this.activeHeader.active = false;
-            this.activeHeader.tab.selected = false;
-            this.activeHeader.tab.style.display = 'none';
-        }
-        this.activeHeader = tabHeader;
-        this.activeHeader.active = true;
-        this.activeHeader.tab.style.display = '';
-        this.activeHeader.tab.selected = true;
-        return true;
-    }
-    postCreation() {
-        super.postCreation();
-        this.loadTabs();
-    }
-}
-Layout.Tabs.Tabs.Namespace=`Aventus.Layout.Tabs`;
-__as1(_.Layout.Tabs, 'Tabs', Layout.Tabs.Tabs);
-
-Modal.ModalElement = class ModalElement extends Aventus.WebComponent {
-    get 'options'() {
-						return this.__watch["options"];
-					}
-					set 'options'(val) {
-						this.__watch["options"] = val;
-					}
-    static defaultCloseWithEsc = true;
-    static defaultCloseWithClick = true;
-    static defaultRejectValue = null;
-    cb;
-    pressManagerClickClose;
-    pressManagerPrevent;
-    __registerWatchesActions() {
-    this.__addWatchesActions("options", ((target, action, path, value) => {
-    target.onOptionsChanged();
-}));
-    super.__registerWatchesActions();
-}
-    static __style = `:host{--_modal-z-index: var(--modal-z-index, 60)}:host{align-items:center;display:flex;inset:0;justify-content:center;position:fixed;z-index:var(--_modal-z-index)}:host .modal{background-color:#fff;padding:1.5rem;position:relative}`;
-    constructor() {
-        super();
-        this.options = this.configure();
-        if (this.options.closeWithClick === undefined)
-            this.options.closeWithClick = Modal.ModalElement.defaultCloseWithClick;
-        if (this.options.closeWithEsc === undefined)
-            this.options.closeWithEsc = Modal.ModalElement.defaultCloseWithEsc;
-        if (!Object.hasOwn(this.options, "rejectValue")) {
-            this.options.rejectValue = Modal.ModalElement.defaultRejectValue;
-        }
-        if (this.constructor == ModalElement) {
-            throw "can't instanciate an abstract class";
-        }
-        this.close = this.close.bind(this);
-        this.reject = this.reject.bind(this);
-        this.resolve = this.resolve.bind(this);
-    }
-    __getStatic() {
-        return ModalElement;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(ModalElement.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<div class="modal" _id="modalelement_0">
-	<slot></slot>
-</div>` }
-    });
-}
-    __registerTemplateAction() { super.__registerTemplateAction();
-this.__getStatic().__template.setActions({
-  "elements": [
-    {
-      "name": "modalEl",
-      "ids": [
-        "modalelement_0"
-      ]
-    }
-  ]
-});
- }
-    getClassName() {
-        return "ModalElement";
-    }
-    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["options"] = undefined;
- }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('options');
- }
-    onOptionsChanged() { }
-    init(cb) {
-        this.cb = cb;
-        if (this.options.closeWithEsc) {
-            Lib.ShortcutManager.subscribe(Lib.SpecialTouch.Escape, this.reject, { replaceTemp: true });
-        }
-        if (this.options.closeWithClick) {
-            this.pressManagerClickClose = new Aventus.PressManager({
-                element: this,
-                onPress: () => {
-                    this.reject();
-                }
-            });
-            this.pressManagerPrevent = new Aventus.PressManager({
-                element: this.modalEl,
-                onPress: () => { }
-            });
-        }
-    }
-    show(element) {
-        return Modal.ModalElement._show(this, element);
-    }
-    close() {
-        Lib.ShortcutManager.unsubscribe(Lib.SpecialTouch.Escape, this.reject);
-        this.pressManagerClickClose?.destroy();
-        this.pressManagerPrevent?.destroy();
-        this.remove();
-    }
-    reject(no_close) {
-        if (this.cb) {
-            this.cb(this.options.rejectValue ?? null);
-        }
-        if (no_close !== true) {
-            this.close();
-        }
-    }
-    resolve(response, no_close) {
-        if (this.cb) {
-            this.cb(response);
-        }
-        if (no_close !== true) {
-            this.close();
-        }
-    }
-    postCreation() {
-        super.postCreation();
-        this.modalEl.setAttribute("role", "dialog");
-        this.modalEl.setAttribute("aria-modal", "true");
-    }
-    static configure(options) {
-        if (options.closeWithClick !== undefined)
-            this.defaultCloseWithClick = options.closeWithClick;
-        if (options.closeWithEsc !== undefined)
-            this.defaultCloseWithEsc = options.closeWithEsc;
-        if (Object.hasOwn(options, "rejectValue")) {
-            this.defaultRejectValue = options.rejectValue;
-        }
-    }
-    static _show(modal, element) {
-        return new Promise((resolve) => {
-            modal.init((response) => {
-                resolve(response);
-            });
-            if (!element) {
-                element = document.body;
-            }
-            element.appendChild(modal);
-        });
-    }
-}
-Modal.ModalElement.Namespace=`Aventus.Modal`;
-__as1(_.Modal, 'ModalElement', Modal.ModalElement);
-
-Toast.ToastManager = class ToastManager extends Aventus.WebComponent {
-    get 'not_main'() { return this.getBoolAttr('not_main') }
-    set 'not_main'(val) { this.setBoolAttr('not_main', val) }
-    static defaultToast;
-    static defaultToastManager;
-    static defaultPosition = 'top right';
-    static defaultDelay = 5000;
-    static gap = 10;
-    static heightLimitPercent = 100;
-    static instance;
-    activeToasts = {
-        top: [],
-        'top left': [],
-        'bottom left': [],
-        bottom: [],
-        'bottom right': [],
-        'top right': [],
-    };
-    waitingToasts = {
-        top: [],
-        'top left': [],
-        'bottom left': [],
-        bottom: [],
-        'bottom right': [],
-        'top right': [],
-    };
-    get containerHeight() {
-        return this.offsetHeight;
-    }
-    get heightLimit() {
-        return this.containerHeight * Toast.ToastManager.heightLimitPercent / 100;
-    }
-    mutex = new Aventus.Mutex();
-    static __style = `:host{--_toast-space-bottom: var(--toast-space-bottom, 20px);--_toast-space-top: var(--toast-space-top, 20px);--_toast-space-right: var(--toast-space-right, 10px);--_toast-space-left: var(--toast-space-left, 10px);--_toast-z-index: var(--toast-z-index, 70)}:host{bottom:var(--_toast-space-bottom);left:var(--_toast-space-left);overflow:visible;pointer-events:none;position:fixed;right:var(--_toast-space-right);top:var(--_toast-space-top);z-index:var(--_toast-z-index)}:host ::slotted(*){pointer-events:auto}`;
-    __getStatic() {
-        return ToastManager;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(ToastManager.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<slot></slot>` }
-    });
-}
-    getClassName() {
-        return "ToastManager";
-    }
-    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('not_main')) { this.attributeChangedCallback('not_main', false, false); }
- }
-    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('containerHeight');
-this.__correctGetter('heightLimit');
-this.__upgradeProperty('not_main');
- }
-    __listBoolProps() { return ["not_main"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
-    async add(toast) {
-        await this.mutex.waitOne();
-        let realToast;
-        if (toast instanceof _.Toast.ToastElement) {
-            realToast = toast;
-        }
-        else {
-            if (!Toast.ToastManager.defaultToast)
-                throw "No default toast. Try ToastManager.configure()";
-            realToast = new Toast.ToastManager.defaultToast();
-            await realToast._setOptions(toast);
-        }
-        this.appendChild(realToast);
-        if (realToast.position == "bottom") {
-            return this._notifyBottom(realToast, true);
-        }
-        else if (realToast.position == "bottom left") {
-            return this._notifyBottomLeft(realToast, true);
-        }
-        else if (realToast.position == "top left") {
-            return this._notifyTopLeft(realToast, true);
-        }
-        else if (realToast.position == "bottom right") {
-            return this._notifyBottomRight(realToast, true);
-        }
-        else if (realToast.position == "top right") {
-            return this._notifyTopRight(realToast, true);
-        }
-        else if (realToast.position == "top") {
-            return this._notifyTop(realToast, true);
-        }
-        return false;
-    }
-    _calculateBottom(toast, firstTime, position) {
-        return new Promise(async (resolve) => {
-            let height = toast.offsetHeight;
-            const _remove = (result) => {
-                let index = this.activeToasts[position].indexOf(toast);
-                if (index > -1) {
-                    this.activeToasts[position].splice(index, 1);
-                }
-                if (this.waitingToasts[position].length > 0) {
-                    let nextNotif = this.waitingToasts[position].splice(0, 1)[0];
-                    this._calculateBottom(nextNotif, false, position);
-                }
-                else {
-                    let bottom = 0;
-                    for (let i = 0; i < this.activeToasts[position].length; i++) {
-                        let notif = this.activeToasts[position][i];
-                        notif.style.bottom = bottom + 'px';
-                        bottom += notif.offsetHeight + Toast.ToastManager.gap;
-                    }
-                }
-                resolve(result);
-            };
-            let length = this.activeToasts[position].length;
-            if (length == 0) {
-                this.activeToasts[position].push(toast);
-                toast.show(_remove);
-            }
-            else {
-                let totHeight = 0;
-                for (let notif of this.activeToasts[position]) {
-                    await notif.waitTransition();
-                    totHeight += notif.offsetHeight + Toast.ToastManager.gap;
-                }
-                if (totHeight + height < this.heightLimit) {
-                    this.activeToasts[position].splice(0, 0, toast);
-                    let bottom = 0;
-                    for (let i = 0; i < this.activeToasts[position].length; i++) {
-                        let notif = this.activeToasts[position][i];
-                        notif.style.bottom = bottom + 'px';
-                        bottom += notif.offsetHeight + Toast.ToastManager.gap;
-                    }
-                    toast.show(_remove);
-                }
-                else if (firstTime) {
-                    this.waitingToasts[position].push(toast);
-                }
-            }
-            this.mutex.release();
-        });
-    }
-    _calculateTop(toast, firstTime, position) {
-        return new Promise(async (resolve) => {
-            let height = toast.offsetHeight;
-            const _remove = (result) => {
-                let index = this.activeToasts[position].indexOf(toast);
-                if (index > -1) {
-                    this.activeToasts[position].splice(index, 1);
-                }
-                if (this.waitingToasts[position].length > 0) {
-                    let nextNotif = this.waitingToasts[position].splice(0, 1)[0];
-                    this._calculateTop(nextNotif, false, position);
-                }
-                else {
-                    let top = 0;
-                    for (let i = 0; i < this.activeToasts[position].length; i++) {
-                        let notif = this.activeToasts[position][i];
-                        notif.style.top = top + 'px';
-                        top += notif.offsetHeight + Toast.ToastManager.gap;
-                    }
-                }
-                resolve(result);
-            };
-            let length = this.activeToasts[position].length;
-            if (length == 0) {
-                this.activeToasts[position].push(toast);
-                toast.show(_remove);
-            }
-            else {
-                let totHeight = 0;
-                for (let notif of this.activeToasts[position]) {
-                    await notif.waitTransition();
-                    totHeight += notif.offsetHeight + Toast.ToastManager.gap;
-                }
-                if (totHeight + height < this.heightLimit) {
-                    this.activeToasts[position].splice(0, 0, toast);
-                    let top = 0;
-                    for (let i = 0; i < this.activeToasts[position].length; i++) {
-                        let notif = this.activeToasts[position][i];
-                        notif.style.top = top + 'px';
-                        top += notif.offsetHeight + Toast.ToastManager.gap;
-                    }
-                    toast.show(_remove);
-                }
-                else if (firstTime) {
-                    this.waitingToasts[position].push(toast);
-                }
-            }
-            this.mutex.release();
-        });
-    }
-    async _notifyBottomRight(toast, firstTime) {
-        return await this._calculateBottom(toast, firstTime, "bottom right");
-    }
-    async _notifyTopRight(toast, firstTime) {
-        return await this._calculateTop(toast, firstTime, "top right");
-    }
-    async _notifyBottomLeft(toast, firstTime) {
-        return await this._calculateBottom(toast, firstTime, "bottom left");
-    }
-    async _notifyTopLeft(toast, firstTime) {
-        return await this._calculateTop(toast, firstTime, "top left");
-    }
-    async _notifyTop(toast, firstTime) {
-        return await this._calculateTop(toast, firstTime, "top");
-    }
-    async _notifyBottom(toast, firstTime) {
-        return await this._calculateBottom(toast, firstTime, "bottom");
-    }
-    postConnect() {
-        super.postConnect();
-        if (!Toast.ToastManager.instance && !this.not_main) {
-            Toast.ToastManager.instance = this;
-        }
-    }
-    postDisconnect() {
-        if (Toast.ToastManager.instance == this) {
-            Toast.ToastManager.instance = undefined;
-        }
-    }
-    static add(toast) {
-        if (!this.instance) {
-            this.instance = this.defaultToastManager ? new this.defaultToastManager() : new Toast.ToastManager();
-            document.body.appendChild(this.instance);
-        }
-        return this.instance.add(toast);
-    }
-    static configure(options) {
-        const opts = options;
-        const t = this;
-        for (let key in options) {
-            if (opts[key] !== undefined)
-                t[key] = opts[key];
-        }
-    }
-}
-Toast.ToastManager.Namespace=`Aventus.Toast`;
-Toast.ToastManager.Tag=`av-toast-manager`;
-__as1(_.Toast, 'ToastManager', Toast.ToastManager);
-if(!window.customElements.get('av-toast-manager')){window.customElements.define('av-toast-manager', Toast.ToastManager);Aventus.WebComponentInstance.registerDefinition(Toast.ToastManager);}
-
 let TouchRecord=class TouchRecord {
     /**
      * The identifier of the currently active touch/pointer.
@@ -13256,6 +12544,718 @@ Layout.AdvancedScrollable.Tag=`av-advanced-scrollable`;
 __as1(_.Layout, 'AdvancedScrollable', Layout.AdvancedScrollable);
 if(!window.customElements.get('av-advanced-scrollable')){window.customElements.define('av-advanced-scrollable', Layout.AdvancedScrollable);Aventus.WebComponentInstance.registerDefinition(Layout.AdvancedScrollable);}
 
+Layout.Tabs.Tab = class Tab extends Aventus.WebComponent {
+    get 'selected'() { return this.getBoolAttr('selected') }
+    set 'selected'(val) { this.setBoolAttr('selected', val) }
+get 'loaded'() { return this.getBoolAttr('loaded') }
+    set 'loaded'(val) { this.setBoolAttr('loaded', val) }
+    tabHeader;
+    static __style = `:host(:not([loaded])){display:none}`;
+    constructor() {
+        super();
+        if (this.constructor == Tab) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return Tab;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Tab.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "Tab";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('selected')) { this.attributeChangedCallback('selected', false, false); }
+if(!this.hasAttribute('loaded')) { this.attributeChangedCallback('loaded', false, false); }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('selected');
+this.__upgradeProperty('loaded');
+ }
+    __listBoolProps() { return ["selected","loaded"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+}
+Layout.Tabs.Tab.Namespace=`Aventus.Layout.Tabs`;
+__as1(_.Layout.Tabs, 'Tab', Layout.Tabs.Tab);
+
+Toast.ToastElement = class ToastElement extends Aventus.WebComponent {
+    get 'position'() { return this.getStringAttr('position') }
+    set 'position'(val) { this.setStringAttr('position', val) }
+get 'delay'() { return this.getNumberAttr('delay') }
+    set 'delay'(val) { this.setNumberAttr('delay', val) }
+get 'is_active'() { return this.getBoolAttr('is_active') }
+    set 'is_active'(val) { this.setBoolAttr('is_active', val) }
+    showAsked = false;
+    onHideCallback = () => { };
+    timeout = 0;
+    hasTransition = false;
+    waitTransitionCbs = [];
+    static __style = `:host{position:absolute}:host(:not([is_active])){opacity:0;visibility:hidden}:host([position="bottom left"]){bottom:0px;left:0px}:host([position="top left"]){left:0;top:0}:host([position="bottom right"]){bottom:0;right:0}:host([position="top right"]){right:0;top:0}:host([position=top]){left:50%;top:0;transform:translateX(-50%)}:host([position=bottom]){bottom:0;left:50%;transform:translateX(-50%)}`;
+    constructor() {
+        super();
+        this.addTransition();
+        if (this.constructor == ToastElement) {
+            throw "can't instanciate an abstract class";
+        }
+    }
+    __getStatic() {
+        return ToastElement;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(ToastElement.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "ToastElement";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('position')){ this['position'] = _.Toast.ToastManager.defaultPosition; }
+if(!this.hasAttribute('delay')){ this['delay'] = _.Toast.ToastManager.defaultDelay; }
+if(!this.hasAttribute('is_active')) { this.attributeChangedCallback('is_active', false, false); }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__upgradeProperty('position');
+this.__upgradeProperty('delay');
+this.__upgradeProperty('is_active');
+ }
+    __listBoolProps() { return ["is_active"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    _setOptions(options) {
+        if (options.position !== undefined)
+            this.position = options.position;
+        if (options.delay !== undefined)
+            this.delay = options.delay;
+        return this.setOptions(options);
+    }
+    show(onHideCallback) {
+        this.onHideCallback = onHideCallback;
+        if (this.isReady) {
+            this.is_active = true;
+            this.startDelay();
+        }
+        else {
+            this.showAsked = true;
+        }
+    }
+    startDelay() {
+        if (this.delay > 0) {
+            this.timeout = setTimeout(() => {
+                this.close();
+            }, this.delay);
+        }
+    }
+    async close() {
+        if (this.onHideCallback) {
+            this.is_active = false;
+            this.onHideCallback(false);
+            this.remove();
+        }
+    }
+    addTransition() {
+        this.addEventListener("transitionstart", (e) => {
+            this.hasTransition = true;
+        });
+        this.addEventListener("transitionend", () => {
+            this.hasTransition = false;
+            let cbs = [...this.waitTransitionCbs];
+            this.waitTransitionCbs = [];
+            for (let cb of cbs) {
+                cb();
+            }
+        });
+    }
+    waitTransition() {
+        if (this.hasTransition) {
+            return new Promise((resolve) => {
+                this.waitTransitionCbs.push(resolve);
+            });
+        }
+        return new Promise((resolve) => {
+            resolve();
+        });
+    }
+    postCreation() {
+        if (this.showAsked) {
+            this.is_active = true;
+            this.startDelay();
+        }
+    }
+    static add(options) {
+        return _.Toast.ToastManager.add(options);
+    }
+}
+Toast.ToastElement.Namespace=`Aventus.Toast`;
+__as1(_.Toast, 'ToastElement', Toast.ToastElement);
+
+Layout.Tabs.Tabs = class Tabs extends Aventus.WebComponent {
+    activeHeader;
+    tabs = {};
+    static __style = ``;
+    constructor() {
+        super();
+        if (this.constructor == Tabs) {
+            throw "can't instanciate an abstract class";
+        }
+        this.reloadFromSlot = this.reloadFromSlot.bind(this);
+    }
+    __getStatic() {
+        return Tabs;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(Tabs.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<div class="header" _id="tabs_0"></div><div class="body" _id="tabs_1">
+	<slot></slot>
+</div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "headerEl",
+      "ids": [
+        "tabs_0"
+      ]
+    },
+    {
+      "name": "bodyEl",
+      "ids": [
+        "tabs_1"
+      ]
+    }
+  ]
+});
+ }
+    getClassName() {
+        return "Tabs";
+    }
+    async loadTabs() {
+        // let elements = this.elements;
+        let elements = this.getElementsInSlot();
+        let first = null;
+        for (let element of elements) {
+            if (element instanceof _.Layout.Tabs.Tab) {
+                element.style.display = 'none';
+                this.tabs[element.identifier()] = element;
+                let header = new (this.defineTabHeader())();
+                this.headerEl.appendChild(header);
+                await header.init(element, this);
+                if (first == null) {
+                    first = header;
+                }
+                else if (!first.tab.selected && element.selected) {
+                    first = header;
+                }
+                element.loaded = true;
+            }
+        }
+        if (first) {
+            this.setActive(first);
+        }
+        this.shadowRoot.querySelector("slot")?.addEventListener("slotchange", this.reloadFromSlot);
+    }
+    async reloadFromSlot() {
+        let elements = this.getElementsInSlot();
+        let actualTabs = Object.keys(this.tabs);
+        let first = null;
+        let orders = [];
+        for (let element of elements) {
+            if (element instanceof _.Layout.Tabs.Tab) {
+                element.style.display = 'none';
+                const el = element;
+                const identifier = element.identifier();
+                const indexActual = actualTabs.indexOf(identifier);
+                orders.push(identifier);
+                if (indexActual == -1) {
+                    this.tabs[identifier] = el;
+                    let header = new (this.defineTabHeader())();
+                    this.headerEl.appendChild(header);
+                    await header.init(el, this);
+                    if (first == null) {
+                        first = header;
+                    }
+                }
+                else {
+                    actualTabs.splice(indexActual, 1);
+                    if (first == null) {
+                        first = this.tabs[identifier].tabHeader;
+                    }
+                }
+                element.loaded = true;
+            }
+        }
+        for (let missing of actualTabs) {
+            this.tabs[missing].tabHeader?.remove();
+            delete this.tabs[missing];
+        }
+        let hasSelected = false;
+        for (let identifier in this.tabs) {
+            if (this.tabs[identifier].selected) {
+                if (!hasSelected) {
+                    hasSelected = true;
+                    first = this.tabs[identifier].tabHeader;
+                }
+                else {
+                    this.tabs[identifier].selected = false;
+                    this.tabs[identifier].tabHeader.active = false;
+                    this.tabs[identifier].style.display = 'none';
+                    this.tabs[identifier].selected = false;
+                }
+            }
+        }
+        if (first != null) {
+            this.setActive(first);
+        }
+        for (let i = 0, j = 0; i < orders.length; i++, j++) {
+            const shouldBe = this.tabs[orders[i]].tabHeader;
+            if (!shouldBe)
+                continue;
+            while (j < this.headerEl.children.length && !(this.headerEl.children[j] instanceof _.Layout.Tabs.TabHeader)) {
+                j++;
+            }
+            if (shouldBe != this.headerEl.children[j]) {
+                this.headerEl.appendChild(shouldBe);
+            }
+        }
+    }
+    setActive(tabHeader) {
+        if (typeof tabHeader == 'number') {
+            if (this.headerEl.children.length > tabHeader) {
+                const header = this.headerEl.children[tabHeader];
+                if (header instanceof _.Layout.Tabs.TabHeader) {
+                    return this.setActive(header);
+                }
+            }
+            return false;
+        }
+        else if (typeof tabHeader == 'string') {
+            const header = this.tabs[tabHeader]?.tabHeader;
+            if (header)
+                return this.setActive(header);
+            return false;
+        }
+        if (this.activeHeader) {
+            this.activeHeader.active = false;
+            this.activeHeader.tab.selected = false;
+            this.activeHeader.tab.style.display = 'none';
+        }
+        this.activeHeader = tabHeader;
+        this.activeHeader.active = true;
+        this.activeHeader.tab.style.display = '';
+        this.activeHeader.tab.selected = true;
+        return true;
+    }
+    postCreation() {
+        super.postCreation();
+        this.loadTabs();
+    }
+}
+Layout.Tabs.Tabs.Namespace=`Aventus.Layout.Tabs`;
+__as1(_.Layout.Tabs, 'Tabs', Layout.Tabs.Tabs);
+
+Modal.ModalElement = class ModalElement extends Aventus.WebComponent {
+    get 'options'() {
+						return this.__watch["options"];
+					}
+					set 'options'(val) {
+						this.__watch["options"] = val;
+					}
+    static defaultCloseWithEsc = true;
+    static defaultCloseWithClick = true;
+    static defaultRejectValue = null;
+    cb;
+    pressManagerClickClose;
+    pressManagerPrevent;
+    __registerWatchesActions() {
+    this.__addWatchesActions("options", ((target, action, path, value) => {
+    target.onOptionsChanged();
+}));
+    super.__registerWatchesActions();
+}
+    static __style = `:host{--_modal-z-index: var(--modal-z-index, 60)}:host{align-items:center;display:flex;inset:0;justify-content:center;position:fixed;z-index:var(--_modal-z-index)}:host .modal{background-color:#fff;padding:1.5rem;position:relative}`;
+    constructor() {
+        super();
+        this.options = this.configure();
+        if (this.options.closeWithClick === undefined)
+            this.options.closeWithClick = Modal.ModalElement.defaultCloseWithClick;
+        if (this.options.closeWithEsc === undefined)
+            this.options.closeWithEsc = Modal.ModalElement.defaultCloseWithEsc;
+        if (!Object.hasOwn(this.options, "rejectValue")) {
+            this.options.rejectValue = Modal.ModalElement.defaultRejectValue;
+        }
+        if (this.constructor == ModalElement) {
+            throw "can't instanciate an abstract class";
+        }
+        this.close = this.close.bind(this);
+        this.reject = this.reject.bind(this);
+        this.resolve = this.resolve.bind(this);
+    }
+    __getStatic() {
+        return ModalElement;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(ModalElement.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<div class="modal" _id="modalelement_0">
+	<slot></slot>
+</div>` }
+    });
+}
+    __registerTemplateAction() { super.__registerTemplateAction();
+this.__getStatic().__template.setActions({
+  "elements": [
+    {
+      "name": "modalEl",
+      "ids": [
+        "modalelement_0"
+      ]
+    }
+  ]
+});
+ }
+    getClassName() {
+        return "ModalElement";
+    }
+    __defaultValuesWatch(w) { super.__defaultValuesWatch(w); w["options"] = undefined;
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('options');
+ }
+    onOptionsChanged() { }
+    init(cb) {
+        this.cb = cb;
+        if (this.options.closeWithEsc) {
+            Lib.ShortcutManager.subscribe(Lib.SpecialTouch.Escape, this.reject, { replaceTemp: true });
+        }
+        if (this.options.closeWithClick) {
+            this.pressManagerClickClose = new Aventus.PressManager({
+                element: this,
+                onPress: () => {
+                    this.reject();
+                }
+            });
+            this.pressManagerPrevent = new Aventus.PressManager({
+                element: this.modalEl,
+                onPress: () => { }
+            });
+        }
+    }
+    show(element) {
+        return Modal.ModalElement._show(this, element);
+    }
+    close() {
+        Lib.ShortcutManager.unsubscribe(Lib.SpecialTouch.Escape, this.reject);
+        this.pressManagerClickClose?.destroy();
+        this.pressManagerPrevent?.destroy();
+        this.remove();
+    }
+    reject(no_close) {
+        if (this.cb) {
+            this.cb(this.options.rejectValue ?? null);
+        }
+        if (no_close !== true) {
+            this.close();
+        }
+    }
+    resolve(response, no_close) {
+        if (this.cb) {
+            this.cb(response);
+        }
+        if (no_close !== true) {
+            this.close();
+        }
+    }
+    postCreation() {
+        super.postCreation();
+        this.modalEl.setAttribute("role", "dialog");
+        this.modalEl.setAttribute("aria-modal", "true");
+    }
+    static configure(options) {
+        if (options.closeWithClick !== undefined)
+            this.defaultCloseWithClick = options.closeWithClick;
+        if (options.closeWithEsc !== undefined)
+            this.defaultCloseWithEsc = options.closeWithEsc;
+        if (Object.hasOwn(options, "rejectValue")) {
+            this.defaultRejectValue = options.rejectValue;
+        }
+    }
+    static _show(modal, element) {
+        return new Promise((resolve) => {
+            modal.init((response) => {
+                resolve(response);
+            });
+            if (!element) {
+                element = document.body;
+            }
+            element.appendChild(modal);
+        });
+    }
+}
+Modal.ModalElement.Namespace=`Aventus.Modal`;
+__as1(_.Modal, 'ModalElement', Modal.ModalElement);
+
+Toast.ToastManager = class ToastManager extends Aventus.WebComponent {
+    get 'not_main'() { return this.getBoolAttr('not_main') }
+    set 'not_main'(val) { this.setBoolAttr('not_main', val) }
+    static defaultToast;
+    static defaultToastManager;
+    static defaultPosition = 'top right';
+    static defaultDelay = 5000;
+    static gap = 10;
+    static heightLimitPercent = 100;
+    static instance;
+    activeToasts = {
+        top: [],
+        'top left': [],
+        'bottom left': [],
+        bottom: [],
+        'bottom right': [],
+        'top right': [],
+    };
+    waitingToasts = {
+        top: [],
+        'top left': [],
+        'bottom left': [],
+        bottom: [],
+        'bottom right': [],
+        'top right': [],
+    };
+    get containerHeight() {
+        return this.offsetHeight;
+    }
+    get heightLimit() {
+        return this.containerHeight * Toast.ToastManager.heightLimitPercent / 100;
+    }
+    mutex = new Aventus.Mutex();
+    static __style = `:host{--_toast-space-bottom: var(--toast-space-bottom, 20px);--_toast-space-top: var(--toast-space-top, 20px);--_toast-space-right: var(--toast-space-right, 10px);--_toast-space-left: var(--toast-space-left, 10px);--_toast-z-index: var(--toast-z-index, 70)}:host{bottom:var(--_toast-space-bottom);left:var(--_toast-space-left);overflow:visible;pointer-events:none;position:fixed;right:var(--_toast-space-right);top:var(--_toast-space-top);z-index:var(--_toast-z-index)}:host ::slotted(*){pointer-events:auto}`;
+    __getStatic() {
+        return ToastManager;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(ToastManager.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<slot></slot>` }
+    });
+}
+    getClassName() {
+        return "ToastManager";
+    }
+    __defaultValues() { super.__defaultValues(); if(!this.hasAttribute('not_main')) { this.attributeChangedCallback('not_main', false, false); }
+ }
+    __upgradeAttributes() { super.__upgradeAttributes(); this.__correctGetter('containerHeight');
+this.__correctGetter('heightLimit');
+this.__upgradeProperty('not_main');
+ }
+    __listBoolProps() { return ["not_main"].concat(super.__listBoolProps()).filter((v, i, a) => a.indexOf(v) === i); }
+    async add(toast) {
+        await this.mutex.waitOne();
+        let realToast;
+        if (toast instanceof _.Toast.ToastElement) {
+            realToast = toast;
+        }
+        else {
+            if (!Toast.ToastManager.defaultToast)
+                throw "No default toast. Try ToastManager.configure()";
+            realToast = new Toast.ToastManager.defaultToast();
+            await realToast._setOptions(toast);
+        }
+        this.appendChild(realToast);
+        if (realToast.position == "bottom") {
+            return this._notifyBottom(realToast, true);
+        }
+        else if (realToast.position == "bottom left") {
+            return this._notifyBottomLeft(realToast, true);
+        }
+        else if (realToast.position == "top left") {
+            return this._notifyTopLeft(realToast, true);
+        }
+        else if (realToast.position == "bottom right") {
+            return this._notifyBottomRight(realToast, true);
+        }
+        else if (realToast.position == "top right") {
+            return this._notifyTopRight(realToast, true);
+        }
+        else if (realToast.position == "top") {
+            return this._notifyTop(realToast, true);
+        }
+        return false;
+    }
+    _calculateBottom(toast, firstTime, position) {
+        return new Promise(async (resolve) => {
+            let height = toast.offsetHeight;
+            const _remove = (result) => {
+                let index = this.activeToasts[position].indexOf(toast);
+                if (index > -1) {
+                    this.activeToasts[position].splice(index, 1);
+                }
+                if (this.waitingToasts[position].length > 0) {
+                    let nextNotif = this.waitingToasts[position].splice(0, 1)[0];
+                    this._calculateBottom(nextNotif, false, position);
+                }
+                else {
+                    let bottom = 0;
+                    for (let i = 0; i < this.activeToasts[position].length; i++) {
+                        let notif = this.activeToasts[position][i];
+                        notif.style.bottom = bottom + 'px';
+                        bottom += notif.offsetHeight + Toast.ToastManager.gap;
+                    }
+                }
+                resolve(result);
+            };
+            let length = this.activeToasts[position].length;
+            if (length == 0) {
+                this.activeToasts[position].push(toast);
+                toast.show(_remove);
+            }
+            else {
+                let totHeight = 0;
+                for (let notif of this.activeToasts[position]) {
+                    await notif.waitTransition();
+                    totHeight += notif.offsetHeight + Toast.ToastManager.gap;
+                }
+                if (totHeight + height < this.heightLimit) {
+                    this.activeToasts[position].splice(0, 0, toast);
+                    let bottom = 0;
+                    for (let i = 0; i < this.activeToasts[position].length; i++) {
+                        let notif = this.activeToasts[position][i];
+                        notif.style.bottom = bottom + 'px';
+                        bottom += notif.offsetHeight + Toast.ToastManager.gap;
+                    }
+                    toast.show(_remove);
+                }
+                else if (firstTime) {
+                    this.waitingToasts[position].push(toast);
+                }
+            }
+            this.mutex.release();
+        });
+    }
+    _calculateTop(toast, firstTime, position) {
+        return new Promise(async (resolve) => {
+            let height = toast.offsetHeight;
+            const _remove = (result) => {
+                let index = this.activeToasts[position].indexOf(toast);
+                if (index > -1) {
+                    this.activeToasts[position].splice(index, 1);
+                }
+                if (this.waitingToasts[position].length > 0) {
+                    let nextNotif = this.waitingToasts[position].splice(0, 1)[0];
+                    this._calculateTop(nextNotif, false, position);
+                }
+                else {
+                    let top = 0;
+                    for (let i = 0; i < this.activeToasts[position].length; i++) {
+                        let notif = this.activeToasts[position][i];
+                        notif.style.top = top + 'px';
+                        top += notif.offsetHeight + Toast.ToastManager.gap;
+                    }
+                }
+                resolve(result);
+            };
+            let length = this.activeToasts[position].length;
+            if (length == 0) {
+                this.activeToasts[position].push(toast);
+                toast.show(_remove);
+            }
+            else {
+                let totHeight = 0;
+                for (let notif of this.activeToasts[position]) {
+                    await notif.waitTransition();
+                    totHeight += notif.offsetHeight + Toast.ToastManager.gap;
+                }
+                if (totHeight + height < this.heightLimit) {
+                    this.activeToasts[position].splice(0, 0, toast);
+                    let top = 0;
+                    for (let i = 0; i < this.activeToasts[position].length; i++) {
+                        let notif = this.activeToasts[position][i];
+                        notif.style.top = top + 'px';
+                        top += notif.offsetHeight + Toast.ToastManager.gap;
+                    }
+                    toast.show(_remove);
+                }
+                else if (firstTime) {
+                    this.waitingToasts[position].push(toast);
+                }
+            }
+            this.mutex.release();
+        });
+    }
+    async _notifyBottomRight(toast, firstTime) {
+        return await this._calculateBottom(toast, firstTime, "bottom right");
+    }
+    async _notifyTopRight(toast, firstTime) {
+        return await this._calculateTop(toast, firstTime, "top right");
+    }
+    async _notifyBottomLeft(toast, firstTime) {
+        return await this._calculateBottom(toast, firstTime, "bottom left");
+    }
+    async _notifyTopLeft(toast, firstTime) {
+        return await this._calculateTop(toast, firstTime, "top left");
+    }
+    async _notifyTop(toast, firstTime) {
+        return await this._calculateTop(toast, firstTime, "top");
+    }
+    async _notifyBottom(toast, firstTime) {
+        return await this._calculateBottom(toast, firstTime, "bottom");
+    }
+    postConnect() {
+        super.postConnect();
+        if (!Toast.ToastManager.instance && !this.not_main) {
+            Toast.ToastManager.instance = this;
+        }
+    }
+    postDisconnect() {
+        if (Toast.ToastManager.instance == this) {
+            Toast.ToastManager.instance = undefined;
+        }
+    }
+    static add(toast) {
+        if (!this.instance) {
+            this.instance = this.defaultToastManager ? new this.defaultToastManager() : new Toast.ToastManager();
+            document.body.appendChild(this.instance);
+        }
+        return this.instance.add(toast);
+    }
+    static configure(options) {
+        const opts = options;
+        const t = this;
+        for (let key in options) {
+            if (opts[key] !== undefined)
+                t[key] = opts[key];
+        }
+    }
+}
+Toast.ToastManager.Namespace=`Aventus.Toast`;
+Toast.ToastManager.Tag=`av-toast-manager`;
+__as1(_.Toast, 'ToastManager', Toast.ToastManager);
+if(!window.customElements.get('av-toast-manager')){window.customElements.define('av-toast-manager', Toast.ToastManager);Aventus.WebComponentInstance.registerDefinition(Toast.ToastManager);}
+
 
 for(let key in _) { Aventus[key] = _[key] }
 })(Aventus);
@@ -13271,37 +13271,6 @@ const _ = {};
 
 
 let _n;
-const DocUIAdvancedScrollableEditor1Compiled = class DocUIAdvancedScrollableEditor1Compiled extends Aventus.WebComponent {
-    static __style = `:host{height:200px;width:100%}:host av-advanced-scrollable{height:100%;width:100%}`;
-    __getStatic() {
-        return DocUIAdvancedScrollableEditor1Compiled;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIAdvancedScrollableEditor1Compiled.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<av-advanced-scrollable x_scroll y_scroll mouse_drag>
-  <div style="width: 2000px; 
-  height: 1500px; 
-  background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%); 
-  background-size: 10px 10px, 10px 10px;">
-    Large content here
-  </div>
-</av-advanced-scrollable>` }
-    });
-}
-    getClassName() {
-        return "DocUIAdvancedScrollableEditor1Compiled";
-    }
-}
-DocUIAdvancedScrollableEditor1Compiled.Namespace=`AventusWebsite`;
-DocUIAdvancedScrollableEditor1Compiled.Tag=`av-doc-u-i-advanced-scrollable-editor-1-compiled`;
-__as1(_, 'DocUIAdvancedScrollableEditor1Compiled', DocUIAdvancedScrollableEditor1Compiled);
-if(!window.customElements.get('av-doc-u-i-advanced-scrollable-editor-1-compiled')){window.customElements.define('av-doc-u-i-advanced-scrollable-editor-1-compiled', DocUIAdvancedScrollableEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIAdvancedScrollableEditor1Compiled);}
-
 const Tabs = class Tabs extends Aventus.WebComponent {
     static __style = ``;
     __getStatic() {
@@ -13528,6 +13497,37 @@ DocUITabsEditor1TabHeader.Namespace=`AventusWebsite`;
 DocUITabsEditor1TabHeader.Tag=`av-doc-u-i-tabs-editor-1-tab-header`;
 __as1(_, 'DocUITabsEditor1TabHeader', DocUITabsEditor1TabHeader);
 if(!window.customElements.get('av-doc-u-i-tabs-editor-1-tab-header')){window.customElements.define('av-doc-u-i-tabs-editor-1-tab-header', DocUITabsEditor1TabHeader);Aventus.WebComponentInstance.registerDefinition(DocUITabsEditor1TabHeader);}
+
+const DocUIAdvancedScrollableEditor1Compiled = class DocUIAdvancedScrollableEditor1Compiled extends Aventus.WebComponent {
+    static __style = `:host{height:200px;width:100%}:host av-advanced-scrollable{height:100%;width:100%}`;
+    __getStatic() {
+        return DocUIAdvancedScrollableEditor1Compiled;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIAdvancedScrollableEditor1Compiled.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<av-advanced-scrollable x_scroll y_scroll mouse_drag>
+  <div style="width: 2000px; 
+  height: 1500px; 
+  background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%); 
+  background-size: 10px 10px, 10px 10px;">
+    Large content here
+  </div>
+</av-advanced-scrollable>` }
+    });
+}
+    getClassName() {
+        return "DocUIAdvancedScrollableEditor1Compiled";
+    }
+}
+DocUIAdvancedScrollableEditor1Compiled.Namespace=`AventusWebsite`;
+DocUIAdvancedScrollableEditor1Compiled.Tag=`av-doc-u-i-advanced-scrollable-editor-1-compiled`;
+__as1(_, 'DocUIAdvancedScrollableEditor1Compiled', DocUIAdvancedScrollableEditor1Compiled);
+if(!window.customElements.get('av-doc-u-i-advanced-scrollable-editor-1-compiled')){window.customElements.define('av-doc-u-i-advanced-scrollable-editor-1-compiled', DocUIAdvancedScrollableEditor1Compiled);Aventus.WebComponentInstance.registerDefinition(DocUIAdvancedScrollableEditor1Compiled);}
 
 const DocUIScrollableEditor1Compiled = class DocUIScrollableEditor1Compiled extends Aventus.WebComponent {
     static __style = `:host{height:200px;width:100%}:host av-scrollable{height:100%;width:100%}`;
@@ -20663,278 +20663,6 @@ DocUILink.Tag=`av-doc-u-i-link`;
 __as1(_, 'DocUILink', DocUILink);
 if(!window.customElements.get('av-doc-u-i-link')){window.customElements.define('av-doc-u-i-link', DocUILink);Aventus.WebComponentInstance.registerDefinition(DocUILink);}
 
-const DocUIAdvancedScrollable = class DocUIAdvancedScrollable extends DocGenericPage {
-    static __style = ``;
-    __getStatic() {
-        return DocUIAdvancedScrollable;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIAdvancedScrollable.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        blocks: { 'default':`<h1>UI - Advanced Scrollable</h1><p>The <span class="cn">av-advanced-scrollable</span> component provides a custom, fully-featured scrollable container with
-    support for:</p><ul>
-    <li>Horizontal and vertical scrolling</li>
-    <li>Smooth momentum-based scrolling</li>
-    <li>Floating or static scrollbars</li>
-    <li>Auto-hide scrollbars</li>
-    <li>Mouse dragging</li>
-    <li>Touch and pinch-zoom support</li>
-    <li>Zooming on a point</li>
-    <li>Programmatic scrolling</li>
-</ul><p>It's ideal for applications that need precise control over scroll behavior, including drag-to-scroll, zoomable
-    content, and custom scrollbars.</p><h2 id="concept">Concept</h2><p><span class="cn">av-advanced-scrollable</span> wraps content in a scrollable container with custom scrollbars. Unlike native
-    scroll elements, it supports momentum, pinch zoom, and dragging, with fully customizable styling.</p><p>Example:</p><av-doc-u-i-advanced-scrollable-editor-1></av-doc-u-i-advanced-scrollable-editor-1><h2 id="attributes">Attributes</h2><div class="table">
-    <av-row class="header">
-        <av-col size="4" center>Attribute</av-col>
-        <av-col size="4" center>Type</av-col>
-        <av-col size="4" center>Description</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>x_scroll</av-col>
-        <av-col size="4" center>boolean</av-col>
-        <av-col size="4" center>Enable horizontal scrolling. Default: false.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>y_scroll</av-col>
-        <av-col size="4" center>boolean</av-col>
-        <av-col size="4" center>Enable vertical scrolling. Default: true. </av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>floating_scroll</av-col>
-        <av-col size="4" center>boolean</av-col>
-        <av-col size="4" center>If true, scrollbars float over content instead of pushing it. </av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>auto_hide</av-col>
-        <av-col size="4" center>boolean</av-col>
-        <av-col size="4" center>Scrollbars hide automatically when not in use.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>disable</av-col>
-        <av-col size="4" center>boolean</av-col>
-        <av-col size="4" center>Disables all user interaction with scrolling.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>flex</av-col>
-        <av-col size="4" center>boolean</av-col>
-        <av-col size="4" center>Uses a vertical flex layout internally so child content can fill the remaining height.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>mouse_drag</av-col>
-        <av-col size="4" center>boolean</av-col>
-        <av-col size="4" center>Enables dragging content with a mouse.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>pinch</av-col>
-        <av-col size="4" center>boolean</av-col>
-        <av-col size="4" center>Enables pinch-to-zoom on touch devices.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>zoom</av-col>
-        <av-col size="4" center>number</av-col>
-        <av-col size="4" center>Current zoom level of the content. Default: 1. </av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>min_zoom</av-col>
-        <av-col size="4" center>number</av-col>
-        <av-col size="4" center>Minimum allowed zoom level. Default: 1. </av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>max_zoom</av-col>
-        <av-col size="4" center>number</av-col>
-        <av-col size="4" center>Maximum allowed zoom level. Default: unlimited. </av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>break</av-col>
-        <av-col size="4" center>number</av-col>
-        <av-col size="4" center>Easing factor for momentum. Default: 0.1. </av-col>
-    </av-row>
-</div><h2 id="features">Features</h2><h3>1. Momentum-based scrolling</h3><p><span class="cn">av-advanced-scrollable</span> applies smooth momentum when dragging or using the mouse wheel. The break
-    attribute controls easing.</p><h3>2. Custom scrollbars</h3><ul>
-    <li>Scrollbars are separate DOM elements, styled with CSS variables.</li>
-    <li>Floating scrollbars can auto-hide after inactivity.</li>
-    <li>Supports drag-to-scroll directly on the scrollbars.</li>
-</ul><h3>3. Pinch-to-zoom</h3><ul>
-    <li>Works on touch devices with two fingers.</li>
-    <li>Zoom is centered on a point for precise control.</li>
-    <li>Zoom boundaries respect min_zoom and max_zoom.</li>
-    <li>Triggers onZoomChange callback when zoom changes.</li>
-</ul><h3>4. Mouse dragging</h3><ul>
-    <li>Drag content with mouse if mouse_drag is enabled.</li>
-    <li>Momentum continues after release for a natural feel.</li>
-</ul><h2 id="callbacks">Callbacks</h2><div class="table">
-    <av-row class="header">
-        <av-col size="4" center>Callback</av-col>
-        <av-col size="8" center>Description</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>onScrollChange</av-col>
-        <av-col size="8">Triggered whenever the scroll position changes. Returns (x: number, y: number).</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>onZoomChange</av-col>
-        <av-col size="8">Triggered when the zoom level changes. Returns the new zoom number.</av-col>
-    </av-row>
-</div><h2 id="methods">Methods</h2><div class="table">
-    <av-row class="header">
-        <av-col size="6" center>Method</av-col>
-        <av-col size="6" center>Description</av-col>
-        </av-row>
-    <av-row>
-        <av-col size="6" center>scrollToPosition(x, y)</av-col>
-        <av-col size="6">Scrolls to specific pixel positions.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>scrollX(x)</av-col>
-        <av-col size="6">Scroll horizontally to pixel position.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>scrollXPercent(percent)</av-col>
-        <av-col size="6">Scroll horizontally as a percentage of total width.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>scrollY(y)</av-col>
-        <av-col size="6">Scroll vertically to pixel position.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>scrollYPercent(percent)</av-col>
-        <av-col size="6">Scroll vertically as a percentage of total height.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>zoomOnPoint(clientX, clientY, newZoom)</av-col>
-        <av-col size="6">Zoom centered at a screen point (clientX, clientY) to a specific zoom value.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>autoScrollRight(percent)</av-col>
-        <av-col size="6">Automatically scrolls right at a speed relative to content size.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>stopAutoScrollRight()</av-col>
-        <av-col size="6">Stops auto-scroll right.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>autoScrollLeft(percent)</av-col>
-        <av-col size="6">Automatically scrolls left.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>stopAutoScrollLeft()</av-col>
-        <av-col size="6">Stops auto-scroll left.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>autoScrollTop(percent)</av-col>
-        <av-col size="6">Automatically scrolls up.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>stopAutoScrollTop()</av-col>
-        <av-col size="6">Stops auto-scroll up.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>autoScrollBottom(percent)</av-col>
-        <av-col size="6">Automatically scrolls down.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="6" center>stopAutoScrollBottom()</av-col>
-        <av-col size="6">Stops auto-scroll down.</av-col>
-    </av-row>
-</div><h2 id="css-variables">CSS Variables</h2><div class="table">
-    <av-row class="header">
-        <av-col size="4" center>Variable</av-col>
-        <av-col size="4" center>Default</av-col>
-        <av-col size="4" center>Description</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scrollbar-container-color</av-col>
-        <av-col size="4" center>transparent</av-col>
-        <av-col size="4" center>Background color of scrollbar container.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scrollbar-color</av-col>
-        <av-col size="4" center>#757575</av-col>
-        <av-col size="4" center>Scrollbar color.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scrollbar-active-color</av-col>
-        <av-col size="4" center>#858585</av-col>
-        <av-col size="4" center>Scrollbar color when active/dragged.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scroller-width</av-col>
-        <av-col size="4" center>6px</av-col>
-        <av-col size="4" center>Width of scrollbar.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scroller-top</av-col>
-        <av-col size="4" center>3px</av-col>
-        <av-col size="4" center>Top padding of horizontal scrollbar.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scroller-bottom</av-col>
-        <av-col size="4" center>3px</av-col>
-        <av-col size="4" center>Bottom padding of horizontal scrollbar.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scroller-left</av-col>
-        <av-col size="4" center>3px</av-col>
-        <av-col size="4" center>Left padding of vertical scrollbar.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scroller-right</av-col>
-        <av-col size="4" center>3px</av-col>
-        <av-col size="4" center>Right padding of vertical scrollbar.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scrollbar-content-padding</av-col>
-        <av-col size="4" center>0</av-col>
-        <av-col size="4" center>Padding inside content-wrapper.</av-col>
-    </av-row>
-    <av-row>
-        <av-col size="4" center>--scrollbar-container-display</av-col>
-        <av-col size="4" center>inline-block</av-col>
-        <av-col size="4" center>Display type of content-wrapper.</av-col>
-    </av-row>
-</div><h2 id="notes">Notes</h2><ul>
-    <li>Scrollbars are automatically shown or hidden based on content size.</li>
-    <li><span class="cn">disable</span> temporarily locks scrolling and zooming.</li>
-    <li>Pinch zoom uses DOMMatrix transformations for smooth and accurate scaling.</li>
-    <li>Supports both pixel-based and percent-based scrolling.</li>
-    <li>Works in combination with Aventus PressManager for unified pointer/touch handling.</li>
-</ul>` }
-    });
-}
-    getClassName() {
-        return "DocUIAdvancedScrollable";
-    }
-    Title() {
-        return "How to Use the Advanced Scrollable Component in AventusJs";
-    }
-    Description() {
-        return "Learn how to use the Advanced Scrollable component in AventusJs to display scrollbars when needed. This guide covers both horizontal and vertical scrolling, automatic overflow handling, and integrating scrollable areas within your UI.";
-    }
-    Keywords() {
-        return [
-            "AventusJs Advanced Scrollable",
-            "scrollbar component AventusJs",
-            "horizontal scroll AventusJs",
-            "vertical scroll AventusJs",
-            "Aventus UI components",
-            "styled scrollable area",
-            "overflow management",
-            "frontend scrolling AventusJs",
-            "scrollable container",
-            "Aventus scroll handling",
-        ];
-    }
-}
-DocUIAdvancedScrollable.Namespace=`AventusWebsite`;
-DocUIAdvancedScrollable.Tag=`av-doc-u-i-advanced-scrollable`;
-__as1(_, 'DocUIAdvancedScrollable', DocUIAdvancedScrollable);
-if(!window.customElements.get('av-doc-u-i-advanced-scrollable')){window.customElements.define('av-doc-u-i-advanced-scrollable', DocUIAdvancedScrollable);Aventus.WebComponentInstance.registerDefinition(DocUIAdvancedScrollable);}
-
 const DocUIImage = class DocUIImage extends DocGenericPage {
     static __style = ``;
     __getStatic() {
@@ -24379,52 +24107,6 @@ BaseEditor.Namespace=`AventusWebsite`;
 BaseEditor.Tag=`av-base-editor`;
 __as1(_, 'BaseEditor', BaseEditor);
 if(!window.customElements.get('av-base-editor')){window.customElements.define('av-base-editor', BaseEditor);Aventus.WebComponentInstance.registerDefinition(BaseEditor);}
-
-const DocUIAdvancedScrollableEditor1 = class DocUIAdvancedScrollableEditor1 extends BaseEditor {
-    static __style = ``;
-    __getStatic() {
-        return DocUIAdvancedScrollableEditor1;
-    }
-    __getStyle() {
-        let arrStyle = super.__getStyle();
-        arrStyle.push(DocUIAdvancedScrollableEditor1.__style);
-        return arrStyle;
-    }
-    __getHtml() {
-super.__getHtml();
-    this.__getStatic().__template.setHTML({
-        slots: { 'default':`<slot></slot>` }, 
-        blocks: { 'default':`<av-code-editor name="Advanced Scrollable">
-    <av-code language="html" filename="index.html">
-        <pre>
-            &lt;av-advanced-scrollable x_scroll y_scroll mouse_drag&gt;
-                &lt;div style="width: 2000px; 
-                height: 1500px; 
-                background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%); 
-                background-size: 10px 10px, 10px 10px;"&gt;
-                    Large content here
-                &lt;/div&gt;
-            &lt;/av-advanced-scrollable&gt;
-        </pre>
-    </av-code></av-code>
-    <slot></slot>
-</av-code-editor>` }
-    });
-}
-    getClassName() {
-        return "DocUIAdvancedScrollableEditor1";
-    }
-    defineResult() {
-        const cont = document.createElement("DIV");
-        const ex1 = new DocUIAdvancedScrollableEditor1Compiled();
-        cont.appendChild(ex1);
-        return cont;
-    }
-}
-DocUIAdvancedScrollableEditor1.Namespace=`AventusWebsite`;
-DocUIAdvancedScrollableEditor1.Tag=`av-doc-u-i-advanced-scrollable-editor-1`;
-__as1(_, 'DocUIAdvancedScrollableEditor1', DocUIAdvancedScrollableEditor1);
-if(!window.customElements.get('av-doc-u-i-advanced-scrollable-editor-1')){window.customElements.define('av-doc-u-i-advanced-scrollable-editor-1', DocUIAdvancedScrollableEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIAdvancedScrollableEditor1);}
 
 const TutorialGenericPageEditor1 = class TutorialGenericPageEditor1 extends BaseEditor {
     static __style = ``;
@@ -37483,6 +37165,324 @@ DocUIScrollable.Namespace=`AventusWebsite`;
 DocUIScrollable.Tag=`av-doc-u-i-scrollable`;
 __as1(_, 'DocUIScrollable', DocUIScrollable);
 if(!window.customElements.get('av-doc-u-i-scrollable')){window.customElements.define('av-doc-u-i-scrollable', DocUIScrollable);Aventus.WebComponentInstance.registerDefinition(DocUIScrollable);}
+
+const DocUIAdvancedScrollableEditor1 = class DocUIAdvancedScrollableEditor1 extends BaseEditor {
+    static __style = ``;
+    __getStatic() {
+        return DocUIAdvancedScrollableEditor1;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIAdvancedScrollableEditor1.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        slots: { 'default':`<slot></slot>` }, 
+        blocks: { 'default':`<av-code-editor name="Advanced Scrollable">
+    <av-code language="html" filename="index.html">
+        <pre>
+            &lt;av-advanced-scrollable x_scroll y_scroll mouse_drag&gt;
+                &lt;div style="width: 2000px; 
+                height: 1500px; 
+                background-image: linear-gradient(to bottom, transparent 50%, #28487d 50%),  linear-gradient(to right, #617ca2 50%, #28487d 50%); 
+                background-size: 10px 10px, 10px 10px;"&gt;
+                    Large content here
+                &lt;/div&gt;
+            &lt;/av-advanced-scrollable&gt;
+        </pre>
+    </av-code></av-code>
+    <slot></slot>
+</av-code-editor>` }
+    });
+}
+    getClassName() {
+        return "DocUIAdvancedScrollableEditor1";
+    }
+    defineResult() {
+        const cont = document.createElement("DIV");
+        const ex1 = new DocUIAdvancedScrollableEditor1Compiled();
+        cont.appendChild(ex1);
+        return cont;
+    }
+}
+DocUIAdvancedScrollableEditor1.Namespace=`AventusWebsite`;
+DocUIAdvancedScrollableEditor1.Tag=`av-doc-u-i-advanced-scrollable-editor-1`;
+__as1(_, 'DocUIAdvancedScrollableEditor1', DocUIAdvancedScrollableEditor1);
+if(!window.customElements.get('av-doc-u-i-advanced-scrollable-editor-1')){window.customElements.define('av-doc-u-i-advanced-scrollable-editor-1', DocUIAdvancedScrollableEditor1);Aventus.WebComponentInstance.registerDefinition(DocUIAdvancedScrollableEditor1);}
+
+const DocUIAdvancedScrollable = class DocUIAdvancedScrollable extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocUIAdvancedScrollable;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocUIAdvancedScrollable.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>UI - Advanced Scrollable</h1><p>The <span class="cn">av-advanced-scrollable</span> component provides a custom, fully-featured scrollable container with
+    support for:</p><ul>
+    <li>Horizontal and vertical scrolling</li>
+    <li>Smooth momentum-based scrolling</li>
+    <li>Floating or static scrollbars</li>
+    <li>Auto-hide scrollbars</li>
+    <li>Mouse dragging</li>
+    <li>Touch and pinch-zoom support</li>
+    <li>Zooming on a point</li>
+    <li>Programmatic scrolling</li>
+</ul><p>It's ideal for applications that need precise control over scroll behavior, including drag-to-scroll, zoomable
+    content, and custom scrollbars.</p><h2 id="concept">Concept</h2><p><span class="cn">av-advanced-scrollable</span> wraps content in a scrollable container with custom scrollbars. Unlike native
+    scroll elements, it supports momentum, pinch zoom, and dragging, with fully customizable styling.</p><p>Example:</p><av-doc-u-i-advanced-scrollable-editor-1></av-doc-u-i-advanced-scrollable-editor-1><h2 id="attributes">Attributes</h2><div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Attribute</av-col>
+        <av-col size="4" center>Type</av-col>
+        <av-col size="4" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>x_scroll</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Enable horizontal scrolling. Default: false.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>y_scroll</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Enable vertical scrolling. Default: true. </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>floating_scroll</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>If true, scrollbars float over content instead of pushing it. </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>auto_hide</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Scrollbars hide automatically when not in use.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>disable</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Disables all user interaction with scrolling.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>flex</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Uses a vertical flex layout internally so child content can fill the remaining height.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>mouse_drag</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Enables dragging content with a mouse.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>pinch</av-col>
+        <av-col size="4" center>boolean</av-col>
+        <av-col size="4" center>Enables pinch-to-zoom on touch devices.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>zoom</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Current zoom level of the content. Default: 1. </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>min_zoom</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Minimum allowed zoom level. Default: 1. </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>max_zoom</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Maximum allowed zoom level. Default: unlimited. </av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>break</av-col>
+        <av-col size="4" center>number</av-col>
+        <av-col size="4" center>Easing factor for momentum. Default: 0.1. </av-col>
+    </av-row>
+</div><h2 id="features">Features</h2><h3>1. Momentum-based scrolling</h3><p><span class="cn">av-advanced-scrollable</span> applies smooth momentum when dragging or using the mouse wheel. The break
+    attribute controls easing.</p><h3>2. Custom scrollbars</h3><ul>
+    <li>Scrollbars are separate DOM elements, styled with CSS variables.</li>
+    <li>Floating scrollbars can auto-hide after inactivity.</li>
+    <li>Supports drag-to-scroll directly on the scrollbars.</li>
+</ul><h3>3. Pinch-to-zoom</h3><ul>
+    <li>Works on touch devices with two fingers.</li>
+    <li>Zoom is centered on a point for precise control.</li>
+    <li>Zoom boundaries respect min_zoom and max_zoom.</li>
+    <li>Triggers onZoomChange callback when zoom changes.</li>
+</ul><h3>4. Mouse dragging</h3><ul>
+    <li>Drag content with mouse if mouse_drag is enabled.</li>
+    <li>Momentum continues after release for a natural feel.</li>
+</ul><h2 id="callbacks">Callbacks</h2><div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Callback</av-col>
+        <av-col size="8" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>onScrollChange</av-col>
+        <av-col size="8">Triggered whenever the scroll position changes. Returns (x: number, y: number).</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>onZoomChange</av-col>
+        <av-col size="8">Triggered when the zoom level changes. Returns the new zoom number.</av-col>
+    </av-row>
+</div><h2 id="methods">Methods</h2><div class="table">
+    <av-row class="header">
+        <av-col size="6" center>Method</av-col>
+        <av-col size="6" center>Description</av-col>
+        </av-row>
+    <av-row>
+        <av-col size="6" center>scrollToPosition(x, y)</av-col>
+        <av-col size="6">Scrolls to specific pixel positions.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>scrollX(x)</av-col>
+        <av-col size="6">Scroll horizontally to pixel position.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>scrollXPercent(percent)</av-col>
+        <av-col size="6">Scroll horizontally as a percentage of total width.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>scrollY(y)</av-col>
+        <av-col size="6">Scroll vertically to pixel position.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>scrollYPercent(percent)</av-col>
+        <av-col size="6">Scroll vertically as a percentage of total height.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>zoomOnPoint(clientX, clientY, newZoom)</av-col>
+        <av-col size="6">Zoom centered at a screen point (clientX, clientY) to a specific zoom value.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>autoScrollRight(percent)</av-col>
+        <av-col size="6">Automatically scrolls right at a speed relative to content size.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>stopAutoScrollRight()</av-col>
+        <av-col size="6">Stops auto-scroll right.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>autoScrollLeft(percent)</av-col>
+        <av-col size="6">Automatically scrolls left.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>stopAutoScrollLeft()</av-col>
+        <av-col size="6">Stops auto-scroll left.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>autoScrollTop(percent)</av-col>
+        <av-col size="6">Automatically scrolls up.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>stopAutoScrollTop()</av-col>
+        <av-col size="6">Stops auto-scroll up.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>autoScrollBottom(percent)</av-col>
+        <av-col size="6">Automatically scrolls down.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="6" center>stopAutoScrollBottom()</av-col>
+        <av-col size="6">Stops auto-scroll down.</av-col>
+    </av-row>
+</div><h2 id="css-variables">CSS Variables</h2><div class="table">
+    <av-row class="header">
+        <av-col size="4" center>Variable</av-col>
+        <av-col size="4" center>Default</av-col>
+        <av-col size="4" center>Description</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scrollbar-container-color</av-col>
+        <av-col size="4" center>transparent</av-col>
+        <av-col size="4" center>Background color of scrollbar container.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scrollbar-color</av-col>
+        <av-col size="4" center>#757575</av-col>
+        <av-col size="4" center>Scrollbar color.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scrollbar-active-color</av-col>
+        <av-col size="4" center>#858585</av-col>
+        <av-col size="4" center>Scrollbar color when active/dragged.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scroller-width</av-col>
+        <av-col size="4" center>6px</av-col>
+        <av-col size="4" center>Width of scrollbar.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scroller-top</av-col>
+        <av-col size="4" center>3px</av-col>
+        <av-col size="4" center>Top padding of horizontal scrollbar.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scroller-bottom</av-col>
+        <av-col size="4" center>3px</av-col>
+        <av-col size="4" center>Bottom padding of horizontal scrollbar.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scroller-left</av-col>
+        <av-col size="4" center>3px</av-col>
+        <av-col size="4" center>Left padding of vertical scrollbar.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scroller-right</av-col>
+        <av-col size="4" center>3px</av-col>
+        <av-col size="4" center>Right padding of vertical scrollbar.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scrollbar-content-padding</av-col>
+        <av-col size="4" center>0</av-col>
+        <av-col size="4" center>Padding inside content-wrapper.</av-col>
+    </av-row>
+    <av-row>
+        <av-col size="4" center>--scrollbar-container-display</av-col>
+        <av-col size="4" center>inline-block</av-col>
+        <av-col size="4" center>Display type of content-wrapper.</av-col>
+    </av-row>
+</div><h2 id="notes">Notes</h2><ul>
+    <li>Scrollbars are automatically shown or hidden based on content size.</li>
+    <li><span class="cn">disable</span> temporarily locks scrolling and zooming.</li>
+    <li>Pinch zoom uses DOMMatrix transformations for smooth and accurate scaling.</li>
+    <li>Supports both pixel-based and percent-based scrolling.</li>
+    <li>Works in combination with Aventus PressManager for unified pointer/touch handling.</li>
+</ul>` }
+    });
+}
+    getClassName() {
+        return "DocUIAdvancedScrollable";
+    }
+    Title() {
+        return "How to Use the Advanced Scrollable Component in AventusJs";
+    }
+    Description() {
+        return "Learn how to use the Advanced Scrollable component in AventusJs to display scrollbars when needed. This guide covers both horizontal and vertical scrolling, automatic overflow handling, and integrating scrollable areas within your UI.";
+    }
+    Keywords() {
+        return [
+            "AventusJs Advanced Scrollable",
+            "scrollbar component AventusJs",
+            "horizontal scroll AventusJs",
+            "vertical scroll AventusJs",
+            "Aventus UI components",
+            "styled scrollable area",
+            "overflow management",
+            "frontend scrolling AventusJs",
+            "scrollable container",
+            "Aventus scroll handling",
+        ];
+    }
+}
+DocUIAdvancedScrollable.Namespace=`AventusWebsite`;
+DocUIAdvancedScrollable.Tag=`av-doc-u-i-advanced-scrollable`;
+__as1(_, 'DocUIAdvancedScrollable', DocUIAdvancedScrollable);
+if(!window.customElements.get('av-doc-u-i-advanced-scrollable')){window.customElements.define('av-doc-u-i-advanced-scrollable', DocUIAdvancedScrollable);Aventus.WebComponentInstance.registerDefinition(DocUIAdvancedScrollable);}
 
 const DocUITabsEditor1Tabs = class DocUITabsEditor1Tabs extends Aventus.Layout.Tabs.Tabs {
     static __style = `:host{width:100%}:host .header{border-bottom:1px solid var(--border);display:flex;gap:2rem;margin-top:2rem}:host .body{width:100%}`;
