@@ -43,6 +43,26 @@ export class PersonRAM extends Aventus.Ram<Person> implements Aventus.IRam {
     protected override getTypeForData(objJson: Aventus.KeysObject<Person> | Person): new () => Person {
         return Person;
     }
+    protected override async transformCreateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        const result = new Aventus.ResultWithError<Person>();
+        result.result = item;
+        return result;
+    }
+
+    protected override async transformCreateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        const result = new Aventus.ResultWithError<Person[]>();
+        result.result = items;
+        return result;
+    }
+
+    protected override async transformUpdateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        return this.transformCreateRequestToItem(item);
+    }
+
+    protected override async transformUpdateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        return this.transformCreateRequestListToItem(items);
+    }
+
 
 }
 ```
@@ -187,6 +207,26 @@ export class PersonRAM extends Aventus.Ram<Person> implements Aventus.IRam {
     protected override getTypeForData(objJson: Aventus.KeysObject<Person> | Person): new () => Person {
         return Person;
     }
+    protected override async transformCreateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        const result = new Aventus.ResultWithError<Person>();
+        result.result = item;
+        return result;
+    }
+
+    protected override async transformCreateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        const result = new Aventus.ResultWithError<Person[]>();
+        result.result = items;
+        return result;
+    }
+
+    protected override async transformUpdateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        return this.transformCreateRequestToItem(item);
+    }
+
+    protected override async transformUpdateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        return this.transformCreateRequestListToItem(items);
+    }
+
 
 }
 ```
@@ -335,6 +375,26 @@ export class PersonRAM extends Aventus.Ram<Person> implements Aventus.IRam {
     protected override getTypeForData(objJson: Aventus.KeysObject<Person> | Person): new () => Person {
         return Person;
     }
+    protected override async transformCreateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        const result = new Aventus.ResultWithError<Person>();
+        result.result = item;
+        return result;
+    }
+
+    protected override async transformCreateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        const result = new Aventus.ResultWithError<Person[]>();
+        result.result = items;
+        return result;
+    }
+
+    protected override async transformUpdateRequestToItem(item: Person): Promise<Aventus.ResultWithError<Person>> {
+        return this.transformCreateRequestToItem(item);
+    }
+
+    protected override async transformUpdateRequestListToItem(items: Person[]): Promise<Aventus.ResultWithError<Person[]>> {
+        return this.transformCreateRequestListToItem(items);
+    }
+
 
 }
 ```

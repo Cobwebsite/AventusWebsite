@@ -14,7 +14,7 @@ A <mark>Page</mark> is automatically managed by the <mark>Router</mark> componen
 You can extend <mark>Page</mark> to create your own screens, and optionally override lifecycle methods like <mark>onShow</mark>, <mark>onHide</mark>, and <mark>isAllowed</mark>.
 
 ```ts
-import { Page } from "Aventus@Main:Aventus.package.avt";
+import { Page } from "Aventus@UI:Aventus.Navigation.package.avt";
 
 export class HomePage extends Page {
 	public override async configure() {
@@ -54,6 +54,9 @@ The visible property is reactive when its value changes:
 
 - If true, onShow() is called
 - If false, onHide() is called
+
+Calling <mark>show()</mark> on a page that is already visible still calls <mark>onShow()</mark>,
+    which allows route data to be refreshed without hiding the page first.
 
 ## Lifecycle Methods
 

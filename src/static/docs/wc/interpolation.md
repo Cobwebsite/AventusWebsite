@@ -93,3 +93,5 @@ export class Example extends Aventus.WebComponent implements Aventus.DefaultComp
 ```
 
 Because Aventus is using a <mark>Signal</mark> like system, any function that is using watchable variable will be auto refreshed when a value changed
+
+JavaScript template literals using backticks are supported inside view expressions and interpolations.

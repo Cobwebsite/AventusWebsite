@@ -48,7 +48,7 @@ Inside the output folder you must have a new folder named <mark>locales</mark> t
 
 ## Compilation configuration
 
-You can customize how Avenuts must handle you i18n files.
+You can customize how Aventus handles your i18n files.
 
 ```json filename=aventus.conf.avt
 {

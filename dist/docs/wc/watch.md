@@ -189,7 +189,7 @@ You can watch what occur on an object everywhere on your code. To achieve that, 
 
 ```typescript filename=Test.lib.avt
 export function createWatcher() {
-	let watchableObj = Aventus.Watcher.get({}, (action: WatchAction, path: string, element: any) => {
+	let watchableObj = Aventus.Watcher.get({}, (action: WatchAction, path: string, value: any) => {
 		console.log(Aventus.WatchAction[action] + " on " + path + " with value " + value);
 	});
 	return watchableObj;

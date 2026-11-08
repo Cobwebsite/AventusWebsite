@@ -11,6 +11,10 @@ When you create function that can fail you can use the error strategy developed 
     that extends either number or an enumeration (Enum). By extending GenericError, you can create specific error types
     tailored to different error scenarios in your application.
 
+The constructor accepts an error code and any message value. Native <mark>Error</mark> instances use their
+    message, while other values are converted to strings. Use <mark>details</mark> for structured supplementary
+    information.
+
 ```typescript filename=Example.lib.avt
 // Define an enumeration for error codes
 export enum MyErrorCode {

@@ -23,8 +23,8 @@ ToastElement&lt;T extends ToastOptions = ToastOptions&gt; is the base class used
 
 |Method|Description|
 |---|---|
-|static add(options: ToastOptions | ToastElement): Promise&lt;boolean&gt;|Displays a new toast.|
-|setOptions(options: T): Promise&lt;void&gt;|Must be implemented to define how your toast handles the provided options (e.g., set text, color, or             icon).|
+|static add(options: ToastOptions): Promise&lt;boolean&gt;|Displays a new toast.|
+|setOptions(options: T): Asyncable&lt;void&gt;|Must be implemented to define how your toast handles the provided options (e.g., set text, color, or             icon).|
 |close()|Manually closes the toast and removes it from the DOM.|
 
 ## ToastManager Class
@@ -42,6 +42,7 @@ Toast.ToastManager.configure({
     defaultPosition: 'top right',
     defaultDelay: 4000,
     heightLimitPercent: 90,
+    gap: 12,
 });
 ```
 
@@ -53,10 +54,12 @@ Toast.ToastManager.configure({
 |defaultToastManager|Constructor&lt;ToastManager&gt;|Allows using a custom toast manager implementation.|
 |defaultPosition|ToastPosition|Default screen position for new toasts. Default : 'top right'|
 |defaultDelay|number|Default auto-close delay for toasts.. Default : 5000|
-|heightLimitPercent|number|Max vertical space2 (in % of viewport height) that toasts can occupy. Default : 100|
+|heightLimitPercent|number|Max vertical space (in % of viewport height) that toasts can occupy. Default: 100|
+|gap|number|Space in pixels between stacked toasts. Default: 10|
 
 ## Behavior
 
 - The toast slides in at the specified position.
 - Automatically disappears after delay milliseconds.
 - If delay = -1, it stays visible until manually closed.
+- Stack recalculation waits for active CSS transitions before measuring toast sizes.

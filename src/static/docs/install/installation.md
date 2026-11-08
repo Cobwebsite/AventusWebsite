@@ -18,6 +18,9 @@ Because Aventus is fully integrated inside vscode, you must know how to run some
 -  **Aventus : Import templates**  &nbsp; To import Aventus templates
 -  **Aventus : Import projects**  &nbsp; To import Aventus projects
 -  **Aventus : Open storage**  &nbsp; To open the folder where Aventus store data
+-  **Aventus : Create emmet snippets**  &nbsp; To generate
+        &nbsp;<mark>.aventus/emmet/snippets.json</mark> from web components exported by project packages
+-  **Aventus : Format all files**  &nbsp; To format all Aventus files loaded by the language server
 
 ## CLI
 
@@ -28,6 +31,13 @@ npm i @aventusjs/cli
 ```
 
 While the CLI is powerful for scripting and automation, it is still recommended to use the VSCode extension for development, as it includes all necessary tools in a user-friendly interface.
+
+Useful CLI commands include:
+
+- <mark>av format [aventus.conf.avt]</mark> to format every Aventus file in a project; the optional
+        configuration path selects the project explicitly.
+- <mark>av dependencies help-llm</mark> to generate dependency documentation for AI tools.
+- <mark>av update</mark> to update the CLI package.
 
 ## Source code
 

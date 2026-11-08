@@ -34,7 +34,7 @@ export class Emitter extends Aventus.WebComponent implements Aventus.DefaultComp
         setInterval(() => {
             this.dispatchEvent(new CustomEvent("myEvent", {
                 detail: {
-                    time: Date.now()
+                    time: Aventus.DateTime.now
                 }
             }));
         }, 1000);
@@ -85,7 +85,8 @@ export class Receiver extends Aventus.WebComponent implements Aventus.DefaultCom
     protected override postCreation(): void {
         let emitter = document.querySelector<Emitter>("av-emitter");
         if(emitter) {
-            emitter.addEventListener("myEvent", (e: CustomEvent) => {
+            emitter.addEventListener("myEvent", (e: Event) => {
+                const event = e as CustomEvent<{ time: Aventus.DateTime }>;
                 this.shadowRoot.innerHTML = 'Time is ' + e.detail.time;
             });
         }
@@ -169,7 +170,7 @@ export class Emitter extends Aventus.WebComponent implements Aventus.DefaultComp
 
 
     //#region variables
-    public readonly myEvent: Aventus.Callback<(time: number) => void> = new Aventus.Callback();
+    public readonly myEvent: Aventus.Callback<(time: Aventus.DateTime) => void> = new Aventus.Callback();
     //#endregion
 
 
@@ -181,7 +182,7 @@ export class Emitter extends Aventus.WebComponent implements Aventus.DefaultComp
     //#region methods
     private emitMyEvent() {
         setInterval(() => {
-            this.myEvent.trigger(Date.now());
+            this.myEvent.trigger(Aventus.DateTime.now);
         }, 1000);
     }
     protected override postCreation(): void {
@@ -230,7 +231,7 @@ export class Receiver extends Aventus.WebComponent implements Aventus.DefaultCom
     protected override postCreation(): void {
         let emitter = document.querySelector<Emitter>("av-emitter");
         if(emitter) {
-            emitter.myEvent.add((time: number) => {
+            emitter.myEvent.add((time: Aventus.DateTime) => {
                 this.shadowRoot.innerHTML = 'Time is ' + time;
             });
         }

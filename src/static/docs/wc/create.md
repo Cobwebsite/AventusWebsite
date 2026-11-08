@@ -583,9 +583,9 @@ Over the classname you can add predefine Decorators :
         compilation and
         to.
     &nbsp;
-- <mark>@Dependances({ type: Type, strong?:boolean}[])</mark> : to add dependance not written inside
+- <mark>@Dependencies({ type: Type, strong?:boolean}[])</mark> : to add a dependency not written inside
         component. The
-        strong boolean define if the dependance must be loaded before the class.
+        The strong boolean defines whether the dependency must be loaded before the class.
 - <mark>@OverrideView({ removeViewVariables?: string[] })</mark> : to fully override parent view. You
         can remove parent
         ViewElement needed, but you have to be aware of what you are doing.
@@ -606,3 +606,7 @@ The webcomponent has the following lifecycle
 ![](https://aventusjs.com/img/doc/wc/create/lifecylce.png)
 
 By default <mark>postCreation</mark> and <mark>postDestruction</mark> are empty.
+
+Use <mark>postDisconnect()</mark> for work performed whenever the component leaves the DOM.
+    &nbsp;<mark>onPostDisconnect(callback)</mark> and <mark>onPostDestruction(callback)</mark> register
+    cleanup callbacks without overriding the lifecycle methods.

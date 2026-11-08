@@ -5,6 +5,10 @@ To know when an element is changing you can use the native function <mark>[Resiz
     behind, a <mark>single instance</mark> of native ResizeObserver is used and the callback function is
     limited to one trigger each <mark>1000 / 60 ms</mark>.
 
+The callback follows the native <mark>ResizeObserverCallback</mark> signature and receives the changed
+    entries followed by the shared native observer. Pass <mark>fps</mark> in the options to choose another
+    callback frequency.
+
 ```typescript filename=/ResizeObserver/src/Example/Example.wcl.avt
 export class Example extends Aventus.WebComponent implements Aventus.DefaultComponent {
 

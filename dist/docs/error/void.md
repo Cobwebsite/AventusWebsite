@@ -15,3 +15,10 @@ if (validation.success) {
     console.error("Validation errors:", validation.errors);
 }
 ```
+
+## Composition helpers
+
+- <mark>containsCode(code, type?)</mark> checks whether a code is present.
+- <mark>run()</mark> and <mark>runAsync()</mark> execute only while the result is successful and merge returned errors.
+- <mark>extract()</mark> and <mark>extractAsync()</mark> unwrap a ResultWithError and propagate its errors.
+- <mark>toGeneric()</mark> removes a specialized error type.

@@ -61,12 +61,9 @@ export class Example extends Aventus.WebComponent implements Aventus.DefaultComp
 </example-tabs>
 ```
 
-The three classes below use <mark>@TagName</mark> to register these exact tags, regardless of the project's component prefix. The tab header is created by <mark>Tabs</mark> and does not appear in the example markup.
-
 ```typescript filename=/Tab/Tab.wcl.avt
 import type { IconType } from "MaterialIcon:MaterialIcon.package.avt";
 
-@TagName("example-tab")
 export class Tab extends Aventus.Layout.Tabs.Tab implements Aventus.DefaultComponent {
 
     //#region static
@@ -120,7 +117,6 @@ export class Tab extends Aventus.Layout.Tabs.Tab implements Aventus.DefaultCompo
 ```typescript filename=/TabHeader/TabHeader.wcl.avt
 import type { Tab } from "../Tab/Tab.wcl.avt";
 
-@TagName("example-tab-header")
 export class TabHeader extends Aventus.Layout.Tabs.TabHeader<Tab> implements Aventus.DefaultComponent {
 
     //#region static
@@ -222,7 +218,6 @@ export class TabHeader extends Aventus.Layout.Tabs.TabHeader<Tab> implements Ave
 import type { Tab } from "../Tab/Tab.wcl.avt";
 import { TabHeader } from "../TabHeader/TabHeader.wcl.avt";
 
-@TagName("example-tabs")
 export class Tabs extends Aventus.Layout.Tabs.Tabs<Tab, TabHeader> implements Aventus.DefaultComponent {
 
     //#region static
@@ -289,19 +284,22 @@ export class Tabs extends Aventus.Layout.Tabs.Tabs<Tab, TabHeader> implements Av
 
 Developers must implement the <mark>defineTabHeader()</mark> method to specify which header component should be used.
 
-Developers can also use the method <mark>setActive(tabHeader: TabHeader&lt;T&gt; | number | string)</mark> to set the active tab by reference, index, or tab identifier.
+Developers can also use the method <mark>setActive(tabHeader: TabHeader&lt;T&gt; | number | string): boolean</mark>
+    to set the active tab by reference, index, or tab identifier. It returns false when no matching tab exists.
 
  **Behavior** 
 
 - Tabs are hidden until selected.
 - The first tab is automatically activated unless another one is marked as selected.
 - The <mark>Tabs</mark> component controls both visual state and logical state (selected attribute).
+- Adding, removing or reordering slotted tabs automatically updates their headers.
 
 ## Tab Class
 
 <mark>Tab</mark> represents the  **content**  of a tab, and provides the connection point between tab data and its header. To implement a <mark>Tab</mark>, the method <mark>identifier() : string</mark> have to be implemented.
 
-When the tab is active, the attribute <mark>selected</mark> is set to true.
+Once a tab is registered, <mark>loaded</mark> is set to true. When it is active,
+    &nbsp;<mark>selected</mark> is set to true.
 
 ## TabHeader Class
 

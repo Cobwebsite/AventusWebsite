@@ -21,7 +21,7 @@ When working with backend routes, forms, or other async processes in Aventus, ma
 ```ts
 // Sets up a global error handler that is automatically invoked whenever an operation fails.
 Process.configure({
-    handleErrors: (msg) => {
+    handleErrors: (msg, errors) => {
         Alert.open({
             title: "Execution error",
             content: msg,
@@ -41,3 +41,7 @@ async function login() {
 	}
 }
 ```
+
+For <mark>ResultWithError</mark>, <mark>execute</mark> and
+    &nbsp;<mark>parseErrors</mark> return the result value. For <mark>VoidWithError</mark>, they return
+    the success boolean. Both return <mark>undefined</mark> after handled errors.

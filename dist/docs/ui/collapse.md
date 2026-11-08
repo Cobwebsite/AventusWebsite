@@ -20,6 +20,8 @@ By default, clicking the header toggles the open state with an animated transiti
 |---|---|---|
 |open|boolean|Whether the collapse is currently expanded.|
 |no_animation|boolean|Disables the transition animation.|
+|horizontal|boolean|Collapses columns horizontally instead of rows vertically.|
+|reverse|boolean|Anchors collapsing content to the end side.|
 
 ## CSS Variables
 

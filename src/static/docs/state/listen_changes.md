@@ -492,3 +492,12 @@ export async function inactiveNotFired() {
     ]
 }
 ```
+
+## Manager helpers
+
+- <mark>subscribe(pattern, callbacks, autoActiveState)</mark> immediately calls the active callback by default when the current state already matches.
+- <mark>activateAfterSubscribe()</mark> performs that activation explicitly when automatic activation was disabled.
+- <mark>canChangeState()</mark> registers a global asynchronous guard.
+- <mark>getStateSlugs(pattern)</mark> returns the typed parameters of the active state.
+- <mark>onAfterStateChanged()</mark> and <mark>offAfterStateChanged()</mark> manage callbacks executed after a successful transition.
+- <mark>StateManager.canBeActivate(pattern, stateName)</mark> tests a state name without changing the current state.

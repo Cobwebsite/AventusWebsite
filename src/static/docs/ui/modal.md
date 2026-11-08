@@ -17,6 +17,10 @@ ModalElement is an abstract base class designed to handle modal logic such as:
 Developers should extend this class to create specific modal components (confirmation dialogs, forms, alerts, etc.).
 
 
+The modal content receives <mark>role="dialog"</mark> and <mark>aria-modal="true"</mark>
+    automatically. Its stacking level can be customized with the <mark>--modal-z-index</mark> CSS variable
+    (default: 60).
+
 ## Example
 
 ```typescript filename=/Example/Example.wcl.avt

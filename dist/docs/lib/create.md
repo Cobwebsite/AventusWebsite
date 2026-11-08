@@ -5,10 +5,12 @@ In this section you are going to learn what is a library and how you can create 
 ## Definition
 
 A library is a piece of code that isn't matching any previous file type. This is the only file type that can contain
-    exported functions. The only thing that isn't allowed inside this file is to write root constants or root variables.
+    exported functions. You can also declare and export constants or variables at the root of a library file.
 
 
 ```typescript filename=Test.lib.avt
+export const answer = 42;
+
 export function myFunction(){
 ...
 }

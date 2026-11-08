@@ -17,7 +17,10 @@ To create an application with Aventus, you need to define a file named <mark>ave
 |componentPrefix|This is the prefix that are going to be used by all your webcomponents inside the module. For example if my class is named "Test" and my prefix is "av", the final tag will be "av-test". By default, it will use the module name as prefix.             &nbsp;Must satisfy: <mark>^[a-z]{2,}$</mark>         &nbsp;|
 |hideWarnings|This is a boolean to hide warnings inside Aventus. This is useful when you are developing an app but your aren't in production. If you set it to false, you need to document all your methods             &nbsp;Must satisfy: <mark>true|false</mark>         &nbsp;|
 |avoidParsingInsideTags|This is an array of string that the HTML compiler must avoid parsing. For example on this website, the tag av-code isn't parsed by the compiler to avoid detecting some Aventus features inside the HTML code like @element.             &nbsp;Each string must satisfy: <mark>^[a-z-]+$</mark>         &nbsp;|
-|aliases|This is an object of string that allows replacement of code. For example { "@root": "./"} will replace any @root to resolve the root folder|
+|aliases|This maps import aliases to folders. For example, <mark>{ "@root": "./src/" }</mark>             allows imports such as <mark>import { User } from "@root/data/User.data.avt"</mark>. When an             auto-import resolves inside an aliased folder, the language server writes the alias form instead of a long             relative path.|
 |build|This is an array of build options. Each build is defined by a list of input and will output a .js file and / or a package.avt file         &nbsp;|
-|dependances|This is an array of dependances options.|
+|dependencies|This is an object of dependency options.|
+|namespaceStrategy|Global namespace strategy: <mark>manual</mark>, <mark>followFolders</mark>,             &nbsp;<mark>followFoldersCamelCase</mark> or <mark>rules</mark>.|
+|namespaceRoot|Root folder used by folder-based namespace strategies.|
+|namespaceRules|Path patterns used when <mark>namespaceStrategy</mark> is             &nbsp;<mark>rules</mark>.|
 |static|This is an array of static options.         &nbsp;|

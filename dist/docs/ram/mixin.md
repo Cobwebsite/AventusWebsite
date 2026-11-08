@@ -137,6 +137,26 @@ export class PersonRAM extends Aventus.Ram<Person, PersonExtended> implements Av
         // this will be implemented later
         throw new Error("Method not implemented.");
     }
+    protected override async transformCreateRequestToItem(item: PersonExtended): Promise<Aventus.ResultWithError<Person>> {
+        const result = new Aventus.ResultWithError<Person>();
+        result.result = item;
+        return result;
+    }
+
+    protected override async transformCreateRequestListToItem(items: PersonExtended[]): Promise<Aventus.ResultWithError<Person[]>> {
+        const result = new Aventus.ResultWithError<Person[]>();
+        result.result = items;
+        return result;
+    }
+
+    protected override async transformUpdateRequestToItem(item: PersonExtended): Promise<Aventus.ResultWithError<Person>> {
+        return this.transformCreateRequestToItem(item);
+    }
+
+    protected override async transformUpdateRequestListToItem(items: PersonExtended[]): Promise<Aventus.ResultWithError<Person[]>> {
+        return this.transformCreateRequestListToItem(items);
+    }
+
 }
 ```
 
@@ -194,6 +214,26 @@ export class PersonRAM extends Aventus.Ram<Person, PersonExtended> implements Av
         // this will be implemented later
         throw new Error("Method not implemented.");
     }
+    protected override async transformCreateRequestToItem(item: PersonExtended): Promise<Aventus.ResultWithError<Person>> {
+        const result = new Aventus.ResultWithError<Person>();
+        result.result = item;
+        return result;
+    }
+
+    protected override async transformCreateRequestListToItem(items: PersonExtended[]): Promise<Aventus.ResultWithError<Person[]>> {
+        const result = new Aventus.ResultWithError<Person[]>();
+        result.result = items;
+        return result;
+    }
+
+    protected override async transformUpdateRequestToItem(item: PersonExtended): Promise<Aventus.ResultWithError<Person>> {
+        return this.transformCreateRequestToItem(item);
+    }
+
+    protected override async transformUpdateRequestListToItem(items: PersonExtended[]): Promise<Aventus.ResultWithError<Person[]>> {
+        return this.transformCreateRequestListToItem(items);
+    }
+
     /**
      * Mixin pattern to add methods
      */
@@ -268,6 +308,26 @@ export class PersonRAM extends Aventus.Ram<Person, PersonExtended> implements Av
     protected override getTypeForData(objJson: Person | Aventus.KeysObject<Person>): new () => PersonExtended {
         return this.addPersonMethod(Person);
     }
+    protected override async transformCreateRequestToItem(item: PersonExtended): Promise<Aventus.ResultWithError<Person>> {
+        const result = new Aventus.ResultWithError<Person>();
+        result.result = item;
+        return result;
+    }
+
+    protected override async transformCreateRequestListToItem(items: PersonExtended[]): Promise<Aventus.ResultWithError<Person[]>> {
+        const result = new Aventus.ResultWithError<Person[]>();
+        result.result = items;
+        return result;
+    }
+
+    protected override async transformUpdateRequestToItem(item: PersonExtended): Promise<Aventus.ResultWithError<Person>> {
+        return this.transformCreateRequestToItem(item);
+    }
+
+    protected override async transformUpdateRequestListToItem(items: PersonExtended[]): Promise<Aventus.ResultWithError<Person[]>> {
+        return this.transformCreateRequestListToItem(items);
+    }
+
     /**
      * Mixin pattern to add methods
      */
@@ -342,6 +402,26 @@ export class PersonRAM extends Aventus.Ram<Person, PersonExtended> implements Av
     protected override getTypeForData(objJson: Person | Aventus.KeysObject<Person>): new () => PersonExtended {
         return this.addPersonMethod(Person);
     }
+    protected override async transformCreateRequestToItem(item: PersonExtended): Promise<Aventus.ResultWithError<Person>> {
+        const result = new Aventus.ResultWithError<Person>();
+        result.result = item;
+        return result;
+    }
+
+    protected override async transformCreateRequestListToItem(items: PersonExtended[]): Promise<Aventus.ResultWithError<Person[]>> {
+        const result = new Aventus.ResultWithError<Person[]>();
+        result.result = items;
+        return result;
+    }
+
+    protected override async transformUpdateRequestToItem(item: PersonExtended): Promise<Aventus.ResultWithError<Person>> {
+        return this.transformCreateRequestToItem(item);
+    }
+
+    protected override async transformUpdateRequestListToItem(items: PersonExtended[]): Promise<Aventus.ResultWithError<Person[]>> {
+        return this.transformCreateRequestListToItem(items);
+    }
+
     /**
      * Mixin pattern to add methods
      */

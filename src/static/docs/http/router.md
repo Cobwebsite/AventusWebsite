@@ -15,6 +15,10 @@ A HttpRouter instance is responsible for:
 
 You can subclass <mark>HttpRouter</mark> to customize its endpoint behavior or base URL.
 
+Use <mark>HttpRouter.configure(options)</mark> to change the global defaults. Override
+    &nbsp;<mark>defineOptions(options)</mark> in a subclass for router-specific configuration. The constructor does
+    not accept options.
+
 By default, the router's base URL is set to the current domain:
 
 ```ts
