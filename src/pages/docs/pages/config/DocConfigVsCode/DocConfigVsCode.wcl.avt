@@ -1,0 +1,7 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocConfigVsCode extends DocGenericPage implements Aventus.DefaultComponent {
+    protected override Title(): string { return "VS Code settings for Aventus"; }
+    protected override Description(): string { return "Customize the Aventus VS Code extension, including editor behavior, templates, file access and live server settings."; }
+    protected override Keywords(): string[] { return ["Aventus VS Code settings", "Aventus extension configuration", "Aventus live server settings"]; }
+}

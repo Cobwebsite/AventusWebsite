@@ -1,0 +1,7 @@
+import { DocGenericPage } from "../../DocGenericPage/DocGenericPage.wcl.avt";
+
+export class DocLibDateTime extends DocGenericPage implements Aventus.DefaultComponent {
+    protected override Title(): string { return "Date, DateTime and Time in Aventus"; }
+    protected override Description(): string { return "Create, parse, compare and format Aventus Date, DateTime and Time values."; }
+    protected override Keywords(): string[] { return ["Aventus Date", "Aventus DateTime", "Aventus Time", "time zones", "date formatting"]; }
+}

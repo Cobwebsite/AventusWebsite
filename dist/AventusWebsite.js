@@ -19613,6 +19613,7 @@ const DocSidenav = class DocSidenav extends Aventus.WebComponent {
             <li><av-link to="/docs/config/build">Builds</av-link></li>
             <li><av-link to="/docs/config/static">Statics</av-link></li>
             <li><av-link to="/docs/config/lib">Import libs</av-link></li>
+            <li><av-link to="/docs/config/vscode">VS Code settings</av-link></li>
         </ul>
     </av-collapse>
     <av-collapse>
@@ -19679,6 +19680,7 @@ const DocSidenav = class DocSidenav extends Aventus.WebComponent {
         <div class="title" slot="header">lib</div>
         <ul>
             <li><av-link to="/docs/lib/create">Create</av-link></li>
+            <li><av-link to="/docs/lib/date_time">Date, DateTime &amp; Time</av-link></li>
             <li><av-link to="/docs/lib/animation">Animation</av-link></li>
             <li><av-link to="/docs/lib/callback">Callback</av-link></li>
             <li><av-link to="/docs/lib/compare_object">CompareObject</av-link></li>
@@ -22128,6 +22130,70 @@ DocLibInstance.Tag=`av-doc-lib-instance`;
 __as1(_, 'DocLibInstance', DocLibInstance);
 if(!window.customElements.get('av-doc-lib-instance')){window.customElements.define('av-doc-lib-instance', DocLibInstance);Aventus.WebComponentInstance.registerDefinition(DocLibInstance);}
 
+const DocLibDateTime = class DocLibDateTime extends DocGenericPage {
+    static __style = ``;
+    __getStatic() {
+        return DocLibDateTime;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocLibDateTime.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>Date, DateTime and Time</h1><p><span class="cn">Aventus.Date</span> represents a calendar day, <span class="cn">Aventus.Time</span> a time of day, and <span class="cn">Aventus.DateTime</span> both. Methods such as <span class="cn">addDays()</span> and <span class="cn">with()</span> return a new value without changing the original.</p><h2 id="create-and-parse">Create and parse</h2><av-code language="typescript" filename="Example.lib.avt">
+    <pre>
+    const day = new Aventus.Date(2026, 11, 23);
+    const parsedDay = Aventus.Date.parse("2026-11-23");
+    const clock = Aventus.Time.parse("14:30:00");
+    const appointment = Aventus.DateTime.parse("2026-11-23T14:30:00");
+    const instant = Aventus.DateTime.parse("2026-11-23T13:30:00Z");
+    &nbsp;
+    console.log(Aventus.Date.today, Aventus.Time.now);
+    console.log(Aventus.DateTime.now, Aventus.DateTime.utcNow);
+    </pre>
+</av-code></av-code><p><span class="cn">parse()</span> throws for invalid input; <span class="cn">tryParse()</span> returns <span class="cn">null</span>. Date uses <span class="cn">YYYY-MM-DD</span>, Time uses <span class="cn">HH:mm[:ss[.fraction]]</span>, and DateTime uses an ISO date and time with an optional <span class="cn">Z</span> or offset.</p><h2 id="arithmetic-and-comparison">Arithmetic and comparison</h2><av-code language="typescript" filename="Example.lib.avt">
+    <pre>
+    const nextWeek = day.addDays(7);
+    const monthStart = day.startOfMonth();
+    const later = clock.addMinutes(45); // Wraps at midnight.
+    const deadline = appointment.addHours(2);
+    &nbsp;
+    console.log(day.isBefore(nextWeek));
+    console.log(day.daysUntil(nextWeek)); // 7; diffDays() gives the absolute value.
+    console.log(deadline.date, deadline.time);
+    </pre>
+</av-code></av-code><p>All three types offer <span class="cn">compareTo()</span>, <span class="cn">equals()</span>, <span class="cn">isBefore()</span> and <span class="cn">isAfter()</span>. Date and DateTime also provide year, quarter, month, week and day boundaries where applicable. Time differences compare times on the same day; they do not assume an overnight interval.</p><h2 id="time-zones">DateTime and time zones</h2><p>A DateTime without an offset represents a local date and time. An input ending in <span class="cn">Z</span> or containing an offset represents a specific instant and is converted to UTC. Specify a time zone such as <span class="cn">Europe/Zurich</span> before converting a local value to a timestamp or comparing it with a UTC value.</p><av-code language="typescript" filename="Example.lib.avt">
+    <pre>
+    const local = Aventus.DateTime.parse("2026-11-23T14:30:00");
+    const utc = local.toUtc("Europe/Zurich");
+    console.log(utc.toString()); // 2026-11-23T13:30:00Z
+    console.log(local.toTimestamp("Europe/Zurich")); // Unix milliseconds.
+    </pre>
+</av-code></av-code><p><span class="cn">toUtc()</span> rejects local times that are ambiguous or do not exist because of a daylight saving change. Convert both values to UTC before comparing a local DateTime with a UTC DateTime.</p><h2 id="formatting">Formatting and configuration</h2><p><span class="cn">toString()</span> and <span class="cn">toJSON()</span> produce ISO values. Use <span class="cn">toLocaleString()</span> for display, or <span class="cn">toInputString()</span> for HTML time and date-time inputs. <span class="cn">configure()</span> shares formatting and calendar defaults across the three types; it does not change ISO parsing or JSON serialization.</p><av-code language="typescript" filename="Example.lib.avt">
+    <pre>
+    Aventus.Date.configure({ locale: "fr-CH", timeZone: "Europe/Zurich", firstDayOfWeek: 1 });
+    console.log(day.toLocaleString());
+    console.log(appointment.toInputString());
+    console.log(clock.toInputString("minute"));
+    </pre>
+</av-code></av-code><p>Configuration also accepts <span class="cn">dateFormat</span>, <span class="cn">dateTimeFormat</span>, <span class="cn">timeFormat</span>, <span class="cn">monthNameFormat</span> and <span class="cn">dayNameFormat</span>. A supplied format object replaces the previous format object.</p>` }
+    });
+}
+    getClassName() {
+        return "DocLibDateTime";
+    }
+    Title() { return "Date, DateTime and Time in Aventus"; }
+    Description() { return "Create, parse, compare and format Aventus Date, DateTime and Time values."; }
+    Keywords() { return ["Aventus Date", "Aventus DateTime", "Aventus Time", "time zones", "date formatting"]; }
+}
+DocLibDateTime.Namespace=`AventusWebsite`;
+DocLibDateTime.Tag=`av-doc-lib-date-time`;
+__as1(_, 'DocLibDateTime', DocLibDateTime);
+if(!window.customElements.get('av-doc-lib-date-time')){window.customElements.define('av-doc-lib-date-time', DocLibDateTime);Aventus.WebComponentInstance.registerDefinition(DocLibDateTime);}
+
 const DocLibCreate = class DocLibCreate extends DocGenericPage {
     static __style = ``;
     __getStatic() {
@@ -22944,6 +23010,75 @@ DocErrorGeneric.Namespace=`AventusWebsite`;
 DocErrorGeneric.Tag=`av-doc-error-generic`;
 __as1(_, 'DocErrorGeneric', DocErrorGeneric);
 if(!window.customElements.get('av-doc-error-generic')){window.customElements.define('av-doc-error-generic', DocErrorGeneric);Aventus.WebComponentInstance.registerDefinition(DocErrorGeneric);}
+
+const DocConfigVsCode = class DocConfigVsCode extends DocGenericPage {
+    static __style = `:host .table av-col:nth-child(2){text-align:left}`;
+    __getStatic() {
+        return DocConfigVsCode;
+    }
+    __getStyle() {
+        let arrStyle = super.__getStyle();
+        arrStyle.push(DocConfigVsCode.__style);
+        return arrStyle;
+    }
+    __getHtml() {
+super.__getHtml();
+    this.__getStatic().__template.setHTML({
+        blocks: { 'default':`<h1>VS Code settings</h1><p>Customize the Aventus extension in VS Code Settings or in your workspace's <span class="cn">.vscode/settings.json</span>. These settings control the editor, templates, file access and live server.</p><av-code language="json" filename=".vscode/settings.json">
+    <pre>
+    {
+    &nbsp;
+    	"aventus.ideBuild": true,
+    	"aventus.readDirs": ["./shared"],
+    	"aventus.liveserver": { "port": 8080, "rootFolder": "./dist" }
+    &nbsp;
+    }
+    </pre>
+</av-code></av-code><h2 id="editor-and-build">Editor and build</h2><div class="table">
+    <av-row class="header"><av-col size="4" center>Setting</av-col><av-col size="8" center>Purpose and default</av-col></av-row>
+    <av-row><av-col size="4">aventus.updateImportOnRename</av-col><av-col size="8">Update import paths when a file is renamed. Default: <span class="cn">true</span>.</av-col></av-row>
+    <av-row><av-col size="4">aventus.ideBuild</av-col><av-col size="8">Build code in the IDE. Default: <span class="cn">true</span>.</av-col></av-row>
+    <av-row><av-col size="4">aventus.defaultHideWarnings</av-col><av-col size="8">Default value for hiding warnings. Default: <span class="cn">false</span>.</av-col></av-row>
+    <av-row><av-col size="4">aventus.defaultForceDocumentation</av-col><av-col size="8">Default value for requiring documentation. Default: <span class="cn">false</span>.</av-col></av-row>
+    <av-row><av-col size="4">aventus.logLevel</av-col><av-col size="8">Log level: <span class="cn">0</span> Debug, <span class="cn">1</span> Information, <span class="cn">2</span> Warning, <span class="cn">3</span> Error, <span class="cn">4</span> None. Default: <span class="cn">3</span>.</av-col></av-row>
+</div><h2 id="templates-and-files">Templates and files</h2><div class="table">
+    <av-row class="header"><av-col size="4" center>Setting</av-col><av-col size="8" center>Purpose and default</av-col></av-row>
+    <av-row><av-col size="4">aventus.projectPath</av-col><av-col size="8">Paths containing project templates. Default: empty array.</av-col></av-row>
+    <av-row><av-col size="4">aventus.templatePath</av-col><av-col size="8">Paths containing element templates. Default: empty array.</av-col></av-row>
+    <av-row><av-col size="4">aventus.globalPath</av-col><av-col size="8">Paths containing global templates. Default: empty array.</av-col></av-row>
+    <av-row><av-col size="4">aventus.useDefaultTemplate</av-col><av-col size="8">Use the default Aventus templates. Default: <span class="cn">true</span>.</av-col></av-row>
+    <av-row><av-col size="4">aventus.quickCreations</av-col><av-col size="8">List of elements available for quick creation. Default: empty array.</av-col></av-row>
+    <av-row><av-col size="4">aventus.readNodeModules</av-col><av-col size="8">Read <span class="cn">node_modules</span> for import suggestions; this can slow the extension. Default: <span class="cn">false</span>.</av-col></av-row>
+    <av-row><av-col size="4">aventus.readDirs</av-col><av-col size="8">Extra readable directories. Relative paths start at the workspace root, not the <span class="cn">.vscode</span> directory. Default: empty array.</av-col></av-row>
+    <av-row><av-col size="4">aventus.preventCustomData</av-col><av-col size="8">URIs to exclude from custom data. Default: empty array.</av-col></av-row>
+</div><h2 id="services">Services</h2><div class="table">
+    <av-row class="header"><av-col size="4" center>Setting</av-col><av-col size="8" center>Purpose and default</av-col></av-row>
+    <av-row><av-col size="4">aventus.deeplApiKey</av-col><av-col size="8">DeepL API key used for translation. Default: empty string.</av-col></av-row>
+    <av-row><av-col size="4">aventus.liveserver</av-col><av-col size="8">Live server options, described below.</av-col></av-row>
+</div><h2 id="live-server">Live server options</h2><p>Configure the live server with the following fields in <span class="cn">aventus.liveserver</span>:</p><ul>
+    <li><span class="cn">host</span> — Address the server listens on. Default: <span class="cn">0.0.0.0</span>.</li>
+    <li><span class="cn">port</span> — Port used by the server. Default: <span class="cn">8080</span>.</li>
+    <li><span class="cn">autoIncrementPort</span> — Try the next port if the chosen one is in use. Default: <span class="cn">true</span>.</li>
+    <li><span class="cn">rootFolder</span> — Folder served by the server. Default: <span class="cn">./dist</span>.</li>
+    <li><span class="cn">indexFile</span> — Page opened at the root URL. Default: <span class="cn">index.html</span>.</li>
+    <li><span class="cn">delay</span> — Wait before triggering a live reload. Default: <span class="cn">200</span> ms.</li>
+    <li><span class="cn">launch_browser</span> — Open a browser when the server starts. Default: <span class="cn">true</span>.</li>
+    <li><span class="cn">browser</span> — Browser to open; leave empty to use your default browser. Default: <span class="cn">chrome</span>.</li>
+    <li><span class="cn">auto_close</span> — Close the browser tab when the server stops. Default: <span class="cn">true</span>.</li>
+</ul>` }
+    });
+}
+    getClassName() {
+        return "DocConfigVsCode";
+    }
+    Title() { return "VS Code settings for Aventus"; }
+    Description() { return "Customize the Aventus VS Code extension, including editor behavior, templates, file access and live server settings."; }
+    Keywords() { return ["Aventus VS Code settings", "Aventus extension configuration", "Aventus live server settings"]; }
+}
+DocConfigVsCode.Namespace=`AventusWebsite`;
+DocConfigVsCode.Tag=`av-doc-config-vs-code`;
+__as1(_, 'DocConfigVsCode', DocConfigVsCode);
+if(!window.customElements.get('av-doc-config-vs-code')){window.customElements.define('av-doc-config-vs-code', DocConfigVsCode);Aventus.WebComponentInstance.registerDefinition(DocConfigVsCode);}
 
 const DocConfigLib = class DocConfigLib extends DocGenericPage {
     static __style = `:host av-col{flex-direction:column}:host .table av-row:not(.header) av-col:nth-child(2){text-align:justify}:host .table av-row:not(.header) av-link,:host .table av-row:not(.header) b,:host .table av-row:not(.header) i{display:contents}:host .table .constraint{display:block;font-size:14px;margin-top:5px}`;
@@ -39309,6 +39444,7 @@ super.__getHtml();
         this.addRoute("/docs/config/build", DocConfigBuild);
         this.addRoute("/docs/config/static", DocConfigStatic);
         this.addRoute("/docs/config/lib", DocConfigLib);
+        this.addRoute("/docs/config/vscode", DocConfigVsCode);
         //#endregion
         //#region doc data
         this.addRoute("/docs/data/create", DocDataCreate);
@@ -39358,6 +39494,7 @@ super.__getHtml();
         this.addRoute("/docs/lib/compare_object", DocLibCompareObject);
         this.addRoute("/docs/lib/converter", DocLibConverter);
         this.addRoute("/docs/lib/create", DocLibCreate);
+        this.addRoute("/docs/lib/date_time", DocLibDateTime);
         this.addRoute("/docs/lib/drag_and_drop", DocLibDragAndDrop);
         this.addRoute("/docs/lib/instance", DocLibInstance);
         this.addRoute("/docs/lib/json", DocLibJson);

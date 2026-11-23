@@ -17,6 +17,7 @@
             <li><av-link to="/docs/config/build">Builds</av-link></li>
             <li><av-link to="/docs/config/static">Statics</av-link></li>
             <li><av-link to="/docs/config/lib">Import libs</av-link></li>
+            <li><av-link to="/docs/config/vscode">VS Code settings</av-link></li>
         </ul>
     </av-collapse>
 
@@ -90,6 +91,7 @@
         <div class="title" slot="header">lib</div>
         <ul>
             <li><av-link to="/docs/lib/create">Create</av-link></li>
+            <li><av-link to="/docs/lib/date_time">Date, DateTime &amp; Time</av-link></li>
             <li><av-link to="/docs/lib/animation">Animation</av-link></li>
             <li><av-link to="/docs/lib/callback">Callback</av-link></li>
             <li><av-link to="/docs/lib/compare_object">CompareObject</av-link></li>

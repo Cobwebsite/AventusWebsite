@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "deploy": "git subtree push --prefix dist origin deploy"
+    "prepare": "node ./scripts/prepareAll.mjs"
   },
   "repository": {
     "type": "git",

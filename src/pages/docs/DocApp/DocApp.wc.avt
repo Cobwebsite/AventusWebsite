@@ -7,6 +7,8 @@ import { DocConfigBasic } from "../pages/config/DocConfigBasic/DocConfigBasic.wc
 import { DocConfigBuild } from "../pages/config/DocConfigBuild/DocConfigBuild.wcl.avt";
 import { DocConfigStatic } from "../pages/config/DocConfigStatic/DocConfigStatic.wcl.avt";
 import { DocConfigLib } from "../pages/config/DocConfigLib/DocConfigLib.wcl.avt";
+import { DocConfigVsCode } from "../pages/config/DocConfigVsCode/DocConfigVsCode.wcl.avt";
+import { DocLibDateTime } from "../pages/lib/DocLibDateTime/DocLibDateTime.wcl.avt";
 import { DocDataCreate } from "../pages/data/DocDataCreate/DocDataCreate.wcl.avt";
 import { DocRamCreate } from "../pages/ram/DocRamCreate/DocRamCreate.wcl.avt";
 import { DocRamCrud } from "../pages/ram/DocRamCrud/DocRamCrud.wcl.avt";
@@ -96,6 +98,7 @@ export class DocApp extends Aventus.Navigation.Router implements Aventus.Default
         this.addRoute("/docs/config/build", DocConfigBuild);
         this.addRoute("/docs/config/static", DocConfigStatic);
         this.addRoute("/docs/config/lib", DocConfigLib);
+        this.addRoute("/docs/config/vscode", DocConfigVsCode);
         //#endregion
 
         //#region doc data
@@ -152,6 +155,7 @@ export class DocApp extends Aventus.Navigation.Router implements Aventus.Default
         this.addRoute("/docs/lib/compare_object", DocLibCompareObject);
         this.addRoute("/docs/lib/converter", DocLibConverter);
         this.addRoute("/docs/lib/create", DocLibCreate);
+        this.addRoute("/docs/lib/date_time", DocLibDateTime);
         this.addRoute("/docs/lib/drag_and_drop", DocLibDragAndDrop);
         this.addRoute("/docs/lib/instance", DocLibInstance);
         this.addRoute("/docs/lib/json", DocLibJson);

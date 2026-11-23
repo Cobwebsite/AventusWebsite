@@ -1,0 +1,58 @@
+<h1>VS Code settings</h1>
+<p>Customize the Aventus extension in VS Code Settings or in your workspace's <span class="cn">.vscode/settings.json</span>. These settings control the editor, templates, file access and live server.</p>
+
+<av-code language="json" filename=".vscode/settings.json">
+    <pre>
+    {
+    &nbsp;
+    	"aventus.ideBuild": true,
+    	"aventus.readDirs": ["./shared"],
+    	"aventus.liveserver": { "port": 8080, "rootFolder": "./dist" }
+    &nbsp;
+    }
+    </pre>
+</av-code>
+
+<h2 id="editor-and-build">Editor and build</h2>
+<div class="table">
+    <av-row class="header"><av-col size="4" center>Setting</av-col><av-col size="8" center>Purpose and default</av-col></av-row>
+    <av-row><av-col size="4">aventus.updateImportOnRename</av-col><av-col size="8">Update import paths when a file is renamed. Default: <span class="cn">true</span>.</av-col></av-row>
+    <av-row><av-col size="4">aventus.ideBuild</av-col><av-col size="8">Build code in the IDE. Default: <span class="cn">true</span>.</av-col></av-row>
+    <av-row><av-col size="4">aventus.defaultHideWarnings</av-col><av-col size="8">Default value for hiding warnings. Default: <span class="cn">false</span>.</av-col></av-row>
+    <av-row><av-col size="4">aventus.defaultForceDocumentation</av-col><av-col size="8">Default value for requiring documentation. Default: <span class="cn">false</span>.</av-col></av-row>
+    <av-row><av-col size="4">aventus.logLevel</av-col><av-col size="8">Log level: <span class="cn">0</span> Debug, <span class="cn">1</span> Information, <span class="cn">2</span> Warning, <span class="cn">3</span> Error, <span class="cn">4</span> None. Default: <span class="cn">3</span>.</av-col></av-row>
+</div>
+
+<h2 id="templates-and-files">Templates and files</h2>
+<div class="table">
+    <av-row class="header"><av-col size="4" center>Setting</av-col><av-col size="8" center>Purpose and default</av-col></av-row>
+    <av-row><av-col size="4">aventus.projectPath</av-col><av-col size="8">Paths containing project templates. Default: empty array.</av-col></av-row>
+    <av-row><av-col size="4">aventus.templatePath</av-col><av-col size="8">Paths containing element templates. Default: empty array.</av-col></av-row>
+    <av-row><av-col size="4">aventus.globalPath</av-col><av-col size="8">Paths containing global templates. Default: empty array.</av-col></av-row>
+    <av-row><av-col size="4">aventus.useDefaultTemplate</av-col><av-col size="8">Use the default Aventus templates. Default: <span class="cn">true</span>.</av-col></av-row>
+    <av-row><av-col size="4">aventus.quickCreations</av-col><av-col size="8">List of elements available for quick creation. Default: empty array.</av-col></av-row>
+    <av-row><av-col size="4">aventus.readNodeModules</av-col><av-col size="8">Read <span class="cn">node_modules</span> for import suggestions; this can slow the extension. Default: <span class="cn">false</span>.</av-col></av-row>
+    <av-row><av-col size="4">aventus.readDirs</av-col><av-col size="8">Extra readable directories. Relative paths start at the workspace root, not the <span class="cn">.vscode</span> directory. Default: empty array.</av-col></av-row>
+    <av-row><av-col size="4">aventus.preventCustomData</av-col><av-col size="8">URIs to exclude from custom data. Default: empty array.</av-col></av-row>
+</div>
+
+<h2 id="services">Services</h2>
+<div class="table">
+    <av-row class="header"><av-col size="4" center>Setting</av-col><av-col size="8" center>Purpose and default</av-col></av-row>
+    <av-row><av-col size="4">aventus.deeplApiKey</av-col><av-col size="8">DeepL API key used for translation. Default: empty string.</av-col></av-row>
+    <av-row><av-col size="4">aventus.liveserver</av-col><av-col size="8">Live server options, described below.</av-col></av-row>
+</div>
+
+<h2 id="live-server">Live server options</h2>
+<p>Configure the live server with the following fields in <span class="cn">aventus.liveserver</span>:</p>
+<ul>
+    <li><span class="cn">host</span> — Address the server listens on. Default: <span class="cn">0.0.0.0</span>.</li>
+    <li><span class="cn">port</span> — Port used by the server. Default: <span class="cn">8080</span>.</li>
+    <li><span class="cn">autoIncrementPort</span> — Try the next port if the chosen one is in use. Default: <span class="cn">true</span>.</li>
+    <li><span class="cn">rootFolder</span> — Folder served by the server. Default: <span class="cn">./dist</span>.</li>
+    <li><span class="cn">indexFile</span> — Page opened at the root URL. Default: <span class="cn">index.html</span>.</li>
+    <li><span class="cn">delay</span> — Wait before triggering a live reload. Default: <span class="cn">200</span> ms.</li>
+    <li><span class="cn">launch_browser</span> — Open a browser when the server starts. Default: <span class="cn">true</span>.</li>
+    <li><span class="cn">browser</span> — Browser to open; leave empty to use your default browser. Default: <span class="cn">chrome</span>.</li>
+    <li><span class="cn">auto_close</span> — Close the browser tab when the server stops. Default: <span class="cn">true</span>.</li>
+</ul>
